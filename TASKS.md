@@ -71,10 +71,10 @@ football app which fills in all relevant information in the app."*
 - [x] 4b. Network: cache anything that cannot change, stop refetching it, and
       keep request rates polite enough that no provider ever rate-limits or
       bans. → `tools/test_net.js`
-- [ ] 4c. Whole-app bug sweep: correctness, error paths, ES2018, dead code,
+- [x] 4c. Whole-app bug sweep: correctness, error paths, ES2018, dead code,
       leaks. Everything found is either fixed or written down.
-- [ ] 4d. UI/efficiency pass over every screen.
-- [ ] 4e. Verify the fixes did not introduce new bugs: full suite green, plus
+- [x] 4d. UI/efficiency pass over every screen.
+- [x] 4e. Verify the fixes did not introduce new bugs: full suite green, plus
       the new suites.
 
 ## 5. Needs Tj's approval before it happens
@@ -83,4 +83,4 @@ He said: *"consider features and ui from other similar apps but do not make any
 major changes unless I approve."* So candidates are **listed, not built** — see
 the "For your approval" section at the end of `RELEASE_NOTES.md`.
 
-- [ ] 5a. Write the candidate list. Build none of it.
+- [x] 5a. Write the candidate list. Build none of it.

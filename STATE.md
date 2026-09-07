@@ -1,8 +1,25 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-07** · ladder 0-14 COMPLETE · **v4.2** · APK builds, signed, all 5 test suites green
+**Last updated: 2026-09-07** · ladder 0-15 COMPLETE · **v4.3** · APK builds, signed, all 11 test suites green
 
-## WHERE I LEFT OFF — read this, then LADDER.md, then start
+## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
+On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
+sweep) and asked FIRST for a checkpoint system that survives a usage cap
+landing mid-edit. That is now the front door of this bundle:
+
+- `CHECKPOINT.md` — where the last session stopped, regenerated every commit.
+- `TASKS.md` — his request in his own words, as checkboxes.
+- `tools/ckpt.sh "did" "next"` — a fast commit with NO gate. It records red
+  suites honestly instead of refusing, because the moment a cap lands is
+  exactly the moment everything is half-finished.
+- `bash bootstrap.sh` now prints ~120 lines instead of ~1,200. It used to cat
+  STATE.md + LADDER.md + BRIEF.md in full on every cold start — roughly 40k
+  tokens of permanent conversation prefix before any work began. `--full`
+  still prints everything.
+- The zip carries `.git`, so resuming from it restores every checkpoint rather
+  than only the final state of each file.
+
+## The older note, kept for context
 Tj gave a new review list on 2026-09-03 (see the v3.1+ block at the bottom of
 `LADDER.md`). It is broken into checkpoints **11a … 11f**, one zip each.
 Tj asked for the four KNOWN-OPEN items from the v3.6 review to be cleared,
@@ -27,6 +44,147 @@ Next job: Tj running it and reporting what misbehaves.
 | free agents: Claude sync button, waiver wire online, league scoring, roster needs | **11d done** |
 | free agents show all positions, not just QB | **11b done** |
 | weekly advice: multiple pro sources averaged, converted to league scoring | **11e done** |
+
+## v4.3 — the 2026-09-07 list, and the bug that would have shipped
+
+### The three he reported
+**1. "Claude FAILED: the model did not return usable JSON."** Three defects,
+and the error message named none of them.
+- `jsonOf` computed `var a = s.indexOf('{')` ONCE, outside the loop, and only
+  ever retracted the closing brace. With web search on the model narrates
+  between searches and that narration lands in the same text buffer, so one
+  brace anywhere in it anchored every attempt to the wrong character.
+- `parseSse` set `stopped = true` and threw the REASON away. `max_tokens` is
+  the likeliest cause by far — the old budget was `400 + 260/player`, and the
+  search narration is spent from it before the JSON starts — and a truncated
+  object is unrecoverable by construction, because the closing braces were
+  never sent. The diagnosis was known one function earlier and discarded.
+- It was quadratic: every retraction re-parsed a near-full-length string.
+
+Now one string-aware pass collects every balanced top-level value, prefers the
+one carrying the expected key, and — when the answer was cut off — REPAIRS the
+tail rather than discarding it. That last part is the one that matters: the
+searches in a truncated answer have already been paid for, and recovering
+fourteen players out of seventeen beats reporting total failure. `max_tokens`
+was raised, which costs nothing: it is a cap, not an allocation.
+
+**2. Sentences cut off mid-word.** `String(det).slice(0, 220)` at ingest — the
+note in his screenshot is exactly 220 characters. Both the per-player *why* and
+the FLAGGED list read the same stored string, which is why the same wound
+appeared three times. The cap was not the mistake; cutting without regard for
+meaning was, and for an injury note it can invert the sense ("Even still, Swift
+wil…" is the whole question). Now 600, cut at a sentence or a word, with an
+explicit ellipsis.
+
+**3. "Re-default all teams now" always said "Nothing to change."** It did
+nothing and then reported success at doing nothing. `Store.applyAuto` skips any
+slot marked manual — correct and load-bearing for the automatic fills that run
+on boot, on week change and after every sync, which must never undo a decision
+he made. But this button is Tj explicitly ASKING for the defaults back, and
+every hand-edit marks a slot manual, so the more changes he made the more
+certainly it did nothing. The per-team "Reset to auto" had it right all along:
+clear the manual marks first. It now confirms, because it discards his picks,
+and says how many.
+
+### The Claude-app round trip (handoff.js)
+Export a file → attach it in a Claude chat with no message → get a file back →
+import → the app is filled in. Both for the weekly advice and for the waiver
+wire. The briefing is written for a reader told NOTHING: it opens by saying so,
+carries this league's scoring table, the roster with kickoffs, the exact output
+contract and a worked example.
+
+**It owns the file format and nothing else.** Understanding what a reply MEANS
+is `Ai.parseAnswer` + `Ai.normalizeAdvice`/`normalizeWaivers` +
+`Recommend.mergeAi` + `Value.waiverSave` — every one of them the same function
+the live API path calls. A second implementation would drift the first time
+either changed and nothing would notice, because each path is exercised
+separately. `rosterContext(..., {everyone:true})` is the one deliberate
+difference: triage exists because a web search costs money on the API path, and
+through his own subscription it does not, so the handoff asks about every
+player. Same code, different economics.
+
+Android side: `exportShare` hands the file straight to the share sheet (no
+FileProvider needed — the MediaStore Downloads Uri is shareable), and a
+document picker reads the reply off the UI thread. Paste is the fallback
+everywhere, because a picker depends on the phone having one and on Claude
+having saved a file rather than shown a code block.
+
+### Kickoff times and the pre-Sunday alert (schedule.js)
+Every player carries a day and time next to his name on Live, Lineups, Rosters
+and Advice, and an alert card leads the three lineup screens when anyone plays
+before Sunday — leading with the players who are RECOMMENDED but on the bench,
+with a one-tap fix.
+
+**It costs no extra network.** `liveTick` already fetched the scoreboard every
+poll to decide whether anything was in progress, and threw the kickoff times
+away. `Schedule.ingest` is handed that same response. `refresh()` only goes out
+when the stored copy is over three hours old.
+
+`Alerts.java` fires the same warning with the app CLOSED, reading the kickoffs
+the page persists into `weekMeta` — no network at alarm time. **The trap there:
+Thursday Night Football kicks off at 00:20Z, which is FRIDAY in UTC.** Deriving
+the weekday in UTC would make the alert fire a day late every single week and
+look correct in a log. `Calendar.getInstance()` with no argument — the phone's
+own zone — is the only right answer, and a test pins it.
+
+### THE APP NOW SLEEPS
+Nothing stopped anything when the app left the screen. `ui.js`'s own comment
+claimed the live poll was "foreground only, by design"; nothing implemented
+that, and a backgrounded WebView keeps running its JS timers — so a 45-second
+poll that pulls sixteen box scores ran all afternoon behind whatever Tj was
+actually doing. `MainActivity` now implements onPause/onStop/onResume/onDestroy
+(pauseTimers, WebView teardown, bridge released), the page has
+`__appPause`/`__appResume` plus a `visibilitychange` handler, and the sleep
+guard sits at the single place a timer is armed — because a request already in
+flight will resolve later and re-arm from inside its own `.then()`, and one
+escaped timer is enough to keep the poll running forever.
+
+### THE BUG THAT WOULD HAVE SHIPPED
+`ui.js` is `(function () { ... })()`. Every OTHER module is
+`(function (root) { ... })(window)`. Writing `root.__appPause = appPause` at
+ui.js's top level, out of habit, is a **ReferenceError at script load** — the
+app would not have booted at all. No screen, no readable error, a dead WebView.
+
+**Eleven green suites and a clean APK build said nothing, because not one of
+them executed ui.js.** Every suite either tested a module in isolation or
+asserted on ui.js's source TEXT. `tools/test_lifecycle.js` now runs the real
+index.html load order in a VM context against a DOM stub, checks that boot()
+genuinely initialised the season (the first version of that assertion was
+vacuous and hid a boot failure for a round), and proves the battery claim by
+COUNTING TIMERS: boot arms 1, pause leaves 0, resume does not stack a second.
+
+A second bug came out of the same suite: `MainActivity.onResume()` calls
+`window.__appResume()` directly, and on a cold start that can fire after the
+script is evaluated but before `boot()` has run — `S.weekMeta` on an undefined
+`S`, thrown into `evaluateJavascript` where nothing in the app would ever
+report it. Both hooks now guard on `S`.
+
+### Network, caching and not getting blocked
+Every tap of "Sync advice" refetched the full ESPN projection feed (400
+players, megabytes) and the 800-record injury list unconditionally. That is not
+hypothetical waste: when the Claude step failed — which is what his screenshot
+shows — the natural response is to tap Sync again, and each retry pulled all of
+it down to reach a step that needed neither. A handful of frustrated taps is a
+burst of multi-megabyte requests at a public endpoint nobody owes us. Both feeds
+now have freshness gates (20 min / 10 min), reuse is REPORTED rather than
+hidden, a failed or empty result is never treated as a cache, and the Data tab's
+"test the feed" forces a real fetch because a cached answer would tell him
+nothing about the network.
+
+Two more, both mine from earlier the same day: `Schedule.ingest` called
+`Store.save()` on every 45-second poll tick — a full-season disk write for data
+that had not changed — now guarded by a signature; and `earlyAlert` ran
+`bestLineup` on every render of three tabs, now memoised.
+
+### Three hard-coded lists that were quietly not covering things
+The same hole as v3.0's discarded javac exit status and v3.10's ship.sh that
+never ran the tests — a check that exists but is not wired to what it is meant
+to stop:
+- `tools/ckpt.sh` and `ship.sh` listed the test suites by name, so `test_ai.js`
+  was added and the gate reported "all 6 suites green" without running it.
+- `tools/check_es2018.js` listed fourteen filenames; `schedule.js`, `handoff.js`
+  and `names.js` were never checked while it printed "all files ES2018-safe".
+All three now discover with a glob. Nothing to remember when a file is added.
 
 ## v4.1 — player identity (nicknames)
 Tj: "the free agent list shows Kenny Gainwell, but Kenneth Gainwell is already

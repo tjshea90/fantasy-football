@@ -3,6 +3,110 @@
 Newest first. Every version is one checkpoint zip and one APK; `VERSION` is the
 only place the number lives.
 
+## v4.3 — the three bugs you reported, two new features, and a full sweep
+
+### The three you reported
+- **The JSON error is fixed, and the cause was not what the message said.**
+  Three separate defects. The parser was anchored to the first `{` in the whole
+  answer and never moved it, so a single brace in Claude's between-search
+  narration poisoned every attempt. The stream discarded the *reason* the model
+  stopped, which is how a `max_tokens` truncation surfaced as a generic parse
+  failure with the diagnosis already thrown away. And it was quadratic, so a
+  long answer chewed the phone right after a two-minute wait. It now finds the
+  JSON in one pass and, when the answer was genuinely cut off, **rescues the
+  players that did arrive instead of losing the whole sync** — those searches
+  were already paid for. When it truly cannot, it says which of the real causes
+  it was.
+- **Sentences no longer stop mid-word.** The injury note was hard-cut at exactly
+  220 characters at ingest — that is why "Even still, Swift wil" appeared in
+  three places at once: the *why* line and the FLAGGED list read the same stored
+  string. Now 600 characters, cut at a sentence or a word boundary, with a
+  visible "…" when anything was dropped. For an injury note this matters more
+  than it looks: a cut in the wrong place can invert the meaning.
+- **"Re-default all teams now" actually re-defaults.** It was skipping every
+  slot you had touched — correct behaviour for the automatic fills that run on
+  boot and after each sync, which must never undo your decisions, but wrong for
+  a button whose whole purpose is asking for the defaults back. The more changes
+  you had made, the more certainly it did nothing. It now asks first (it is
+  discarding your picks), says how many, and tells you what it changed.
+
+### Use the Claude app instead of an API key
+A new card under **Sync advice** on the Advice tab, and under **Ask Claude about
+the wire** on the Rosters tab.
+
+1. Tap **Make the file for Claude** — the share sheet opens, pick Claude.
+2. Send it with **no message of your own**. The file explains itself.
+3. Claude gives you a file back. Tap **Load Claude's reply** and pick it.
+
+Everything fills in exactly as if the API key had done it. Because it costs you
+nothing extra, this path asks about **every player on your roster**, not just
+the ones the paid path judges worth researching. If the file picker is not
+available, you can paste the reply instead — it finds the JSON either way, even
+in a whole chat message.
+
+### When each player plays, and a warning before Thursday
+- Every player now carries his **day and kickoff time** next to his name, on
+  Live, Lineups, Rosters and Advice. Anyone playing **before Sunday** is in
+  amber.
+- An **alert card** leads the Live, Lineups and Advice tabs whenever you have
+  players in early games. It leads with the ones the app recommends that are
+  still on your bench, with a one-tap fix, and says how long you have.
+- The same warning now fires as a **notification with the app closed**.
+- All of this costs no extra data: the kickoff times come from the scoreboard
+  request the live poll was already making and throwing away.
+
+### The app now sleeps
+It did not before. The live poll kept running in the background — every 45
+seconds, pulling sixteen box scores on a Sunday — behind whatever you were
+actually doing. It now stops the moment the app leaves the screen and restarts
+when you come back, and the WebView is released properly so it stops holding
+memory it only needs while visible.
+
+### Fewer, politer requests
+Every tap of Sync advice used to refetch the entire ESPN projection feed and the
+whole injury list, even when a previous tap had just done it. After a failure
+that was the worst case: retrying pulled megabytes down again to reach the step
+that had failed. Both are now reused for a short window, and the sync report
+tells you when it reused rather than fetched — nothing pretends to be fresher
+than it is.
+
+### And one that would have stopped the app booting
+Found while sweeping: a single-word mistake in the new sleep code would have
+thrown before the app painted a pixel. Eleven passing test suites and a clean
+APK build said nothing, because not one of them actually ran the screen file.
+There is now a suite that does, and it proves the battery fix by counting live
+timers rather than by reading the code: boot arms one, backgrounding leaves
+zero, returning does not stack a second.
+
+---
+
+## For your approval — considered, deliberately NOT built
+
+You said to consider ideas from similar apps but not to make major changes
+without your say-so. These are the ones worth having; none of them are in this
+build. Say which you want.
+
+1. **A start/sit confidence bar per slot.** Sleeper and Yahoo both show how
+   clear-cut a decision is. Here it would be honest, because the app already
+   simulates: "start Olave over Adams — he wins 71% of simulated weeks". Small
+   change, uses `sim.js` as it stands.
+2. **Notify when a rostered player's injury status changes**, not only on the
+   morning check. The feed is already fetched; this is a comparison against the
+   previous fetch plus a notification.
+3. **A "what changed since you last looked" card** on the Live tab — scores,
+   new designations, lineup deadlines passed. Common in ESPN's app and genuinely
+   useful mid-week.
+4. **Opponent-aware waiver suggestions**: flag a free agent who is good *and*
+   plays the team your opponent's starter also faces. The app has both rosters
+   and the schedule, so nothing new is fetched.
+5. **Trade finder** rather than only a trade evaluator: scan the other nine
+   rosters for two-for-one swaps that help both sides under this scoring. This
+   is the biggest of the five and the one most likely to need iteration.
+6. **A season-long "points left on the bench" tally.** Bench regret exists
+   per week; totalling it is a line of arithmetic and a genuinely painful stat.
+7. **Widget or lock-screen reminder for early kickoffs.** The notification now
+   covers this; a widget would be the next step and is a real chunk of Java.
+
 ## v2.9 — hardening
 - One card can no longer take down a whole screen. Every card added since v2.3
   is built inside `addSafe`, and each screen is wrapped as well: a failure shows

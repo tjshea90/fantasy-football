@@ -172,3 +172,44 @@
           "Export backup" button is untouched — still a Tj-initiated, visible
           copy to Downloads on request.
 
+
+# ---- v4.3 — the 2026-09-07 list. Checkpointing first, then his three bugs,
+# then the two new features, then the sweep he asks for every time.
+
+- [x] 15a. CHECKPOINTS FOR COWORK. git history + tools/ckpt.sh (fast, NO gate,
+          records red suites honestly) + CHECKPOINT.md (regenerated every
+          commit) + TASKS.md (his request as checkboxes). The zip now carries
+          .git. bootstrap.sh prints ~120 lines instead of ~1,200 — it was
+          catting STATE.md + LADDER.md + BRIEF.md in full on every cold start,
+          which is ~40k tokens of permanent conversation prefix before any work
+          began. `--full` still prints everything.
+- [x] 15b. THE JSON FAILURE. jsonOf anchored to the first brace in the whole
+          answer and never moved it; parseSse discarded stop_reason, so a
+          max_tokens truncation surfaced as a generic parse error with the
+          diagnosis already lost; and it was quadratic. Rewritten as one
+          string-aware pass plus a repair path that rescues the players that
+          did arrive. tools/test_ai.js.
+- [x] 15c. THE CUT-OFF SENTENCES. A hard slice(0,220) at ingest, cutting
+          mid-word, read by both the per-player why and the FLAGGED list.
+- [x] 15d. RE-DEFAULT ALL TEAMS. applyAuto skips manual slots by contract, so
+          the button did nothing and said so as "Nothing to change". It now
+          clears the manual marks first, like the per-team Reset always did,
+          and confirms because that discards his picks.
+- [x] 15e. THE CLAUDE-APP ROUND TRIP. handoff.js, both tabs. Self-explaining
+          .md briefing out, tolerant JSON reply in, through the SAME parser and
+          normalisers the API path uses. Share sheet + document picker in Java,
+          paste as the fallback. tools/test_handoff.js.
+- [x] 15f. KICKOFF TIMES + THE PRE-SUNDAY ALERT. schedule.js, fed free off the
+          scoreboard response the live poll already fetched. Alerts.java fires
+          the same warning with the app closed. tools/test_schedule.js.
+- [x] 15g. THE APP SLEEPS. onPause/onStop/onResume/onDestroy, pauseTimers,
+          WebView teardown, __appPause/__appResume, visibilitychange, and the
+          sleep guard at the single timer-arming site. Caught a ReferenceError
+          at ui.js top level that would have stopped the app booting at all —
+          nothing in the suite executed ui.js. tools/test_lifecycle.js now does.
+- [x] 15h. NETWORK + CACHING. Freshness gates on the two heavy feeds, so a run
+          of retries after a failure costs one fetch instead of ten. Reuse is
+          reported, never hidden. tools/test_net.js.
+- [x] 15i. THE SWEEP. Three hard-coded lists that were silently not covering
+          new files (two test runners, the ES2018 guard) now discover with a
+          glob. Plus the smaller fixes recorded in STATE.md's v4.3 section.
