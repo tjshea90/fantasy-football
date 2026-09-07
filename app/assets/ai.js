@@ -142,7 +142,7 @@
   function parseSse(rawText) {
     var lines = String(rawText || '').split(/\r?\n/);
     var text = [], usage = null, err = null, stopped = false, i;
-    /* WHY THE STOP REASON IS KEPT (v4.3).
+    /* WHY THE STOP REASON IS KEPT (v4.5).
        It used to set `stopped` and throw the reason away. That single discard
        is what made "the model did not return usable JSON" unactionable: by far
        the likeliest cause is stop_reason === 'max_tokens', i.e. the answer was

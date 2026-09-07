@@ -3,7 +3,7 @@
 Newest first. Every version is one checkpoint zip and one APK; `VERSION` is the
 only place the number lives.
 
-## v4.3 — the three bugs you reported, two new features, and a full sweep
+## v4.5 — the three bugs you reported, two new features, and a full sweep
 
 ### The three you reported
 - **The JSON error is fixed, and the cause was not what the message said.**

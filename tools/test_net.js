@@ -11,7 +11,7 @@
  * traffic: what is cached, what is rate-limited, what happens when a step
  * fails, and whether anything can spin.
  *
- * The concrete defect behind most of it: before v4.3 every tap of "Sync
+ * The concrete defect behind most of it: before v4.5 every tap of "Sync
  * advice" refetched the full ESPN projection feed (400 players, megabytes) and
  * the full 800-record injury list, unconditionally. When the Claude step failed
  * — which is what Tj's screenshot shows — the natural response is to tap Sync

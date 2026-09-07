@@ -173,7 +173,7 @@
           copy to Downloads on request.
 
 
-# ---- v4.3 — the 2026-09-07 list. Checkpointing first, then his three bugs,
+# ---- v4.5 — the 2026-09-07 list. Checkpointing first, then his three bugs,
 # then the two new features, then the sweep he asks for every time.
 
 - [x] 15a. CHECKPOINTS FOR COWORK. git history + tools/ckpt.sh (fast, NO gate,
@@ -212,4 +212,4 @@
           reported, never hidden. tools/test_net.js.
 - [x] 15i. THE SWEEP. Three hard-coded lists that were silently not covering
           new files (two test runners, the ES2018 guard) now discover with a
-          glob. Plus the smaller fixes recorded in STATE.md's v4.3 section.
+          glob. Plus the smaller fixes recorded in STATE.md's v4.5 section.

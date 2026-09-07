@@ -141,7 +141,7 @@ summary::-webkit-details-marker{display:none}
 .chk input{width:20px;height:20px;accent-color:var(--accent)}
 .row .nm small{white-space:pre-line}
 
-/* ---- game-time badges and the pre-Sunday alert (v4.3) --------------------
+/* ---- game-time badges and the pre-Sunday alert (v4.5) --------------------
    The badge sits next to a player's name on every screen that lists players.
    On a seventeen-man roster the ONLY thing that has to jump out is "this one
    is not on Sunday", so early games are the accent colour and everything else

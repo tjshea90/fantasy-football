@@ -1,4 +1,4 @@
-/* schedule.js — when does each of my players actually play? (v4.3)
+/* schedule.js — when does each of my players actually play? (v4.5)
  *
  * WHAT TJ ASKED FOR
  * -----------------

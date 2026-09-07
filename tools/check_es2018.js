@@ -4,7 +4,7 @@ var fs = require('fs');
 /* DISCOVERED, NOT LISTED.
  *
  * This was a hard-coded array of fourteen filenames. schedule.js and handoff.js
- * were added in v4.3 and neither was ever checked — the guard reported "all
+ * were added in v4.5 and neither was ever checked — the guard reported "all
  * files ES2018-safe" while silently skipping the two newest files in the app,
  * which are exactly the ones most likely to carry a modern idiom.
  *

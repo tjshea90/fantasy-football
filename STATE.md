@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-07** · ladder 0-15 COMPLETE · **v4.3** · APK builds, signed, all 11 test suites green
+**Last updated: 2026-09-07** · ladder 0-15 COMPLETE · **v4.5** · APK builds, signed, all 11 test suites green
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
@@ -45,7 +45,9 @@ Next job: Tj running it and reporting what misbehaves.
 | free agents show all positions, not just QB | **11b done** |
 | weekly advice: multiple pro sources averaged, converted to league scoring | **11e done** |
 
-## v4.3 — the 2026-09-07 list, and the bug that would have shipped
+## v4.5 — the 2026-09-07 list, and the bug that would have shipped
+(v4.3 was the mid-work checkpoint zip sent to Tj partway through the same
+session; this is the finished version of that work.)
 
 ### The three he reported
 **1. "Claude FAILED: the model did not return usable JSON."** Three defects,

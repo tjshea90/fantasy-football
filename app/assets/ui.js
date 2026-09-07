@@ -200,7 +200,7 @@
     back.addEventListener('click', function (e) { if (e.target === back) document.body.removeChild(back); });
     document.body.appendChild(back);
   }
-  /* ---------- THE CLAUDE-APP ROUND TRIP (v4.3) --------------------------
+  /* ---------- THE CLAUDE-APP ROUND TRIP (v4.5) --------------------------
    * Tj: "I should be able to export a file from the app, upload it to a Claude
    * chat with no explanation, and Claude creates a file which I can import back
    * into the football app which fills in all relevant information in the app."
@@ -225,7 +225,7 @@
     cb(text, err);
   };
 
-  /* ---------- game-time badges and the pre-Sunday alert (v4.3) ----------
+  /* ---------- game-time badges and the pre-Sunday alert (v4.5) ----------
    * Tj wanted the day and time each player plays sitting next to his name,
    * everywhere a player is listed, and an alert he cannot miss for the ones
    * playing before Sunday.
@@ -557,7 +557,7 @@
     if (busy) { scheduleLive(15000); return; }
     Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2).then(function (games) {
       /* FREE: this response already carries every kickoff time, and before
-         v4.3 they were thrown away. The schedule badges and the pre-Sunday
+         v4.5 they were thrown away. The schedule badges and the pre-Sunday
          alert cost no extra request because of this line. */
       if (window.Schedule) { try { Schedule.ingest(week, games); } catch (e) { } }
       var i, inProg = 0, pre = 0, post = 0;

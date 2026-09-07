@@ -268,7 +268,7 @@
 
   var GOOD_ENOUGH = 300;      /* weekly lines that make further routes pointless */
 
-  /* HOW LONG A GOOD PROJECTION SET STAYS GOOD (v4.3).
+  /* HOW LONG A GOOD PROJECTION SET STAYS GOOD (v4.5).
    *
    * This is the single heaviest thing the app fetches: up to three ESPN routes
    * asking for 400 players, plus two Sleeper routes, and the ESPN response is

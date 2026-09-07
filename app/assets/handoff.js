@@ -1,4 +1,4 @@
-/* handoff.js — the offline Claude round trip (v4.3).
+/* handoff.js — the offline Claude round trip (v4.5).
  *
  * WHAT TJ ASKED FOR, IN HIS WORDS
  * -------------------------------

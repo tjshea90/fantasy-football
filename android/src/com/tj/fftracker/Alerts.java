@@ -230,7 +230,7 @@ public class Alerts {
             (slots.length - filled == 1 ? " is" : "s are") + " empty");
       }
 
-      /* ---- games before Sunday (v4.3) -------------------------------------
+      /* ---- games before Sunday (v4.5) -------------------------------------
        * Tj: "it should also give me alerts that are easy to see about players
        * on my roster that will be playing before the upcoming NFL Sunday, so I
        * don't forget to turn in my roster for those players which play early in

@@ -12,6 +12,18 @@ OUT="$(dirname "$D")"
 NOTE="${1:-}"; [ -z "$NOTE" ] && { echo "FAIL: a one-line change note is required."; exit 1; }
 echo "== checkpoint =="
 rm -rf __pycache__ tools/__pycache__ 2>/dev/null
+
+# COMMIT BEFORE ZIPPING. The zip carries .git so a resumed session gets the
+# whole history — but a zip built from a DIRTY tree carries the final files
+# plus a history that does not contain them, and bootstrap.sh then greets the
+# next session with "uncommitted edits are present, the last session may have
+# been interrupted mid-change" when nothing of the sort happened. Worse, the
+# real signal is destroyed: that warning is how a genuinely interrupted session
+# is recognised, and it must not cry wolf on every clean ship.
+if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+  bash tools/ckpt.sh "ship: $NOTE" "verify on the phone" >/dev/null 2>&1
+  echo "  OK    committed the working tree before zipping"
+fi
 TODAY=$(date +%Y-%m-%d)
 grep -q "Last updated: $TODAY" STATE.md || { echo "  FAIL  STATE.md not updated today. The next chat would not know where this stands."; exit 1; }
 bash bootstrap.sh >/dev/null 2>&1 || { echo "  FAIL  bootstrap does not pass. Fix MANIFEST.txt, then re-run."; bash bootstrap.sh | head -20; exit 1; }

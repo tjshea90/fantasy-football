@@ -580,7 +580,7 @@ public class NativeBridge {
     }
   }
 
-  /* ---- the offline Claude round trip (v4.3) -------------------------------
+  /* ---- the offline Claude round trip (v4.5) -------------------------------
    * Tj's flow is: export here, attach the file in a Claude chat, get a file
    * back, import it here. Both halves happen on a phone, so both halves have
    * to be one tap.
