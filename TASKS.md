@@ -13,25 +13,25 @@ has, and a false one costs more than an untouched one.
 
 ## 0. Checkpointing (do this first, he asked for it first)
 
-- [ ] 0a. Fine-grained checkpoints that survive a usage cap mid-edit.
+- [x] 0a. Fine-grained checkpoints that survive a usage cap mid-edit.
       `git` for history + `tools/ckpt.sh` for one-command commits +
       `CHECKPOINT.md` as the always-current resume card.
-- [ ] 0b. `bootstrap.sh` prints `CHECKPOINT.md` + `TASKS.md` + `git log` so a
+- [x] 0b. `bootstrap.sh` prints `CHECKPOINT.md` + `TASKS.md` + `git log` so a
       cold session is briefed by one command.
-- [ ] 0c. The zip carries `.git`, so resuming from an attached zip restores the
+- [x] 0c. The zip carries `.git`, so resuming from an attached zip restores the
       entire history, not just the final files.
 - [ ] 0d. Deliver the zip to Tj at every milestone. The container is ephemeral;
       a checkpoint he does not have is a checkpoint that does not exist.
 
 ## 1. The three reported bugs
 
-- [ ] 1a. **The JSON error.** Screenshot 3: `Claude FAILED: the model did not
+- [x] 1a. **The JSON error.** Screenshot 3: `Claude FAILED: the model did not
       return usable JSON`. Diagnose it properly and fix the cause, not the
       message. → `tools/test_ai.js`
-- [ ] 1b. **Sentences cut off in the advice.** Screenshots 1 and 2: the injury
+- [x] 1b. **Sentences cut off in the advice.** Screenshots 1 and 2: the injury
       note stops mid-word ("Even still, Swift wil"), in both the per-player
       *why* and the FLAGGED list. → `tools/test_ai.js`
-- [ ] 1c. **"Re-default all teams now" always says "Nothing to change"** even
+- [x] 1c. **"Re-default all teams now" always says "Nothing to change"** even
       after several changes away from the default. → `tools/test_integration.js`
 
 ## 2. The two new Claude-app round trips

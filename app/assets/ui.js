@@ -574,16 +574,56 @@
       render();
     });
     head.appendChild(togg);
+    /* WHY THIS BUTTON USED TO LIE (Tj, 2026-09-07: "when I make changes to
+     * lineups then press the re-default all teams now button it always says
+     * nothing to change even when I made several changes away from the
+     * default").
+     *
+     * He was right and the button was broken in the most confusing way
+     * available: it did exactly nothing and then reported success at doing
+     * nothing. The cause is that `Store.applyAuto` skips any slot marked
+     * manual — `if (M[key]) continue;` — which is the correct and load-bearing
+     * contract for the AUTOMATIC fills that run on boot, on every week change
+     * and after every sync. Those must never silently undo a decision Tj made.
+     *
+     * But this button is not an automatic fill. It is Tj explicitly asking for
+     * the defaults back, and every hand-edit he makes marks that slot manual,
+     * so the more changes he made the more certainly the button did nothing.
+     * The per-team "Reset to auto" fifty lines below had it right all along:
+     * it calls clearManual FIRST. This is now the same operation across all
+     * ten teams, which is what its name has always claimed.
+     *
+     * It asks first, because discarding hand-picks is exactly the kind of
+     * thing that must not happen on a mis-tap — and unlike the old version, it
+     * can now say how many picks are at stake. */
     var refill = el('button', 'btn'); refill.textContent = 'Re-default all teams now';
     refill.style.marginTop = '8px';
     refill.addEventListener('click', function () {
-      var was = S.settings.autoFill;
-      S.settings.autoFill = true;
-      var n = autoFillWeek(week);
-      S.settings.autoFill = was;
-      if (window.Sim) Sim.invalidate();
-      render();
-      toast(n ? (n + ' slot' + (n === 1 ? '' : 's') + ' updated') : 'Nothing to change');
+      var manual = 0;
+      S.teams.forEach(function (t) {
+        var M = (S.lineupManual[String(week)] || {})[t.id] || {}, k;
+        for (k in M) if (Object.prototype.hasOwnProperty.call(M, k)) manual++;
+      });
+      function go() {
+        S.teams.forEach(function (t) { Store.clearManual(week, t.id); });
+        var was = S.settings.autoFill;
+        S.settings.autoFill = true;
+        var n = autoFillWeek(week);
+        S.settings.autoFill = was;
+        if (window.Sim) Sim.invalidate();
+        render();
+        toast(n ? (n + ' slot' + (n === 1 ? '' : 's') + ' updated'
+                     + (manual ? ' · ' + manual + ' of your picks replaced' : ''))
+                : 'Every team already holds its recommended lineup');
+      }
+      if (!manual) { go(); return; }
+      confirmModal('Re-default all ten teams?',
+        'You have hand-picked ' + manual + ' slot' + (manual === 1 ? '' : 's') +
+        ' in week ' + week + '. Re-defaulting throws those away and fills every ' +
+        'team with the best projected legal lineup instead.\n\n' +
+        'Nothing else is touched — rosters, scores and matchups all stay as they ' +
+        'are, and you can change any slot straight back afterwards.',
+        'Replace my picks', go, true);
     });
     head.appendChild(refill);
     root.appendChild(head);

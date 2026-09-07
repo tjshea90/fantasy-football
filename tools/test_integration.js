@@ -231,5 +231,77 @@ var me = S.league.me;
      'the prompt is a sane size (' + prompt.length + ' chars) — no runaway pool');
 }());
 
+/* ---- 12. "Re-default all teams now" actually re-defaults ------------------
+ * Tj, 2026-09-07: "when I make changes to lineups then press the re-default
+ * all teams now button it always says nothing to change even when I made
+ * several changes away from the default."
+ *
+ * The data-layer half of that bug is pinned here: applyAuto MUST keep skipping
+ * manual slots (every automatic fill in the app depends on that contract), and
+ * clearing the manual marks first MUST make it move again. The button now does
+ * the second thing, which is what its name always claimed. ui.js is not loaded
+ * in this suite, so the button's own wiring is asserted on source at the end. */
+(function () {
+  var wk = 6, tid = me;
+  var auto = W.Recommend.autoLineup(wk, tid, null);
+  var keys = Object.keys(auto);
+  ok(keys.length > 0, 'the recommender produces a lineup to default to');
+
+  W.Store.clearManual(wk, tid);
+  W.Store.applyAuto(wk, tid, auto);
+  var n0 = W.Store.applyAuto(wk, tid, auto);
+  ok(n0 === 0, 're-applying an unchanged auto lineup reports 0 slots changed');
+
+  /* Tj hand-picks a different player into a slot — exactly what he did */
+  var slot = keys[0];
+  var roster = W.Store.team(tid).players;
+  var current = W.Store.getLineup(wk, tid)[slot];
+  var other = null, i;
+  for (i = 0; i < roster.length; i++) {
+    if (roster[i].id !== current) { other = roster[i].id; break; }
+  }
+  ok(other !== null, 'the roster has another player to move into the slot');
+  W.Store.setSlot(wk, tid, slot, other, true);
+  ok(W.Store.isManual(wk, tid, slot), 'a hand-picked slot is marked manual');
+
+  /* THE BUG: this is what the button used to do, and it is why it said
+     "Nothing to change" no matter how many changes had been made. */
+  var stillNothing = W.Store.applyAuto(wk, tid, auto);
+  ok(stillNothing === 0,
+     'applyAuto alone still reports 0 — the manual contract is intact  <-- the old button stopped here');
+  ok(W.Store.getLineup(wk, tid)[slot] === other,
+     'and it left his pick in place, which is correct for an AUTOMATIC fill');
+
+  /* THE FIX: clear the manual marks first, the way the per-team "Reset to
+     auto" button has always done, then fill. */
+  W.Store.clearManual(wk, tid);
+  var changed = W.Store.applyAuto(wk, tid, auto);
+  ok(changed > 0,
+     'clearing the manual marks first makes the re-default actually move ' +
+     changed + ' slot(s)  <-- the fix');
+  ok(W.Store.getLineup(wk, tid)[slot] === current,
+     'and the slot is back to the recommended player');
+}());
+
+/* ---- 13. the button itself is wired that way ----------------------------- */
+(function () {
+  var src = fs.readFileSync(path.join(__dirname, '..', 'app/assets/ui.js'), 'utf8');
+  /* comments are stripped first — the block above the button quotes the old
+     behaviour on purpose, and STATE.md records that this trap has bitten
+     three times already */
+  var code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  var i = code.indexOf('Re-default all teams now');
+  ok(i > 0, 'the re-default button still exists');
+  var block = code.slice(i, i + 1600);
+  ok(/clearManual/.test(block),
+     'the re-default handler clears the manual marks  <-- without this it can only ever say "Nothing to change"');
+  ok(/confirmModal/.test(block),
+     'it asks first, because it discards hand-picked slots');
+  ok(!/Nothing to change/.test(block),
+     'the misleading "Nothing to change" wording is gone');
+  ok(/of your picks replaced|already holds its recommended/.test(block),
+     'the toast now says what actually happened');
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);

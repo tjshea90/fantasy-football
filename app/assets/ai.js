@@ -142,6 +142,15 @@
   function parseSse(rawText) {
     var lines = String(rawText || '').split(/\r?\n/);
     var text = [], usage = null, err = null, stopped = false, i;
+    /* WHY THE STOP REASON IS KEPT (v4.3).
+       It used to set `stopped` and throw the reason away. That single discard
+       is what made "the model did not return usable JSON" unactionable: by far
+       the likeliest cause is stop_reason === 'max_tokens', i.e. the answer was
+       cut off mid-object, and at that point NO parser can recover the closing
+       braces because they were never sent. The cause was known right here and
+       then dropped, so the failure surfaced two functions later as a generic
+       parse error with the diagnosis already lost. */
+    var stopReason = '';
     for (i = 0; i < lines.length; i++) {
       var ln = lines[i];
       if (ln.indexOf('data:') !== 0) continue;
@@ -162,7 +171,9 @@
            one, the web-search count. Overwriting would silently drop the input
            side and the cost meter would read about half of what was spent. */
         if (ev.usage) { usage = mergeUsage(usage || {}, ev.usage); }
-        if (ev.delta && ev.delta.stop_reason) stopped = true;
+        if (ev.delta && ev.delta.stop_reason) {
+          stopped = true; stopReason = String(ev.delta.stop_reason);
+        }
       } else if (ev.type === 'message_start' && ev.message && ev.message.usage) {
         usage = mergeUsage(usage || {}, ev.message.usage);
       }
@@ -174,18 +185,152 @@
         ? 'the stream finished without any text (the model may have only searched)'
         : 'the stream ended early — no text was received');
     }
-    return { content: [{ type: 'text', text: joined }], usage: usage };
+    return { content: [{ type: 'text', text: joined }], usage: usage,
+             stop_reason: stopReason };
   }
-  /* Claude is asked for bare JSON but may still wrap it in prose or a fence.
-     Take the widest {...} span that actually parses. */
-  function jsonOf(txt) {
-    var s = String(txt || '');
-    var a = s.indexOf('{'), b = s.lastIndexOf('}');
-    while (a >= 0 && b > a) {
-      try { return JSON.parse(s.slice(a, b + 1)); }
-      catch (e) { b = s.lastIndexOf('}', b - 1); }
+  /* ---- finding the JSON in a model's answer -----------------------------
+   * THE BUG THIS REPLACES (Tj's screenshot, 2026-09-07: "Claude FAILED: the
+   * model did not return usable JSON"). The old implementation was:
+   *
+   *     var a = s.indexOf('{'), b = s.lastIndexOf('}');
+   *     while (a >= 0 && b > a) {
+   *       try { return JSON.parse(s.slice(a, b + 1)); }
+   *       catch (e) { b = s.lastIndexOf('}', b - 1); }
+   *     }
+   *
+   * Three separate defects, any one of which produces that message:
+   *
+   * 1. `a` IS COMPUTED ONCE AND NEVER MOVES. Only `b` retracts. So the scan is
+   *    permanently anchored to the FIRST '{' in the whole response. This call
+   *    runs with web search on, and between searches the model narrates — that
+   *    narration arrives as text_delta and lands in the same buffer as the
+   *    answer. One brace anywhere in it (a quoted snippet, an example) and
+   *    every attempt starts at the wrong character. A response containing
+   *    perfectly good JSON is rejected.
+   *
+   * 2. A TRUNCATED ANSWER IS UNRECOVERABLE BY CONSTRUCTION. If the model hit
+   *    max_tokens the closing braces were never sent, so retracting `b` can
+   *    never find a balanced span — it just walks every '}' in the text and
+   *    fails. And truncation is the likeliest cause of all: max_tokens was
+   *    400 + 260/player, and the search narration is spent from the same
+   *    budget before the JSON even starts.
+   *
+   * 3. IT IS QUADRATIC. Every retraction re-parses a near-full-length string.
+   *    On a 40 KB answer with a few hundred '}' that is hundreds of parses of
+   *    tens of kilobytes on the renderer's JS thread, straight after a
+   *    two-minute wait.
+   *
+   * What replaces it: ONE left-to-right pass that is string- and escape-aware
+   * (so a brace inside a "reason" cannot fool it), collecting every balanced
+   * top-level value; then, only if none of them is the answer, a repair of the
+   * unterminated tail. The repair matters more than it looks — the searches in
+   * a truncated response have already been PAID FOR, and recovering fourteen
+   * players out of seventeen is worth far more than reporting total failure. */
+
+  /* One pass. Returns every balanced top-level {...} / [...] span, and — if
+     the text ends inside one — where it started, what brackets are still open,
+     and whether it ended inside a string. */
+  function scanJson(s) {
+    var out = [], stack = [], start = -1, inStr = false, esc = false;
+    var i, n = s.length, ch;
+    for (i = 0; i < n; i++) {
+      ch = s.charAt(i);
+      if (inStr) {
+        if (esc) esc = false;
+        else if (ch === '\\') esc = true;
+        else if (ch === '"') inStr = false;
+        continue;
+      }
+      if (ch === '"') { inStr = true; continue; }
+      if (ch === '{' || ch === '[') {
+        if (stack.length === 0) start = i;
+        stack.push(ch === '{' ? '}' : ']');
+      } else if (ch === '}' || ch === ']') {
+        if (!stack.length) continue;              /* stray closer in prose */
+        stack.pop();
+        if (!stack.length && start >= 0) { out.push([start, i + 1]); start = -1; }
+      }
     }
-    throw new Error('the model did not return usable JSON');
+    return { spans: out, openAt: stack.length ? start : -1,
+             stack: stack, inStr: inStr };
+  }
+
+  /* Does this parsed value look like the answer we asked for, rather than some
+     other object the model happened to write? `want` is the key that must be
+     present — 'players' for the advice call, 'adds' for the waiver call. */
+  function shapeOk(v, want) {
+    if (!v || typeof v !== 'object') return false;
+    if (!want) return true;
+    return Object.prototype.hasOwnProperty.call(v, want);
+  }
+
+  /* Close an answer that was cut off mid-flight. Cuts the incomplete trailing
+     element, re-derives which brackets are still open from what is LEFT (so
+     the closers can never disagree with the body), and retries. Bounded. */
+  function repairTail(body) {
+    var guard = 0;
+    while (body.length > 2 && guard++ < 200) {
+      var st = scanJson(body), cand = body, k;
+      if (st.inStr) cand += '"';       /* a reason cut mid-sentence still reads */
+      cand = cand.replace(/[,\s]+$/, '')
+                 .replace(/,?\s*"[^"\\]*"\s*:\s*$/, '')   /* a key with no value */
+                 .replace(/[,\s]+$/, '');
+      for (k = st.stack.length - 1; k >= 0; k--) cand += st.stack[k];
+      try { return JSON.parse(cand); } catch (e) { /* cut further back */ }
+      var cut = body.lastIndexOf(',');
+      if (cut <= 0) cut = Math.max(body.lastIndexOf('['), body.lastIndexOf('{'));
+      if (cut <= 0) break;
+      body = body.slice(0, cut);
+    }
+    return null;
+  }
+
+  /* opts.want  — the key the answer must carry, so a stray object in the
+                  narration is never mistaken for the answer.
+     opts.stop  — the stream's stop_reason, used only to explain a failure.
+     Returns the parsed object. On a salvaged answer it carries a
+     non-enumerable _truncated flag so the caller can say so on screen without
+     the flag riding along into anything that gets saved or re-serialised. */
+  function jsonOf(txt, opts) {
+    var s = String(txt || ''), want = (opts && opts.want) ? opts.want : null;
+    var stop = (opts && opts.stop) ? String(opts.stop) : '';
+    var sc = scanJson(s), i, v, loose = null;
+    /* widest first: the answer object encloses anything the model wrote inside
+       it, and a stray object in the narration is necessarily smaller */
+    var spans = sc.spans.slice().sort(function (a, b) {
+      return (b[1] - b[0]) - (a[1] - a[0]);
+    });
+    for (i = 0; i < spans.length; i++) {
+      try { v = JSON.parse(s.slice(spans[i][0], spans[i][1])); } catch (e) { continue; }
+      if (shapeOk(v, want)) return v;
+      if (!loose && v && typeof v === 'object') loose = v;
+    }
+    /* nothing complete matched — try to rescue an answer that was cut off */
+    if (sc.openAt >= 0) {
+      v = repairTail(s.slice(sc.openAt));
+      if (shapeOk(v, want)) {
+        try {
+          Object.defineProperty(v, '_truncated', { value: true, enumerable: false });
+        } catch (e) { /* an old WebView without defineProperty on plain objects */ }
+        return v;
+      }
+    }
+    /* an object was found but it is not the answer — say which, it is a much
+       better clue than "no JSON" when the contract has drifted */
+    if (loose && want) {
+      throw new Error('Claude returned JSON but without a "' + want + '" list — '
+        + 'it answered with { ' + Object.keys(loose).slice(0, 4).join(', ') + ' }');
+    }
+    if (stop === 'max_tokens') {
+      throw new Error('Claude ran out of output room mid-answer (stop_reason '
+        + 'max_tokens) and not enough arrived to rescue. Research fewer players '
+        + '(Data → depth: Smart) or raise the limit.');
+    }
+    if (stop === 'refusal') throw new Error('Claude declined to answer this one.');
+    if (!s.replace(/\s/g, '')) throw new Error('Claude sent no text at all.');
+    throw new Error('Claude did not return usable JSON'
+      + (stop ? ' (stopped: ' + stop + ')' : '')
+      + '. It answered with ' + s.replace(/\s+/g, ' ').trim().slice(0, 120) + '…');
   }
 
   function rulesText() {
@@ -328,7 +473,15 @@
     if (depth() === 'full') budget = 8;
     var body = {
       model: mdl,
-      max_tokens: Math.max(1200, Math.min(8000, 400 + n * 260)),
+      /* max_tokens IS A CAP, NOT AN ALLOCATION — an unused ceiling costs
+         nothing, and output is billed on what is actually generated. The old
+         400 + 260/player gave 4,820 for a 17-man roster, which sounds ample
+         until you remember that with web search on the model NARRATES between
+         searches and that narration is spent from this same budget before the
+         JSON even starts. Running out mid-object is the likeliest single cause
+         of the "did not return usable JSON" failure Tj hit, and it was being
+         economised on for no saving whatsoever. */
+      max_tokens: Math.max(3000, Math.min(16000, 1500 + n * 320)),
       messages: [{ role: 'user', content: [
         /* the cache breakpoint: everything before it — tools, and this whole
            block — is re-read at a tenth of the price on the next call inside
@@ -353,7 +506,7 @@
         if (errJ && errJ.error) throw new Error(errJ.error.message || JSON.stringify(errJ.error));
       }
       var j = parseSse(rawText);
-      var parsed = jsonOf(textOf(j));
+      var parsed = jsonOf(textOf(j), { want: 'players', stop: j.stop_reason });
       var byName = {}, i;
       var arr = parsed.players || [];
       for (i = 0; i < arr.length; i++) {
@@ -378,6 +531,12 @@
         at: Date.now(), model: mdl, byName: byName, searchBudget: budget,
         summary: String(parsed.summary || ''),
         count: arr.length,
+        /* A rescued answer is USED but never presented as complete. The
+           searches were already paid for, so throwing away the fourteen
+           players that did arrive because three did not is the worst of both
+           outcomes — but so is letting a partial answer look whole. */
+        truncated: !!parsed._truncated,
+        asked: n,
         usage: j.usage || null,
         spent: spent
       };
@@ -526,7 +685,9 @@
     var mdl = depth() === 'cheap' ? cheapModel() : model();
     var body = {
       model: mdl,
-      max_tokens: 3000,
+      /* same reasoning as the advice call: a cap costs nothing unused, and
+         running out mid-answer is the failure that actually happens */
+      max_tokens: 8000,
       messages: [{ role: 'user', content: [
         /* the fixed half — scoring table, task, JSON shape — is identical every
            week, so it is re-read at a tenth of the price inside the window */
@@ -545,7 +706,7 @@
         if (errJ && errJ.error) throw new Error(errJ.error.message || JSON.stringify(errJ.error));
       }
       var j = parseSse(rawText);
-      var parsed = jsonOf(textOf(j));
+      var parsed = jsonOf(textOf(j), { want: 'adds', stop: j.stop_reason });
       /* Which names were actually in the block we sent? Anything else is a
          suggestion the app cannot verify is free in this league, and it is
          labelled that way rather than quietly presented as equivalent. */

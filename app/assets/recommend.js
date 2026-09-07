@@ -173,6 +173,38 @@
   }
 
   /* ---- ESPN injury feed ------------------------------------------------ */
+
+  /* WHY THIS EXISTS (Tj's screenshots, 2026-09-07).
+   * The note was stored as `String(det).slice(0, 220)` — a hard cut at exactly
+   * 220 characters, landing wherever it landed. On his phone that read:
+   *
+   *   "...the early diagnosis seems to suggest he is not dealing with a
+   *    serious setback. Even still, Swift wil"
+   *
+   * and the same wound appeared twice more in the FLAGGED list, because both
+   * the per-player "why" line and the flag text read this one stored string.
+   * A sentence stopping mid-word does not just look unfinished — it can invert
+   * the meaning, which for an injury note is the one thing it must not do
+   * ("Even still, Swift will [play / miss]" is the whole question).
+   *
+   * The cap itself is not the mistake; the feed carries ~800 records and the
+   * whole cache is rewritten on every sync, so an unbounded note is a real
+   * cost. Cutting WITHOUT REGARD FOR MEANING was the mistake. 600 holds a
+   * complete ESPN comment in the overwhelming majority of cases, and when a cut
+   * is genuinely needed it now happens at a sentence end, or failing that a
+   * word end, and always says so with an ellipsis. */
+  function trimNote(s, max) {
+    s = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    if (s.length <= max) return s;
+    var cut = s.slice(0, max);
+    /* prefer a whole sentence, but only if that does not throw most of it away */
+    var dot = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '),
+                       cut.lastIndexOf('? '));
+    if (dot >= Math.floor(max * 0.6)) return cut.slice(0, dot + 1);
+    var sp = cut.lastIndexOf(' ');
+    return (sp > 0 ? cut.slice(0, sp) : cut).replace(/[,;:.\-—]+$/, '') + '…';
+  }
+
   function loadNews(onStep) {
     var url = root.Espn.BASE + '/injuries';
     if (onStep) onStep('Injury report…', 15);
@@ -187,7 +219,7 @@
           var nm = ath && ath.displayName ? ath.displayName : (it.displayName || '');
           var st = String(it.status || (it.type ? it.type.description : '') || '').toUpperCase();
           var det = it.longComment || it.shortComment || (it.details ? it.details.type : '') || '';
-          if (nm) byName[norm(nm)] = { status: st, note: String(det).slice(0, 220) };
+          if (nm) byName[norm(nm)] = { status: st, note: trimNote(det, 600) };
         }
       }
       newsCache = { at: Date.now(), byName: byName, count: Object.keys(byName).length };
