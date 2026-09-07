@@ -1,0 +1,852 @@
+{
+"jalen hurts": {
+"pts": 713.9,
+"nsrc": 2,
+"src": "components"
+},
+"james cook": {
+"pts": 266.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"chase brown": {
+"pts": 281.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"zay flowers": {
+"pts": 234.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"emeka egbuka": {
+"pts": 220.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jameson williams": {
+"pts": 213.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"harold fannin": {
+"pts": 194.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"carnell tate": {
+"pts": 181.7,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"cameron dicker": {
+"pts": 155.3,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"pittsburgh steelers": {
+"pts": 205.8,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"bhayshul tuten": {
+"pts": 211.9,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"makai lemon": {
+"pts": 163.9,
+"nsrc": 0,
+"src": "listed-rank"
+},
+"jakobi meyers": {
+"pts": 177.1,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jk dobbins": {
+"pts": 173.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"tyler shough": {
+"pts": 738.6,
+"nsrc": 2,
+"src": "components"
+},
+"kenyan sadik": {
+"pts": 105.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"calvin ridley": {
+"pts": 123.0,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"drake maye": {
+"pts": 747.2,
+"nsrc": 2,
+"src": "components"
+},
+"breece hall": {
+"pts": 231.1,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"cam skattebo": {
+"pts": 237.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"ceedee lamb": {
+"pts": 252.7,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"justin jefferson": {
+"pts": 250.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"rashee rice": {
+"pts": 261.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"george kittle": {
+"pts": 168.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"ladd mcconkey": {
+"pts": 208.1,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"harrison meavis": {
+"pts": 139.1,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"baltimore ravens": {
+"pts": 184.4,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"jaxson dart": {
+"pts": 708.8,
+"nsrc": 2,
+"src": "components"
+},
+"tony pollard": {
+"pts": 197.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"aaron jones": {
+"pts": 148.0,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jonathon brooks": {
+"pts": 149.5,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jalen coker": {
+"pts": 141.2,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"hunter henry": {
+"pts": 143.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"kc concepcion": {
+"pts": 154.2,
+"nsrc": 0,
+"src": "listed-rank"
+},
+"matthew stafford": {
+"pts": 746.3,
+"nsrc": 2,
+"src": "components"
+},
+"jonathan taylor": {
+"pts": 306.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"dandre swift": {
+"pts": 228.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"chris olave": {
+"pts": 260.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"davante adams": {
+"pts": 209.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"michael wilson": {
+"pts": 172.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"trey mcbride": {
+"pts": 244.7,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"wandale robinson": {
+"pts": 174.6,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"kaimi fairbairn": {
+"pts": 160.7,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"seattle seahawks": {
+"pts": 214.3,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"bo nix": {
+"pts": 729.4,
+"nsrc": 2,
+"src": "components"
+},
+"deebo samuel": {
+"pts": 143.8,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"jaylen warren": {
+"pts": 196.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"kenneth gainwell": {
+"pts": 167.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"tyrone tracy": {
+"pts": 105.5,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"dalton schultz": {
+"pts": 144.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jauan jennings": {
+"pts": 102.2,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"patrick mahomes": {
+"pts": 738.8,
+"nsrc": 2,
+"src": "components"
+},
+"kenneth walker": {
+"pts": 251.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jeremiyah love": {
+"pts": 239.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"amon ra st brown": {
+"pts": 306.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"dj moore": {
+"pts": 199.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jaylen waddle": {
+"pts": 202.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"tucker kraft": {
+"pts": 163.9,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jadarian price": {
+"pts": 185.3,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jake bates": {
+"pts": 141.6,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"houston texans": {
+"pts": 227.6,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"alec pierce": {
+"pts": 187.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"rhamondre stevenson": {
+"pts": 196.7,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jared goff": {
+"pts": 775.5,
+"nsrc": 2,
+"src": "components"
+},
+"matthew golden": {
+"pts": 154.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"mark andrews": {
+"pts": 161.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jalen mcmillan": {
+"pts": 115.2,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"woody marks": {
+"pts": 119.1,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jayden daniels": {
+"pts": 709.5,
+"nsrc": 2,
+"src": "components"
+},
+"ashton jeanty": {
+"pts": 249.7,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"omarion hampton": {
+"pts": 248.7,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jaxon smith njigba": {
+"pts": 313.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"devonta smith": {
+"pts": 227.1,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"tee higgins": {
+"pts": 213.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"travis kelce": {
+"pts": 171.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"david montgomery": {
+"pts": 197.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"eddy pineiro": {
+"pts": 141.2,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"philadelphia eagles": {
+"pts": 199.4,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"quinshon judkins": {
+"pts": 210.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jordyn tyson": {
+"pts": 151.6,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"jayden reed": {
+"pts": 184.3,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jake ferguson": {
+"pts": 157.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"brock purdy": {
+"pts": 777.4,
+"nsrc": 2,
+"src": "components"
+},
+"josh jacobs": {
+"pts": 119.3,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"rashid shaheed": {
+"pts": 136.0,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"lamar jackson": {
+"pts": 701.2,
+"nsrc": 2,
+"src": "components"
+},
+"christian mccaffrey": {
+"pts": 330.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"saquon barkley": {
+"pts": 259.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"malik nabers": {
+"pts": 231.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"marvin harrison": {
+"pts": 193.3,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"courtland sutton": {
+"pts": 189.8,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"kyle pitts": {
+"pts": 175.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"brian thomas": {
+"pts": 167.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"will reichard": {
+"pts": 144.0,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"cleveland browns": {
+"pts": 179.8,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"romeo doubs": {
+"pts": 163.9,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jerry jeudy": {
+"pts": 125.6,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"xavier worthy": {
+"pts": 168.1,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"omar cooper": {
+"pts": 81.4,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"khalil shakir": {
+"pts": 172.6,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"kyle monangai": {
+"pts": 137.7,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"baker mayfield": {
+"pts": 725.6,
+"nsrc": 2,
+"src": "components"
+},
+"joe burrow": {
+"pts": 810.2,
+"nsrc": 2,
+"src": "components"
+},
+"jahmyr gibbs": {
+"pts": 374.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"travis etienne": {
+"pts": 231.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"drake london": {
+"pts": 269.0,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"aj brown": {
+"pts": 249.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"mike evans": {
+"pts": 206.5,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"sam laporta": {
+"pts": 167.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jordan addison": {
+"pts": 163.8,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"brandon aubrey": {
+"pts": 165.1,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"new england patriots": {
+"pts": 176.8,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"jacory croskey merritt": {
+"pts": 141.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"caleb williams": {
+"pts": 736.2,
+"nsrc": 2,
+"src": "components"
+},
+"dallas goedert": {
+"pts": 170.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"josh downs": {
+"pts": 162.7,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"tyler allgeier": {
+"pts": 85.0,
+"nsrc": 0,
+"src": "listed-rank"
+},
+"jalen nailor": {
+"pts": 120.4,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"zach charbonnet": {
+"pts": 110.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"dak prescott": {
+"pts": 802.1,
+"nsrc": 2,
+"src": "components"
+},
+"derrick henry": {
+"pts": 273.1,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"javonte williams": {
+"pts": 230.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"jamarr chase": {
+"pts": 324.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"garrett wilson": {
+"pts": 233.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"rome odunze": {
+"pts": 201.5,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"brock bowers": {
+"pts": 230.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"christian watson": {
+"pts": 205.2,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"chris boswell": {
+"pts": 128.6,
+"nsrc": 1,
+"src": "fg/xp components"
+},
+"denver broncos": {
+"pts": 235.4,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"michael pittman": {
+"pts": 193.7,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"stefon diggs": {
+"pts": 168.6,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"quentin johnston": {
+"pts": 156.7,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"rachaad white": {
+"pts": 168.9,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"tj hockenson": {
+"pts": 122.6,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"tank bigsby": {
+"pts": 38.7,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"brian robinson": {
+"pts": 85.0,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"trevor lawrence": {
+"pts": 728.8,
+"nsrc": 2,
+"src": "components"
+},
+"devon achane": {
+"pts": 290.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"kyren williams": {
+"pts": 236.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"puka nacua": {
+"pts": 342.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"george pickens": {
+"pts": 247.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"terry mclaurin": {
+"pts": 198.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"tyler warren": {
+"pts": 185.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"treveyon henderson": {
+"pts": 191.3,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"harrison butker": {
+"pts": 142.1,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"los angeles rams": {
+"pts": 193.8,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"dk metcalf": {
+"pts": 197.4,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"rj harvey": {
+"pts": 167.5,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"parker washington": {
+"pts": 173.4,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"isaiah likely": {
+"pts": 157.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"daniel jones": {
+"pts": 688.5,
+"nsrc": 2,
+"src": "components"
+},
+"isiah pacheco": {
+"pts": 35.0,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"odell beckham": {
+"pts": 102.2,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"josh allen": {
+"pts": 788.1,
+"nsrc": 2,
+"src": "components"
+},
+"bijan robinson": {
+"pts": 357.9,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"bucky irving": {
+"pts": 224.8,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"nico collins": {
+"pts": 243.2,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"tetairoa mcmillan": {
+"pts": 223.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"luther burden": {
+"pts": 201.4,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"colston loveland": {
+"pts": 197.1,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"chuba hubbard": {
+"pts": 178.5,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"jason myers": {
+"pts": 165.2,
+"nsrc": 2,
+"src": "fg/xp components"
+},
+"minnesota vikings": {
+"pts": 210.8,
+"nsrc": 1,
+"src": "fftoday-components"
+},
+"chris godwin": {
+"pts": 175.9,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"justin herbert": {
+"pts": 738.6,
+"nsrc": 2,
+"src": "components"
+},
+"rico dowdle": {
+"pts": 176.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"dalton kincaid": {
+"pts": 149.3,
+"nsrc": 2,
+"src": "PPR fpts"
+},
+"blake corum": {
+"pts": 132.4,
+"nsrc": 1,
+"src": "PPR fpts"
+},
+"cooper kupp": {
+"pts": 117.8,
+"nsrc": 0,
+"src": "EXTRAPOLATED"
+},
+"jordan mason": {
+"pts": 131.3,
+"nsrc": 1,
+"src": "PPR fpts"
+}
+}

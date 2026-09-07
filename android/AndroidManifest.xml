@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tj.fftracker">
+
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <!-- Lineup alerts. POST_NOTIFICATIONS is asked for at runtime on API 33+;
+       RECEIVE_BOOT_COMPLETED re-arms the weekly alarm after a restart.
+       Deliberately NO SCHEDULE_EXACT_ALARM: the check uses a half-hour window,
+       so it does not need a permission the user has to grant in Settings. -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+  <!-- No native libraries anywhere in this app, so the same APK is valid on
+       armeabi-v7a (Android 10) and arm64-v8a (Android 16). Do not add an NDK. -->
+  <application
+      android:label="League Tracker"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher"
+      android:theme="@style/AppTheme"
+      android:allowBackup="true"
+      android:supportsRtl="true"
+      android:usesCleartextTraffic="false"
+      android:hardwareAccelerated="true">
+    <activity
+        android:name=".MainActivity"
+        android:exported="true"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|uiMode|density|fontScale"
+        android:windowSoftInputMode="adjustResize">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+
+    <!-- The alarm reaches this receiver through an EXPLICIT PendingIntent, so
+         it needs no intent-filter of its own. The filter below is only for the
+         two system broadcasts that re-arm the weekly alarm, and both of them
+         are protected broadcasts that only the OS can send — which is why
+         exported="true" here grants no other app anything. -->
+    <receiver android:name=".Alerts$Receiver" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

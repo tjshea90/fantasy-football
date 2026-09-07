@@ -1,0 +1,2448 @@
+/* ui.js — all screens. ES2018 only (no ?. no ?? no .at()). */
+(function () {
+  'use strict';
+  var S, seed, view = 'live', week = 1, busy = false;
+  /* live polling: a handle plus the last result, so every screen can say how
+     fresh the numbers are without each one owning a timer */
+  var live = { timer: null, at: 0, inProgress: 0, err: '', next: 0 };
+  /* Parsed box scores for the week being watched. A final game never changes,
+     so a live poll refetches only what is still moving. Memory only, and reset
+     whenever the season or week changes — see doSync. */
+  var gcache = { season: 0, week: 0, byId: {} };
+  /* Long-running work lives HERE, not inside a screen, so switching tabs never
+     cancels it and never loses the progress display. Any screen can read it. */
+  var job = { name: null, text: '', pct: 0 };
+  var scrollMem = {};
+  /* ---- scroll and focus continuity across a re-render -------------------
+   * render() rebuilds the whole view with innerHTML = ''. That is fine for a
+   * tab switch and wrong for everything else: picking a player from a <select>
+   * calls render(), and the old code then restored `scrollMem[view]`, which is
+   * only ever written by the TAB HANDLER. So the position it restored was
+   * wherever the tab was when it was last opened — the top — and the screen
+   * jumped away from the dropdown he had just used. Every select in the app
+   * did this, not only Lineups.
+   *
+   * The rule now: a re-render of the SAME view keeps exactly where you are; a
+   * switch to a DIFFERENT view restores that view's remembered position. */
+  var lastView = null;      /* which view the last completed render painted */
+  var keepScroll = null;    /* explicit override for one render, else null */
+  var focusKey = null;      /* data-fk of the control that had focus */
+  function curScroll() {
+    return window.pageYOffset || document.documentElement.scrollTop ||
+           document.body.scrollTop || 0;
+  }
+  function applyScroll(y) {
+    if (Math.abs(curScroll() - y) < 2) return;   /* already there — no jump */
+    window.scrollTo(0, y);
+    /* The rebuilt view can be a few pixels shorter for a frame, which clamps
+       the scroll. Re-assert once after layout; if the first call landed, this
+       is a no-op and nothing moves. */
+    var again = function () { if (Math.abs(curScroll() - y) >= 2) window.scrollTo(0, y); };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(again);
+    else window.setTimeout(again, 0);
+  }
+  function grabFocus() {
+    var a = document.activeElement;
+    focusKey = (a && a.getAttribute) ? a.getAttribute('data-fk') : null;
+  }
+  function restoreFocus() {
+    if (!focusKey) return;
+    var n = document.querySelector('[data-fk="' + focusKey + '"]');
+    focusKey = null;
+    if (!n) return;
+    try { n.focus({ preventScroll: true }); } catch (e) { /* older WebView */ }
+  }
+
+  function jobStart(name, text) { job = { name: name, text: text, pct: 0 }; paintJob(); }
+  function jobStep(text, pct) { job.text = text; if (pct !== undefined) job.pct = pct; paintJob(); }
+  function jobEnd() { job = { name: null, text: '', pct: 0 }; paintJob(); }
+  function jobRunning(name) { return job.name === name; }
+  function paintJob() {
+    var box = $('job');
+    if (!box) return;
+    if (!job.name) { box.hidden = true; return; }
+    box.hidden = false;
+    $('jobText').textContent = job.text;
+    $('jobBar').style.width = Math.max(2, Math.min(100, job.pct)) + '%';
+  }
+
+  /* ---- one bad card must not blank a whole tab (v2.9) --------------------
+   * Every screen is rebuilt from scratch on every render, so an exception
+   * inside one card used to take the entire tab down to the global error
+   * handler and leave a stack trace where the app should be. Each card is now
+   * built inside this: a failure becomes one visible red card naming what
+   * broke, and everything else on the screen still renders. */
+  function safeCard(name, fn) {
+    try {
+      var node = fn();
+      return node || null;
+    } catch (e) {
+      var c = el('div', 'card warn');
+      c.appendChild(el('h2', null, name + ' could not be drawn'));
+      c.appendChild(el('p', null, (e && e.message) ? e.message : String(e)));
+      c.appendChild(el('p', 'muted', 'The rest of this screen is unaffected. ' +
+        'If this keeps happening, Data → Export a backup and say what it says here.'));
+      return c;
+    }
+  }
+  function addSafe(root, name, fn) {
+    var n = safeCard(name, fn);
+    if (n) root.appendChild(n);
+  }
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined && txt !== null) e.textContent = String(txt);
+    return e;
+  }
+  /* This was `return String(s)` — named as a guard and doing nothing, while
+     its one caller builds the transactions list through innerHTML from
+     free-text player names. Ampersand and angle brackets are all that is
+     needed: the value lands in element TEXT, never inside an attribute, so
+     quotes cannot break out. (Numeric entities are avoided on purpose — the
+     ES2018 checker reads `&#39;` as a private class field.) */
+  function esc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
+  /* alert() renders as 'The page at "file://" says', which looks broken.
+     Everything user-facing goes through this instead. */
+  /* ---- real dialogs (v3.7) ----------------------------------------------
+   * confirm() and prompt() render as bare file:// dialogs on Android — the
+   * same reason alert() was banned here long ago. Worse, prompt()'s default
+   * value is a single-line field: it truncates and is not reliably
+   * selectable, and TWO of the six call sites were the manual backup and
+   * restore path. A mid-season export is tens of KB, so "Copy this backup"
+   * was handing back an unusable string and "Paste a backup JSON" could not
+   * take one. These replace all six. */
+  function dialog(title, bodyText, build) {
+    var back = el('div');
+    back.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:60;' +
+      'display:flex;align-items:center;justify-content:center;padding:18px';
+    var box = el('div', 'card');
+    box.style.cssText = 'max-width:560px;width:100%;max-height:82vh;overflow:auto;margin:0';
+    box.appendChild(el('h2', null, title));
+    if (bodyText) {
+      var pre = el('pre');
+      pre.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
+        'font-family:inherit;line-height:1.5';
+      pre.textContent = bodyText;
+      box.appendChild(pre);
+    }
+    var close = function () { if (back.parentNode) document.body.removeChild(back); };
+    var row = el('div', 'dbrow');
+    row.style.marginTop = '12px';
+    build(box, row, close);
+    box.appendChild(row);
+    back.appendChild(box);
+    back.addEventListener('click', function (e) { if (e.target === back) close(); });
+    document.body.appendChild(back);
+    return close;
+  }
+  /* A yes/no. `danger` paints the confirm button red — used for the two
+     destructive ones so they do not look like every other button. */
+  function confirmModal(title, bodyText, okLabel, onOk, danger) {
+    dialog(title, bodyText, function (box, row, close) {
+      var no = el('button', 'btn', 'Cancel');
+      no.addEventListener('click', close);
+      var yes = el('button', 'btn ' + (danger ? 'dan' : 'pri'), okLabel || 'OK');
+      yes.addEventListener('click', function () { close(); onOk(); });
+      row.appendChild(no); row.appendChild(yes);
+    });
+  }
+  /* A multi-line text box. `initial` prefills it and is pre-selected, which is
+     what makes copy-out work; onOk receives the current value. */
+  function textModal(title, bodyText, initial, okLabel, onOk) {
+    dialog(title, bodyText, function (box, row, close) {
+      var ta = el('textarea');
+      ta.value = initial || '';
+      ta.setAttribute('spellcheck', 'false');
+      ta.setAttribute('autocapitalize', 'none');
+      ta.style.cssText = 'width:100%;min-height:180px;background:var(--panel2);' +
+        'color:var(--fg);border:1px solid var(--line);border-radius:9px;padding:9px;' +
+        'font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical';
+      box.appendChild(ta);
+      var no = el('button', 'btn', 'Cancel');
+      no.addEventListener('click', close);
+      var yes = el('button', 'btn pri', okLabel || 'OK');
+      yes.addEventListener('click', function () { var v = ta.value; close(); onOk(v); });
+      row.appendChild(no); row.appendChild(yes);
+      window.setTimeout(function () {
+        ta.focus();
+        if (initial) { try { ta.setSelectionRange(0, ta.value.length); } catch (e) { } }
+      }, 30);
+    });
+  }
+  function modal(title, body, extra) {
+    var back = el('div');
+    back.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:60;' +
+      'display:flex;align-items:center;justify-content:center;padding:18px';
+    var box = el('div', 'card');
+    box.style.cssText = 'max-width:520px;width:100%;max-height:78vh;overflow:auto;margin:0';
+    box.appendChild(el('h2', null, title));
+    var pre = el('pre');
+    pre.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
+      'font-family:inherit;line-height:1.5';
+    pre.textContent = body;
+    box.appendChild(pre);
+    if (extra) box.appendChild(extra);
+    var ok = el('button', 'btn pri', 'Close');
+    ok.addEventListener('click', function () { document.body.removeChild(back); });
+    box.appendChild(ok);
+    back.appendChild(box);
+    back.addEventListener('click', function (e) { if (e.target === back) document.body.removeChild(back); });
+    document.body.appendChild(back);
+  }
+  function toast(msg, ms) {
+    var t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.hidden = true; }, ms || 2600);
+  }
+
+  /* ---------- boot ---------- */
+  function fatal(msg) {
+    var v = $('view');
+    if (!v) { document.body.innerHTML = '<pre style="padding:16px;color:#f85149;white-space:pre-wrap">' + msg + '</pre>'; return; }
+    v.innerHTML = '';
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Something went wrong'));
+    var p = el('pre'); p.style.whiteSpace = 'pre-wrap'; p.style.fontSize = '12px';
+    p.style.color = '#f85149'; p.textContent = msg;
+    c.appendChild(p);
+    c.appendChild(el('p', 'muted', 'Send this text to Claude and it can be fixed.'));
+    v.appendChild(c);
+  }
+  function boot() {
+    try {
+      /* Data is a <script>, not a fetch: a file:// page on Android WebView
+         cannot XHR a sibling file, which is exactly what broke v1.0. */
+      seed = window.SEED;
+      if (!seed || !seed.teams || !seed.teams.length) {
+        fatal('seed.js did not load (window.SEED is ' + (typeof window.SEED) + ').\n' +
+              'The app data file is missing from the APK.');
+        return;
+      }
+      S = Store.init(seed);
+      week = S.settings.currentWeek || 1;
+      applyAdjust();
+      if (window.Recommend && Recommend.loadCaches) Recommend.loadCaches();
+      autoFillWeek(week);
+      wire(); render();
+      startLive();
+    } catch (e) {
+      fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
+    }
+  }
+  function wire() {
+    var tabs = document.querySelectorAll('#tabs .tab'), i;
+    for (i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function () {
+        scrollMem[view] = window.pageYOffset || document.documentElement.scrollTop || 0;
+        view = this.getAttribute('data-v');
+        var t = document.querySelectorAll('#tabs .tab'), k;
+        for (k = 0; k < t.length; k++) t[k].classList.toggle('on', t[k] === this);
+        render();
+      });
+    }
+    $('wkPrev').addEventListener('click', function () { if (week > 1) { week--; commitWeek(); } });
+    $('wkNext').addEventListener('click', function () { if (week < 18) { week++; commitWeek(); } });
+    $('syncBtn').addEventListener('click', syncWeek);
+  }
+  function applyAdjust() {
+    if (window.__setAdjust) window.__setAdjust(S.settings.adjTop || 0, S.settings.adjBot || 0);
+  }
+  function commitWeek() {
+    S.settings.currentWeek = week; Store.save();
+    if (window.Sim) Sim.invalidate();
+    autoFillWeek(week);
+    startLive();
+    renderTop();
+  }
+
+  /* ---------- auto-default every lineup ----------
+   * Tj asked for the dropdowns to stay but for each roster to already hold the
+   * obvious starters. So: on boot, on every week change, and after any sync,
+   * fill each team's empty slots with its best projected legal lineup —
+   * skipping byes and anyone ruled out. Slots he has touched himself are
+   * marked manual in the store and are never overwritten, so this can be left
+   * on permanently without ever undoing a decision he made.
+   * Opponent teams get the same treatment, because a live matchup total is
+   * meaningless if the other nine rosters are empty. */
+  function autoFillWeek(w) {
+    if (!S.settings.autoFill) return 0;
+    if (!window.Recommend || !Recommend.autoLineup) return 0;
+    var opp = (S.weekMeta[String(w)] && S.weekMeta[String(w)].opponents) || null;
+    var total = 0;
+    S.teams.forEach(function (t) {
+      try {
+        total += Store.applyAuto(w, t.id, Recommend.autoLineup(w, t.id, opp));
+      } catch (e) { /* one bad roster must not stop the rest */ }
+    });
+    return total;
+  }
+
+  /* ---------- live refresh ----------
+   * A cheap scoreboard poll decides whether anything is actually happening.
+   * Only if a game is in progress does it pull box scores, so sitting on the
+   * Live tab on a Tuesday costs one small request every few minutes rather
+   * than sixteen every minute. Foreground only, by design: a background
+   * service would need a notification channel and a wake lock for a number
+   * that is meaningless when nobody is looking at it. */
+  function stopLive() { if (live.timer) clearTimeout(live.timer); live.timer = null; }
+  function startLive() {
+    stopLive();
+    if (!S.settings.liveRefresh) { live.next = 0; return; }
+    scheduleLive(4000);
+  }
+  function scheduleLive(ms) {
+    stopLive();
+    live.next = Date.now() + ms;
+    live.timer = setTimeout(liveTick, ms);
+  }
+  function liveTick() {
+    if (busy) { scheduleLive(15000); return; }
+    Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2).then(function (games) {
+      var i, inProg = 0, pre = 0, post = 0;
+      for (i = 0; i < games.length; i++) {
+        if (games[i].state === 'in') inProg++;
+        else if (games[i].state === 'pre') pre++;
+        else post++;
+      }
+      live.inProgress = inProg; live.err = '';
+      if (inProg > 0) {
+        return doSync({ quiet: true }).then(function () {
+          live.at = Date.now();
+          scheduleLive(Math.max(20, Number(S.settings.liveEvery) || 45) * 1000);
+        });
+      }
+      live.at = Date.now();
+      /* nothing live: check back rarely, and stop entirely once the week is
+         complete and already synced */
+      var m = S.weekMeta[String(week)];
+      if (!pre && m && m.synced && m.allFinal) { live.next = 0; return; }
+      scheduleLive(pre ? 5 * 60000 : 10 * 60000);
+      return null;
+    }).catch(function (e) {
+      live.err = (e && e.message) ? e.message : String(e);
+      scheduleLive(60000);
+    }).then(function () { if (view === 'live') renderHeader(); });
+  }
+  function liveText() {
+    if (!S.settings.liveRefresh) return 'live off';
+    if (live.err) return 'live: ' + live.err;
+    if (live.inProgress) return live.inProgress + ' game' + (live.inProgress === 1 ? '' : 's') +
+      ' live · updating every ' + (Number(S.settings.liveEvery) || 45) + 's';
+    if (!live.next) return 'week complete';
+    return 'watching for kickoff';
+  }
+
+  /* ---------- header ---------- */
+  function renderHeader() {
+    var names = { live: 'Live', lineups: 'Lineups', rosters: 'Rosters', league: 'League',
+                  standings: 'Standings', advice: 'Advice', data: 'Data' };
+    $('title').textContent = names[view] || 'Tracker';
+    $('wkLabel').textContent = 'Wk ' + week;
+    var m = S.weekMeta[String(week)];
+    if (!m || !m.synced) $('syncText').textContent = 'not synced · ' + liveText();
+    else $('syncText').textContent = (m.allFinal ? 'final' : 'in progress') +
+        ' · ' + m.games + ' games · updated ' +
+        (live.at ? new Date(live.at).toTimeString().slice(0, 5) : m.at.slice(11, 16) + 'Z') +
+        (m.estFG ? ' · FG est' : '') + ' · ' + liveText();
+    $('syncBtn').textContent = busy ? '…' : 'Sync week';
+    $('syncBtn').disabled = busy;
+  }
+
+  /* The canary is worthless in a log nobody opens, so it is the first thing on
+     the Live tab in red. It only appears when a sync actually saw something
+     wrong — a renamed scoring column, or coverage that collapsed. */
+  function feedWarnBanner() {
+    var wm = S.weekMeta[String(week)];
+    if (!wm || !wm.feedWarn) return null;
+    var c = el('div', 'card warn');
+    c.appendChild(el('h2', null, 'Check the scores this week'));
+    c.appendChild(el('p', null, wm.feedWarn));
+    c.appendChild(el('p', 'muted', 'Everything else still ran. Data → Run the feed self-test ' +
+      'will say which part of the parse changed.'));
+    return c;
+  }
+
+  /* ---------- LIVE ---------- */
+  function viewLive(root) {
+    var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
+    var mus = Store.getMatchups(week);
+    if (!mus.length) {
+      var c = el('div', 'card');
+      c.appendChild(el('h2', null, 'No matchups for week ' + week));
+      c.appendChild(el('p', 'muted', 'Add them on the Data tab, or below.'));
+      var b = el('button', 'btn pri', 'Set up week ' + week + ' matchups');
+      b.addEventListener('click', function () { view = 'data'; render(); });
+      c.appendChild(b); root.appendChild(c);
+    }
+    /* Tj's own matchup comes first, always, and opens expanded. It is the one
+       card he actually watches; scrolling past four other games to find it is
+       the difference between a live scoreboard and a spreadsheet. */
+    var mine = null, rest = [];
+    mus.forEach(function (pair) {
+      if (pair[0] === S.league.me || pair[1] === S.league.me) mine = pair; else rest.push(pair);
+    });
+    if (mine) {
+      var me = mine[0] === S.league.me ? mine[0] : mine[1];
+      var them = mine[0] === S.league.me ? mine[1] : mine[0];
+      root.appendChild(myMatchupCard(me, them));
+    }
+    rest.forEach(function (pair) { root.appendChild(matchupCard(pair[0], pair[1])); });
+
+    var used = {}; mus.forEach(function (p) { used[p[0]] = 1; used[p[1]] = 1; });
+    var idle = S.teams.filter(function (t) { return !used[t.id]; });
+    if (idle.length && mus.length) {
+      var c2 = el('div', 'card');
+      c2.appendChild(el('h2', null, 'Not in a matchup this week'));
+      idle.forEach(function (t) {
+        var r = teamWeekRow(t);
+        c2.appendChild(r);
+      });
+      root.appendChild(c2);
+    }
+  }
+  function teamWeekRow(t) {
+    var res = Store.teamWeekPoints(week, t.id);
+    var r = el('div', 'row');
+    r.appendChild(el('div', 'nm', t.name));
+    r.appendChild(el('div', 'pts', fmt(res.total)));
+    return r;
+  }
+  /* The headline card: my team against my opponent, both lineups open, with
+     what is still to play on each side — because a 12-point deficit with four
+     starters yet to play is a completely different situation from the same
+     deficit with none. */
+  function myMatchupCard(meId, oppId) {
+    var A = Store.team(meId), B = Store.team(oppId);
+    var ra = Store.teamWeekPoints(week, meId), rb = Store.teamWeekPoints(week, oppId);
+    var c = el('div', 'card me');
+    c.appendChild(el('h2', null, 'Your matchup · week ' + week));
+    var mu = el('div', 'mu');
+    [[A, ra, rb], [null, null, null], [B, rb, ra]].forEach(function (x) {
+      if (!x[0]) { mu.appendChild(el('div', 'vs', 'vs')); return; }
+      var s = el('div', 'side' + (x[1].total > x[2].total ? ' win' : ''));
+      s.appendChild(el('div', 'nm', x[0].name));
+      s.appendChild(el('div', 'pt', fmt(x[1].total)));
+      var yet = x[1].detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
+      s.appendChild(el('div', 'sub', yet + ' yet to play'));
+      mu.appendChild(s);
+    });
+    c.appendChild(mu);
+
+    var diff = ra.total - rb.total;
+    var banner = el('div', 'banner' + (diff > 0 ? ' good' : (diff < 0 ? ' bad' : '')));
+    banner.textContent = diff === 0 ? 'Level' :
+      (diff > 0 ? 'You lead by ' + fmt(diff) : 'You trail by ' + fmt(-diff));
+    c.appendChild(banner);
+
+    var mineYet = ra.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; });
+    var theirYet = rb.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; });
+    var note = el('p', 'muted');
+    note.textContent = mineYet.length || theirYet.length
+      ? ('Still to play — you: ' +
+         (mineYet.length ? mineYet.map(function (d) { return d.player ? d.player.name : d.slot; }).join(', ') : 'nobody') +
+         ' · them: ' +
+         (theirYet.length ? theirYet.map(function (d) { return d.player ? d.player.name : d.slot; }).join(', ') : 'nobody'))
+      : 'Every starter on both sides has a stat line for this week.';
+    c.appendChild(note);
+
+    c.appendChild(openLineup(A, ra));
+    c.appendChild(openLineup(B, rb));
+    return c;
+  }
+  function openLineup(team, res) {
+    var d = lineupDetail(team, res);
+    d.open = true;
+    return d;
+  }
+  function matchupCard(aId, bId) {
+    var A = Store.team(aId), B = Store.team(bId);
+    var ra = Store.teamWeekPoints(week, aId), rb = Store.teamWeekPoints(week, bId);
+    var c = el('div', 'card');
+    var mu = el('div', 'mu');
+    [[A, ra, rb], [null, null, null], [B, rb, ra]].forEach(function (x) {
+      if (!x[0]) { mu.appendChild(el('div', 'vs', 'vs')); return; }
+      var s = el('div', 'side' + (x[1].total > x[2].total ? ' win' : ''));
+      s.appendChild(el('div', 'nm', x[0].name));
+      s.appendChild(el('div', 'pt', fmt(x[1].total)));
+      var yet = x[1].detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
+      var empty = x[1].detail.filter(function (d) { return !d.pid; }).length;
+      s.appendChild(el('div', 'sub', yet + ' to play' + (empty ? ' · ' + empty + ' empty' : '')));
+      mu.appendChild(s);
+    });
+    c.appendChild(mu);
+    var diff = Math.abs(ra.total - rb.total);
+    var lead = ra.total >= rb.total ? A.name : B.name;
+    var d = el('div', 'sub muted');
+    d.style.textAlign = 'center'; d.style.marginTop = '4px'; d.style.fontSize = '12px';
+    d.textContent = diff === 0 ? 'tied' : lead + ' by ' + fmt(diff);
+    c.appendChild(d);
+    c.appendChild(lineupDetail(A, ra));
+    c.appendChild(lineupDetail(B, rb));
+    return c;
+  }
+  function lineupDetail(team, res) {
+    var d = el('details');
+    var s = el('summary', null, team.name + ' lineup ▾');
+    d.appendChild(s);
+    res.detail.forEach(function (x) {
+      var r = el('div', 'row');
+      r.appendChild(el('div', 'slot', x.slot));
+      var nm = el('div', 'nm');
+      if (!x.pid) { nm.appendChild(el('span', 'muted', '— empty —')); }
+      else {
+        nm.appendChild(document.createTextNode(x.player ? x.player.name : '?'));
+        var sm = el('small', null, ' ' + (x.player ? x.player.pos + ' ' + x.player.nfl : ''));
+        nm.appendChild(sm);
+        if (x.onBye) nm.appendChild(el('span', 'tag out', 'bye'));
+        else if (!x.played) nm.appendChild(el('span', 'tag', 'to play'));
+      }
+      r.appendChild(nm);
+      var p = el('div', 'pts' + (x.onBye ? ' bye' : (x.played ? '' : ' pend')), x.onBye ? '0.0' : fmt(x.pts));
+      r.appendChild(p);
+      r.addEventListener('click', function () { if (x.pid) showPlayer(x.pid); });
+      d.appendChild(r);
+    });
+    return d;
+  }
+  function showPlayer(pid) {
+    var rec = Store.playerById(pid); if (!rec) return;
+    var line = Store.lineFor(week, pid);
+    if (!line) { toast(rec.player.name + ' — no stats synced for week ' + week); return; }
+    var sc = Scoring.score(line);
+    /* The manual adjustment is the escape hatch for the two things the feed
+       cannot settle by itself: the league-wide longest-play bonuses, which are
+       decided across every game and not always resolvable, and a rare
+       mis-parse. It survives a re-sync because it lives on the stat line, and
+       it always shows up as its own labelled row so nothing is ever silently
+       fudged. */
+    var wrap = el('div');
+    wrap.appendChild(el('label', 'f', 'Manual adjustment (points)'));
+    var inp = el('input'); inp.type = 'number'; inp.step = '0.5';
+    inp.value = String(Number(line.manualAdj) || 0);
+    inp.style.width = '100%';
+    wrap.appendChild(inp);
+    var row = el('div', 'kv'); row.style.marginTop = '8px';
+    [['+5 longest play', 5], ['−5', -5], ['Clear', 0]].forEach(function (b) {
+      var btn = el('button', 'btn sm', b[0]);
+      btn.addEventListener('click', function () {
+        inp.value = b[1] === 0 ? '0' : String((Number(inp.value) || 0) + b[1]);
+      });
+      row.appendChild(btn);
+    });
+    wrap.appendChild(row);
+    var save = el('button', 'btn pri', 'Save adjustment');
+    save.style.marginTop = '8px';
+    save.addEventListener('click', function () {
+      line.manualAdj = Number(inp.value) || 0;
+      Store.save(); render();
+      toast(rec.player.name + ' adjusted to ' + fmt(Scoring.score(line).total));
+    });
+    wrap.appendChild(save);
+
+    /* opportunity over the last three weeks, above the points. Touches are what
+       predict next week; points are what happened last week. */
+    var trend = window.Value ? Value.usageText(rec.player.name, week + 1) : '';
+    modal(rec.player.name + ' · week ' + week,
+      fmt(sc.total) + ' points\n\n' +
+      (sc.parts.length
+        ? sc.parts.map(function (p) { return '  ' + p.label + '   ' + (p.pts > 0 ? '+' : '') + fmt(p.pts); }).join('\n')
+        : '  no scoring plays') +
+      (trend ? '\n\nOpportunity\n  ' + trend.split('   ·   ').join('\n  ') : ''),
+      wrap);
+  }
+
+  /* ---------- LINEUPS ---------- */
+  function viewLineups(root) {
+    var head = el('div', 'card');
+    head.appendChild(el('h2', null, 'Week ' + week + ' lineups'));
+    head.appendChild(el('p', 'muted',
+      'Every roster is defaulted to its most likely starters — best projected ' +
+      'legal lineup, byes and ruled-out players skipped. Change any slot with ' +
+      'its dropdown; a slot you pick yourself is marked "yours" and auto-fill ' +
+      'will never move it again.'));
+    var togg = el('button', 'btn' + (S.settings.autoFill ? ' pri' : ''),
+      S.settings.autoFill ? 'Auto-default: ON' : 'Auto-default: OFF');
+    togg.addEventListener('click', function () {
+      S.settings.autoFill = !S.settings.autoFill; Store.save();
+      if (S.settings.autoFill) autoFillWeek(week);
+      render();
+    });
+    head.appendChild(togg);
+    var refill = el('button', 'btn'); refill.textContent = 'Re-default all teams now';
+    refill.style.marginTop = '8px';
+    refill.addEventListener('click', function () {
+      var was = S.settings.autoFill;
+      S.settings.autoFill = true;
+      var n = autoFillWeek(week);
+      S.settings.autoFill = was;
+      if (window.Sim) Sim.invalidate();
+      render();
+      toast(n ? (n + ' slot' + (n === 1 ? '' : 's') + ' updated') : 'Nothing to change');
+    });
+    head.appendChild(refill);
+    root.appendChild(head);
+    /* my team first — it is the only one he edits weekly */
+    var mine = null, rest = [];
+    S.teams.forEach(function (t) { if (t.id === S.league.me) mine = t; else rest.push(t); });
+    if (mine) root.appendChild(lineupCard(mine));
+    rest.forEach(function (t) { root.appendChild(lineupCard(t)); });
+  }
+  function lineupCard(t) {
+    var c = el('div', 'card' + (t.id === S.league.me ? ' me' : ''));
+    var h = el('h2', null, t.name + (t.id === S.league.me ? '  ★' : ''));
+    c.appendChild(h);
+    var keys = Store.slotKeys();
+    var L = Store.getLineup(week, t.id);
+    var manualCount = 0;
+    keys.forEach(function (k) {
+      var isMan = Store.isManual(week, t.id, k.key);
+      if (isMan) manualCount++;
+      var lab = el('label', 'f', k.label + (isMan ? '  · yours' : (L[k.key] ? '  · auto' : '')));
+      var sel = el('select');
+      /* stable identity so the re-render can hand focus back to this exact
+         slot instead of dropping it on <body> */
+      sel.setAttribute('data-fk', 'ln|' + t.id + '|' + k.key);
+      sel.appendChild(new Option('— empty —', ''));
+      var opts = Store.eligible(t.id, k.pos);
+      /* players already used in another slot are shown but marked */
+      opts.forEach(function (p) {
+        var usedIn = null, kk;
+        for (kk in L) if (L[kk] === p.id && kk !== k.key) usedIn = kk;
+        var bye = Number(p.bye) === Number(week) ? ' [BYE]' : '';
+        var o = new Option(p.name + ' (' + p.pos + ' ' + p.nfl + ')' + bye +
+                           (usedIn ? '  → ' + usedIn : ''), p.id);
+        sel.appendChild(o);
+      });
+      sel.value = L[k.key] || '';
+      /* the 4th argument is what marks this as HIS choice, not the app's */
+      sel.addEventListener('change', function () {
+        Store.setSlot(week, t.id, k.key, this.value, true);
+        if (window.Sim) Sim.invalidate();   /* the win probability depends on it */
+        render();
+      });
+      c.appendChild(lab); c.appendChild(sel);
+    });
+    var filled = 0; keys.forEach(function (k) { if (L[k.key]) filled++; });
+    var byeCount = 0;
+    keys.forEach(function (k) {
+      if (!L[k.key]) return;
+      var r = Store.playerById(L[k.key]);
+      if (r && Number(r.player.bye) === Number(week)) byeCount++;
+    });
+    var st = el('div', 'kv');
+    st.appendChild(el('span', byeCount ? 'warnText' : null,
+      filled + '/' + keys.length + ' filled · ' + manualCount + ' set by you' +
+      (byeCount ? '  ·  ' + byeCount + ' ON BYE' : '')));
+    var b = el('button', 'btn sm', 'Copy wk ' + (week - 1));
+    b.disabled = week <= 1;
+    b.addEventListener('click', function () {
+      Store.copyLineup(week - 1, week, t.id); render(); toast('Copied');
+    });
+    st.appendChild(b);
+    var rb = el('button', 'btn sm', 'Reset to auto');
+    rb.disabled = !manualCount;
+    rb.addEventListener('click', function () {
+      Store.clearManual(week, t.id);
+      if (window.Sim) Sim.invalidate();
+      var was = S.settings.autoFill; S.settings.autoFill = true;
+      autoFillWeek(week);
+      S.settings.autoFill = was;
+      render(); toast('Reset to the recommended lineup');
+    });
+    st.appendChild(rb);
+    st.style.marginTop = '10px'; st.style.alignItems = 'center';
+    c.appendChild(st);
+    return c;
+  }
+
+  /* ---------- ROSTERS ---------- */
+  function viewRosters(root) {
+    addSafe(root, 'The free-agent board', freeAgentCard);
+    addSafe(root, 'The trade evaluator', tradeCard);
+    S.teams.forEach(function (t) {
+      var c = el('div', 'card');
+      c.appendChild(el('h2', null, t.name + ' · ' + t.players.length + ' players'));
+      var order = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DEF: 5 };
+      t.players.slice().sort(function (a, b) {
+        if (order[a.pos] !== order[b.pos]) return order[a.pos] - order[b.pos];
+        return a.name.localeCompare(b.name);
+      }).forEach(function (p) {
+        var r = el('div', 'row');
+        r.appendChild(el('div', 'slot', p.pos));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(p.name));
+        nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '') +
+          (p.projPG ? ' · proj ' + fmt(p.projPG) + '/wk' : '')));
+        r.appendChild(nm);
+        var x = el('button', 'btn sm dan', 'Drop');
+        x.addEventListener('click', function () {
+          confirmModal('Drop ' + p.name + '?',
+            'Removes him from ' + t.name + ' in this app. It does not touch your ' +
+            'league site — do the drop there as well.', 'Drop him', function () {
+            Store.removePlayer(t.id, p.id);
+            if (window.Sim) Sim.invalidate();
+            render(); toast('Dropped ' + p.name);
+          }, true);
+        });
+        r.appendChild(x);
+        c.appendChild(r);
+      });
+      c.appendChild(addForm(t));
+      root.appendChild(c);
+    });
+  }
+  /* ---------- ROSTERS: the wire (v2.6) ----------
+   * Ranked in THIS league's points, which is the only reason to have it: every
+   * waiver list on the internet is computed in scoring where a completion is
+   * worth nothing, and here it is worth a point. */
+  function freeAgentCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Free agents · week ' + week));
+    var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+    var ups = Value.upgrades(week, S.league.me, opp, 80);
+    if (ups.length) {
+      c.appendChild(el('p', null, ups.length + ' available player' + (ups.length === 1 ? '' : 's') +
+        ' project higher than somebody you are starting:'));
+      ups.slice(0, 6).forEach(function (u) {
+        var r = el('div', 'row');
+        r.appendChild(el('div', 'slot', u.fa.pos));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(u.fa.name));
+        nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' + fmt(u.fa.v) + ' proj — ' +
+          '+' + fmt(u.gain) + ' over ' + u.over.name + ' in your ' + u.over.slot));
+        r.appendChild(nm);
+        var b = el('button', 'btn sm', 'Add');
+        b.addEventListener('click', function () { addFreeAgent(u.fa); });
+        r.appendChild(b);
+        c.appendChild(r);
+      });
+    } else {
+      c.appendChild(el('p', 'muted', 'Nobody on the wire beats a player you are starting this week.'));
+    }
+    /* ---- Claude's read of the wire (v3.4) ------------------------------
+     * The button is here rather than on the Data tab because this is where he
+     * is looking when he wants it. The app has already decided WHO is free and
+     * what they are worth in league points; this call adds only what a stat
+     * line cannot see — who just got hurt ahead of somebody, who just took a
+     * job — and re-ranks the shortlist for THIS roster. */
+    var wcard = el('div');
+    var wsync = el('button', 'btn pri', 'Ask Claude about the wire');
+    var wnote = el('p', 'hint', '');
+    var cached = Value.waiverLoad();
+
+    if (!Ai.configured()) {
+      wsync.disabled = true;
+      wnote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". ' +
+        'Everything above works without one; this only adds the news layer.';
+    } else {
+      wnote.textContent = 'Reads this week\'s waiver-wire and injury news for the ' +
+        'shortlist above, then ranks it for your roster under THIS league\'s ' +
+        'scoring. Public waiver lists are half-PPR standard and are wrong about ' +
+        'quarterbacks here by roughly a factor of two.';
+    }
+    wsync.addEventListener('click', function () {
+      var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var ctx;
+      try {
+        ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season, new Date().toISOString().slice(0, 10));
+      } catch (e) {
+        wnote.textContent = 'Could not build the roster context: ' + (e && e.message ? e.message : e);
+        return;
+      }
+      wsync.disabled = true; wsync.textContent = 'Reading the wire…';
+      jobStart('waivers', 'Claude is reading the waiver wire…');
+      Ai.askWaivers(ctx, function (msg, pct) { jobStep(msg, pct); })
+        .then(function (res) {
+          Value.waiverSave(res);
+          jobEnd();
+          toast('Wire read — ' + res.adds.length + ' adds');
+          render();
+        })['catch'](function (e) {
+          jobEnd();
+          wsync.disabled = false; wsync.textContent = 'Ask Claude about the wire';
+          wnote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
+            '  ·  the ranked board above is unaffected and still works.';
+        });
+    });
+    var wrow = el('div', 'dbrow'); wrow.appendChild(wsync);
+    wcard.appendChild(wrow); wcard.appendChild(wnote);
+    c.appendChild(wcard);
+
+    if (cached && cached.adds && cached.adds.length) {
+      var age = Math.round((Date.now() - (cached.at || 0)) / 3600000);
+      var stale = (cached.week !== week);
+      c.appendChild(el('div', 'subhd', "Claude's read of the wire"));
+      c.appendChild(el('p', stale ? 'warnText' : 'muted',
+        (stale ? 'FROM WEEK ' + cached.week + ' — re-sync for this week. ' : '') +
+        (cached.needs || '') + (cached.summary ? '  ' + cached.summary : '')));
+      /* grouped by position, because that is the question being asked */
+      var seen = {}, order = [];
+      cached.adds.forEach(function (a) {
+        if (!seen[a.pos]) { seen[a.pos] = []; order.push(a.pos); }
+        seen[a.pos].push(a);
+      });
+      order.forEach(function (k) {
+        c.appendChild(el('div', 'subhd', k + ' — Claude'));
+        seen[k].forEach(function (a) {
+          var r = el('div', 'row');
+          r.appendChild(el('div', 'slot', '#' + a.rank));
+          var nm = el('div', 'nm');
+          nm.appendChild(document.createTextNode(a.name));
+          var bits = [a.nfl];
+          if (typeof a.proj === 'number') bits.push(fmt(a.proj) + ' proj');
+          if (a.onBye) bits.push('ON BYE');
+          if (a.overStarter) bits.push('beats ' + a.overStarter);
+          bits.push(a.confidence + ' confidence');
+          nm.appendChild(el('small', null, '  ' + bits.join(' · ') +
+            (a.verified ? '' : '  ·  NOT IN THE APP\'S POOL — check he is actually free') +
+            (a.why ? '  —  ' + a.why : '')));
+          r.appendChild(nm);
+          if (a.verified) {
+            var ab = el('button', 'btn sm', 'Add');
+            ab.addEventListener('click', function () {
+              addFreeAgent({ name: a.name, pos: a.pos, nfl: a.nfl, bye: a.bye });
+            });
+            r.appendChild(ab);
+          }
+          c.appendChild(r);
+        });
+      });
+      c.appendChild(el('p', 'hint',
+        'Read ' + (age < 1 ? 'just now' : age + 'h ago') + ' with ' + (cached.model || 'Claude') +
+        ', ' + cached.searchBudget + ' searches allowed' +
+        (cached.spent && typeof cached.spent.cost === 'number' ? ', about $' + cached.spent.cost.toFixed(3) : '') +
+        '. Availability and the projections come from this app; the news and the ' +
+        'ranking come from Claude. Rows it could not match to the app\'s pool are ' +
+        'marked — verify those on your league site before claiming.'));
+    }
+
+    /* ---- the board, BY POSITION ---------------------------------------
+     * It used to be one list of the top 40 by league points, and it came out
+     * as forty quarterbacks. That was not a data fault: this league pays a
+     * point per completion, so a startable QB is worth about twice a startable
+     * RB, and any single sort across positions puts every QB on top. Nobody
+     * picking up a free agent wants QB1-40. Sections per position, plus one
+     * genuinely comparable mixed ranking on value-over-replacement. */
+    var chips = el('div', 'fchips');
+    ['ALL', 'VALUE'].concat(Value.POS).forEach(function (k) {
+      var b = el('button', 'fchip' + (faPos === k ? ' on' : ''),
+                 k === 'VALUE' ? 'Best value' : (k === 'ALL' ? 'All positions' : k));
+      b.setAttribute('data-fk', 'faChip|' + k);
+      b.addEventListener('click', function () { faPos = k; render(); });
+      chips.appendChild(b);
+    });
+    c.appendChild(chips);
+
+    var groups = Value.byPos(week, 0);
+    function faRow(f, showPos) {
+      var r2 = el('div', 'row');
+      r2.appendChild(el('div', 'slot', showPos ? f.pos : (f.nfl || f.pos)));
+      var nm2 = el('div', 'nm');
+      nm2.appendChild(document.createTextNode(f.name));
+      var vor = (typeof f.vor === 'number' && f.vor > 0.05)
+        ? '  ·  +' + fmt(f.vor) + ' over the next ' + f.pos + ' on the wire' : '';
+      nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE' : '') +
+        ' · ' + fmt(f.v) + ' proj' + vor + '  (' + f.src + ')' +
+        (f.usage ? '\n' + f.usage : '')));
+      r2.appendChild(nm2);
+      var b2 = el('button', 'btn sm', 'Add');
+      b2.addEventListener('click', function () { addFreeAgent(f); });
+      r2.appendChild(b2);
+      return r2;
+    }
+
+    if (faPos === 'VALUE') {
+      c.appendChild(el('p', 'muted',
+        'Ranked by points above the best free agent at the same position. This ' +
+        'is the only ranking on this screen that compares a QB with a running ' +
+        'back honestly — raw points never can, because a completion pays 1 here.'));
+      Value.byVor(week, 30).forEach(function (f) { c.appendChild(faRow(f, true)); });
+    } else {
+      var show = faPos === 'ALL' ? Value.POS : [faPos];
+      var perPos = faPos === 'ALL' ? 6 : 30;
+      show.forEach(function (k) {
+        var rows = groups[k] || [];
+        if (!rows.length) return;
+        var hd = el('div', 'subhd');
+        hd.textContent = k + '  ·  ' + rows.length + ' available';
+        c.appendChild(hd);
+        rows.slice(0, perPos).forEach(function (f) { c.appendChild(faRow(f, false)); });
+        if (rows.length > perPos && faPos === 'ALL') {
+          var more = el('button', 'btn sm', 'All ' + rows.length + ' ' + k + 's');
+          more.addEventListener('click', function () { faPos = k; render(); });
+          c.appendChild(more);
+        }
+      });
+    }
+    c.appendChild(el('p', 'hint',
+      'Everyone in the bundled player database who is not on one of the ten ' +
+      'rosters, grouped by position and ranked by this league\'s points — ESPN\'s ' +
+      'projected stat line for this week re-scored here where there is one, and ' +
+      'what he has actually scored in this app where there is not. Each row says ' +
+      'which. Adding a player here does not tell your league site anything; do ' +
+      'the real add there.'));
+    return c;
+  }
+  function addFreeAgent(f) {
+    var t = Store.team(S.league.me);
+    if (!t) return;
+    var go = el('button', 'btn pri', 'Add to my roster');
+    go.style.marginBottom = '8px';
+    go.addEventListener('click', function () {
+      Store.addPlayer(S.league.me, { name: f.name, pos: f.pos, nfl: f.nfl, bye: f.bye });
+      if (window.Sim) Sim.invalidate();
+      var back = go.parentNode && go.parentNode.parentNode;
+      if (back && back.parentNode) back.parentNode.removeChild(back);
+      render(); toast('Added ' + f.name);
+    });
+    modal('Add ' + f.name + '?',
+      'This adds him to YOUR roster in this app (' + t.players.length + ' players now). ' +
+      'It does not touch your league site — do the waiver claim there as well.', go);
+  }
+
+  /* ---------- ROSTERS: trade evaluator (v2.6) ---------- */
+  var faPos = 'ALL';   /* free-agent board filter (v3.2) */
+  var tradeSel = { give: {}, get: {}, other: '' };
+  function tradeCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Trade evaluator'));
+    var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+    var others = S.teams.filter(function (t) { return t.id !== S.league.me; });
+    if (!tradeSel.other) tradeSel.other = others.length ? others[0].id : '';
+
+    var sel = el('select');
+    others.forEach(function (t) {
+      var o = el('option', null, t.name); o.value = t.id;
+      if (t.id === tradeSel.other) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () {
+      tradeSel.other = this.value; tradeSel.get = {}; render();
+    });
+    c.appendChild(el('label', 'f', 'Trade with'));
+    c.appendChild(sel);
+
+    function picker(label, teamId, bag) {
+      var d = el('details');
+      var n = Object.keys(bag).length;
+      d.appendChild(el('summary', null, label + (n ? ' — ' + n + ' selected' : '') + ' \u25be'));
+      var t = Store.team(teamId);
+      if (t) t.players.forEach(function (p) {
+        var r = el('label', 'chk');
+        var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!bag[p.id];
+        cb.addEventListener('change', function () {
+          if (this.checked) bag[p.id] = 1; else delete bag[p.id];
+          render();
+        });
+        r.appendChild(cb);
+        r.appendChild(document.createTextNode(' ' + p.pos + '  ' + p.name));
+        d.appendChild(r);
+      });
+      return d;
+    }
+    c.appendChild(picker('You give', S.league.me, tradeSel.give));
+    c.appendChild(picker('You get', tradeSel.other, tradeSel.get));
+
+    var giveIds = Object.keys(tradeSel.give), getIds = Object.keys(tradeSel.get);
+    if (giveIds.length && getIds.length) {
+      var r = Value.trade(week, giveIds, getIds, opp);
+      var big = el('div', 'bigfig', (r.delta >= 0 ? '+' : '') + fmt(r.delta));
+      big.style.color = r.delta >= 0 ? 'var(--good)' : 'var(--bad)';
+      c.appendChild(big);
+      c.appendChild(el('p', null, 'points over the rest of the regular season — ' + r.verdict + '.'));
+      var rows = [];
+      r.give.forEach(function (v) {
+        rows.push({ cells: ['out', v.name + ' (' + v.pos + ')', fmt(v.perGame),
+                            fmt(v.replacement), fmt(v.ros)] });
+      });
+      r.get.forEach(function (v) {
+        rows.push({ me: true, cells: ['in', v.name + ' (' + v.pos + ')', fmt(v.perGame),
+                                      fmt(v.replacement), fmt(v.ros)] });
+      });
+      c.appendChild(table(['', 'Player', 'Pts/wk', 'Wire', 'Value'], rows));
+      if (r.note) c.appendChild(el('p', 'muted', r.note));
+      c.appendChild(el('p', 'hint',
+        'Value is (his points a week minus what the best free agent at his position ' +
+        'is worth) times the ' + r.weeks + ' regular-season weeks left. That subtraction ' +
+        'is the whole idea: a player is only worth what he beats the wire by, which is ' +
+        'why a startable tight end and a fourth running back are not the same asset at ' +
+        'the same projection. All of it in this league\'s scoring.'));
+    } else {
+      c.appendChild(el('p', 'muted', 'Pick at least one player on each side.'));
+    }
+    return c;
+  }
+
+  function addForm(t) {
+    var d = el('details');
+    d.appendChild(el('summary', null, '+ Add player  (search ' + PlayerDB.meta().count + ' players) \u25be'));
+
+    var posSel = el('select');
+    posSel.setAttribute('data-fk', 'faPos');
+    posSel.appendChild(new Option('Any position', 'ANY'));
+    ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].forEach(function (p) { posSel.appendChild(new Option(p, p)); });
+
+    var q = el('input'); q.type = 'text';
+    q.setAttribute('autocomplete', 'off'); q.setAttribute('autocorrect', 'off');
+    q.setAttribute('autocapitalize', 'none'); q.setAttribute('spellcheck', 'false');
+    q.placeholder = 'Type a name — e.g. achane, kupp, seahawks';
+
+    var results = el('div');
+    var hint = el('p', 'hint', '');
+
+    /* This re-normalised all ~170 rostered names for EVERY search hit, and
+       there are up to 20 hits, on EVERY keystroke — about 3,400 regex-heavy
+       norm() calls per character typed, which is exactly what input lag feels
+       like. The owner index is built once per render instead, and rebuilt only
+       if the rosters change under it. */
+    var ownerBy = null, ownerGen = -1;
+    function owners() {
+      var gen = (window.Store && Store.generation) ? Store.generation() : 0;
+      if (ownerBy && ownerGen === gen) return ownerBy;
+      ownerBy = {};
+      var i, j;
+      for (i = 0; i < S.teams.length; i++) {
+        for (j = 0; j < S.teams[i].players.length; j++) {
+          var vv = Names.variants(S.teams[i].players[j].name), q;
+          for (q = 0; q < vv.length; q++) ownerBy[vv[q]] = S.teams[i].name;
+        }
+      }
+      ownerGen = gen;
+      return ownerBy;
+    }
+    function have(name) {
+      var o = owners();
+      var hit = o[PlayerDB.norm(name)] || o[Names.canon(name)];
+      return hit ? hit : null;
+    }
+    function run() {
+      results.innerHTML = '';
+      var hits = PlayerDB.search(q.value, posSel.value, 20);
+      if (!q.value.trim()) { hint.textContent = ''; return; }
+      if (!hits.length) {
+        hint.textContent = 'No match. Refresh the player database on the Data tab, ' +
+                           'or add him by hand below.';
+        results.appendChild(manualRow(t, q.value));
+        return;
+      }
+      hint.textContent = hits.length + ' match' + (hits.length === 1 ? '' : 'es');
+      hits.forEach(function (p) {
+        var owner = have(p.n);
+        var row = el('div', 'res');
+        row.appendChild(el('div', 'pos', p.p));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(p.n));
+        nm.appendChild(el('small', null, '  ' + (p.t || '?') + (p.b ? ' · bye ' + p.b : '')));
+        if (owner) nm.appendChild(el('span', 'tag out', owner === t.name ? 'on this team' : owner));
+        row.appendChild(nm);
+        row.appendChild(el('div', 'add', owner ? '' : '+'));
+        if (!owner) {
+          row.addEventListener('click', function () {
+            Store.addPlayer(t.id, { name: p.n, pos: p.p, nfl: p.t, bye: p.b, espnId: p.e || '' });
+            toast('Added ' + p.n + ' to ' + t.name);
+            render();
+          });
+        }
+        results.appendChild(row);
+      });
+    }
+    q.addEventListener('input', run);
+    posSel.addEventListener('change', run);
+
+    d.appendChild(el('label', 'f', 'Position filter')); d.appendChild(posSel);
+    d.appendChild(el('label', 'f', 'Search')); d.appendChild(q);
+    d.appendChild(hint);
+    d.appendChild(results);
+    return d;
+  }
+  /* Escape hatch for a player the database has never heard of. */
+  function manualRow(t, typedName) {
+    var wrap = el('div');
+    wrap.style.marginTop = '8px';
+    var pos = el('select');
+    pos.setAttribute('data-fk', 'addPos');
+    ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].forEach(function (p) { pos.appendChild(new Option(p, p)); });
+    var nfl = el('select');
+    nfl.setAttribute('data-fk', 'addNfl');
+    nfl.appendChild(new Option('— NFL team —', ''));
+    Object.keys(S.byes).sort().forEach(function (a) {
+      nfl.appendChild(new Option(a + ' (bye ' + S.byes[a] + ')', a));
+    });
+    var b = el('button', 'btn pri', 'Add "' + typedName.trim() + '" manually');
+    b.style.marginTop = '8px';
+    b.addEventListener('click', function () {
+      Store.addPlayer(t.id, { name: typedName.trim(), pos: pos.value, nfl: nfl.value });
+      render(); toast('Added');
+    });
+    wrap.appendChild(el('label', 'f', 'Position')); wrap.appendChild(pos);
+    wrap.appendChild(el('label', 'f', 'NFL team')); wrap.appendChild(nfl);
+    wrap.appendChild(b);
+    return wrap;
+  }
+
+  /* ---------- STANDINGS ---------- */
+  function viewStandings(root) {
+    var st = Store.standings(Math.max(week, 1));
+    var c1 = el('div', 'card');
+    c1.appendChild(el('h2', null, 'By record'));
+    c1.appendChild(table(['Team', 'W', 'L', 'T', 'Points'], st.byRecord.map(function (r) {
+      return { me: r.id === S.league.me, cells: [r.name, r.w, r.l, r.t, fmt(r.pts)] };
+    })));
+    root.appendChild(c1);
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h2', null, 'By season points · 4 books on this'));
+    var playedW = 0, pw;
+    for (pw = 1; pw <= week; pw++) if (Store.weekIsScored(pw)) playedW++;
+    c2.appendChild(table(['Team', 'Points', 'Avg/wk'], st.byPoints.map(function (r) {
+      return { me: r.id === S.league.me, cells: [r.name, fmt(r.pts),
+               playedW ? fmt(r.pts / playedW) : '—'] };
+    })));
+    root.appendChild(c2);
+    var c3 = el('div', 'card');
+    c3.appendChild(el('h2', null, 'Weekly high score · 1 book each week'));
+    var rows = [], w2;
+    for (w2 = 1; w2 <= S.league.regularSeasonWeeks; w2++) {
+      if (!Store.weekIsScored(w2)) continue;
+      var best = null;
+      S.teams.forEach(function (t) {
+        var p = Store.teamWeekPoints(w2, t.id).total;
+        if (!best || p > best.p) best = { n: t.name, p: p, id: t.id };
+      });
+      if (best) rows.push({ me: best.id === S.league.me, cells: ['Week ' + w2, best.n, fmt(best.p)] });
+    }
+    if (!rows.length) rows.push({ cells: ['—', 'no completed weeks yet', ''] });
+    c3.appendChild(table(['Week', 'Team', 'Pts'], rows));
+    root.appendChild(c3);
+    root.appendChild(playoffCard(st));
+  }
+
+  /* ---------- LEAGUE (v2.5) ----------
+   * Everything sim.js can answer, and nothing that needs the network. The
+   * ordering is deliberate: the question you actually have on Sunday is at the
+   * top, and the season-long ones are underneath it. */
+  function pct(x) { return Math.round(x * 100) + '%'; }
+
+  /* ---------- LEAGUE: the week in one card (v2.8) ---------- */
+  var recapText = { week: 0, ai: '' };
+  function recapCard() {
+    var c = el('div', 'card');
+    /* the most recent FINAL week, which is usually the one before the one
+       being watched */
+    var w = week, r = null;
+    while (w >= 1 && !r) { r = Recap.build(w); if (!r) w--; }
+    c.appendChild(el('h2', null, r ? ('Week ' + w + ' recap') : 'Weekly recap'));
+    if (!r) {
+      c.appendChild(el('p', 'muted', 'No week is final yet. This fills in the moment one is.'));
+      return c;
+    }
+    var txt = Recap.text(w, r);
+    var pre = el('pre');
+    pre.style.cssText = 'white-space:pre-wrap;font:13px/1.5 inherit;margin:0 0 10px';
+    pre.textContent = txt;
+    c.appendChild(pre);
+
+    if (recapText.week === w && recapText.ai) {
+      var q = el('p', null, recapText.ai);
+      q.style.cssText = 'border-left:3px solid var(--accent);padding-left:10px;font-style:italic';
+      c.appendChild(q);
+    }
+
+    var row = el('div', 'kv');
+    var sh = el('button', 'btn pri', 'Send to the league');
+    sh.addEventListener('click', function () {
+      var body = txt + (recapText.week === w && recapText.ai ? '\n\n' + recapText.ai : '');
+      if (window.Native && Native.share) { Native.share(body); }
+      else if (window.Native && Native.copy) { Native.copy(body); toast('Copied'); }
+      else modal('Recap', body);
+    });
+    row.appendChild(sh);
+    if (window.Ai && Ai.configured()) {
+      var wr = el('button', 'btn', 'Have Claude write it up');
+      wr.addEventListener('click', function () {
+        wr.disabled = true; wr.textContent = 'Writing…';
+        Ai.recap(txt, w).then(function (out) {
+          recapText = { week: w, ai: out };
+          render();
+        }).catch(function (e) {
+          wr.disabled = false; wr.textContent = 'Have Claude write it up';
+          modal('Could not write the recap', (e && e.message) ? e.message : String(e));
+        });
+      });
+      row.appendChild(wr);
+      c.appendChild(row);
+      c.appendChild(el('p', 'hint', 'The write-up is one small call with no web ' +
+        'search — about a cent. The facts above are computed on the phone and are ' +
+        'handed to it verbatim, so it has nothing to invent.'));
+    } else {
+      c.appendChild(row);
+    }
+    return c;
+  }
+
+  function viewLeague(root) {
+    addSafe(root, 'The weekly recap', recapCard);
+    var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+    var me = S.league.me;
+
+    /* 1. this week's win probability */
+    var mus = Store.getMatchups(week), mine = null;
+    mus.forEach(function (pr) { if (pr[0] === me || pr[1] === me) mine = pr; });
+    var c0 = el('div', 'card me');
+    c0.appendChild(el('h2', null, 'Week ' + week + ' — will I win?'));
+    if (!mine) {
+      c0.appendChild(el('p', 'muted', 'No matchup set for week ' + week + '. Add it on the Data tab.'));
+    } else {
+      var aId = mine[0] === me ? mine[0] : mine[1];
+      var bId = mine[0] === me ? mine[1] : mine[0];
+      var m = Sim.matchup(week, aId, bId, opp);
+      var big = el('div', 'bigfig', pct(m.pA));
+      big.style.color = m.pA >= 0.5 ? 'var(--good)' : 'var(--bad)';
+      c0.appendChild(big);
+      c0.appendChild(el('p', null, 'to beat ' + nameOf(bId) + ' — ' +
+        fmt(m.projA) + ' projected against ' + fmt(m.projB) + '.'));
+      c0.appendChild(el('p', 'muted',
+        m.doneA + ' of your starters are done (' + fmt(m.fixedA) + ' banked, ' +
+        m.leftA + ' still to play); ' + nameOf(bId) + ' has ' + m.doneB + ' done (' +
+        fmt(m.fixedB) + ' banked, ' + m.leftB + ' to play).'));
+      if (m.leftA) {
+        c0.appendChild(el('p', 'muted', 'You need about ' + fmt(m.needA) +
+          ' more from those ' + m.leftA + '. ' +
+          'A typical week for you lands between ' + fmt(m.projA + m.p10 - (m.projA - m.projB)) +
+          ' and ' + fmt(m.projA + m.p90 - (m.projA - m.projB)) + '.'));
+      }
+      c0.appendChild(el('p', 'hint', m.sims.toLocaleString ? (m.sims.toLocaleString() + ' simulated weeks') :
+        (m.sims + ' simulated weeks')));
+    }
+    root.appendChild(c0);
+
+    /* every other matchup, one line each */
+    if (mus.length > 1) {
+      var cAll = el('div', 'card');
+      cAll.appendChild(el('h2', null, 'The rest of the week'));
+      var rows = [];
+      mus.forEach(function (pr) {
+        if (mine && pr[0] === mine[0] && pr[1] === mine[1]) return;
+        var mm = Sim.matchup(week, pr[0], pr[1], opp);
+        rows.push({ cells: [nameOf(pr[0]) + ' vs ' + nameOf(pr[1]),
+                            pct(mm.pA), fmt(mm.projA) + ' – ' + fmt(mm.projB)] });
+      });
+      if (rows.length) cAll.appendChild(table(['Matchup', 'First wins', 'Projected'], rows));
+      root.appendChild(cAll);
+    }
+
+    /* 2. playoff odds */
+    var sea = Sim.season(week);
+    var c1 = el('div', 'card');
+    c1.appendChild(el('h2', null, 'Playoff odds · top 6, top 2 get a bye'));
+    c1.appendChild(table(['Team', 'Playoffs', 'Bye', 'Title', 'Proj W'],
+      sea.rows.map(function (r) {
+        return { me: r.id === me,
+                 cells: [r.name, pct(r.playoff), pct(r.bye), pct(r.title), fmt(r.projW)] };
+      })));
+    c1.appendChild(el('p', 'hint', sea.runs + ' simulated seasons · ' + sea.weeksLeft +
+      ' regular-season week' + (sea.weeksLeft === 1 ? '' : 's') + ' left. Each team\'s week is ' +
+      'drawn from its own measured average and spread in THIS league\'s points' +
+      (sea.rows.length && sea.rows[0].shrunk
+        ? ', pulled towards the league average until a team has four weeks of its own.' : '.')));
+    root.appendChild(c1);
+
+    /* 3. power rankings + luck */
+    var pw = Sim.power(week);
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h2', null, 'Power rankings · all-play, not luck'));
+    c2.appendChild(table(['#', 'Team', 'All-play', 'Pts/wk', 'Record', 'Luck'],
+      pw.map(function (r) {
+        var luck = r.luck >= 0 ? '+' + r.luck.toFixed(1) : r.luck.toFixed(1);
+        return { me: r.id === me,
+                 cells: [r.rank, r.name, r.allPlayW + '-' + r.allPlayL,
+                         r.played ? fmt(r.ppg) : '—', r.w + '-' + r.l, luck] };
+      })));
+    c2.appendChild(el('p', 'hint',
+      'All-play is the record you would have if you played every team every week — ' +
+      'it does not care who you happened to draw. Luck is your real wins minus the ' +
+      'wins that all-play record deserves: +2 means two wins you would not expect to ' +
+      'keep, -2 means you are better than the table says.'));
+    root.appendChild(c2);
+
+    /* 4. bench regret, most recent finished week first */
+    var c3 = el('div', 'card');
+    c3.appendChild(el('h2', null, 'Points left on your bench'));
+    var any = false, tot = 0, w3, lines = [], firstRegret = null;
+    for (w3 = S.league.regularSeasonWeeks; w3 >= 1; w3--) {
+      var rg = Sim.regret(w3, me);
+      if (!rg) continue;
+      if (!firstRegret) firstRegret = rg;
+      any = true; tot += rg.lost;
+      lines.push({ cells: ['Week ' + w3, fmt(rg.actual), fmt(rg.optimal),
+                           rg.lost > 0.05 ? '-' + fmt(rg.lost) : '0.0'] });
+      if (lines.length >= 6) break;
+    }
+    if (!any) {
+      c3.appendChild(el('p', 'muted', 'Nothing to look back on yet — no week is final.'));
+    } else {
+      c3.appendChild(table(['Week', 'You started', 'Best possible', 'Lost'], lines));
+      c3.appendChild(el('p', 'muted', 'That is ' + fmt(tot) + ' points across those weeks.'));
+      /* the loop above already walked down from the last week and stopped at
+         the first scored one, so lines[0] IS the most recent — re-running
+         Sim.regret from week 14 again just to find it was pure waste */
+      var recent = firstRegret;
+      if (recent && recent.misses.length) {
+        var d = el('details');
+        d.appendChild(el('summary', null, 'Week ' + recent.week + ': who should have started ▾'));
+        recent.misses.forEach(function (mm) {
+          d.appendChild(el('div', 'kv')).appendChild(el('span', null,
+            mm.slot + ': ' + mm.name + ' (' + fmt(mm.pts) + ') was on the bench'));
+        });
+        c3.appendChild(d);
+      }
+    }
+    root.appendChild(c3);
+
+    /* 5. how the spread was decided — say it, do not claim it */
+    var cv = Sim.positionCV(week);
+    var c4 = el('div', 'card');
+    c4.appendChild(el('h2', null, 'How the randomness is set'));
+    var cvRows = [];
+    ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].forEach(function (p) {
+      if (!cv[p]) return;
+      cvRows.push({ cells: [p, Math.round(cv[p].cv * 100) + '%',
+                            cv[p].measured ? 'measured here (' + cv[p].n + ' players)' : 'prior'] });
+    });
+    c4.appendChild(table(['Pos', 'Week-to-week swing', 'Source'], cvRows));
+    c4.appendChild(el('p', 'hint',
+      'A simulated week multiplies each starter\'s projection by a right-skewed ' +
+      'random factor of that size — the floor is zero and the ceiling is not, so a ' +
+      'symmetric bell would understate the weeks that actually win. QB starts low ' +
+      'on purpose: a completion is a point in this league, so a QB\'s floor is his ' +
+      'attempts, and attempts are the steadiest thing in football. Once eight ' +
+      'players at a position have three scored weeks each, the measured number ' +
+      'replaces the prior.'));
+    root.appendChild(c4);
+  }
+
+  /* W15 top-2 bye, 3v6 and 4v5; W16 semis; W17 final + 3rd place. */
+  function playoffCard(st) {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Playoff picture · W15-17'));
+    var seeds = st.byRecord.slice(0, 6);
+    if (seeds.length < 6) { c.appendChild(el('p', 'muted', 'Not enough teams.')); return c; }
+    var lines = [
+      'Seeds 1-2 (' + seeds[0].name + ', ' + seeds[1].name + ') get the W15 bye',
+      'W15  #3 ' + seeds[2].name + '  vs  #6 ' + seeds[5].name,
+      'W15  #4 ' + seeds[3].name + '  vs  #5 ' + seeds[4].name,
+      'W16  semis — #1 and #2 enter here',
+      'W17  final + 3rd place'
+    ];
+    lines.forEach(function (t) { c.appendChild(el('div', 'kv')).appendChild(el('span', null, t)); });
+    var done = 0, w;
+    for (w = 1; w <= S.league.regularSeasonWeeks; w++) if (Store.weekIsScored(w)) done++;
+    c.appendChild(el('p', 'muted', done + ' of ' + S.league.regularSeasonWeeks +
+      ' regular-season weeks are final, so these seeds are ' +
+      (done >= S.league.regularSeasonWeeks ? 'settled.' : 'provisional.')));
+    return c;
+  }
+  function table(head, rows) {
+    var t = el('table'), thead = el('thead'), tr = el('tr');
+    head.forEach(function (h) { tr.appendChild(el('th', null, h)); });
+    thead.appendChild(tr); t.appendChild(thead);
+    var tb = el('tbody');
+    rows.forEach(function (r) {
+      var x = el('tr'); if (r.me) x.className = 'me';
+      r.cells.forEach(function (c, i) { x.appendChild(el('td', i ? 'num' : null, c)); });
+      tb.appendChild(x);
+    });
+    t.appendChild(tb); return t;
+  }
+
+  /* ---------- ADVICE ----------
+     The "not built yet" placeholder that used to guard this is gone:
+     index.html loads recommend.js unconditionally, so it was unreachable, and
+     render()'s own try/catch already turns a real failure into a named error
+     card rather than a blank tab. */
+  function viewAdvice(root) {
+    Recommend.render(root, { week: week, teamId: S.league.me, el: el, table: table,
+      fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
+      jobEnd: jobEnd, jobRunning: jobRunning, rerender: render });
+  }
+
+  /* ---------- DATA ---------- */
+  function viewData(root) {
+    /* matchups */
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Week ' + week + ' matchups'));
+    var mus = Store.getMatchups(week);
+    mus.forEach(function (p, i) {
+      var r = el('div', 'row');
+      r.appendChild(el('div', 'nm', nameOf(p[0]) + '  vs  ' + nameOf(p[1])));
+      var x = el('button', 'btn sm dan', 'Remove');
+      x.addEventListener('click', function () { mus.splice(i, 1); Store.setMatchups(week, mus); render(); });
+      r.appendChild(x); c.appendChild(r);
+    });
+    var sa = el('select'), sb = el('select');
+    S.teams.forEach(function (t) { sa.appendChild(new Option(t.name, t.id)); sb.appendChild(new Option(t.name, t.id)); });
+    if (S.teams.length > 1) sb.selectedIndex = 1;
+    var sp = el('div', 'split'); sp.style.marginTop = '8px';
+    sp.appendChild(sa); sp.appendChild(sb);
+    c.appendChild(sp);
+    var add = el('button', 'btn pri', 'Add matchup'); add.style.marginTop = '8px';
+    add.addEventListener('click', function () {
+      if (sa.value === sb.value) { toast('Pick two different teams'); return; }
+      Store.addMatchup(week, sa.value, sb.value); render();
+    });
+    c.appendChild(add);
+    /* the whole season at once (v2.8) — circle method, and it refuses to
+       touch a week that already has results */
+    var gen = el('button', 'btn', 'Generate the whole season');
+    gen.style.marginTop = '8px';
+    gen.addEventListener('click', function () {
+      var go = el('button', 'btn pri', 'Generate');
+      go.style.marginBottom = '8px';
+      go.addEventListener('click', function () {
+        var r = Recap.generateSchedule({});
+        var back = go.parentNode && go.parentNode.parentNode;
+        if (back && back.parentNode) back.parentNode.removeChild(back);
+        if (window.Sim) Sim.invalidate();
+        render();
+        toast('Wrote ' + r.weeks + ' week' + (r.weeks === 1 ? '' : 's') +
+              (r.skipped.length ? ', kept ' + r.skipped.length + ' already played' : ''));
+      });
+      modal('Generate a full round robin?',
+        'Ten teams over ' + S.league.regularSeasonWeeks + ' weeks: a complete ' +
+        'round robin (everyone plays everyone once in nine weeks), then the first ' +
+        'five rounds again with the order swapped.\n\nAny week that already has ' +
+        'results is left exactly as it is — this cannot overwrite a played week.', go);
+    });
+    c.appendChild(gen);
+
+    var auto = el('button', 'btn', 'Auto-pair remaining'); auto.style.marginTop = '8px';
+    auto.addEventListener('click', function () {
+      var used = {}; Store.getMatchups(week).forEach(function (p) { used[p[0]] = 1; used[p[1]] = 1; });
+      var free = S.teams.filter(function (t) { return !used[t.id]; });
+      while (free.length > 1) Store.addMatchup(week, free.shift().id, free.shift().id);
+      render();
+    });
+    c.appendChild(auto);
+    root.appendChild(c);
+
+    /* sync + diagnostics */
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h2', null, 'Stats feed'));
+    var m = S.weekMeta[String(week)];
+    c2.appendChild(el('p', 'muted', m && m.synced
+      ? ('Week ' + week + ': ' + m.games + ' games, ' + (m.allFinal ? 'all final' : 'in progress') +
+         ', ' + m.matched + ' of ' + m.rostered + ' rostered players matched.' + (m.estFG ? ' Field-goal distances estimated for some kickers.' : ''))
+      : ('Week ' + week + ' has not been synced. Tap Sync week at the top.')));
+    if (m && m.synced && m.reused !== undefined) {
+      c2.appendChild(el('p', 'muted', 'Last sync fetched ' + m.fetched + ' box score' +
+        (m.fetched === 1 ? '' : 's') + ' and reused ' + m.reused +
+        ' already-final game' + (m.reused === 1 ? '' : 's') +
+        (m.failed ? ', ' + m.failed + ' failed' : '') + '. ' +
+        (m.bookSize || 0) + ' players are in the league book.'));
+    }
+    if (m && m.feedWarn) {
+      var fw = el('p', null, 'FEED ALARM: ' + m.feedWarn);
+      fw.style.color = 'var(--bad)';
+      c2.appendChild(fw);
+    }
+    var st = el('button', 'btn', 'Run feed self-test');
+    st.addEventListener('click', selfTest);
+    c2.appendChild(st);
+    if (m && m.unmatched && m.unmatched.length) {
+      var d = el('details');
+      d.appendChild(el('summary', null, m.unmatched.length + ' rostered players had no stat line ▾'));
+      d.appendChild(el('p', 'muted', m.unmatched.join(', ')));
+      d.appendChild(el('p', 'muted', 'Normal for players who did not play, were inactive, or are on bye. If a starter is here every week, his name may not match ESPN’s spelling — drop and re-add him with the exact ESPN name.'));
+      c2.appendChild(d);
+    }
+    root.appendChild(c2);
+
+    root.appendChild(scoringCard());
+    root.appendChild(aiCard());
+    root.appendChild(usageCard());
+    addSafe(root, 'Lineup alerts', alertCard);
+    root.appendChild(liveCard());
+
+    /* screen fit */
+    var cs = el('div', 'card');
+    cs.appendChild(el('h2', null, 'Screen fit'));
+    var ins = window.__insets || { seen: false, t: 0, b: 0 };
+    cs.appendChild(el('p', 'muted', ins.seen
+      ? ('Detected system bars: ' + Math.round(ins.t) + 'px at the top, ' +
+         Math.round(ins.b) + 'px at the bottom. The header and tab bar are padded by that much.')
+      : 'The app has not received inset sizes from Android. Using the sliders below.'));
+    [['adjTop', 'Extra top padding'], ['adjBot', 'Extra bottom padding']].forEach(function (f) {
+      var lab = el('label', 'f', f[1] + ': ' + (S.settings[f[0]] || 0) + 'px');
+      var rng = el('input'); rng.type = 'range'; rng.min = '0'; rng.max = '80'; rng.step = '2';
+      rng.value = String(S.settings[f[0]] || 0);
+      rng.style.width = '100%';
+      rng.addEventListener('input', function () {
+        S.settings[f[0]] = Number(this.value);
+        lab.textContent = f[1] + ': ' + this.value + 'px';
+        applyAdjust();
+      });
+      rng.addEventListener('change', function () { Store.save(); });
+      cs.appendChild(lab); cs.appendChild(rng);
+    });
+    var rz = el('button', 'btn sm', 'Reset both to 0');
+    rz.addEventListener('click', function () {
+      S.settings.adjTop = 0; S.settings.adjBot = 0; Store.save(); applyAdjust(); render();
+    });
+    cs.appendChild(rz);
+    cs.appendChild(el('p', 'hint', 'If the top or bottom is still clipped, drag these until it sits right. ' +
+      'The value is saved and applied every launch.'));
+    root.appendChild(cs);
+
+    /* player database */
+    var cdb = el('div', 'card');
+    cdb.appendChild(el('h2', null, 'Player database'));
+    var dm = PlayerDB.meta();
+    cdb.appendChild(el('p', 'muted', dm.count + ' players · ' +
+      (dm.updated ? 'refreshed ' + dm.updated.slice(0, 10) : 'bundled with the app, never refreshed') +
+      '. Used by roster search so you never type a position or team by hand.'));
+    var rb = el('button', 'btn pri', jobRunning('db') ? 'Refreshing…' : 'Refresh from ESPN (needs internet)');
+    rb.disabled = jobRunning('db');
+    rb.addEventListener('click', function () {
+      rb.disabled = true; rb.textContent = 'Refreshing…';
+      jobStart('db', 'Player database: starting…');
+      PlayerDB.refresh(function (done, total, ab) {
+        jobStep(done >= total ? 'Player database: saving…'
+                              : ('Player database: ' + ab + '  ' + done + '/' + total),
+                Math.round(done * 100 / total));
+      }).then(function (r) {
+        jobEnd();
+        var msg = r.added || r.updated
+          ? (r.total + ' players · ' + r.added + ' new, ' + r.updated + ' changed')
+          : (r.total + ' players · already up to date');
+        render();
+        if (r.failed.length) modal('Player database', msg + '\n\nThese teams failed every route:\n  ' +
+          r.failed.join('\n  ') + '\n\nEverything else was saved. Each entry lists what every ' +
+          'route returned, so the cause is in there.');
+        else toast(msg, 6000);
+      }).catch(function (e) {
+        jobEnd(); rb.disabled = false;
+        toast('Refresh failed: ' + (e && e.message ? e.message : e), 8000);
+        render();
+      });
+    });
+    cdb.appendChild(rb);
+    /* If the player database ever carries one man twice under two spellings
+       AND the two copies name different NFL teams, one of them has a wrong bye
+       week — and in a league with no auto-substitution a wrong bye is a zero.
+       PlayerDB.init() collapses them; this says so rather than letting the
+       merge be silent. */
+    var dup = (PlayerDB.meta().dupes || []);
+    if (dup.length) {
+      var dw = el('div', 'card');
+      dw.appendChild(el('h2', null, 'Duplicate players merged'));
+      dw.appendChild(el('p', 'muted', dup.length + ' player' + (dup.length > 1 ? 's are' : ' is') +
+        ' in the database twice under two spellings, and the copies disagree about ' +
+        'the NFL team — so one of them has the wrong bye week. They have been ' +
+        'merged into one, but check the team is right before you rely on the bye.'));
+      dup.forEach(function (d) {
+        dw.appendChild(el('div', 'kv')).innerHTML =
+          '<span>' + esc(d.name) + ' / ' + esc(d.alt) + ' (' + esc(d.pos) + ')</span><b>' +
+          esc(d.teams.join(' vs ')) + '</b>';
+      });
+      cdb.appendChild(dw);
+    }
+    var dg = el('button', 'btn'); dg.textContent = 'Diagnose a team'; dg.style.marginTop = '8px';
+    dg.addEventListener('click', function () {
+      textModal('Diagnose a team', 'Which NFL team code? For example ARI, KC, WSH.',
+                'ARI', 'Test it', function (raw) {
+      var ab = String(raw || '').toUpperCase().trim();
+      if (!ab) return;
+      if (PlayerDB.TEAMS.indexOf(ab) < 0) { toast('Unknown code: ' + ab); return; }
+      dg.disabled = true; dg.textContent = 'Testing ' + ab + '…';
+      PlayerDB.diagnose(ab).then(function (txt) {
+        dg.disabled = false; dg.textContent = 'Diagnose a team';
+        modal('Route test · ' + ab, txt +
+          '\n\nEach line is one way of asking ESPN for that roster. ' +
+          'Send this to Claude — it says exactly which routes your network allows.');
+      }).catch(function (e) {
+        dg.disabled = false; dg.textContent = 'Diagnose a team';
+        modal('Route test failed', String(e && e.message ? e.message : e));
+      });
+      });
+    });
+    cdb.appendChild(dg);
+    root.appendChild(cdb);
+
+    /* backup */
+    var c3 = el('div', 'card');
+    c3.appendChild(el('h2', null, 'Backup'));
+    var ab = S.settings.autoBackupAt;
+    c3.appendChild(el('p', 'muted', 'Everything lives on this phone, saved the moment you change it. ' +
+      'An invisible safety copy is kept automatically after every sync and every 10 edits — ' +
+      'it never shows up in Downloads or a file manager, and the oldest ones are cleared out ' +
+      'once there are more than 8, only after a new one finishes writing' +
+      (ab ? ' — last one ' + ab.slice(0, 16).replace('T', ' ') + '.' : '.')));
+    var ex = el('button', 'btn pri', 'Export backup');
+    ex.addEventListener('click', function () {
+      var js = Store.exportJSON();
+      var fn = 'fftracker-backup-w' + week + '.json';
+      if (window.Native && Native.export) { Native.export(fn, js); toast('Saved to Downloads: ' + fn); }
+      else {
+        textModal('Copy this backup', 'Select all and copy. This is your whole season — ' +
+          js.length.toLocaleString() + ' characters. Keep it somewhere you can paste from.',
+          js, 'Done', function () { });
+      }
+    });
+    c3.appendChild(ex);
+    var im = el('button', 'btn'); im.textContent = 'Import backup'; im.style.marginTop = '8px';
+    im.addEventListener('click', function () {
+      textModal('Import a backup',
+        'Paste a backup JSON. Nothing is replaced until it has been checked, so a ' +
+        'bad paste cannot damage the season you have now.',
+        '', 'Import it', function (txt) {
+        if (!txt || !txt.trim()) return;
+        try { Store.importJSON(txt); S = Store.get(); renderTop(); toast('Imported'); }
+        catch (e) { modal('That backup was not usable', String(e && e.message ? e.message : e) +
+          '\n\nNothing was changed — the season you had is still here.'); }
+      });
+    });
+    c3.appendChild(im);
+    var rb = el('button', 'btn'); rb.textContent = 'Restore from auto-backup'; rb.style.marginTop = '8px';
+    rb.addEventListener('click', function () {
+      if (!(window.Native && Native.backupList)) { toast('No auto-backups on this device'); return; }
+      var list;
+      try { list = JSON.parse(Native.backupList() || '[]'); } catch (e) { list = []; }
+      if (!list.length) { toast('No auto-backups yet'); return; }
+      dialog('Restore from auto-backup',
+        'These are the invisible safety copies this app kept on its own — the ' +
+        'newest ' + list.length + ' shown first. Nothing changes until you pick ' +
+        'one and confirm.',
+        function (box, row, close) {
+        list.forEach(function (b) {
+          var d = new Date(b.mtime);
+          var btn = el('button', 'btn');
+          btn.style.cssText = 'display:block;width:100%;margin-bottom:6px;text-align:left';
+          btn.textContent = d.toLocaleString() + '  ·  ' + Math.round(b.size / 1024) + ' KB';
+          btn.addEventListener('click', function () {
+            close();
+            confirmModal('Restore this backup?',
+              'This replaces everything currently on screen with the snapshot ' +
+              'from ' + d.toLocaleString() + '. The season you have now is not ' +
+              'touched until you confirm.',
+              'Restore', function () {
+              var txt = Native.backupLoad(b.name);
+              if (!txt) { toast('Could not read that backup'); return; }
+              try { Store.importJSON(txt); S = Store.get(); renderTop(); toast('Restored'); }
+              catch (e) { modal('That backup was not usable', String(e && e.message ? e.message : e)); }
+            }, true);
+          });
+          box.appendChild(btn);
+        });
+        var cancel = el('button', 'btn', 'Cancel');
+        cancel.addEventListener('click', close);
+        row.appendChild(cancel);
+      });
+    });
+    c3.appendChild(rb);
+    var rs = el('button', 'btn dan'); rs.textContent = 'Reset to drafted rosters'; rs.style.marginTop = '8px';
+    rs.addEventListener('click', function () {
+      confirmModal('Wipe everything?',
+        'This deletes every lineup, every synced week and every transaction, and ' +
+        'reloads the ten drafted rosters. Export a backup first if you are not sure.',
+        'Wipe it', function () {
+        Store.resetToSeed(seed); S = Store.get(); renderTop(); toast('Reset');
+      }, true);
+    });
+    c3.appendChild(rs);
+    var tx = el('details');
+    tx.appendChild(el('summary', null, 'Transactions (' + S.transactions.length + ') ▾'));
+    S.transactions.slice(0, 40).forEach(function (t) {
+      tx.appendChild(el('div', 'kv')).innerHTML =
+        '<span>' + esc(t.at.slice(0, 10)) + ' ' + esc(t.type) + ' ' + esc(t.player) + '</span><b>' + esc(t.team) + '</b>';
+    });
+    c3.appendChild(tx);
+    root.appendChild(c3);
+
+    var ver = el('div', 'card');
+    ver.appendChild(el('h2', null, 'About'));
+    ver.appendChild(el('p', 'muted', 'League Tracker v' +
+      (window.APP_VERSION || '?') + ' · season ' + S.settings.season +
+      ' · ' + Store.allPlayers().length + ' rostered players'));
+    root.appendChild(ver);
+  }
+  function nameOf(id) { var t = Store.team(id); return t ? t.name : id; }
+
+  /* ---------- Data: scoring rules, in full, computed not claimed ---------- */
+  function scoringCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Scoring rules'));
+    c.appendChild(el('p', 'muted',
+      'Every line below is read out of the live scoring engine, not typed into ' +
+      'this screen — so if the app pays something different from what you see ' +
+      'here, that is impossible rather than merely unlikely. Ground truth is ' +
+      'RULES_2026.md, transcribed from your league\'s rules sheet.'));
+
+    Scoring.describe().forEach(function (grp) {
+      var d = el('details');
+      d.appendChild(el('summary', null, grp.title + ' ▾'));
+      grp.rows.forEach(function (r) {
+        var kv = el('div', 'kv');
+        kv.appendChild(el('span', null, r[0]));
+        kv.appendChild(el('b', null, r[1]));
+        d.appendChild(kv);
+      });
+      c.appendChild(d);
+    });
+
+    var audit = Scoring.selfAudit();
+    var ad = el('details');
+    ad.appendChild(el('summary', null,
+      'Live check: ' + audit.pass + '/' + audit.total + ' worked examples ' +
+      (audit.pass === audit.total ? 'agree' : 'DISAGREE') + ' ▾'));
+    audit.cases.forEach(function (x) {
+      var kv = el('div', 'kv');
+      kv.appendChild(el('span', x.ok ? null : 'warnText', x.pos + ' · ' + x.name));
+      kv.appendChild(el('b', null, (x.ok ? '' : 'got ' + x.got + ' want ') + x.exp));
+      ad.appendChild(kv);
+    });
+    ad.appendChild(el('p', 'hint',
+      'These run on your phone every time you open this screen. Each one is a ' +
+      'full stat line for a position, scored by the same code that scores real ' +
+      'games, checked against arithmetic done by hand off the rules sheet.'));
+    c.appendChild(ad);
+
+    /* the single genuine ambiguity in the rules image */
+    var lab = el('label', 'f', 'Kick/punt return TD scored by an individual player');
+    var sel = el('select');
+    sel.appendChild(new Option('Goes to the D/ST only (matches the rules sheet)', 'no'));
+    sel.appendChild(new Option('Also pays the returning player +6', 'yes'));
+    sel.value = S.settings.individualReturnTD ? 'yes' : 'no';
+    sel.addEventListener('change', function () {
+      S.settings.individualReturnTD = this.value === 'yes';
+      Scoring.configure({ individualReturnTD: S.settings.individualReturnTD });
+      Store.save(); render();
+      toast('Return-TD rule updated — every week recomputes');
+    });
+    c.appendChild(lab); c.appendChild(sel);
+    c.appendChild(el('p', 'hint',
+      'Your rules sheet prints "Kickoff/Punt return TD +6" under Defense/ST, so ' +
+      'the default gives it to the D/ST. If RTSports also credits the returner, ' +
+      'switch this — the app records return touchdowns either way, so nothing ' +
+      'needs re-syncing.'));
+
+    c.appendChild(el('p', 'hint',
+      'Not modelled: the three league-wide +5 bonuses for longest completion, ' +
+      'reception and rush are awarded once per week across the whole league and ' +
+      'cannot be derived from a box score alone. Tap any player on the Live tab ' +
+      'to add one by hand as a labelled adjustment.'));
+    return c;
+  }
+
+  /* ---------- Data: Claude ---------- */
+  function aiCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Claude reasoning (optional)'));
+    c.appendChild(el('p', 'muted',
+      'With an Anthropic API key, Sync advice has Claude search current news for ' +
+      'every player on your roster — practice reports, designations, suspensions, ' +
+      'snap restrictions — and adjust each projection with its reasoning shown ' +
+      'and sourced. Without a key everything else still works; only this layer ' +
+      'is skipped. The key is stored on this phone and sent only to Anthropic.'));
+
+    var lab = el('label', 'f', 'API key');
+    var inp = el('input'); inp.type = 'password';
+    inp.setAttribute('autocomplete', 'off'); inp.setAttribute('autocorrect', 'off');
+    inp.setAttribute('autocapitalize', 'none'); inp.setAttribute('spellcheck', 'false');
+    inp.placeholder = 'sk-ant-…';
+    inp.value = S.settings.aiKey || '';
+    inp.addEventListener('change', function () {
+      S.settings.aiKey = this.value.trim(); Store.save();
+      toast(S.settings.aiKey ? 'Key saved' : 'Key cleared');
+    });
+    c.appendChild(lab); c.appendChild(inp);
+
+    /* ---- model pickers (v3.3) ------------------------------------------
+     * Was a free-text box, which cannot tell a typo from a retired model id —
+     * both come back as the same 404 in the middle of a sync. A hard-coded
+     * list would go stale instead. So the list is fetched from GET /v1/models
+     * with the key that is already here, cached in settings, and always ends
+     * with a Custom row so a model newer than the cache stays reachable. */
+    c.appendChild(modelPicker('Main model — used for the players that matter',
+      'aiModel', Ai.DEFAULT_MODEL));
+    c.appendChild(modelPicker('Routine model — the cheap pass over settled players',
+      'aiCheapModel', Ai.CHEAP_MODEL));
+
+    var refresh = el('button', 'btn sm', 'Refresh the model list');
+    var mstamp = el('p', 'hint', modelListNote());
+    refresh.addEventListener('click', function () {
+      refresh.disabled = true; refresh.textContent = 'Asking Anthropic…';
+      Ai.listModels().then(function (list) {
+        S = Store.get();
+        refresh.disabled = false; refresh.textContent = 'Refresh the model list';
+        toast(list.length + ' models available');
+        render();
+      })['catch'](function (e) {
+        refresh.disabled = false; refresh.textContent = 'Refresh the model list';
+        mstamp.textContent = 'Could not fetch the list: ' + ((e && e.message) ? e.message : e) +
+          '  ·  the picker still works and Custom always does.';
+      });
+    });
+    var mrow = el('div', 'dbrow'); mrow.appendChild(refresh);
+    c.appendChild(mrow); c.appendChild(mstamp);
+
+    /* ---- what a sync is allowed to spend (v2.4) ------------------------- */
+    var dlab = el('label', 'f', 'How much to research each sync');
+    var dsel = el('select');
+    [['smart', 'Smart — only players whose answer could change (default)'],
+     ['full',  'Full — every player, every sync (the old behaviour)'],
+     ['cheap', 'Cheap — smart, on the cheaper model']].forEach(function (o) {
+      var op = el('option', null, o[1]); op.value = o[0];
+      if ((S.settings.aiDepth || 'smart') === o[0]) op.selected = true;
+      dsel.appendChild(op);
+    });
+    dsel.addEventListener('change', function () {
+      S.settings.aiDepth = this.value; Store.save(); render();
+    });
+    c.appendChild(dlab); c.appendChild(dsel);
+
+    var flab = el('label', 'f', 'A clear verdict stays good for (days)');
+    var finp = el('input'); finp.type = 'number'; finp.min = '0.5'; finp.step = '0.5';
+    finp.value = String(S.settings.aiFreshDays === undefined ? 3 : S.settings.aiFreshDays);
+    finp.addEventListener('change', function () {
+      var v = parseFloat(this.value);
+      S.settings.aiFreshDays = (isFinite(v) && v > 0) ? v : 3; Store.save();
+    });
+    c.appendChild(flab); c.appendChild(finp);
+    c.appendChild(el('p', 'hint',
+      'A web search costs roughly what ten thousand input tokens cost, so what ' +
+      'a sync spends is decided almost entirely by how many players it searches ' +
+      'for. On Smart, anyone carrying an injury designation, anyone whose verdict ' +
+      'is stale or was not clear, anyone whose workload just changed and anyone ' +
+      'never checked is researched exactly as before. Players who came back ' +
+      'clear a day ago, and players already settled by a bye or an OUT, are not ' +
+      'paid for twice — their previous verdict is shown with its own date. The ' +
+      'fixed half of the prompt is cached, so a second sync in the same few ' +
+      'minutes re-reads it at a tenth of the price.'));
+
+    var t = el('button', 'btn pri', 'Test the key');
+    t.addEventListener('click', function () {
+      if (!Ai.configured()) { modal('No key', 'Paste an API key above first.'); return; }
+      t.disabled = true; t.textContent = 'Testing…';
+      Ai.test().then(function (msg) {
+        t.disabled = false; t.textContent = 'Test the key';
+        modal('Key works', msg);
+      }).catch(function (e) {
+        t.disabled = false; t.textContent = 'Test the key';
+        modal('Key test failed', (e && e.message ? e.message : String(e)) +
+          '\n\nA 401 means the key is wrong or revoked. A 404 naming the model ' +
+          'means the model string needs updating in the field above.');
+      });
+    });
+    c.appendChild(t);
+
+    var p = el('button', 'btn'); p.textContent = 'Show the exact prompt'; p.style.marginTop = '8px';
+    p.addEventListener('click', function () {
+      var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var team = Store.team(S.league.me), players = [];
+      var proj = Recommend.projectAll(week, S.league.me, opp);
+      proj.forEach(function (x) {
+        players.push({ name: x.p.name, pos: x.p.pos, nfl: x.p.nfl, opp: x.opp || '',
+                       onBye: x.onBye, proj: x.base, feedStatus: x.h.label });
+      });
+      modal('Prompt sent to Claude', Ai.buildPrompt({
+        week: week, season: S.settings.season,
+        today: new Date().toISOString().slice(0, 10), players: players
+      }));
+    });
+    c.appendChild(p);
+    return c;
+  }
+
+  /* ---------- Data: what the key has cost ----------
+   * There is no endpoint a normal API key can call to ask how much credit is
+   * left — Anthropic's Usage and Cost API needs an ADMIN key, which can read
+   * the whole organisation's spend and manage keys, and does not belong typed
+   * into a phone. So this counts what the app spent itself, from the usage each
+   * response reports about itself, and says plainly that it is doing that. */
+  function usageCard() {
+    Usage.load();
+    var t = Usage.totals();
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Claude spend'));
+
+    if (!t.calls) {
+      c.appendChild(el('p', 'muted',
+        'Nothing spent yet. Every Claude call reports its own token and search ' +
+        'counts, so once you run Sync advice this becomes an exact running ' +
+        'total of what the tracker has cost.'));
+    } else {
+      var big = el('div', 'bigfig', Usage.money(t.spend));
+      c.appendChild(big);
+      c.appendChild(el('p', 'muted',
+        t.calls + ' call' + (t.calls === 1 ? '' : 's') + ' · ' + t.syncs + ' advice sync' +
+        (t.syncs === 1 ? '' : 's') + ' · ' + t.searches + ' web searches · since ' +
+        new Date(t.since).toISOString().slice(0, 10)));
+
+      if (t.budget) {
+        var bar = el('div', 'bar'); bar.style.height = '10px'; bar.style.marginTop = '10px';
+        var fill = el('i');
+        fill.style.width = Math.max(1, t.pct) + '%';
+        fill.style.background = t.pct > 90 ? 'var(--bad)' : (t.pct > 70 ? 'var(--accent)' : 'var(--good)');
+        bar.appendChild(fill);
+        c.appendChild(bar);
+        var kv = el('div', 'kv'); kv.style.marginTop = '6px';
+        kv.appendChild(el('span', null, Usage.money(t.remaining) + ' left of ' +
+          Usage.money(t.budget)));
+        kv.appendChild(el('b', null, Math.round(t.pct) + '% used'));
+        c.appendChild(kv);
+        if (t.syncsLeft !== null) {
+          c.appendChild(el('p', 'muted', 'At ' + Usage.money(t.perSync) +
+            ' per sync, that is about ' + t.syncsLeft + ' more advice syncs — ' +
+            'roughly ' + Math.floor(t.syncsLeft / 1) + ' weeks at one a week.'));
+        }
+      }
+
+      if (t.last) {
+        c.appendChild(el('p', 'muted', 'Last call: ' + t.last.what + ' · ' +
+          Usage.money(t.last.cost) + ' · ' + t.last.tokensIn + ' in, ' +
+          t.last.tokensOut + ' out, ' + t.last.searches + ' searches'));
+      }
+
+      var h = el('details');
+      h.appendChild(el('summary', null, 'every call ▾'));
+      Usage.history(25).forEach(function (x) {
+        var r = el('div', 'kv');
+        r.appendChild(el('span', null,
+          new Date(x.at).toISOString().slice(5, 16).replace('T', ' ') + '  ' + x.what));
+        r.appendChild(el('b', null, Usage.money(x.cost)));
+        h.appendChild(r);
+      });
+      c.appendChild(h);
+    }
+
+    var lab = el('label', 'f', 'Credit you loaded onto the key (US$, 0 to hide the meter)');
+    var inp = el('input'); inp.type = 'number'; inp.step = '1'; inp.min = '0';
+    inp.value = String(S.settings.aiBudget || 0);
+    inp.addEventListener('change', function () {
+      S.settings.aiBudget = Number(this.value) || 0; Store.save(); render();
+    });
+    c.appendChild(lab); c.appendChild(inp);
+
+    var rd = el('details');
+    rd.appendChild(el('summary', null, 'prices used for this estimate ▾'));
+    var R = t.rates;
+    [['rate_inPerM', 'Input, per million tokens', R.inPerM],
+     ['rate_outPerM', 'Output, per million tokens', R.outPerM],
+     ['rate_cacheReadPerM', 'Cached input read, per million', R.cacheReadPerM],
+     ['rate_cacheWritePerM', 'Cache write, per million', R.cacheWritePerM],
+     ['rate_searchPer1000', 'Web search, per 1000', R.searchPer1000]].forEach(function (f) {
+      var l = el('label', 'f', f[1]);
+      var i2 = el('input'); i2.type = 'number'; i2.step = '0.01'; i2.min = '0';
+      i2.value = String(f[2]);
+      i2.addEventListener('change', function () {
+        S.settings[f[0]] = Number(this.value) || 0; Store.save(); render();
+      });
+      rd.appendChild(l); rd.appendChild(i2);
+    });
+    rd.appendChild(el('p', 'hint',
+      'Defaults are Claude Sonnet 5\'s published prices' +
+      (t.usingDefaults ? '' : ' (you have changed these)') +
+      '. They are editable because prices and model names both change, and a ' +
+      'wrong number baked into the app would be worse than one you can correct. ' +
+      'If you switch models on the card above, update these to match.'));
+    c.appendChild(rd);
+
+    var rs = el('button', 'btn sm dan'); rs.textContent = 'Reset the meter';
+    rs.style.marginTop = '8px';
+    rs.addEventListener('click', function () {
+      confirmModal('Zero the spend total?',
+        'Resets this app\'s running estimate only. It does not touch your API key and ' +
+        'it does not touch your actual Anthropic balance.', 'Zero it', function () {
+        Usage.reset(); render(); toast('Meter reset');
+      });
+    });
+    c.appendChild(rs);
+
+    c.appendChild(el('p', 'hint',
+      'This counts THIS APP ONLY. There is no way for an ordinary API key to ' +
+      'ask Anthropic what its balance is — that needs an admin key, which can ' +
+      'read your whole organisation and manage keys, so the app deliberately ' +
+      'does not want one. If you spend the key anywhere else, this reads low. ' +
+      'The authoritative number is always the Anthropic Console.'));
+    return c;
+  }
+
+  /* ---------- Data: lineup alerts (v2.7) ----------
+   * The only feature in the app that does anything while the app is closed. */
+  function alertCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Lineup alerts'));
+    var have = !!(window.Native && Native.alertsSet);
+    if (!have) {
+      c.appendChild(el('p', 'muted',
+        'This build of the shell has no alarm bridge — reinstall the current APK ' +
+        'to get alerts. Everything else works as normal.'));
+      return c;
+    }
+    var st = {};
+    try { st = JSON.parse(Native.alertsStatus() || '{}'); } catch (e) { st = {}; }
+
+    c.appendChild(el('p', 'muted',
+      'Before kickoff, this checks your starting lineup with the app closed and ' +
+      'tells you if a starter is on a bye, has been ruled OUT or doubtful, or if ' +
+      'a slot is empty. Sunday at the time you set, and Thursday at 4pm for the ' +
+      'night game. It is deliberately narrow: only things that are certain and ' +
+      'expensive. Everything that needs judgement stays in the Advice tab where ' +
+      'the reasoning can be shown.'));
+
+    var row = el('div', 'kv');
+    var lab = el('label', 'chk');
+    var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!st.on;
+    var hr = el('input'); hr.type = 'number'; hr.min = '0'; hr.max = '23';
+    hr.value = String(st.hour === undefined ? 11 : st.hour);
+    hr.style.width = '70px';
+    var mn = el('input'); mn.type = 'number'; mn.min = '0'; mn.max = '59';
+    mn.value = String(st.minute === undefined ? 30 : st.minute);
+    mn.style.width = '70px';
+    function apply() {
+      /* raw bridge calls: if the Java side throws, an unguarded call escapes
+         the click handler to window.onerror, which replaces the whole screen
+         with a stack trace. alertsStatus above was already guarded; these two
+         were not. */
+      var ok = false;
+      try {
+        ok = Native.alertsSet(!!cb.checked, parseInt(hr.value, 10) || 0,
+                              parseInt(mn.value, 10) || 0);
+      } catch (e) {
+        toast('The alarm bridge failed: ' + ((e && e.message) ? e.message : e), 7000);
+        return;
+      }
+      toast(ok ? (cb.checked ? 'Alerts on' : 'Alerts off') : 'Could not set the alarm');
+    }
+    cb.addEventListener('change', apply);
+    hr.addEventListener('change', apply);
+    mn.addEventListener('change', apply);
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' Check my lineup on Sunday at'));
+    c.appendChild(lab);
+    row.appendChild(hr); row.appendChild(el('span', null, ':')); row.appendChild(mn);
+    c.appendChild(row);
+    c.appendChild(el('p', 'hint',
+      'The alarm uses a half-hour window rather than an exact time, so it needs ' +
+      'no special permission from you — set it comfortably before the early ' +
+      'kickoff, not at one minute to.'));
+
+    var t = el('button', 'btn pri', 'Run the check now');
+    t.addEventListener('click', function () {
+      var r;
+      try { r = Native.alertsTest(); }
+      catch (e) {
+        modal('The check could not run', ((e && e.message) ? e.message : String(e)) +
+          '\n\nNothing else is affected — every other tab still works.');
+        return;
+      }
+      modal('Lineup check', r + '\n\nA notification was posted as well. If you ' +
+        'did not see one, Android is blocking notifications for this app — ' +
+        'turn them on in Settings → Apps → League Tracker.');
+      render();
+    });
+    c.appendChild(t);
+
+    if (st.lastRun) {
+      c.appendChild(el('p', 'muted', 'Last automatic check: ' +
+        new Date(st.lastRun).toLocaleString() + ' — ' + (st.lastResult || 'all clear')));
+    }
+    return c;
+  }
+
+  /* ---------- Data: live + projections ---------- */
+  function liveCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Live updating'));
+    c.appendChild(el('p', 'muted',
+      'While a game is in progress the app re-pulls the box scores on its own, ' +
+      'so the Live tab and your matchup total move without you touching Sync. ' +
+      'It checks the scoreboard first and only pulls box scores when something ' +
+      'is actually being played. Status right now: ' + liveText() + '.'));
+
+    var togg = el('button', 'btn' + (S.settings.liveRefresh ? ' pri' : ''),
+      S.settings.liveRefresh ? 'Live updating: ON' : 'Live updating: OFF');
+    togg.addEventListener('click', function () {
+      S.settings.liveRefresh = !S.settings.liveRefresh; Store.save();
+      startLive(); render();
+    });
+    c.appendChild(togg);
+
+    var lab = el('label', 'f', 'Refresh every: ' + (S.settings.liveEvery || 45) + ' seconds');
+    var rng = el('input'); rng.type = 'range'; rng.min = '20'; rng.max = '300'; rng.step = '5';
+    rng.value = String(S.settings.liveEvery || 45); rng.style.width = '100%';
+    rng.addEventListener('input', function () {
+      S.settings.liveEvery = Number(this.value);
+      lab.textContent = 'Refresh every: ' + this.value + ' seconds';
+    });
+    rng.addEventListener('change', function () { Store.save(); startLive(); });
+    c.appendChild(lab); c.appendChild(rng);
+    c.appendChild(el('p', 'hint',
+      'Faster is not better here — a box score does not change more than about ' +
+      'once a minute, and each refresh is sixteen requests on a full Sunday.'));
+
+    var pm = Projections.meta();
+    c.appendChild(el('h2', null, 'Projection feed'));
+    c.appendChild(el('p', 'muted', pm.count
+      ? (pm.count + ' players indexed, ' + pm.weekly + ' with a week-' + pm.week +
+         ' line, via the ' + pm.route + ' route.')
+      : (pm.error ? ('Not working yet: ' + pm.error) : 'Not loaded yet.')));
+    var pt = el('button', 'btn', 'Test the projection feed');
+    pt.addEventListener('click', function () {
+      pt.disabled = true; pt.textContent = 'Testing…';
+      Projections.selfTest(S.settings.season, week).then(function (txt) {
+        pt.disabled = false; pt.textContent = 'Test the projection feed';
+        modal('Projection feed test', txt +
+          '\n\nThis pulls ESPN\'s projected stat lines and re-scores them under ' +
+          'your league\'s rules. The QB numbers should look high — a completion ' +
+          'is a point here, which nobody else\'s scoring does.');
+        render();
+      }).catch(function (e) {
+        pt.disabled = false; pt.textContent = 'Test the projection feed';
+        modal('Projection feed failed', String(e && e.message ? e.message : e));
+      });
+    });
+    c.appendChild(pt);
+    return c;
+  }
+
+  /* ---------- sync ---------- */
+  function syncWeek() { doSync({ quiet: false }); }
+  function doSync(opts) {
+    var quiet = !!(opts && opts.quiet);
+    if (busy) return Promise.resolve(null);
+    busy = true; renderHeader();
+    if (!quiet) jobStart('sync', 'Week ' + week + ': loading schedule…');
+    function step(t, p) { if (!quiet) jobStep(t, p); }
+    var season = S.settings.season, allLines = [], oppMap = {}, twoPtSeen = 0, stSource = 'groups';
+    var meta = { games: 0, allFinal: true, estFG: false, inProgress: 0 };
+    return Espn.weekGames(season, week, week > 18 ? 3 : 2).then(function (games) {
+      meta.games = games.length;
+      games.forEach(function (g) {
+        /* who plays whom, recorded every sync: the advice engine's matchup term
+           and the lineup auto-fill both need it, and it is free here */
+        if (g.teams.length === 2) {
+          oppMap[g.teams[0].abbr] = g.teams[1].abbr;
+          oppMap[g.teams[1].abbr] = g.teams[0].abbr;
+        }
+      });
+
+      /* ---- what actually has to be fetched -------------------------------
+       * A FINAL game cannot change again. Through v2.2 every poll refetched
+       * every game anyway, so a 4pm Sunday refresh at 45s was pulling ten
+       * settled box scores over cellular for nothing. Final results are kept
+       * for the session and reused; anything still moving is refetched.
+       * The cache is per season+week and is memory only — a cold start does
+       * one honest full sync, which is right. */
+      if (gcache.season !== season || gcache.week !== week) {
+        gcache = { season: season, week: week, byId: {} };
+      }
+      var want = [], reused = 0;
+      games.forEach(function (g) {
+        if (g.state === 'pre') { meta.allFinal = false; return; }
+        if (g.state !== 'post') { meta.allFinal = false; meta.inProgress++; }
+        var c = gcache.byId[g.id];
+        if (c && c.final && g.state === 'post') { reused++; return; }
+        want.push(g);
+      });
+      meta.reused = reused; meta.fetched = want.length;
+      if (!want.length) step('Week ' + week + ': every game already final', 100);
+
+      /* Three at a time: the Java side runs a 3-thread pool that used to sit
+         two-thirds idle while the page waited for one box score at a time. */
+      return Espn.pool(want, 3, function (g) {
+        return Espn.gameStats(g.id).then(function (r) {
+          gcache.byId[g.id] = { final: g.state === 'post', r: r };
+          return r;
+        });
+      }, function (n, total) {
+        step('Week ' + week + ': box score ' + n + ' of ' + total +
+             (reused ? ' · ' + reused + ' final reused' : ''),
+             Math.round(n * 100 / Math.max(1, total)));
+      }).then(function () {
+        var perGame = [], failed = 0;
+        games.forEach(function (g) {
+          var c = gcache.byId[g.id];
+          if (c && c.r) perGame.push({ g: g, r: c.r });
+          else if (g.state !== 'pre') failed++;
+        });
+        meta.failed = failed;
+        return perGame;
+      });
+    }).then(function (perGame) {
+      var byName = {}, i;
+      /* Index rostered players by DEF code and by every spelling of the name.
+         This used to be an exact normalised match, so a roster that said
+         "Kenneth Gainwell" against an ESPN box score that says "Kenny" matched
+         NOTHING and he scored 0.0 for the week, silently. */
+      Store.allPlayers().forEach(function (x) {
+        var pl = x.player;
+        if (pl.pos === 'DEF') { byName['DEF:' + pl.nfl] = pl.id; return; }
+        var v = Names.variants(pl.name), j;
+        for (j = 0; j < v.length; j++) byName[v[j]] = pl.id;
+      });
+      var stats = Store.getStats(week), matched = 0, seenPid = {};
+      /* wipe this week's lines so a re-sync is idempotent */
+      Object.keys(stats).forEach(function (k) { delete stats[k]; });
+
+      perGame.forEach(function (pg) {
+        var r = pg.r, key;
+        twoPtSeen += r.twoPtCredited || 0;
+        if (r.flags.stFromScoringPlays) stSource = 'scoring plays';
+        for (key in r.players) {
+          if (!Object.prototype.hasOwnProperty.call(r.players, key)) continue;
+          var L = r.players[key].line;
+          if (L.kick && L.kick.est) meta.estFG = true;
+          allLines.push({ key: key, line: L, abbr: r.players[key].abbr });
+          var pid = byName[key];
+          if (pid) {
+        if (keepAdj[pid]) L.manualAdj = keepAdj[pid];
+        stats[pid] = L; seenPid[pid] = 1; matched++;
+      }
+        }
+        var ab;
+        for (ab in r.teamAgg) {
+          if (!Object.prototype.hasOwnProperty.call(r.teamAgg, ab)) continue;
+          var dpid = byName['DEF:' + ab];
+          if (dpid) { stats[dpid] = Espn.dstLine(r.teamAgg[ab]); seenPid[dpid] = 1; matched++; }
+        }
+      });
+
+      /* league-wide longest-play bonuses, only once every game is final */
+      if (meta.allFinal && allLines.length) {
+        var qbKey = null, bestLong = -1;
+        perGame.forEach(function (pg) {
+          var k2;
+          for (k2 in pg.r.players) {
+            if (!Object.prototype.hasOwnProperty.call(pg.r.players, k2)) continue;
+            var pl = pg.r.players[k2];
+            if (pl.line.rec && pl.line.rec.long > bestLong) {
+              bestLong = pl.line.rec.long;
+              qbKey = pg.r.teamPrimaryQB[pl.abbr] || null;
+            }
+          }
+        });
+        Scoring.applyWeeklyBonuses(allLines, qbKey);
+      }
+
+      /* ---- the league book ------------------------------------------------
+       * Everything ESPN reported, scored under THIS league's rules, not only
+       * the rostered players. The free-agent board and the usage trend read it
+       * and never touch the network. Compact by design. */
+      var book = {};
+      perGame.forEach(function (pg) {
+        var k3;
+        for (k3 in pg.r.players) {
+          if (!Object.prototype.hasOwnProperty.call(pg.r.players, k3)) continue;
+          var P3 = pg.r.players[k3], L3 = P3.line, u = L3.use || {};
+          book[k3] = { n: P3.name, t: P3.abbr,
+                       p: Math.round(Scoring.score(L3).total * 10) / 10,
+                       pa: u.patt || 0, cr: u.car || 0, tg: u.tgts || 0 };
+        }
+        var ab2;
+        for (ab2 in pg.r.teamAgg) {
+          if (!Object.prototype.hasOwnProperty.call(pg.r.teamAgg, ab2)) continue;
+          book['DEF:' + ab2] = { n: ab2 + ' D/ST', t: ab2,
+            p: Math.round(Scoring.score(Espn.dstLine(pg.r.teamAgg[ab2])).total * 10) / 10,
+            pa: 0, cr: 0, tg: 0 };
+        }
+      });
+      Store.setBook(week, book);
+
+      /* ---- the feed-shape canary -----------------------------------------
+       * Two independent alarms, because the expensive failure here is silent.
+       * 1. a scoring label ESPN renamed — pick() would answer 0 forever.
+       * 2. coverage collapsing: rostered players whose NFL team played this
+       *    week but who came back with nothing. A name-matching change looks
+       *    exactly like this and costs real points before anyone notices. */
+      var shapeMissing = [];
+      perGame.forEach(function (pg) {
+        (pg.r.shape ? pg.r.shape.missing : []).forEach(function (m) {
+          if (shapeMissing.indexOf(m) < 0) shapeMissing.push(m);
+        });
+      });
+      var expected = 0;
+      Store.allPlayers().forEach(function (x) {
+        var ab3 = String(x.player.nfl || '').toUpperCase();
+        if (ab3 && oppMap[ab3] !== undefined) expected++;
+      });
+      var feedWarn = '';
+      if (shapeMissing.length) {
+        feedWarn = 'ESPN is no longer sending ' + shapeMissing.join(', ') +
+                   ' — those points are being read as zero.';
+      } else if (expected >= 20 && matched < Math.round(expected * 0.75)) {
+        feedWarn = 'only ' + matched + ' of ' + expected +
+                   ' rostered players whose team played were matched — the feed or the name matching has changed.';
+      }
+
+      var unmatched = [];
+      Store.allPlayers().forEach(function (x) { if (!seenPid[x.player.id]) unmatched.push(x.player.name); });
+      var prevOpp = S.weekMeta[String(week)] ? S.weekMeta[String(week)].opponents : null;
+      S.weekMeta[String(week)] = {
+        synced: true, at: new Date().toISOString(), games: meta.games,
+        allFinal: meta.allFinal, estFG: meta.estFG, matched: matched,
+        inProgress: meta.inProgress, twoPt: twoPtSeen, stSource: stSource,
+        rostered: Store.allPlayers().length, unmatched: unmatched,
+        opponents: (prevOpp && Object.keys(prevOpp).length) ? prevOpp : oppMap,
+        expected: expected, feedWarn: feedWarn, shapeMissing: shapeMissing,
+        fetched: meta.fetched, reused: meta.reused, failed: meta.failed,
+        bookSize: Object.keys(book).length
+      };
+      S.settings.lastSync = new Date().toISOString();
+      live.at = Date.now(); live.inProgress = meta.inProgress;
+      Store.save();
+      /* only spend a Downloads write on a settled week — a live poll every 45s
+         would otherwise fill the folder with near-identical copies */
+      if (!quiet || meta.allFinal) Store.autoBackup(true);
+      autoFillWeek(week);
+      /* projections and measured spread both just changed */
+      if (window.Sim) Sim.invalidate();
+      busy = false; if (!quiet) jobEnd();
+      render();
+      if (!quiet) {
+        toast('Week ' + week + ': ' + matched + ' players scored' +
+              (meta.allFinal ? ' (final)' : ' (live)'));
+      }
+      return meta;
+    }).catch(function (e) {
+      busy = false; if (!quiet) jobEnd();
+      var raw = (e && e.message) ? e.message : String(e);
+      /* "you are offline" and "the feed is broken" are the same exception at
+         the socket and completely different sentences to read. */
+      var off = !!(window.Native && Native.online && !Native.online());
+      live.err = off ? 'no connection — everything already synced still works' : raw;
+      render();
+      if (!quiet) {
+        toast(off ? 'No connection. Scores, standings, the League tab and advice ' +
+                    'from the last sync all still work.'
+                  : 'Sync failed: ' + raw, 8000);
+      }
+      return null;
+    });
+  }
+
+  function selfTest() {
+    toast('Testing feed against a known 2025 game…', 30000);
+    Espn.gameStats('401772636').then(function (r) {
+      var names = Object.keys(r.players), lines = [];
+      lines.push('players parsed: ' + names.length);
+      lines.push('teams: ' + Object.keys(r.teamAgg).join(', '));
+      lines.push('scores found: ' + r.flags.scoresFound + ' ' + JSON.stringify(r.teamScore));
+      lines.push('FG from play-by-play: ' + r.flags.fgFromPlays + ' (' + r.fgs.length + ' kicks)');
+      var k, sample = null;
+      for (k in r.players) { if (r.players[k].line.pass.cmp > 5) { sample = k; break; } }
+      if (sample) {
+        var sc = Scoring.score(r.players[sample].line);
+        lines.push('QB ' + r.players[sample].name + ' -> ' + fmt(sc.total) + ' league pts');
+        lines.push('  ' + sc.parts.slice(0, 5).map(function (p) { return p.label; }).join(', '));
+      }
+      var ab; for (ab in r.teamAgg) {
+        var d = Scoring.score(Espn.dstLine(r.teamAgg[ab]));
+        lines.push('DST ' + ab + ' -> ' + fmt(d.total));
+      }
+      modal('Feed self-test', lines.join('\n'));
+    }).catch(function (e) { modal('Feed self-test failed', (e && e.stack) ? e.stack : String(e)); });
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    var atEntry = curScroll();
+    grabFocus();
+    renderHeader();
+    var root = $('view'); root.innerHTML = '';
+    /* A screen that throws must not leave a stack trace where the app was:
+       whatever was already built stays on screen and the failure is named. */
+    try {
+      if (view === 'live') viewLive(root);
+      else if (view === 'lineups') viewLineups(root);
+      else if (view === 'rosters') viewRosters(root);
+      else if (view === 'standings') viewStandings(root);
+      else if (view === 'league') viewLeague(root);
+      else if (view === 'advice') viewAdvice(root);
+      else viewData(root);
+    } catch (e) {
+      var bad = el('div', 'card warn');
+      bad.appendChild(el('h2', null, 'This screen hit an error'));
+      bad.appendChild(el('p', null, (e && e.message) ? e.message : String(e)));
+      bad.appendChild(el('p', 'muted', 'Every other tab still works, and nothing ' +
+        'has been lost — the season is on disk and Data → Export a backup will ' +
+        'still write it out.'));
+      root.appendChild(bad);
+    }
+    paintJob();
+    var y;
+    if (view !== lastView) y = scrollMem[view] || 0;   /* tab switch: resume */
+    else if (keepScroll !== null) y = keepScroll;      /* caller asked for it */
+    else y = atEntry;                                  /* same view: stay put */
+    lastView = view; keepScroll = null;
+    applyScroll(y);
+    restoreFocus();
+  }
+  /* for the few places that genuinely SHOULD go back to the top: a week
+     change, or a fresh import. Everything else must not. */
+  function renderTop() { keepScroll = 0; render(); }
+
+  /* One <select> over the cached model list plus a Custom escape hatch, bound
+     to a settings key. Two of these exist and they must behave identically, so
+     they are one function rather than two copies. */
+  function modelListNote() {
+    var at = S.settings.aiModelListAt;
+    var n = (S.settings.aiModelList || []).length;
+    if (!n) {
+      return 'Showing a small built-in list. Tap refresh with a key set and the ' +
+             'app will ask Anthropic what is actually available to your account.';
+    }
+    return n + ' models, fetched ' + (at ? new Date(at).toLocaleString() : 'earlier') +
+           '. The list is cached, so the picker works offline.';
+  }
+  function modelPicker(labelText, settingKey, fallbackId) {
+    var wrap = el('div');
+    wrap.appendChild(el('label', 'f', labelText));
+    var cur = S.settings[settingKey] ? String(S.settings[settingKey]).trim() : '';
+    var list = Ai.cachedModels();
+    var sel = el('select');
+    sel.setAttribute('data-fk', 'model|' + settingKey);
+    var o0 = el('option', null, 'Default (' + fallbackId + ')'); o0.value = '';
+    sel.appendChild(o0);
+    var known = false, i;
+    for (i = 0; i < list.length; i++) {
+      var op = el('option', null, list[i].display_name === list[i].id
+        ? list[i].id : (list[i].display_name + '  —  ' + list[i].id));
+      op.value = list[i].id;
+      if (cur && cur === list[i].id) { op.selected = true; known = true; }
+      sel.appendChild(op);
+    }
+    var oc = el('option', null, 'Custom…'); oc.value = '__custom__';
+    if (cur && !known) oc.selected = true;
+    sel.appendChild(oc);
+
+    var box = el('input'); box.type = 'text';
+    box.setAttribute('autocapitalize', 'none'); box.setAttribute('spellcheck', 'false');
+    box.setAttribute('data-fk', 'modelCustom|' + settingKey);
+    box.placeholder = 'exact model id';
+    box.value = (cur && !known) ? cur : '';
+    box.style.marginTop = '6px';
+    box.style.display = (cur && !known) ? 'block' : 'none';
+    box.addEventListener('change', function () {
+      S.settings[settingKey] = this.value.trim(); Store.save();
+      toast(S.settings[settingKey] ? ('Using ' + S.settings[settingKey]) : 'Back to default');
+    });
+
+    sel.addEventListener('change', function () {
+      if (this.value === '__custom__') { box.style.display = 'block'; box.focus(); return; }
+      box.style.display = 'none';
+      S.settings[settingKey] = this.value; Store.save();
+      toast(this.value ? ('Using ' + this.value) : ('Using the default, ' + fallbackId));
+    });
+    wrap.appendChild(sel); wrap.appendChild(box);
+    return wrap;
+  }
+
+
+  document.addEventListener('DOMContentLoaded', boot);
+})();

@@ -1,0 +1,22 @@
+{
+"Tim":{"S":[["QB","Jalen Hurts"],["RB","James Cook"],["RB","Chase Brown"],["WR","Zay Flowers"],["WR","Emeka Egbuka"],["WR","Jameson Williams"],["TE","Harold Fannin Jr."],["FLEX","Carnell Tate"],["K","Cameron Dicker"],["DEF","Pittsburgh Steelers"]],
+"B":[["RB","Bhayshul Tuten"],["WR","Makai Lemon"],["WR","Jakobi Meyers"],["RB","J.K. Dobbins"],["QB","Tyler Shough"],["TE","Kenyan Sadik"],["WR","Calvin Ridley"]]},
+"Jose/Brandon":{"S":[["QB","Drake Maye"],["RB","Breece Hall"],["RB","Cam Skattebo"],["WR","CeeDee Lamb"],["WR","Justin Jefferson"],["WR","Rashee Rice"],["TE","George Kittle"],["FLEX","Ladd McConkey"],["K","Harrison Meavis"],["DEF","Baltimore Ravens"]],
+"B":[["QB","Jaxson Dart"],["RB","Tony Pollard"],["RB","Aaron Jones"],["RB","Jonathon Brooks"],["WR","Jalen Coker"],["TE","Hunter Henry"],["WR","KC Concepcion"]]},
+"My team":{"S":[["QB","Matthew Stafford"],["RB","Jonathan Taylor"],["RB","D'Andre Swift"],["WR","Chris Olave"],["WR","Davante Adams"],["WR","Michael Wilson"],["TE","Trey McBride"],["FLEX","Wan'Dale Robinson"],["K","Ka'imi Fairbairn"],["DEF","Seattle Seahawks"]],
+"B":[["QB","Bo Nix"],["WR","Deebo Samuel Sr."],["RB","Jaylen Warren"],["RB","Kenneth Gainwell"],["RB","Tyrone Tracy Jr."],["TE","Dalton Schultz"],["WR","Jauan Jennings"]]},
+"Tugdude":{"S":[["QB","Patrick Mahomes"],["RB","Kenneth Walker III"],["RB","Jeremiyah Love"],["WR","Amon-Ra St. Brown"],["WR","D.J. Moore"],["WR","Jaylen Waddle"],["TE","Tucker Kraft"],["FLEX","Jadarian Price"],["K","Jake Bates"],["DEF","Houston Texans"]],
+"B":[["WR","Alec Pierce"],["RB","Rhamondre Stevenson"],["QB","Jared Goff"],["WR","Matthew Golden"],["TE","Mark Andrews"],["WR","Jalen McMillan"],["RB","Woody Marks"]]},
+"Mike/Jamie":{"S":[["QB","Jayden Daniels"],["RB","Ashton Jeanty"],["RB","Omarion Hampton"],["WR","Jaxon Smith-Njigba"],["WR","DeVonta Smith"],["WR","Tee Higgins"],["TE","Travis Kelce"],["FLEX","David Montgomery"],["K","Eddy Pineiro"],["DEF","Philadelphia Eagles"]],
+"B":[["RB","Quinshon Judkins"],["WR","Jordyn Tyson"],["WR","Jayden Reed"],["TE","Jake Ferguson"],["QB","Brock Purdy"],["RB","Josh Jacobs"],["WR","Rashid Shaheed"]]},
+"JR":{"S":[["QB","Lamar Jackson"],["RB","Christian McCaffrey"],["RB","Saquon Barkley"],["WR","Malik Nabers"],["WR","Marvin Harrison Jr."],["WR","Courtland Sutton"],["TE","Kyle Pitts Sr."],["FLEX","Brian Thomas Jr."],["K","Will Reichard"],["DEF","Cleveland Browns"]],
+"B":[["WR","Romeo Doubs"],["WR","Jerry Jeudy"],["WR","Xavier Worthy"],["WR","Omar Cooper Jr."],["WR","Khalil Shakir"],["RB","Kyle Monangai"],["QB","Baker Mayfield"]]},
+"Dustin":{"S":[["QB","Joe Burrow"],["RB","Jahmyr Gibbs"],["RB","Travis Etienne Jr."],["WR","Drake London"],["WR","A.J. Brown"],["WR","Mike Evans"],["TE","Sam LaPorta"],["FLEX","Jordan Addison"],["K","Brandon Aubrey"],["DEF","New England Patriots"]],
+"B":[["RB","Jacory Croskey-Merritt"],["QB","Caleb Williams"],["TE","Dallas Goedert"],["WR","Josh Downs"],["RB","Tyler Allgeier"],["WR","Jalen Nailor"],["RB","Zach Charbonnet"]]},
+"Mo":{"S":[["QB","Dak Prescott"],["RB","Derrick Henry"],["RB","Javonte Williams"],["WR","Ja'Marr Chase"],["WR","Garrett Wilson"],["WR","Rome Odunze"],["TE","Brock Bowers"],["FLEX","Christian Watson"],["K","Chris Boswell"],["DEF","Denver Broncos"]],
+"B":[["WR","Michael Pittman Jr."],["WR","Stefon Diggs"],["WR","Quentin Johnston"],["RB","Rachaad White"],["TE","T.J. Hockenson"],["RB","Tank Bigsby"],["RB","Brian Robinson Jr."]]},
+"Steve":{"S":[["QB","Trevor Lawrence"],["RB","De'Von Achane"],["RB","Kyren Williams"],["WR","Puka Nacua"],["WR","George Pickens"],["WR","Terry McLaurin"],["TE","Tyler Warren"],["FLEX","TreVeyon Henderson"],["K","Harrison Butker"],["DEF","Los Angeles Rams"]],
+"B":[["WR","D.K. Metcalf"],["RB","RJ Harvey"],["WR","Parker Washington"],["TE","Isaiah Likely"],["QB","Daniel Jones"],["RB","Isiah Pacheco"],["WR","Odell Beckham Jr."]]},
+"Ron":{"S":[["QB","Josh Allen"],["RB","Bijan Robinson"],["RB","Bucky Irving"],["WR","Nico Collins"],["WR","Tetairoa McMillan"],["WR","Luther Burden III"],["TE","Colston Loveland"],["FLEX","Chuba Hubbard"],["K","Jason Myers"],["DEF","Minnesota Vikings"]],
+"B":[["WR","Chris Godwin"],["QB","Justin Herbert"],["RB","Rico Dowdle"],["TE","Dalton Kincaid"],["RB","Blake Corum"],["WR","Cooper Kupp"],["RB","Jordan Mason"]]}
+}
