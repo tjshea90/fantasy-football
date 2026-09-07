@@ -416,6 +416,35 @@
   /* ---- the one button -------------------------------------------------- */
   /* Everything the advice depends on, refreshed in one pass, with the AI step
      last so a key problem never costs the deterministic upgrade. */
+  /* Fold a set of Claude verdicts into the cache and persist it.
+   *
+   * MERGE, NEVER REPLACE. The carried-forward verdicts have to survive a sync
+   * that only researched four players, or the triage saving would cost the
+   * reasoning for everybody else.
+   *
+   * Shared with the offline Claude-app handoff (handoff.js), which produces
+   * exactly the same `r` shape through Ai.normalizeAdvice. An imported file
+   * therefore lands in the same place, with the same merge semantics, as a
+   * live API sync — there is no second path to keep in step. */
+  function mergeAi(week, r, stats) {
+    var merged = {}, k;
+    if (aiCache.byName) for (k in aiCache.byName) {
+      if (Object.prototype.hasOwnProperty.call(aiCache.byName, k)) merged[k] = aiCache.byName[k];
+    }
+    for (k in r.byName) {
+      if (Object.prototype.hasOwnProperty.call(r.byName, k)) merged[k] = r.byName[k];
+    }
+    aiCache = { at: r.at || Date.now(), byName: merged,
+                summary: r.summary || '', model: r.model || '', week: week,
+                count: r.count,
+                truncated: !!r.truncated,
+                researched: (stats && stats.researched) || 0,
+                carried: (stats && stats.carried) || 0,
+                settled: (stats && stats.settled) || 0 };
+    cacheSave(AIKEY, aiCache);
+    return aiCache;
+  }
+
   function syncAll(week, teamId, onStep) {
     var S = root.Store.get(), report = { steps: [] };
     function step(t, p) { if (onStep) onStep(t, p); }
@@ -453,11 +482,67 @@
         report.steps.push('Claude: no API key set — skipped');
         return opp;
       }
-      var dp = defenseProfile(week);
       var t = root.Store.team(teamId);
-      var research = [], settled = [], carried = [], carriedNames = [];
-      var fresh = freshMs();
-      var deep = root.Ai.depth() === 'full';
+      var _c = rosterContext(week, teamId, opp);
+      var research = _c.players, settled = _c.settled, carried = _c.carriedList;
+
+      if (!research.length) {
+        report.steps.push('Claude: nothing has changed since the last check — ' +
+          carried.length + ' verdicts carried forward, nothing spent');
+        return opp;
+      }
+
+      step('Claude is reading this week\'s news…', 62);
+      return root.Ai.ask(_c, function (t2, p2) { step(t2, p2); }).then(function (r) {
+        mergeAi(week, r, { researched: research.length, carried: carried.length,
+                           settled: settled.length });
+        report.steps.push('Claude researched ' + r.count + ' of ' + t.players.length +
+          ' (' + carried.length + ' carried forward, ' + settled.length +
+          ' already settled) with ' + r.searchBudget + ' searches — ' + r.model);
+        if (r.truncated) {
+          report.steps.push('NOTE: Claude\'s answer was cut off at the token limit. ' +
+            'The ' + r.count + ' players that did arrive were kept; the rest were not ' +
+            'updated.');
+        }
+        if (r.spent && root.Usage) {
+          report.steps.push('this call cost ' + root.Usage.money(r.spent.cost) +
+            ' — ' + r.spent.tokensIn + ' in, ' + r.spent.tokensOut + ' out, ' +
+            r.spent.searches + ' web searches');
+        }
+        return opp;
+      }).catch(function (e) {
+        report.steps.push('Claude FAILED: ' + (e && e.message ? e.message : e));
+        return opp;
+      });
+    }).then(function () {
+      step('Done', 100);
+      S.settings.adviceSyncAt = new Date().toISOString();
+      root.Store.save();
+      return report;
+    });
+  }
+
+  /* ---- who is worth asking about, and what the asker needs to know --------
+   * Extracted from syncAll so the offline Claude-app handoff can build the
+   * IDENTICAL context object the live API call is given. If the handoff built
+   * its own, the two would describe different rosters the first time either
+   * changed, and the difference would be invisible until a verdict landed on
+   * the wrong player.
+   *
+   * opts.everyone — research every player rather than the triaged subset.
+   * The handoff sets it, and that is not laziness: triage exists because a web
+   * search costs real money on the API path. When Tj does this in the Claude
+   * app it costs him nothing extra, so asking about the whole roster is
+   * strictly better there. Same code, different economics, stated once. */
+  function rosterContext(week, teamId, opp, opts) {
+    opts = opts || {};
+    var S2 = root.Store.get();
+    var dp = defenseProfile(week);
+    var t = root.Store.team(teamId);
+    var research = [], settled = [], carried = [], carriedNames = [];
+    var fresh = freshMs();
+    var deep = !!opts.everyone ||
+               (root.Ai && root.Ai.depth && root.Ai.depth() === 'full');
 
       /* ---- TRIAGE (v2.4) --------------------------------------------------
        * A web search costs about what ten thousand input tokens cost, so the
@@ -499,52 +584,10 @@
         else { carried.push(p.name); carriedNames.push(p.name); }
       });
 
-      if (!research.length) {
-        report.steps.push('Claude: nothing has changed since the last check — ' +
-          carried.length + ' verdicts carried forward, nothing spent');
-        return opp;
-      }
-
-      step('Claude is reading this week\'s news…', 62);
-      return root.Ai.ask({
-        week: week, season: S.settings.season,
-        today: new Date().toISOString().slice(0, 10),
-        players: research, settled: settled, carried: carriedNames
-      }, function (t2, p2) { step(t2, p2); }).then(function (r) {
-        /* MERGE, never replace: the carried-forward verdicts have to survive a
-           sync that only researched four players, or the saving would cost the
-           reasoning for everybody else. */
-        var merged = {}, k;
-        if (aiCache.byName) for (k in aiCache.byName) {
-          if (Object.prototype.hasOwnProperty.call(aiCache.byName, k)) merged[k] = aiCache.byName[k];
-        }
-        for (k in r.byName) {
-          if (Object.prototype.hasOwnProperty.call(r.byName, k)) merged[k] = r.byName[k];
-        }
-        aiCache = { at: r.at, byName: merged, summary: r.summary,
-                    model: r.model, week: week,
-                    researched: research.length, carried: carried.length,
-                    settled: settled.length };
-        cacheSave(AIKEY, aiCache);
-        report.steps.push('Claude researched ' + r.count + ' of ' + t.players.length +
-          ' (' + carried.length + ' carried forward, ' + settled.length +
-          ' already settled) with ' + r.searchBudget + ' searches — ' + r.model);
-        if (r.spent && root.Usage) {
-          report.steps.push('this call cost ' + root.Usage.money(r.spent.cost) +
-            ' — ' + r.spent.tokensIn + ' in, ' + r.spent.tokensOut + ' out, ' +
-            r.spent.searches + ' web searches');
-        }
-        return opp;
-      }).catch(function (e) {
-        report.steps.push('Claude FAILED: ' + (e && e.message ? e.message : e));
-        return opp;
-      });
-    }).then(function () {
-      step('Done', 100);
-      S.settings.adviceSyncAt = new Date().toISOString();
-      root.Store.save();
-      return report;
-    });
+    return { week: week, season: S2.settings.season,
+             today: new Date().toISOString().slice(0, 10),
+             players: research, settled: settled, carried: carriedNames,
+             carriedList: carried, teamName: t ? t.name : '' };
   }
 
   /* ---- UI -------------------------------------------------------------- */
@@ -813,5 +856,8 @@
   root.Recommend = { render: render, loadNews: loadNews, bestLineup: bestLineup,
                      autoLineup: autoLineup, projectAll: projectAll,
                      opponentsForWeek: opponentsForWeek, syncAll: syncAll,
-                     loadCaches: loadCaches, PRIOR: PRIOR };
+                     loadCaches: loadCaches, PRIOR: PRIOR,
+                     /* the offline Claude-app handoff writes through these */
+                     mergeAi: mergeAi, aiCache: function () { return aiCache; },
+                     rosterContext: rosterContext };
 })(typeof window !== 'undefined' ? window : this);

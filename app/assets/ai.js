@@ -507,40 +507,59 @@
       }
       var j = parseSse(rawText);
       var parsed = jsonOf(textOf(j), { want: 'players', stop: j.stop_reason });
-      var byName = {}, i;
-      var arr = parsed.players || [];
-      for (i = 0; i < arr.length; i++) {
-        var p = arr[i];
-        if (!p || !p.name) continue;
-        byName[root.Names.canon(p.name)] = {
-          status: String(p.status || '').toLowerCase(),
-          willPlay: p.willPlay !== false,
-          adjust: (typeof p.adjust === 'number' && isFinite(p.adjust))
-                  ? Math.max(0, Math.min(1.6, p.adjust)) : 1,
-          confidence: String(p.confidence || 'low').toLowerCase(),
-          reason: String(p.reason || ''),
-          /* stamped so a later sync can carry this verdict forward instead of
-             paying for the same search again — and so the UI can say how old
-             the reasoning it is showing actually is */
-          at: Date.now(), week: ctx.week, model: mdl
-        };
-      }
+      var norm = normalizeAdvice(parsed, ctx, mdl);
+      var byName = norm.byName;
       var spent = null;
       if (root.Usage) spent = root.Usage.record('advice sync', mdl, j.usage);
       return {
         at: Date.now(), model: mdl, byName: byName, searchBudget: budget,
-        summary: String(parsed.summary || ''),
-        count: arr.length,
+        summary: norm.summary,
+        count: norm.count,
         /* A rescued answer is USED but never presented as complete. The
            searches were already paid for, so throwing away the fourteen
            players that did arrive because three did not is the worst of both
            outcomes — but so is letting a partial answer look whole. */
-        truncated: !!parsed._truncated,
+        truncated: norm.truncated,
         asked: n,
         usage: j.usage || null,
         spent: spent
       };
     });
+  }
+
+  /* ---- turning a parsed answer into the app's shape ----------------------
+   * SHARED ON PURPOSE. The API path above and the offline Claude-app handoff
+   * (handoff.js) both end up holding a parsed reply object that has to become
+   * the same in-app records. Two copies of this loop would drift the moment
+   * one of them gained a field — and the failure would be silent, because each
+   * path is exercised separately. One implementation, called twice.
+   * `mdl` is a provenance label, not a request: for the handoff it is
+   * "Claude app (handoff)" so the UI can say where a verdict came from. */
+  function normalizeAdvice(parsed, ctx, mdl) {
+    var byName = {}, i, arr = (parsed && parsed.players) || [];
+    var kept = 0;
+    for (i = 0; i < arr.length; i++) {
+      var p = arr[i];
+      if (!p || !p.name) continue;
+      byName[root.Names.canon(p.name)] = {
+        status: String(p.status || '').toLowerCase(),
+        willPlay: p.willPlay !== false,
+        adjust: (typeof p.adjust === 'number' && isFinite(p.adjust))
+                ? Math.max(0, Math.min(1.6, p.adjust)) : 1,
+        confidence: String(p.confidence || 'low').toLowerCase(),
+        reason: String(p.reason || ''),
+        /* stamped so a later sync can carry this verdict forward instead of
+           paying for the same search again — and so the UI can say how old
+           the reasoning it is showing actually is */
+        at: Date.now(), week: ctx.week, model: mdl
+      };
+      kept++;
+    }
+    return {
+      byName: byName, count: kept,
+      summary: String((parsed && parsed.summary) || ''),
+      truncated: !!(parsed && parsed._truncated)
+    };
   }
 
   /* ==== THE WAIVER WIRE (v3.4) ==========================================
@@ -710,35 +729,7 @@
       /* Which names were actually in the block we sent? Anything else is a
          suggestion the app cannot verify is free in this league, and it is
          labelled that way rather than quietly presented as equivalent. */
-      var known = {}, k, i;
-      for (k in ctx.pool) {
-        if (!Object.prototype.hasOwnProperty.call(ctx.pool, k)) continue;
-        for (i = 0; i < ctx.pool[k].length; i++) {
-          known[root.Names.canon(ctx.pool[k][i].name)] = ctx.pool[k][i];
-        }
-      }
-      var adds = [], arr = parsed.adds || [];
-      for (i = 0; i < arr.length; i++) {
-        var a = arr[i];
-        if (!a || !a.name) continue;
-        var nn = root.Names.canon(a.name);
-        var src = known[nn] || null;
-        adds.push({
-          name: String(a.name),
-          pos: String(a.pos || (src ? src.pos : '')).toUpperCase(),
-          nfl: String(a.nfl || (src ? src.nfl : '')),
-          rank: (typeof a.rank === 'number' && isFinite(a.rank)) ? a.rank : 99,
-          overStarter: String(a.overStarter || ''),
-          confidence: String(a.confidence || 'low').toLowerCase(),
-          why: String(a.why || ''),
-          verified: !!src,                 /* was he in the block we sent? */
-          proj: src ? src.v : null,
-          vor: src ? src.vor : null,
-          bye: src ? src.bye : null,
-          onBye: src ? !!src.onBye : false
-        });
-      }
-      adds.sort(function (x, y) { return x.rank - y.rank; });
+      var adds = normalizeWaivers(parsed, poolIndex(ctx.pool)).adds;
       var spent = null;
       if (root.Usage) spent = root.Usage.record('waiver sync', mdl, j.usage);
       return {
@@ -746,9 +737,53 @@
         adds: adds,
         needs: String(parsed.needs || ''),
         summary: String(parsed.summary || ''),
+        truncated: !!parsed._truncated,
         usage: j.usage || null, spent: spent
       };
     });
+  }
+
+  /* The waiver twin of normalizeAdvice, and shared with handoff.js for the
+     same reason. `known` is the canonical-name index of the pool the app
+     actually sent; anything outside it is a name the app cannot confirm is
+     free in this league, and that distinction is the whole safety property of
+     this screen — it must be computed in exactly one place. */
+  function normalizeWaivers(parsed, known) {
+    var adds = [], arr = (parsed && parsed.adds) || [], i;
+    for (i = 0; i < arr.length; i++) {
+      var a = arr[i];
+      if (!a || !a.name) continue;
+      var src = known[root.Names.canon(a.name)] || null;
+      adds.push({
+        name: String(a.name),
+        pos: String(a.pos || (src ? src.pos : '')).toUpperCase(),
+        nfl: String(a.nfl || (src ? src.nfl : '')),
+        rank: (typeof a.rank === 'number' && isFinite(a.rank)) ? a.rank : 99,
+        overStarter: String(a.overStarter || ''),
+        confidence: String(a.confidence || 'low').toLowerCase(),
+        why: String(a.why || ''),
+        verified: !!src,                 /* was he in the block we sent? */
+        proj: src ? src.v : null,
+        vor: src ? src.vor : null,
+        bye: src ? src.bye : null,
+        onBye: src ? !!src.onBye : false
+      });
+    }
+    adds.sort(function (x, y) { return x.rank - y.rank; });
+    return { adds: adds };
+  }
+
+  /* The canonical-name index of a waiver pool, so handoff.js can build the
+     same `known` map ask/askWaivers builds internally. */
+  function poolIndex(pool) {
+    var known = {}, k, i;
+    for (k in pool) {
+      if (!Object.prototype.hasOwnProperty.call(pool, k)) continue;
+      for (i = 0; i < pool[k].length; i++) {
+        known[root.Names.canon(pool[k][i].name)] = pool[k][i];
+      }
+    }
+    return known;
   }
 
   /* A recap write-up. No web search, no tools, small output: this is the one
@@ -804,5 +839,9 @@
               FALLBACK_MODELS: FALLBACK,
               _staticPrefix: staticPrefix, _rosterBlock: rosterBlock, _parseSse: parseSse, configured: configured, model: model,
               DEFAULT_MODEL: DEFAULT_MODEL, buildPrompt: buildPrompt,
+              /* shared with handoff.js so the offline round trip and the API
+                 path can never disagree about what a reply means */
+              normalizeAdvice: normalizeAdvice, normalizeWaivers: normalizeWaivers,
+              poolIndex: poolIndex, parseAnswer: jsonOf, rulesText: rulesText,
               _jsonOf: jsonOf, _textOf: textOf };
 })(typeof window !== 'undefined' ? window : this);
