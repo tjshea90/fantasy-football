@@ -56,3 +56,6 @@ RELEASE_NOTES.md
 tools/test_integration.js
 app/assets/names.js
 tools/test_names.js
+TASKS.md
+CHECKPOINT.md
+tools/ckpt.sh

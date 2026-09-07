@@ -118,7 +118,16 @@ DONE=$(grep -c '^- \[x\]' LADDER.md); TOT=$(grep -c '^- \[' LADDER.md)
 ZIP="$OUT/FFTracker_v${V}.zip"
 printf '%s | v%s | step %s/%s | %s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$V" "$DONE" "$TOT" "$NOTE" >> BUILDLOG.md
 grep -q '^BUILDLOG.md$' MANIFEST.txt || echo 'BUILDLOG.md' >> MANIFEST.txt
-( cd "$D" && zip -q -r "$ZIP" . -x 'sdk/*' 'build/*' '.git/*' '*.pyc' )
+# THE ZIP CARRIES .git ON PURPOSE (changed 2026-09-07).
+# In Cowork the zip is the only thing that survives the chat, so excluding the
+# history meant a resumed session got the final state of every file and no
+# record of how it got there. If a usage cap lands mid-change, that difference
+# is everything: with the history, `git log` and `git diff` say exactly what was
+# in flight; without it, the next session sees a tree it cannot reason about and
+# re-derives work that was already done. .lastbuild/ is gitignored so the 170 KB
+# APK is not re-stored on every checkpoint — it is added to the zip separately
+# below, which is why it is still in MANIFEST.txt.
+( cd "$D" && zip -q -r "$ZIP" . -x 'sdk/*' 'build/*' '*.pyc' '*.log' '.ckpt/*' )
 # The last known-good APK travels INSIDE the zip too, so a resumed session can
 # hand Tj a working build immediately even before it rebuilds anything.
 if [ -f build/app-release.apk ]; then
