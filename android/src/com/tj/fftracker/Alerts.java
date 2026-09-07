@@ -145,6 +145,32 @@ public class Alerts {
   /* ---- the check ------------------------------------------------------- */
 
   /** Returns the problem text, or "" when the lineup is clean. */
+  /** ESPN kickoff timestamps, e.g. "2026-09-11T00:20Z". Returns 0 on anything
+   *  it cannot read, and every caller treats 0 as "no information" rather than
+   *  as a time — a misparsed kickoff must never invent or suppress an alert.
+   *
+   *  Instant.parse is deliberately not the first choice: ISO_INSTANT wants
+   *  seconds, and ESPN routinely omits them. The seconds are normalised in
+   *  before parsing instead of hoping. */
+  static long parseIso(String s) {
+    if (s == null) return 0;
+    s = s.trim();
+    if (s.length() < 16) return 0;
+    try {
+      // 2026-09-11T00:20Z -> 2026-09-11T00:20:00Z
+      if (s.length() == 17 && s.endsWith("Z")) s = s.substring(0, 16) + ":00Z";
+      java.text.SimpleDateFormat f =
+          new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US);
+      f.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+      String core = s.length() >= 19 ? s.substring(0, 19) : s;
+      java.util.Date d = f.parse(core);
+      return d == null ? 0 : d.getTime();
+    } catch (Throwable t) {
+      try { return java.time.Instant.parse(s).toEpochMilli(); }
+      catch (Throwable t2) { return 0; }
+    }
+  }
+
   public static String check(Context ctx, boolean useNetwork) {
     String raw = readState(ctx);
     if (raw == null) return "";
@@ -203,6 +229,75 @@ public class Alerts {
         problems.add((slots.length - filled) + " starting slot" +
             (slots.length - filled == 1 ? " is" : "s are") + " empty");
       }
+
+      /* ---- games before Sunday (v4.3) -------------------------------------
+       * Tj: "it should also give me alerts that are easy to see about players
+       * on my roster that will be playing before the upcoming NFL Sunday, so I
+       * don't forget to turn in my roster for those players which play early in
+       * the week, usually on Thursday."
+       *
+       * The in-app banner covers him when he opens the app. This covers him
+       * when he does not, which is the case he actually described.
+       *
+       * NO NETWORK IS NEEDED. schedule.js writes the week's kickoff times into
+       * weekMeta[week].games in the same state file this method already reads,
+       * precisely so the alarm can reason about them with no WebView. If the
+       * page has never stored a schedule the block simply does nothing — a
+       * missing kickoff must never manufacture an alert.
+       *
+       * Only players NOT already in the lineup are reported. Someone already
+       * starting on Thursday is not a problem, and an alert that fires for a
+       * lineup that is already correct is an alert that gets swiped away. */
+      try {
+        JSONObject wm = S.optJSONObject("weekMeta");
+        JSONObject wmw = wm == null ? null : wm.optJSONObject(String.valueOf(week));
+        JSONObject gs = wmw == null ? null : wmw.optJSONObject("games");
+        if (gs != null) {
+          java.util.HashSet<String> startingIds = new java.util.HashSet<String>();
+          if (mine != null) {
+            java.util.Iterator<String> si = mine.keys();
+            while (si.hasNext()) startingIds.add(mine.optString(si.next(), ""));
+          }
+          long now = System.currentTimeMillis();
+          List<String> early = new ArrayList<String>();
+          long soonest = 0;
+          for (JSONObject p : byId.values()) {
+            if (p == null) continue;
+            if (startingIds.contains(p.optString("id"))) continue;   // already in
+            JSONObject g = gs.optJSONObject(p.optString("nfl", "").toUpperCase(java.util.Locale.US));
+            if (g == null) continue;
+            String state = g.optString("state", "pre");
+            if (!"pre".equals(state)) continue;                       // started or done
+            long kick = parseIso(g.optString("kick", ""));
+            if (kick <= 0 || kick <= now) continue;                   // past, or unparseable
+            java.util.Calendar c = java.util.Calendar.getInstance();  // the PHONE's zone
+            c.setTimeInMillis(kick);
+            int dow = c.get(java.util.Calendar.DAY_OF_WEEK);          // Sun=1 .. Sat=7
+            // Tue(3) .. Sat(7) are before Sunday. Sunday and Monday are not.
+            if (dow < java.util.Calendar.TUESDAY) continue;
+            early.add(p.optString("name", "") + " (" + p.optString("pos", "") + ")");
+            if (soonest == 0 || kick < soonest) soonest = kick;
+          }
+          if (!early.isEmpty()) {
+            java.util.Calendar c = java.util.Calendar.getInstance();
+            c.setTimeInMillis(soonest);
+            String[] dn = { "", "Sunday", "Monday", "Tuesday", "Wednesday",
+                            "Thursday", "Friday", "Saturday" };
+            StringBuilder e = new StringBuilder();
+            e.append(early.size() == 1 ? "1 player plays " : early.size() + " players play ");
+            e.append("before Sunday and ").append(early.size() == 1 ? "is" : "are")
+             .append(" NOT in your lineup: ");
+            for (int i = 0; i < early.size() && i < 4; i++) {
+              if (i > 0) e.append(", ");
+              e.append(early.get(i));
+            }
+            if (early.size() > 4) e.append(" +").append(early.size() - 4).append(" more");
+            e.append(" — first kickoff ").append(dn[c.get(java.util.Calendar.DAY_OF_WEEK)]);
+            // put it FIRST: it is the only item here with a deadline attached
+            problems.add(0, e.toString());
+          }
+        }
+      } catch (Throwable t) { /* the other checks must still run */ }
 
       if (useNetwork) {
         Map<String, String> inj = injuries();

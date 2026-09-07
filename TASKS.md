@@ -56,17 +56,17 @@ football app which fills in all relevant information in the app."*
 
 ## 3. Game day/time on every roster + early-week alerts
 
-- [ ] 3a. Show the day and time each player plays this week, next to his name,
+- [x] 3a. Show the day and time each player plays this week, next to his name,
       everywhere a player is listed. Easy to read at a glance.
-- [ ] 3b. Refresh often enough that a schedule change shows up, but only ever
+- [x] 3b. Refresh often enough that a schedule change shows up, but only ever
       the current week's games.
-- [ ] 3c. **A loud, unmissable alert for players who play BEFORE Sunday** —
+- [x] 3c. **A loud, unmissable alert for players who play BEFORE Sunday** —
       Thursday, and this week a Wednesday game — naming which players and which
       are recommended to start. → `tools/test_schedule.js`
 
 ## 4. The sweep he asks for every time, done once, thoroughly
 
-- [ ] 4a. Background behaviour: the app must actually sleep. No timers, no
+- [x] 4a. Background behaviour: the app must actually sleep. No timers, no
       network, no CPU when it is not on screen. → `tools/test_lifecycle.js`
 - [ ] 4b. Network: cache anything that cannot change, stop refetching it, and
       keep request rates polite enough that no provider ever rate-limits or

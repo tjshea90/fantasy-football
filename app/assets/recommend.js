@@ -743,6 +743,11 @@
         if (!s.pick) nm.appendChild(el('span', 'muted', 'no eligible player'));
         else {
           nm.appendChild(document.createTextNode(s.pick.p.name));
+          /* the kickoff, on the screen where he decides who to start */
+          if (ctx.gameBadge) {
+            var gbA = ctx.gameBadge(s.pick.p.nfl);
+            if (gbA) nm.appendChild(gbA);
+          }
           nm.appendChild(el('small', null, '  ' + s.pick.p.pos + ' ' + s.pick.p.nfl +
             (s.pick.opp ? ' vs ' + s.pick.opp : '')));
           s.pick.flags.forEach(function (f) {

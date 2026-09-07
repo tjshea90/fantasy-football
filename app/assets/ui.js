@@ -225,6 +225,109 @@
     cb(text, err);
   };
 
+  /* ---------- game-time badges and the pre-Sunday alert (v4.3) ----------
+   * Tj wanted the day and time each player plays sitting next to his name,
+   * everywhere a player is listed, and an alert he cannot miss for the ones
+   * playing before Sunday.
+   *
+   * `gameBadge` returns a <small> to append to any name. It is deliberately
+   * tiny and deliberately colour-coded rather than wordy: on a roster of
+   * seventeen the only thing that must jump out is "this one is not on
+   * Sunday". */
+  function gameBadge(nfl, wk) {
+    if (!window.Schedule) return null;
+    var b = null;
+    try { b = Schedule.badge(nfl, wk === undefined ? week : wk); } catch (e) { return null; }
+    if (!b) return null;
+    var s = el('small', b.early ? 'gEarly' : (b.live ? 'gLive' : (b.done ? 'gDone' : 'gWhen')));
+    s.textContent = '  ' + b.text;
+    s.title = b.opp;
+    return s;
+  }
+
+  /* The alert card. Shown at the top of Live, Lineups and Advice — the three
+     screens he is actually on when he thinks about his lineup — and only when
+     there is something to act on. It leads with the ACTIONABLE case (someone
+     benched who ought to be starting) because "you have players on Thursday"
+     is a reminder and "two of them are on your bench" is the thing that saves
+     a week. */
+  function earlyGameCard() {
+    if (!window.Schedule) return null;
+    var a = null;
+    try {
+      var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      a = Schedule.earlyAlert(week, S.league.me, opp);
+    } catch (e) { return null; }
+    if (!a) return null;
+
+    var urgent = a.shouldStart.length > 0;
+    var c = el('div', 'card ' + (urgent ? 'alertBad' : 'alertWarn'));
+    var when = a.rows[0].when;
+    c.appendChild(el('h2', null, urgent
+      ? '⚠  Set your lineup — ' + a.shouldStart.length + ' recommended player' +
+        (a.shouldStart.length === 1 ? ' is' : 's are') + ' on your bench'
+      : '⏰  You have ' + a.rows.length + ' player' + (a.rows.length === 1 ? '' : 's') +
+        ' playing before Sunday'));
+
+    c.appendChild(el('p', null,
+      'First kickoff is ' + when + (a.hoursLeft <= 48
+        ? '  ·  in about ' + (a.hoursLeft < 1 ? 'under an hour'
+            : a.hoursLeft + ' hour' + (a.hoursLeft === 1 ? '' : 's'))
+        : '') + '. Lineups for these players are due before then.'));
+
+    if (urgent) {
+      c.appendChild(el('div', 'subhd', 'Recommended, but not in your lineup'));
+      a.shouldStart.forEach(function (r) {
+        var row = el('div', 'row');
+        row.appendChild(el('div', 'slot', r.pos));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(r.name));
+        nm.appendChild(el('small', null, '  ' + r.nfl + ' ' + r.opp));
+        row.appendChild(nm);
+        row.appendChild(el('b', 'gEarly', r.when));
+        c.appendChild(row);
+      });
+      var fix = el('button', 'btn pri', 'Use the recommended lineup');
+      fix.style.marginTop = '8px';
+      fix.addEventListener('click', function () {
+        confirmModal('Use the recommended lineup?',
+          'This fills your week ' + week + ' lineup with the best projected legal ' +
+          'lineup, replacing any slots you picked yourself.',
+          'Do it', function () {
+            Store.clearManual(week, S.league.me);
+            var was = S.settings.autoFill; S.settings.autoFill = true;
+            var n = autoFillWeek(week);
+            S.settings.autoFill = was;
+            if (window.Sim) Sim.invalidate();
+            render();
+            toast(n ? n + ' slot' + (n === 1 ? '' : 's') + ' updated' : 'Already set');
+          });
+      });
+      c.appendChild(fix);
+    }
+
+    if (a.starting.length) {
+      c.appendChild(el('div', 'subhd', 'Already starting, playing early'));
+      a.starting.forEach(function (r) {
+        var row = el('div', 'row');
+        row.appendChild(el('div', 'slot', r.slot || r.pos));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(r.name));
+        nm.appendChild(el('small', null, '  ' + r.nfl + ' ' + r.opp));
+        row.appendChild(nm);
+        row.appendChild(el('b', 'gEarly', r.when));
+        c.appendChild(row);
+      });
+    }
+    var others = [];
+    a.benched.forEach(function (r) { if (!r.recommended) others.push(r.name); });
+    if (others.length) {
+      c.appendChild(el('p', 'hint', 'Also on your bench and playing early: ' +
+        others.join(', ') + '. The app is not recommending them this week.'));
+    }
+    return c;
+  }
+
   function handoffCard(opts) {
     /* opts: { title, blurb, build(), apply(text), status() } */
     var c = el('div', 'card');
@@ -353,9 +456,29 @@
       autoFillWeek(week);
       wire(); render();
       startLive();
+      freshenSchedule();
     } catch (e) {
       fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
     }
+  }
+
+  /* Kickoff times, when the live poll is not going to supply them.
+   *
+   * On a Sunday the poll fetches the scoreboard anyway and `Schedule.ingest`
+   * takes the times off that response for free. But on a Tuesday — which is
+   * exactly when the Thursday alert matters most — the poll is on its slow
+   * ten-minute cadence or stopped entirely because the week is final, so
+   * something has to ask. `Schedule.refresh` is a no-op unless the stored copy
+   * is more than three hours old, so calling it on every boot, week change and
+   * resume is a handful of requests a day, not a poll. */
+  function freshenSchedule() {
+    if (!window.Schedule) return;
+    try {
+      var p = Schedule.refresh(week);
+      if (p && p.then) {
+        p.then(function () { render(); })['catch'](function () { /* offline is fine */ });
+      }
+    } catch (e) { /* never block startup for a badge */ }
   }
   function wire() {
     var tabs = document.querySelectorAll('#tabs .tab'), i;
@@ -381,6 +504,7 @@
     autoFillWeek(week);
     startLive();
     renderTop();
+    freshenSchedule();      /* a different week has different kickoffs */
   }
 
   /* ---------- auto-default every lineup ----------
@@ -432,6 +556,10 @@
   function liveTick() {
     if (busy) { scheduleLive(15000); return; }
     Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2).then(function (games) {
+      /* FREE: this response already carries every kickoff time, and before
+         v4.3 they were thrown away. The schedule badges and the pre-Sunday
+         alert cost no extra request because of this line. */
+      if (window.Schedule) { try { Schedule.ingest(week, games); } catch (e) { } }
       var i, inProg = 0, pre = 0, post = 0;
       for (i = 0; i < games.length; i++) {
         if (games[i].state === 'in') inProg++;
@@ -490,6 +618,10 @@
   function appResume() {
     if (!asleep) return;
     asleep = false;
+    /* Coming back after a while is exactly when a flex-scheduling change would
+       have landed, and it is cheap: refresh() only fetches if the stored copy
+       is over three hours old. */
+    freshenSchedule();
     /* A week that is finished stays finished — do not wake a poll for it. */
     var m = S.weekMeta[String(week)];
     if (m && m.synced && m.allFinal) { renderHeader(); return; }
@@ -550,6 +682,9 @@
   /* ---------- LIVE ---------- */
   function viewLive(root) {
     var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
+    /* the pre-Sunday alert goes ABOVE everything on all three lineup-facing
+       screens — it is time-critical and it is the one thing Tj said he forgets */
+    addSafe(root, 'The early-game alert', earlyGameCard);
     var mus = Store.getMatchups(week);
     if (!mus.length) {
       var c = el('div', 'card');
@@ -678,6 +813,7 @@
         nm.appendChild(document.createTextNode(x.player ? x.player.name : '?'));
         var sm = el('small', null, ' ' + (x.player ? x.player.pos + ' ' + x.player.nfl : ''));
         nm.appendChild(sm);
+        if (x.player) { var gb0 = gameBadge(x.player.nfl); if (gb0) nm.appendChild(gb0); }
         if (x.onBye) nm.appendChild(el('span', 'tag out', 'bye'));
         else if (!x.played) nm.appendChild(el('span', 'tag', 'to play'));
       }
@@ -738,6 +874,7 @@
 
   /* ---------- LINEUPS ---------- */
   function viewLineups(root) {
+    addSafe(root, 'The early-game alert', earlyGameCard);
     var head = el('div', 'card');
     head.appendChild(el('h2', null, 'Week ' + week + ' lineups'));
     head.appendChild(el('p', 'muted',
@@ -823,6 +960,13 @@
       var isMan = Store.isManual(week, t.id, k.key);
       if (isMan) manualCount++;
       var lab = el('label', 'f', k.label + (isMan ? '  · yours' : (L[k.key] ? '  · auto' : '')));
+      /* WHEN DOES THE MAN IN THIS SLOT ACTUALLY PLAY? On the Lineups tab this
+         is the single most useful fact on the row: a Thursday starter is a
+         decision with a deadline, and every other slot can wait. */
+      if (L[k.key]) {
+        var lp = Store.playerById(L[k.key]);
+        if (lp) { var lb = gameBadge(lp.nfl); if (lb) lab.appendChild(lb); }
+      }
       var sel = el('select');
       /* stable identity so the re-render can hand focus back to this exact
          slot instead of dropping it on <body> */
@@ -834,7 +978,15 @@
         var usedIn = null, kk;
         for (kk in L) if (L[kk] === p.id && kk !== k.key) usedIn = kk;
         var bye = Number(p.bye) === Number(week) ? ' [BYE]' : '';
-        var o = new Option(p.name + ' (' + p.pos + ' ' + p.nfl + ')' + bye +
+        /* the kickoff goes in the option text too — an <option> cannot carry a
+           styled child, and when you are CHOOSING between two receivers "one
+           of them plays Thursday" is exactly the tiebreak you want in view */
+        var gw = '';
+        if (window.Schedule) {
+          try { var gbb = Schedule.badge(p.nfl, week); if (gbb) gw = '  ' + gbb.text; }
+          catch (e) { gw = ''; }
+        }
+        var o = new Option(p.name + ' (' + p.pos + ' ' + p.nfl + ')' + bye + gw +
                            (usedIn ? '  → ' + usedIn : ''), p.id);
         sel.appendChild(o);
       });
@@ -896,6 +1048,7 @@
         r.appendChild(el('div', 'slot', p.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(p.name));
+        var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
         nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '') +
           (p.projPG ? ' · proj ' + fmt(p.projPG) + '/wk' : '')));
         r.appendChild(nm);
@@ -1625,7 +1778,8 @@
     Recommend.render(root, { week: week, teamId: S.league.me, el: el, table: table,
       fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
       jobEnd: jobEnd, jobRunning: jobRunning, rerender: render,
-      handoffCard: handoffCard, adviceHandoff: adviceHandoff });
+      handoffCard: handoffCard, adviceHandoff: adviceHandoff,
+      gameBadge: gameBadge, earlyGameCard: earlyGameCard });
   }
 
   /* The Advice tab's round trip. Lives here rather than in recommend.js so the

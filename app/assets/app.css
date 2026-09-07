@@ -140,3 +140,21 @@ summary::-webkit-details-marker{display:none}
   font-size:14px}
 .chk input{width:20px;height:20px;accent-color:var(--accent)}
 .row .nm small{white-space:pre-line}
+
+/* ---- game-time badges and the pre-Sunday alert (v4.3) --------------------
+   The badge sits next to a player's name on every screen that lists players.
+   On a seventeen-man roster the ONLY thing that has to jump out is "this one
+   is not on Sunday", so early games are the accent colour and everything else
+   is deliberately quiet — a roster where every row shouts says nothing. */
+.gWhen{color:var(--dim);font-weight:400}
+.gEarly{color:var(--accent);font-weight:700}
+.gLive{color:var(--good);font-weight:700}
+.gDone{color:var(--dim);font-weight:400;opacity:.65}
+/* The alert card. Bordered and tinted rather than merely coloured text,
+   because Tj's complaint is that he FORGETS — this has to survive being
+   scrolled past at a glance. */
+.card.alertWarn{border-color:#6b5216;background:linear-gradient(180deg,#241d0c,var(--panel))}
+.card.alertWarn h2{color:var(--accent)}
+.card.alertBad{border-color:#7a2f2b;background:linear-gradient(180deg,#2a1413,var(--panel))}
+.card.alertBad h2{color:var(--bad)}
+.card.alertBad .subhd{color:var(--bad)}
