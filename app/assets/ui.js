@@ -609,6 +609,13 @@
    * with a short delay (so the screen is current within a couple of seconds)
    * and it re-derives everything from the scoreboard, which is the cheap
    * endpoint. Nothing is queued while asleep, so nothing can pile up. */
+  /* BOTH GUARD ON `S`, not just the visibilitychange listener that calls them.
+   * MainActivity calls window.__appResume() from onResume(), and on a cold
+   * start onResume() can fire after this script has been evaluated but before
+   * DOMContentLoaded has run boot() — at which point `S` does not exist yet and
+   * `S.weekMeta` is a TypeError thrown straight into evaluateJavascript, where
+   * nothing in the app will ever report it. The window is small and it is
+   * exactly the launch path, which is the worst place to have one. */
   function appPause() {
     if (asleep) return;
     asleep = true;
@@ -618,6 +625,7 @@
   function appResume() {
     if (!asleep) return;
     asleep = false;
+    if (!S) return;             /* not booted yet; boot() starts the poll itself */
     /* Coming back after a while is exactly when a flex-scheduling change would
        have landed, and it is cheap: refresh() only fetches if the stored copy
        is over three hours old. */
@@ -631,11 +639,22 @@
     scheduleLive(1500);
     renderHeader();
   }
-  root.__appPause = appPause;
-  root.__appResume = appResume;
-  if (root.document && root.document.addEventListener) {
-    root.document.addEventListener('visibilitychange', function () {
-      if (root.document.hidden) appPause(); else appResume();
+  /* `window`, not `root`. Every OTHER module in this app is
+   * `(function (root) { ... })(window)`, but ui.js is a bare
+   * `(function () { ... })()` — the only `root` in this file is the local view
+   * container inside render() and the view functions. Writing `root.__appPause`
+   * here, out of habit from the other twelve files, is a ReferenceError at
+   * SCRIPT LOAD, which means the app does not boot at all. It is pinned by
+   * test_lifecycle.js, which loads ui.js against a DOM stub for exactly this
+   * class of mistake — nothing else in the suite executes this file. */
+  window.__appPause = appPause;
+  window.__appResume = appResume;
+  if (document.addEventListener) {
+    document.addEventListener('visibilitychange', function () {
+      /* `S` does not exist until boot() runs, and this listener is registered
+         at load time — a visibility change in that window must not throw. */
+      if (!S) return;
+      if (document.hidden) appPause(); else appResume();
     }, false);
   }
 
