@@ -140,6 +140,17 @@ grep -q '^BUILDLOG.md$' MANIFEST.txt || echo 'BUILDLOG.md' >> MANIFEST.txt
 # re-derives work that was already done. .lastbuild/ is gitignored so the 170 KB
 # APK is not re-stored on every checkpoint — it is added to the zip separately
 # below, which is why it is still in MANIFEST.txt.
+# ...and commit AGAIN, immediately before zipping. The first commit above runs
+# before the gates so the tests judge a committed tree; but BUILDLOG.md, VERSION
+# and sometimes MANIFEST.txt are all written AFTER it, so without this the zip
+# still carries a dirty tree and the next session is told it was interrupted.
+if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+  git add -A >/dev/null 2>&1
+  git commit -q -m "ship v$V: $NOTE
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" >/dev/null 2>&1
+  echo "  OK    working tree committed — the zip carries a clean history"
+fi
 ( cd "$D" && zip -q -r "$ZIP" . -x 'sdk/*' 'build/*' '*.pyc' '*.log' '.ckpt/*' )
 # The last known-good APK travels INSIDE the zip too, so a resumed session can
 # hand Tj a working build immediately even before it rebuilds anything.
