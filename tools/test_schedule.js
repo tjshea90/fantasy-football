@@ -214,8 +214,15 @@ console.log('\n-- the app sleeps when it is not on screen --');
   var code = ui.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   ok(/function appPause/.test(code) && /function appResume/.test(code),
      'the page has explicit pause and resume');
-  ok(/root\.__appPause\s*=\s*appPause/.test(code) && /root\.__appResume\s*=\s*appResume/.test(code),
-     'both are exposed to Java by name');
+  /* `window.`, NOT `root.`. This assertion originally read `root.__appPause`,
+     which is what the code said — and what the code said was a ReferenceError
+     at script load, because ui.js has no `root` in scope. The test was pinning
+     the bug. It now pins the fix and fails if the habit comes back. */
+  ok(/window\.__appPause\s*=\s*appPause/.test(code) &&
+     /window\.__appResume\s*=\s*appResume/.test(code),
+     'both are exposed to Java on `window` by name');
+  ok(!/^\s{0,2}root\./m.test(code),
+     'and nothing at ui.js top level touches a `root` that does not exist there');
   ok(/visibilitychange/.test(code),
      'and to the browser, so a screen lock stops the poll even without the Java call');
   var i = code.indexOf('function scheduleLive');
