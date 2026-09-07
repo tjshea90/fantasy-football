@@ -22,9 +22,10 @@ echo "  OK    STATE.md current, manifest agrees"
 # zip could go out with a red suite. That is the same class of hole as v3.0's
 # discarded javac exit status: a check that exists but is not wired to the
 # thing it is supposed to stop.
+# Discovered with a glob, never listed by hand — see tools/ckpt.sh for why a
+# hard-coded list is a hole rather than a convenience.
 FAILED=""
-for T in tools/test_scoring.js tools/test_engine.js tools/test_boot.js \
-         tools/test_integration.js tools/test_names.js tools/check_es2018.js; do
+for T in tools/test_*.js tools/check_es2018.js; do
   [ -f "$T" ] || continue
   if node "$T" >/tmp/ship-test.log 2>&1; then
     echo "  OK    $(basename "$T")"

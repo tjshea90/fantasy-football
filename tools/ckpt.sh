@@ -30,9 +30,14 @@ DID="${1:-}"; NEXT="${2:-}"
 
 # ---- test state, recorded rather than enforced ------------------------------
 # Never gate on this. The point is to capture the state, whatever it is.
+# DISCOVERED, NOT LISTED. A hard-coded list silently stops covering the suite
+# you just added — which is the same class of hole as v3.0's discarded javac
+# exit status and v3.10's ship.sh that never ran the tests at all: a check that
+# exists but is not wired to the thing it is meant to stop. This caught itself
+# within a minute of being written (test_ai.js was added and the gate reported
+# "all 6 suites green" without ever running it).
 PASS=0; FAIL=0; REDS=""
-for T in tools/test_scoring.js tools/test_engine.js tools/test_boot.js \
-         tools/test_integration.js tools/test_names.js tools/check_es2018.js; do
+for T in tools/test_*.js tools/check_es2018.js; do
   [ -f "$T" ] || continue
   if node "$T" >/dev/null 2>&1; then PASS=$((PASS+1)); else FAIL=$((FAIL+1)); REDS="$REDS $(basename "$T" .js)"; fi
 done
