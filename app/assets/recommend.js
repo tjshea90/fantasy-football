@@ -205,7 +205,25 @@
     return (sp > 0 ? cut.slice(0, sp) : cut).replace(/[,;:.\-—]+$/, '') + '…';
   }
 
-  function loadNews(onStep) {
+  /* The injury feed is ~800 records and it is refetched on every advice sync.
+     Practice reports land in the afternoon and designations move on a Friday,
+     not minute to minute — so a 10-minute window costs nothing in accuracy and
+     turns a run of frustrated Sync taps into one request instead of ten. See
+     the longer note on FRESH_MS in projections.js: this is the same defect and
+     the same reasoning, on the second-heaviest feed. */
+  var NEWS_FRESH_MS = 10 * 60 * 1000;
+  function newsFresh() {
+    return !!(newsCache && newsCache.at && !newsCache.error &&
+              (newsCache.count || 0) > 0 &&
+              (Date.now() - newsCache.at) < NEWS_FRESH_MS);
+  }
+  function loadNews(onStep, opts) {
+    if (!(opts && opts.force) && newsFresh()) {
+      newsCache.reused = Math.max(1, Math.round((Date.now() - newsCache.at) / 60000));
+      if (onStep) onStep('Injury report: reusing the copy from ' +
+                         newsCache.reused + ' min ago', 18);
+      return Promise.resolve(newsCache);
+    }
     var url = root.Espn.BASE + '/injuries';
     if (onStep) onStep('Injury report…', 15);
     return root.Espn._httpGet(url).then(function (j) {
@@ -222,6 +240,9 @@
           if (nm) byName[norm(nm)] = { status: st, note: trimNote(det, 600) };
         }
       }
+      /* `reused` is deliberately absent here: a real fetch must not inherit the
+         marker from the last cached read, or the report would claim a fresh
+         pull was recycled. */
       newsCache = { at: Date.now(), byName: byName, count: Object.keys(byName).length };
       cacheSave(NEWSKEY, newsCache);
       return newsCache;
@@ -468,13 +489,17 @@
       return loadNews(null).then(function () { return opp; });
     }).then(function (opp) {
       report.steps.push(newsCache.error ? ('injury feed FAILED: ' + newsCache.error)
-                                        : ((newsCache.count || 0) + ' injury records'));
+                                        : ((newsCache.count || 0) + ' injury records' +
+                                           (newsCache.reused
+                                             ? ' (reused, ' + newsCache.reused + ' min old)'
+                                             : '')));
       step('Projections from ESPN…', 38);
       if (!root.Projections) return opp;
       return root.Projections.refresh(S.settings.season, week, function (t, p) { step(t, p); })
         .then(function (c) {
           report.steps.push(c.error ? ('projections FAILED: ' + c.error)
-                                    : ((c.weekly || 0) + ' week-' + week + ' projections via ' + c.route));
+                                    : ((c.weekly || 0) + ' week-' + week +
+                                       ' projections via ' + c.route));
           return opp;
         });
     }).then(function (opp) {

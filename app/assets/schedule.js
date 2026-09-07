@@ -75,8 +75,33 @@
         };
       }
     }
+    /* ONLY SAVE IF SOMETHING ACTUALLY CHANGED.
+     *
+     * `ingest` is called from the live poll, which on a Sunday runs every 45
+     * seconds. `Store.save()` serialises the ENTIRE season — every team, every
+     * lineup, every scored week and the league book, which carries a row for
+     * every player ESPN reported — and writes it to disk through the bridge.
+     * Doing that every 45 seconds to re-record kickoff times that had not moved
+     * is exactly the kind of background churn Tj asked me to find: disk, CPU
+     * and battery, for no new information.
+     *
+     * The signature is deliberately over the fields that matter (kickoff and
+     * state) rather than a JSON.stringify of the whole map, so a reordered
+     * response does not read as a change. */
+    var sig = [], key;
+    var keys = [];
+    for (key in byTeam) {
+      if (Object.prototype.hasOwnProperty.call(byTeam, key)) keys.push(key);
+    }
+    keys.sort();
+    for (i = 0; i < keys.length; i++) {
+      sig.push(keys[i] + byTeam[keys[i]].kick + byTeam[keys[i]].state);
+    }
+    var joined = sig.join('|');
     m.games = byTeam;
     m.schedAt = Date.now();
+    if (m.schedSig === joined) return byTeam;   /* nothing moved — no write */
+    m.schedSig = joined;
     /* Persisted deliberately: Alerts.java reads this same state file with no
        WebView available, so a kickoff time saved here is a kickoff time the
        background alarm can reason about. */
@@ -97,7 +122,7 @@
   function refresh(week, force) {
     var S = root.Store.get();
     if (!force && !stale(week)) {
-      return root.Promise ? root.Promise.resolve(get(week)) : null;
+      return Promise.resolve(get(week));
     }
     return root.Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2)
       .then(function (games) { return ingest(week, games); });
@@ -148,7 +173,25 @@
    * the app would recommend. That split is the whole point: "you have players
    * on Thursday" is a reminder, "you have players on Thursday and two of them
    * are on your bench" is the thing that saves a week. */
+  /* MEMOISED, because this is not a cheap read. `bestLineup` walks the whole
+     roster through projectOne — projections, matchup, health, the AI cache —
+     and the alert card is built on EVERY render of Live, Lineups and Advice.
+     The Live tab re-renders on every poll tick. The key covers everything that
+     can change the answer: the week, the store generation (any lineup or roster
+     edit bumps it), and when the schedule was last ingested. The minute bucket
+     is there so "is this kickoff still in the future" cannot go stale for
+     longer than a minute. */
+  var _alertMemo = null;
   function earlyAlert(week, teamId, opponents) {
+    var gen = root.Store.generation ? root.Store.generation() : 0;
+    var key = week + '|' + teamId + '|' + gen + '|' + at(week) + '|' +
+              Math.floor(Date.now() / 60000);
+    if (_alertMemo && _alertMemo.key === key) return _alertMemo.val;
+    var val = earlyAlertUncached(week, teamId, opponents);
+    _alertMemo = { key: key, val: val };
+    return val;
+  }
+  function earlyAlertUncached(week, teamId, opponents) {
     var g = get(week);
     if (!g) return null;
     var t = root.Store.team(teamId);

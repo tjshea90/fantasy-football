@@ -267,7 +267,47 @@
   }
 
   var GOOD_ENOUGH = 300;      /* weekly lines that make further routes pointless */
-  function refresh(season, week, onStep) {
+
+  /* HOW LONG A GOOD PROJECTION SET STAYS GOOD (v4.3).
+   *
+   * This is the single heaviest thing the app fetches: up to three ESPN routes
+   * asking for 400 players, plus two Sleeper routes, and the ESPN response is
+   * megabytes. Before this gate, EVERY tap of "Sync advice" refetched all of
+   * it unconditionally.
+   *
+   * That is not a hypothetical waste. When the Claude step failed — which is
+   * exactly what Tj's screenshot shows — the natural response is to tap Sync
+   * again, and every one of those retries pulled the whole projection feed and
+   * the whole injury list down again to reach a step that had nothing to do
+   * with either. A handful of frustrated taps is a burst of multi-megabyte
+   * requests at a public endpoint that ESPN does not owe us, which is precisely
+   * how an app earns a block.
+   *
+   * 20 minutes is chosen so that a retry loop costs one fetch instead of ten,
+   * while a projection set is never more than one commercial break old. The
+   * reuse is REPORTED rather than hidden — this app's rule is that nothing
+   * pretends to be fresher than it is — and `force` exists for the Data tab's
+   * explicit "test the feed", which must always hit the network. */
+  var FRESH_MS = 20 * 60 * 1000;
+
+  function fresh(season, week) {
+    return !!(cache && cache.at && cache.season === season && cache.week === week &&
+              (cache.weekly || 0) > 0 && (Date.now() - cache.at) < FRESH_MS);
+  }
+
+  function refresh(season, week, onStep, opts) {
+    if (!(opts && opts.force) && fresh(season, week)) {
+      var mins = Math.max(1, Math.round((Date.now() - cache.at) / 60000));
+      if (onStep) onStep('Projections: reusing the set from ' + mins + ' min ago', 60);
+      /* a copy, so a caller reading .notes cannot mutate the live cache */
+      var reused = {};
+      for (var k in cache) {
+        if (Object.prototype.hasOwnProperty.call(cache, k)) reused[k] = cache[k];
+      }
+      reused.reused = true;
+      reused.route = cache.route + ' (cached ' + mins + ' min)';
+      return Promise.resolve(reused);
+    }
     var routes = filters(season, week), attempt = 0, notes = [], best = null;
     var base = HOST + season + '/segments/0/leaguedefaults/3?scoringPeriodId=' +
                week + '&view=kona_player_info';
@@ -432,8 +472,11 @@
 
   /* Self-test: prove the endpoint works from THIS phone and that the
      re-scoring is doing what it claims, without needing a synced week. */
+  /* force: true — this button exists to answer "does the feed answer AT ALL",
+     and a cached answer would tell him nothing about the network. It is the one
+     place that must always go out. */
   function selfTest(season, week) {
-    return refresh(season, week, null).then(function (c) {
+    return refresh(season, week, null, { force: true }).then(function (c) {
       var lines = [];
       lines.push('best route: ' + (c.route || 'ALL ROUTES FAILED'));
       lines.push('players indexed: ' + (c.count || 0));
@@ -460,6 +503,7 @@
 
   root.Projections = {
     refresh: refresh, find: find, meta: meta, loadCache: loadCache, missing: missing,
+    fresh: fresh, FRESH_MS: FRESH_MS,
     _ingestSleeper: ingestSleeper, _sleeperRoutes: sleeperRoutes,
     scoreProjected: scoreProjected, selfTest: selfTest, STAT_ID: ID,
     _ingest: ingest

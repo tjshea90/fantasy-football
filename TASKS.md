@@ -67,8 +67,8 @@ football app which fills in all relevant information in the app."*
 ## 4. The sweep he asks for every time, done once, thoroughly
 
 - [x] 4a. Background behaviour: the app must actually sleep. No timers, no
-      network, no CPU when it is not on screen. → `tools/test_lifecycle.js`
-- [ ] 4b. Network: cache anything that cannot change, stop refetching it, and
+      network, no CPU when it is not on screen. → `tools/test_schedule.js` (the sleep block)
+- [x] 4b. Network: cache anything that cannot change, stop refetching it, and
       keep request rates polite enough that no provider ever rate-limits or
       bans. → `tools/test_net.js`
 - [ ] 4c. Whole-app bug sweep: correctness, error paths, ES2018, dead code,
