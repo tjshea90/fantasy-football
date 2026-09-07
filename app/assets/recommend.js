@@ -718,6 +718,13 @@
       'roster and adjust with its reasoning shown. The Claude step searches the ' +
       'web and normally takes 45-120 seconds; the app stays usable throughout, ' +
       'and you can switch tabs without losing it.'));
+    /* The pre-Sunday alert leads the Advice tab as well. This is the screen he
+       opens to decide a lineup, so a Thursday deadline belongs above the
+       advice rather than below them. */
+    if (ctx.earlyGameCard) {
+      try { var eg = ctx.earlyGameCard(); if (eg) host.appendChild(eg); }
+      catch (e) { /* never take the screen down for a reminder */ }
+    }
     host.appendChild(head);
 
     /* The offline round trip sits directly under the Sync card, which is where

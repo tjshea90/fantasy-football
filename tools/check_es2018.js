@@ -1,8 +1,21 @@
 /* Guards the Android 10 / Chromium 77 constraint from BRIEF.md.
  * Strips comments and strings first, so prose about the rule is not a hit. */
 var fs = require('fs');
-var files = ['scoring.js','espn.js','store.js','ui.js','recommend.js','playerdb.js','players.js','seed.js',
-             'projections.js','ai.js','usage.js','sim.js','value.js','recap.js'];
+/* DISCOVERED, NOT LISTED.
+ *
+ * This was a hard-coded array of fourteen filenames. schedule.js and handoff.js
+ * were added in v4.3 and neither was ever checked — the guard reported "all
+ * files ES2018-safe" while silently skipping the two newest files in the app,
+ * which are exactly the ones most likely to carry a modern idiom.
+ *
+ * That is the same hole as v3.0's discarded javac exit status, v3.10's ship.sh
+ * that never ran the tests, and the ckpt.sh suite list fixed earlier today: a
+ * check that exists but is not wired to the thing it is meant to stop. Any new
+ * .js file in app/assets is now checked by existing, with no step to remember. */
+var dir = __dirname + '/../app/assets/';
+var files = fs.readdirSync(dir).filter(function (f) {
+  return /\.js$/.test(f);
+}).sort();
 var BAN = [
   [/[^=!<>+\-*/%&|^,(\[{;:\s]\s*\?\./, 'optional chaining ?.'],
   [/\?\?/, 'nullish coalescing ??'],

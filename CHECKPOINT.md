@@ -1,12 +1,12 @@
-# CHECKPOINT 10 — read me first, then TASKS.md
+# CHECKPOINT 11 — read me first, then TASKS.md
 
-**Written:** 2026-09-07T19:16:35Z · **version:** 4.3 · **tests:** all 11 suites green
+**Written:** 2026-09-07T19:19:03Z · **version:** 4.3 · **tests:** all 11 suites green
 
 ## Just done
-Fixed the test that was pinning the ReferenceError instead of catching it (it asserted root.__appPause, the broken form). All 11 suites green, APK builds clean.
+Sweep continued. check_es2018.js had a HARD-CODED file list — schedule.js, handoff.js and names.js were never checked while it reported 'all files ES2018-safe'; it now discovers app/assets/*.js (18 files, all pass). handoff: Array.isArray instead of a truthy .length (a STRING has one, so {"players":"none found"} was being accepted then applying nothing), and a reply with no week is refused rather than filed under undefined where the UI would never show it. Game badges now sit consistently after the team/bye text on every row; the pre-Sunday alert also leads the Advice tab; the exported briefing carries a kickoff column so the reader knows which decisions have a deadline. 11 suites green.
 
 ## Do this next
-UI/efficiency pass, then a final full re-verify.
+Write STATE.md / RELEASE_NOTES.md / LADDER.md, rebuild, ship, deliver.
 
 ## How to resume, exactly
 ```bash
@@ -19,10 +19,15 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M tools/test_schedule.js
+     M app/assets/handoff.js
+     M app/assets/recommend.js
+     M app/assets/ui.js
+     M tools/check_es2018.js
+     M tools/test_handoff.js
 
 ## Last ten checkpoints
 ```
+  49c7790 ckpt 10: Fixed the test that was pinning the ReferenceError instead of catching it (it asserted root.__appPause, the broken form). All 11 suites green, APK builds clean.
   3bc3207 ckpt 9: CAUGHT A FATAL BUG I INTRODUCED. ui.js is (function(){...})() with NO root parameter — unlike the other twelve modules — so my 'root.__appPause = appPause' at its top level was a ReferenceError AT SCRIPT LOAD: the app would not have booted at all. Ten green suites and a clean APK build said nothing, because not one of them executed ui.js. Fixed to window.*, plus an !S guard on appPause/appResume (MainActivity.onResume can fire before boot() on a cold start, and S.weekMeta would throw into evaluateJavascript where nothing reports it). New tools/test_lifecycle.js runs ui.js in a real vm context against a DOM stub and proves the battery claim by COUNTING TIMERS: boot arms 1, pause leaves 0, resume does not stack. It also verifies boot really initialised 10 teams, after the first version of that assertion was vacuous and hid a boot failure for a round. 11 suites green.
   cc126ea ckpt 8: Network/caching audit (4b). Found and fixed the real hammering path: every Sync advice tap refetched the full ESPN projection feed (400 players, MB) and the 800-record injury list unconditionally — so a run of retries after the Claude failure Tj photographed meant a burst of multi-MB requests at a public endpoint. Both now have freshness gates (20 min / 10 min), reuse is REPORTED not hidden, failed/empty results are never treated as a cache, and selfTest forces a real fetch. Also fixed two things I introduced: Schedule.ingest was calling Store.save() on every 45s poll tick (full-season disk write for unchanged data) — now signature-guarded; and earlyAlert ran bestLineup on every render of three tabs — now memoised. Normalised three root.Promise refs to the bare global the rest of the codebase uses. New tools/test_net.js, 33 assertions. 10 suites green.
   3c21668 ckpt 7: Task 3 done: schedule.js gives every player a day+time badge on Live, Lineups, Rosters and Advice, fed FREE off the scoreboard response the live poll already fetches (refresh() only hits the network if the stored copy is >3h old). Pre-Sunday alert card on the three lineup screens, leading with recommended-but-benched players and a one-tap fix. Alerts.java extended to fire the same warning with the app closed, reading the kickoffs the page persists — no network. Verified parseIso in real Java: a 00:20Z Thursday kickoff correctly reads as Thursday locally (it is FRIDAY in UTC — that trap is now pinned by a test). 9 suites green.

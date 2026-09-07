@@ -153,14 +153,33 @@
     lines.push('');
     lines.push('## The roster — every one of these needs an entry in your answer');
     lines.push('');
-    lines.push('| player | pos | NFL | opponent | app projection | ESPN status |');
-    lines.push('|---|---|---|---|---|---|');
+    lines.push('| player | pos | NFL | opponent | kickoff | app projection | ESPN status |');
+    lines.push('|---|---|---|---|---|---|---|');
+    var anyEarly = false;
     for (i = 0; i < ctx.players.length; i++) {
       var p = ctx.players[i];
+      /* The kickoff is included because it changes what an answer is worth: a
+         Thursday player's practice report is already final, while a Sunday
+         player may still have Friday news to come — and it tells the reader
+         which of these decisions has a deadline. */
+      var kick = '—';
+      if (root.Schedule) {
+        try {
+          var b = root.Schedule.badge(p.nfl, week);
+          if (b) { kick = b.text + (b.early ? ' **(before Sunday)**' : ''); }
+          if (b && b.early) anyEarly = true;
+        } catch (e) { kick = '—'; }
+      }
       lines.push('| ' + p.name + ' | ' + p.pos + ' | ' + (p.nfl || '?') + ' | ' +
-                 (p.opp || '—') + ' | ' +
+                 (p.opp || '—') + ' | ' + kick + ' | ' +
                  (typeof p.proj === 'number' ? p.proj.toFixed(1) : '?') + ' | ' +
                  (p.feedStatus || 'no designation') + ' |');
+    }
+    if (anyEarly) {
+      lines.push('');
+      lines.push('**Some of these play before Sunday** (marked in the kickoff column).');
+      lines.push('Those decisions are due first, so if anything in your answer deserves');
+      lines.push('extra care it is those players.');
     }
     lines.push('');
     lines.push('"App projection" is this league\'s own number, already in this');
@@ -380,8 +399,11 @@
     if (k.indexOf(KIND_WAIVER) === 0) return 'waivers';
     /* no kind field — fall back to shape, because a model that rewrote the
        skeleton by hand is still giving a usable answer */
-    if (obj.players && obj.players.length !== undefined) return 'advice';
-    if (obj.adds && obj.adds.length !== undefined) return 'waivers';
+    /* Array.isArray, not a truthy `.length` — a STRING has a length, so
+       {"players":"none found"} would otherwise be accepted as an advice reply
+       and then quietly apply nothing. */
+    if (Array.isArray(obj.players)) return 'advice';
+    if (Array.isArray(obj.adds)) return 'waivers';
     return '';
   }
 
@@ -416,14 +438,24 @@
         'Switch weeks, or export a fresh request for week ' + wk + '.');
     }
 
+    /* Everything downstream files verdicts against a week, and the UI only
+       shows a summary when aiCache.week matches the week on screen. A reply
+       with no week and no caller week would be stored under `undefined` and
+       then silently never displayed — a worse outcome than refusing. */
+    var useWeek = wk || obj.week;
+    if (!useWeek) {
+      throw new Error('That reply does not say which week it is for, and the app ' +
+        'was not told either. Nothing was changed.');
+    }
+
     if (kind === 'advice') {
-      var norm = root.Ai.normalizeAdvice(obj, { week: wk || obj.week || 0 },
+      var norm = root.Ai.normalizeAdvice(obj, { week: useWeek },
                                          'Claude app (handoff)');
       if (!norm.count) {
         throw new Error('That reply has a "players" list, but no entry in it had ' +
           'a name. Nothing was changed.');
       }
-      root.Recommend.mergeAi(wk || obj.week, {
+      root.Recommend.mergeAi(useWeek, {
         at: Date.now(), byName: norm.byName, summary: norm.summary,
         model: 'Claude app (handoff)', count: norm.count,
         truncated: norm.truncated
@@ -444,7 +476,7 @@
     var unverified = 0, i;
     for (i = 0; i < res.adds.length; i++) if (!res.adds[i].verified) unverified++;
     var saved = {
-      at: Date.now(), week: wk || obj.week, model: 'Claude app (handoff)',
+      at: Date.now(), week: useWeek, model: 'Claude app (handoff)',
       searchBudget: 0, adds: res.adds,
       needs: String(obj.needs || ''), summary: String(obj.summary || ''),
       usage: null, spent: null

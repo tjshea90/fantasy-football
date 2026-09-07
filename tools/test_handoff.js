@@ -64,8 +64,8 @@ ok(/completed pass is worth 1 point/.test(A),
 ok(/Do not import anyone else's "projected points"/.test(A),
    'it forbids importing outside projected points, which is the trap this league sets');
 ok(/QB · RB · RB · WR · WR · WR · TE · FLEX/.test(A), 'it lists the starting slots');
-ok(/## The roster/.test(A) && /\| player \| pos \| NFL \| opponent \|/.test(A),
-   'the roster is a readable table, not a JSON blob');
+ok(/## The roster/.test(A) && /\| player \| pos \| NFL \| opponent \| kickoff \|/.test(A),
+   'the roster is a readable table, not a JSON blob, and it carries the kickoff');
 ok(/fftracker-advice-reply\.json/.test(A), 'it names the file to write back');
 ok(/### A worked example of one entry/.test(A),
    'it shows a filled-in example, not just a skeleton');
@@ -209,6 +209,20 @@ throws(function () {
   W.Handoff.importReply('{"kind":"fftracker.advice.reply","week":' + WEEK + ',"players":[]}',
                         { week: WEEK });
 }, /no entry in it had a name/, 'an empty players list is refused rather than wiping the cache');
+
+/* a STRING has a .length, so a truthy-length check would accept this and then
+   apply nothing at all — worse than refusing, because it looks like it worked */
+throws(function () {
+  W.Handoff.importReply('{"players":"none found this week"}', { week: WEEK });
+}, /not a reply this app understands/,
+   '"players" as a string is refused, not treated as an empty list');
+
+/* filed under an undefined week, a verdict is stored and then never shown,
+   because the UI only displays a summary whose week matches the screen */
+throws(function () {
+  W.Handoff.importReply('{"players":[{"name":"x","adjust":1}]}', {});
+}, /does not say which week/,
+   'a reply with no week, imported with no week, is refused rather than filed nowhere');
 
 /* ---- 6. names: the Kenny/Kenneth problem, in the reply ------------------- */
 console.log('\n-- identity --');
