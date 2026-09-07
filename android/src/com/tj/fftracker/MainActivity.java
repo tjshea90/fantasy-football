@@ -1,6 +1,7 @@
 package com.tj.fftracker;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.graphics.Insets;
 import android.os.Build;
@@ -116,5 +117,169 @@ public class MainActivity extends Activity {
       return true;
     }
     return super.onKeyDown(code, e);
+  }
+
+  // ---- the offline Claude round trip: reading the reply file ---------------
+  // Only an Activity can start a picker for a result, so NativeBridge.pickFile()
+  // forwards here. The file's TEXT is handed to the page; the page never sees a
+  // path or a Uri, because it has no way to read one and no business holding it.
+  private static final int REQ_PICK = 7301;
+
+  void openDocument() {
+    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+    i.addCategory(Intent.CATEGORY_OPENABLE);
+    // Claude hands back .json; a reply saved as .md or .txt, or pasted into a
+    // note, is just as usable because the importer finds the JSON inside. So
+    // the filter is deliberately wide — a picker that hides the user's file is
+    // worse than one that shows too much.
+    i.setType("*/*");
+    i.putExtra(Intent.EXTRA_MIME_TYPES,
+        new String[] { "application/json", "text/plain", "text/markdown", "*/*" });
+    try {
+      startActivityForResult(i, REQ_PICK);
+    } catch (Throwable t) {
+      toPage("window.__filePicked&&window.__filePicked(null,"
+             + jsStr("This phone has no file picker. Paste the reply instead.") + ")");
+    }
+  }
+
+  @Override protected void onActivityResult(int req, int res, Intent data) {
+    super.onActivityResult(req, res, data);
+    if (req != REQ_PICK) return;
+    if (res != RESULT_OK || data == null || data.getData() == null) {
+      toPage("window.__filePicked&&window.__filePicked(null,null)");   // cancelled
+      return;
+    }
+    // Read on a background thread: a large reply on slow storage would
+    // otherwise block the UI thread, which is the exact mistake the whole
+    // bridge design exists to avoid.
+    final android.net.Uri uri = data.getData();
+    new Thread(new Runnable() { public void run() {
+      String text = null, err = null;
+      java.io.InputStream in = null;
+      try {
+        in = getContentResolver().openInputStream(uri);
+        if (in == null) throw new java.io.IOException("could not open that file");
+        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[8192];
+        int n, total = 0;
+        final int LIMIT = 4 * 1024 * 1024;   // a reply is kilobytes; refuse a video
+        while ((n = in.read(buf)) > 0) {
+          total += n;
+          if (total > LIMIT) throw new java.io.IOException("that file is too large to be a reply");
+          bo.write(buf, 0, n);
+        }
+        text = new String(bo.toByteArray(), "UTF-8");
+      } catch (Throwable t) {
+        err = String.valueOf(t.getMessage());
+      } finally {
+        try { if (in != null) in.close(); } catch (Throwable ignored) { }
+      }
+      final String js = "window.__filePicked&&window.__filePicked("
+          + (text == null ? "null" : jsStr(text)) + ","
+          + (err == null ? "null" : jsStr(err)) + ")";
+      toPage(js);
+    } }).start();
+  }
+
+  private void toPage(final String js) {
+    if (web == null) return;
+    web.post(new Runnable() { public void run() {
+      try { web.evaluateJavascript(js, null); } catch (Throwable ignored) { }
+    } });
+  }
+
+  /** JSON-quote a string for injection into evaluateJavascript. */
+  private static String jsStr(String s) {
+    StringBuilder b = new StringBuilder(s.length() + 16).append('"');
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      switch (c) {
+        case '"':  b.append("\\\""); break;
+        case '\\': b.append("\\\\"); break;
+        case '\n': b.append("\\n");  break;
+        case '\r': b.append("\\r");  break;
+        case '\t': b.append("\\t");  break;
+        default:
+          // Anything below 0x20, plus the two line separators JS treats as
+          // newlines inside a string literal, must be escaped or the injected
+          // script is a syntax error. U+2028/U+2029 turn up in pasted prose.
+          // They are compared NUMERICALLY on purpose: writing the escape as a
+          // char literal does not compile, because javac resolves unicode
+          // escapes BEFORE it lexes, so the escape becomes a real line
+          // terminator inside the literal and the file is a syntax error.
+          if (c < 0x20 || c == 0x2028 || c == 0x2029) {
+            b.append(String.format("\\u%04x", (int) c));
+          } else b.append(c);
+      }
+    }
+    return b.append('"').toString();
+  }
+
+  // ---- SLEEPING WHEN BACKGROUNDED -----------------------------------------
+  // Tj: "make sure when the app is backgrounded that it properly sleeps and
+  // doesn't hog ram or CPU or battery."
+  //
+  // It did not. Nothing in this Activity or in the page stopped anything when
+  // the app left the screen. ui.js owns a live-scoring timer that re-fires
+  // every 45 seconds by default and, when a game is in progress, pulls sixteen
+  // box scores each time. A WebView whose Activity is merely stopped keeps
+  // running its JS timers, so that poll carried on all afternoon behind
+  // whatever Tj was actually doing — network, CPU and battery for a number
+  // nobody was looking at. The page's own comment claimed the poll was
+  // "foreground only, by design"; nothing implemented that.
+  //
+  // Three things, in order of how much they save:
+  //   onPause  -> the page stops its own timers first (it knows which are
+  //               resumable), then pauseTimers() stops any that remain,
+  //               including ones inside the WebView we do not own.
+  //   onStop   -> onPause() on the WebView proper: drops the drawing surface
+  //               and lets it release memory it only needs while visible.
+  //   onDestroy-> tear the WebView down explicitly so it cannot outlive the
+  //               Activity; a WebView holding an Activity context is the
+  //               classic Android leak.
+  //
+  // pauseTimers() is process-wide, which is exactly right here because there
+  // is only ever one WebView.
+  @Override protected void onPause() {
+    super.onPause();
+    if (web != null) {
+      try { web.evaluateJavascript("window.__appPause&&window.__appPause()", null); }
+      catch (Throwable ignored) { }
+      try { web.pauseTimers(); } catch (Throwable ignored) { }
+    }
+  }
+
+  @Override protected void onStop() {
+    super.onStop();
+    if (web != null) { try { web.onPause(); } catch (Throwable ignored) { } }
+  }
+
+  @Override protected void onResume() {
+    super.onResume();
+    if (web != null) {
+      try { web.onResume(); } catch (Throwable ignored) { }
+      try { web.resumeTimers(); } catch (Throwable ignored) { }
+      // The page decides what to restart and whether anything is stale enough
+      // to be worth a fetch. Java must not make that call — it does not know
+      // which screen is open or whether the week is already final.
+      try { web.evaluateJavascript("window.__appResume&&window.__appResume()", null); }
+      catch (Throwable ignored) { }
+    }
+  }
+
+  @Override protected void onDestroy() {
+    if (web != null) {
+      try {
+        ViewGroup p = (ViewGroup) web.getParent();
+        if (p != null) p.removeView(web);
+        web.removeJavascriptInterface("Native");
+        web.stopLoading();
+        web.setWebChromeClient(null);
+        web.destroy();
+      } catch (Throwable ignored) { }
+      web = null;
+    }
+    super.onDestroy();
   }
 }

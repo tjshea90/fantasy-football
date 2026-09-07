@@ -20,7 +20,7 @@ has, and a false one costs more than an untouched one.
       cold session is briefed by one command.
 - [x] 0c. The zip carries `.git`, so resuming from an attached zip restores the
       entire history, not just the final files.
-- [ ] 0d. Deliver the zip to Tj at every milestone. The container is ephemeral;
+- [x] 0d. Deliver the zip to Tj at every milestone. The container is ephemeral;
       a checkpoint he does not have is a checkpoint that does not exist.
 
 ## 1. The three reported bugs
@@ -40,18 +40,18 @@ Tj: *"I should be able to export a file from the app, upload it to a Claude chat
 with no explanation, and Claude creates a file which I can import back into the
 football app which fills in all relevant information in the app."*
 
-- [ ] 2a. **Advice tab, under the Sync button.** Export a briefing file →
+- [x] 2a. **Advice tab, under the Sync button.** Export a briefing file →
       upload to a Claude chat → import Claude's reply file → all advice fields
       filled. → `tools/test_handoff.js`
-- [ ] 2b. **Roster tab, the "Ask Claude about the wire" button.** Same round
+- [x] 2b. **Roster tab, the "Ask Claude about the wire" button.** Same round
       trip, same file format family. → `tools/test_handoff.js`
-- [ ] 2c. The exported file must be self-explanatory to a Claude that has been
+- [x] 2c. The exported file must be self-explanatory to a Claude that has been
       told **nothing** — it carries the league's scoring, the task, the exact
       output contract, and a worked example.
-- [ ] 2d. Import must accept what Claude actually hands back (a fenced block,
+- [x] 2d. Import must accept what Claude actually hands back (a fenced block,
       a bare object, a whole chat transcript pasted in) and must refuse
       anything else with a reason, never half-apply.
-- [ ] 2e. Tested end to end: build the export, run it through the contract,
+- [x] 2e. Tested end to end: build the export, run it through the contract,
       import the result, assert the app's fields are populated.
 
 ## 3. Game day/time on every roster + early-week alerts

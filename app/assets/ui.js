@@ -5,6 +5,10 @@
   /* live polling: a handle plus the last result, so every screen can say how
      fresh the numbers are without each one owning a timer */
   var live = { timer: null, at: 0, inProgress: 0, err: '', next: 0 };
+  /* declared up here with `live` because scheduleLive() reads it and is defined
+     above the sleep block; `var` hoisting makes that safe either way, but a
+     reader should not have to know that to trust it */
+  var asleep = false;
   /* Parsed box scores for the week being watched. A final game never changes,
      so a live poll refetches only what is still moving. Memory only, and reset
      whenever the season or week changes — see doSync. */
@@ -196,6 +200,124 @@
     back.addEventListener('click', function (e) { if (e.target === back) document.body.removeChild(back); });
     document.body.appendChild(back);
   }
+  /* ---------- THE CLAUDE-APP ROUND TRIP (v4.3) --------------------------
+   * Tj: "I should be able to export a file from the app, upload it to a Claude
+   * chat with no explanation, and Claude creates a file which I can import back
+   * into the football app which fills in all relevant information in the app."
+   *
+   * One card, built once, used by BOTH the Advice tab and the waiver wire. The
+   * two differ only in which briefing is built and what the reply fills in, so
+   * a second copy of this would be two places for the file-picking, the paste
+   * fallback and the error wording to drift apart.
+   *
+   * WHY THERE IS A PASTE FALLBACK AS WELL AS A PICKER. The picker is the nicer
+   * path and it is what Tj asked for. But it depends on the phone having a
+   * document provider, on the Claude app having actually saved a file rather
+   * than shown a code block, and on him finding it. Paste always works and
+   * costs one extra tap, and the importer does not care which arrived — it
+   * finds the JSON either way. A feature whose only path can fail silently on
+   * a Sunday morning is not a feature.
+   */
+  var pickWaiting = null;
+  window.__filePicked = function (text, err) {
+    var cb = pickWaiting; pickWaiting = null;
+    if (!cb) return;
+    cb(text, err);
+  };
+
+  function handoffCard(opts) {
+    /* opts: { title, blurb, build(), apply(text), status() } */
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, opts.title));
+    c.appendChild(el('p', 'hint', opts.blurb));
+
+    var step1 = el('button', 'btn pri', '1 · Make the file for Claude');
+    step1.style.marginTop = '4px';
+    step1.addEventListener('click', function () {
+      var f;
+      try { f = opts.build(); }
+      catch (e) {
+        modal('Could not build the file', (e && e.message) ? e.message : String(e));
+        return;
+      }
+      var shared = false;
+      if (window.Native && Native.exportShare) {
+        try { shared = Native.exportShare(f.filename, f.text, 'text/markdown'); }
+        catch (e) { shared = false; }
+      }
+      if (shared) {
+        toast('Saved to Downloads — pick Claude in the share sheet', 4200);
+        return;
+      }
+      /* no share sheet: still write it, and say exactly where it went */
+      var wrote = false;
+      if (window.Native && Native.exportFile) {
+        try { wrote = Native.exportFile(f.filename, f.text, 'text/markdown'); }
+        catch (e) { wrote = false; }
+      }
+      if (wrote) {
+        modal('File ready',
+          'Saved to your Downloads folder as:\n\n  ' + f.filename +
+          '\n\nOpen the Claude app, start a chat, attach that file and send it ' +
+          'with no message. Everything Claude needs is inside the file.\n\n' +
+          'When Claude gives you a file back, come here and tap ' +
+          '"2 · Load Claude\'s reply".');
+        return;
+      }
+      /* nothing could write a file — hand him the text so the path still works */
+      textModal('Copy this to Claude',
+        'The app could not write a file on this phone, so here is the whole ' +
+        'briefing (' + f.text.length + ' characters). Select all, copy, and ' +
+        'paste it into a Claude chat.',
+        f.text, 'Done', function () { });
+    });
+    c.appendChild(step1);
+
+    function applyText(txt) {
+      var res;
+      try { res = opts.apply(txt); }
+      catch (e) {
+        modal('Nothing was imported', (e && e.message) ? e.message : String(e));
+        return;
+      }
+      modal('Imported', res.detail +
+        (res.truncated
+          ? '\n\nNOTE: Claude\'s answer looks like it was cut off before the end. ' +
+            'What did arrive was kept; anyone missing simply was not updated.'
+          : '') +
+        (res.summary ? '\n\n' + res.summary : ''));
+      render();
+    }
+
+    var step2 = el('button', 'btn', '2 · Load Claude\'s reply');
+    step2.style.marginTop = '8px';
+    step2.addEventListener('click', function () {
+      function paste() {
+        textModal('Paste Claude\'s reply',
+          'Paste the file Claude gave you, or just paste its whole message — ' +
+          'the app finds the JSON inside either way.',
+          '', 'Import', function (v) { if (v && v.trim()) applyText(v); });
+      }
+      if (window.Native && Native.pickFile) {
+        pickWaiting = function (text, err) {
+          if (err) { modal('Could not read that file', err + '\n\nYou can paste it instead.'); return; }
+          if (text === null || text === undefined) { paste(); return; }   /* cancelled */
+          applyText(text);
+        };
+        var started = false;
+        try { started = Native.pickFile(); } catch (e) { started = false; }
+        if (started) return;
+        pickWaiting = null;
+      }
+      paste();
+    });
+    c.appendChild(step2);
+
+    var st = opts.status ? opts.status() : '';
+    if (st) c.appendChild(el('p', 'hint', st));
+    return c;
+  }
+
   function toast(msg, ms) {
     var t = $('toast'); t.textContent = msg; t.hidden = false;
     clearTimeout(toast._t); toast._t = setTimeout(function () { t.hidden = true; }, ms || 2600);
@@ -296,8 +418,14 @@
     if (!S.settings.liveRefresh) { live.next = 0; return; }
     scheduleLive(4000);
   }
+  /* THE SINGLE PLACE A LIVE TIMER IS EVER ARMED. The sleep guard lives here
+     rather than in appPause() because a request already in flight when the app
+     is backgrounded will resolve LATER and re-arm from inside its own .then().
+     Guarding only at the pause site would let exactly one timer escape, which
+     is enough to keep the 45-second poll running forever. */
   function scheduleLive(ms) {
     stopLive();
+    if (asleep) { live.next = 0; return; }
     live.next = Date.now() + ms;
     live.timer = setTimeout(liveTick, ms);
   }
@@ -329,7 +457,58 @@
       scheduleLive(60000);
     }).then(function () { if (view === 'live') renderHeader(); });
   }
+  /* ---------- SLEEPING WHEN THE APP IS NOT ON SCREEN --------------------
+   * Tj: "make sure when the app is backgrounded that it properly sleeps and
+   * doesn't hog ram or CPU or battery."
+   *
+   * It did not sleep at all. The comment above startLive() said the poll was
+   * "Foreground only, by design" — and nothing whatsoever implemented that.
+   * A backgrounded WebView keeps running its JS timers, so `liveTick` carried
+   * on firing every 45 seconds all afternoon, and on a Sunday each of those
+   * ticks pulled sixteen box scores. That is the battery and the mobile data,
+   * spent on a screen nobody is looking at.
+   *
+   * Two independent triggers, because neither alone is sufficient:
+   *   - MainActivity's onPause/onResume call these directly. That is the
+   *     reliable signal, and it is what stops the timer BEFORE pauseTimers()
+   *     freezes it mid-flight.
+   *   - `visibilitychange` covers the cases Java does not see as a pause —
+   *     the screen locking, or a split-screen window losing focus — and it is
+   *     also what makes this testable and correct in a plain browser.
+   *
+   * Stopping is the easy half. RESUMING is where the thought is: coming back
+   * must not fire a burst of catch-up requests. `liveTick` is scheduled fresh
+   * with a short delay (so the screen is current within a couple of seconds)
+   * and it re-derives everything from the scoreboard, which is the cheap
+   * endpoint. Nothing is queued while asleep, so nothing can pile up. */
+  function appPause() {
+    if (asleep) return;
+    asleep = true;
+    stopLive();                 /* the timer, not just its effects */
+    live.next = 0;
+  }
+  function appResume() {
+    if (!asleep) return;
+    asleep = false;
+    /* A week that is finished stays finished — do not wake a poll for it. */
+    var m = S.weekMeta[String(week)];
+    if (m && m.synced && m.allFinal) { renderHeader(); return; }
+    if (!S.settings.liveRefresh) { renderHeader(); return; }
+    /* 1.5s, not 0: the WebView is still restoring and a request fired into
+       that costs a frame of jank for no freshness anyone can perceive. */
+    scheduleLive(1500);
+    renderHeader();
+  }
+  root.__appPause = appPause;
+  root.__appResume = appResume;
+  if (root.document && root.document.addEventListener) {
+    root.document.addEventListener('visibilitychange', function () {
+      if (root.document.hidden) appPause(); else appResume();
+    }, false);
+  }
+
   function liveText() {
+    if (asleep) return 'asleep';
     if (!S.settings.liveRefresh) return 'live off';
     if (live.err) return 'live: ' + live.err;
     if (live.inProgress) return live.inProgress + ' game' + (live.inProgress === 1 ? '' : 's') +
@@ -813,6 +992,43 @@
     var wrow = el('div', 'dbrow'); wrow.appendChild(wsync);
     wcard.appendChild(wrow); wcard.appendChild(wnote);
     c.appendChild(wcard);
+
+    /* The same round trip as the Advice tab, on the same card component, for
+       the same reason: this is the button that costs money per press, so the
+       free alternative belongs directly beneath it. Note that unlike the API
+       path it works with NO key at all — which is why it is added outside the
+       Ai.configured() branch above. */
+    try {
+      c.appendChild(handoffCard({
+        title: 'Or use the Claude app — no API key, no cost',
+        blurb: 'Makes a file listing every free agent the app has priced in this ' +
+               'league\'s scoring, plus your starting lineup and where it is thin. ' +
+               'Send it to the Claude app with no message of your own; Claude reads ' +
+               'the wire news and ranks it for this roster. Load the reply here and ' +
+               'it fills in the board below.',
+        build: function () {
+          var o = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+          return Handoff.buildWaivers(week, S.league.me, o, S.league.season,
+                                      new Date().toISOString().slice(0, 10));
+        },
+        apply: function (txt) {
+          var o = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+          /* the pool is rebuilt so "was he in the list we sent" is answered
+             against the CURRENT wire, not a stale one — a player signed since
+             the export must not come back marked verified */
+          var wc = Value.waiverContext(week, S.league.me, o, S.league.season,
+                                       new Date().toISOString().slice(0, 10));
+          return Handoff.importReply(txt, { week: week, pool: wc.pool });
+        },
+        status: function () {
+          var cch = Value.waiverLoad();
+          if (!cch || !cch.adds || !cch.adds.length) return '';
+          return 'Currently showing: ' + cch.adds.length + ' add' +
+                 (cch.adds.length === 1 ? '' : 's') + ' from ' +
+                 (cch.model || 'Claude') + ', week ' + (cch.week || '?') + '.';
+        }
+      }));
+    } catch (e) { /* never take the Rosters tab down for this */ }
 
     if (cached && cached.adds && cached.adds.length) {
       var age = Math.round((Date.now() - (cached.at || 0)) / 3600000);
@@ -1408,7 +1624,35 @@
   function viewAdvice(root) {
     Recommend.render(root, { week: week, teamId: S.league.me, el: el, table: table,
       fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
-      jobEnd: jobEnd, jobRunning: jobRunning, rerender: render });
+      jobEnd: jobEnd, jobRunning: jobRunning, rerender: render,
+      handoffCard: handoffCard, adviceHandoff: adviceHandoff });
+  }
+
+  /* The Advice tab's round trip. Lives here rather than in recommend.js so the
+     card, the picker and the paste fallback have exactly one implementation
+     shared with the waiver wire. */
+  function adviceHandoff() {
+    return handoffCard({
+      title: 'Or use the Claude app — no API key, no cost',
+      blurb: 'Makes a file that explains itself. Send it to the Claude app with ' +
+             'no message of your own, and Claude reads this week\'s news for every ' +
+             'player on your roster and gives you a file back. Load that here and ' +
+             'the advice below fills in exactly as if the key had done it — except ' +
+             'it asks about EVERY player, not just the ones worth paying to check.',
+      build: function () {
+        var opp = null;
+        try { opp = (S.weekMeta[String(week)] || {}).opponents || null; } catch (e) { }
+        return Handoff.buildAdvice(week, S.league.me, opp);
+      },
+      apply: function (txt) { return Handoff.importReply(txt, { week: week }); },
+      status: function () {
+        var a = Recommend.aiCache();
+        if (!a || !a.at) return '';
+        return 'Currently showing: ' + (a.count || 0) + ' verdict' +
+               ((a.count === 1) ? '' : 's') + ' from ' + (a.model || 'Claude') +
+               ', week ' + (a.week || '?') + '.';
+      }
+    });
   }
 
   /* ---------- DATA ---------- */

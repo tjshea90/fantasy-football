@@ -580,6 +580,96 @@ public class NativeBridge {
     }
   }
 
+  /* ---- the offline Claude round trip (v4.3) -------------------------------
+   * Tj's flow is: export here, attach the file in a Claude chat, get a file
+   * back, import it here. Both halves happen on a phone, so both halves have
+   * to be one tap.
+   *
+   * OUT: `exportShare` writes the file and then hands it straight to the
+   * Android share sheet, so "Send to Claude" is a tap rather than a trip
+   * through a file manager. It deliberately does NOT need a FileProvider —
+   * the MediaStore Downloads Uri from the insert is already shareable once the
+   * read permission is granted on the intent, and adding a provider would mean
+   * a manifest entry, an XML paths file, and a new way for the build to break.
+   * The file is left in Downloads on purpose: if the share sheet is dismissed
+   * or the target app cannot take it, it is still there to attach by hand.
+   *
+   * IN: the picker lives in MainActivity, because only an Activity can start
+   * one for a result. This is a thin forwarder. */
+  @JavascriptInterface
+  public boolean exportShare(String filename, String data, String mime) {
+    try {
+      String m = (mime == null || mime.length() == 0) ? "text/plain" : mime;
+      Uri uri = writeToDownloads(filename, data, m);
+      if (uri == null) return false;
+      Intent send = new Intent(Intent.ACTION_SEND);
+      send.setType(m);
+      send.putExtra(Intent.EXTRA_STREAM, uri);
+      send.putExtra(Intent.EXTRA_SUBJECT, filename);
+      send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+      Intent chooser = Intent.createChooser(send, "Send to Claude");
+      chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      ctx.startActivity(chooser);
+      return true;
+    } catch (Exception e) {
+      android.util.Log.w("FFT", "exportShare failed: " + e);
+      return false;
+    }
+  }
+
+  /** Write a file of any type to Downloads and return its Uri. `export` above
+   *  is the json-only special case kept for the existing backup path. */
+  private Uri writeToDownloads(String filename, String data, String mime) throws Exception {
+    String fn = safe(filename);
+    if (fn.length() == 0) fn = "fftracker.txt";
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      ContentValues v = new ContentValues();
+      v.put(MediaStore.MediaColumns.DISPLAY_NAME, fn);
+      v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+      v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+      Uri uri = ctx.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+      if (uri == null) return null;
+      OutputStream o = ctx.getContentResolver().openOutputStream(uri);
+      if (o == null) return null;
+      o.write(data.getBytes("UTF-8"));
+      o.close();
+      return uri;
+    }
+    File d = new File(Environment.getExternalStoragePublicDirectory(
+        Environment.DIRECTORY_DOWNLOADS), fn);
+    FileOutputStream o = new FileOutputStream(d);
+    o.write(data.getBytes("UTF-8"));
+    o.close();
+    return Uri.fromFile(d);
+  }
+
+  /** Write a file of any type to Downloads. Returns true on success. */
+  @JavascriptInterface
+  public boolean exportFile(String filename, String data, String mime) {
+    try {
+      return writeToDownloads(filename, data,
+          (mime == null || mime.length() == 0) ? "text/plain" : mime) != null;
+    } catch (Exception e) {
+      android.util.Log.w("FFT", "exportFile failed: " + e);
+      return false;
+    }
+  }
+
+  /** Open the system file picker. The chosen file's TEXT comes back to the
+   *  page through window.__filePicked(text) — see MainActivity. Returns false
+   *  if no Activity is attached, so the page can fall back to paste. */
+  @JavascriptInterface
+  public boolean pickFile() {
+    try {
+      if (!(ctx instanceof MainActivity)) return false;
+      ((MainActivity) ctx).openDocument();
+      return true;
+    } catch (Exception e) {
+      android.util.Log.w("FFT", "pickFile failed: " + e);
+      return false;
+    }
+  }
+
   @JavascriptInterface
   public String deviceInfo() {
     return "{\"sdk\":" + Build.VERSION.SDK_INT + ",\"abi\":\"" +

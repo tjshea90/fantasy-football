@@ -695,6 +695,20 @@
       'and you can switch tabs without losing it.'));
     host.appendChild(head);
 
+    /* The offline round trip sits directly under the Sync card, which is where
+       Tj asked for it and also where the choice actually is: two ways to do the
+       same job, one paid per call and one not. It is wrapped because a card
+       that throws must not take the whole Advice screen down with it. */
+    if (ctx.adviceHandoff) {
+      try { host.appendChild(ctx.adviceHandoff()); }
+      catch (e) {
+        var bad = el('div', 'card');
+        bad.appendChild(el('h2', null, 'The Claude-app handoff could not be built'));
+        bad.appendChild(el('p', 'hint', (e && e.message) ? e.message : String(e)));
+        host.appendChild(bad);
+      }
+    }
+
     var holder = el('div');
     host.appendChild(holder);
 

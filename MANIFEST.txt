@@ -60,3 +60,5 @@ TASKS.md
 CHECKPOINT.md
 tools/ckpt.sh
 tools/test_ai.js
+app/assets/handoff.js
+tools/test_handoff.js
