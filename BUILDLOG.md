@@ -39,3 +39,4 @@
 2026-09-05T17:18Z | v4.2 | step 34/34 | v4.2 invisible auto-backups: rotated app-private snapshots (full state, matchups included) replace the Downloads-clutter export path; in-app restore picker added
 2026-09-07T19:01Z | v4.3 | step 34/34 | v4.3 WIP — three reported bugs fixed, Claude-app round trip, background sleep
 2026-09-07T19:23Z | v4.5 | step 43/43 | v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep
+2026-09-08T01:13Z | v4.6 | step 47/47 | v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
