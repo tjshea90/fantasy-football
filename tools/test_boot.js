@@ -256,6 +256,32 @@ ok(/\.toast\{[^}]*bottom:calc\(var\(--tabh\)/.test(css3),
 ok(!/124px/.test(css3.replace(/\/\*[\s\S]*?\*\//g, '')),
    'the stale 124px is gone from the CSS (the comment explaining it may stay)');
 
+/* ---- 2026-09-08: the Live tab before kickoff ----------------------------- */
+(function () {
+  var raw = fs.readFileSync('app/assets/ui.js', 'utf8');
+  var code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+
+  /* Tapping a player before the week is synced used to toast "no stats synced"
+     and stop there — a dead end on the screen he uses most, at the time he uses
+     it most. The app already had the projection, the kickoff, the injury note
+     and Claude's read; none of it was reachable. */
+  ok(/function showPlayerPreGame/.test(code),
+     'there is a pre-game card for a player with no stat line yet');
+  ok(/if \(!line\) \{ showPlayerPreGame\(rec\); return; \}/.test(code),
+     'and showPlayer uses it instead of a dead-end toast  <-- the reported dead end');
+  ok(!/no stats synced for week/.test(code),
+     'the dead-end toast is gone');
+  var pg = code.slice(code.indexOf('function showPlayerPreGame'), code.indexOf('function showPlayer(pid)'));
+  ok(/Schedule\.badge/.test(pg), 'the pre-game card says when he plays');
+  ok(/row\.h && row\.h\.label/.test(pg), 'and carries the injury feed line');
+  ok(/row\.ai && row\.ai\.reason/.test(pg), "and Claude's read when there is one");
+
+  /* "TO PLAY" next to "Sun 4:05p" is noise, and .row .nm ellipsises the NAME to
+     make room for it. The badge says the same thing and says when. */
+  ok(/!x\.played && !gb0/.test(code),
+     'the "to play" tag is suppressed when a kickoff badge already says so');
+}());
+
 /* ---- v3.3: the model picker ---------------------------------------------- */
 var aiRaw2 = fs.readFileSync('app/assets/ai.js', 'utf8');
 var uiRaw2 = fs.readFileSync('app/assets/ui.js', 'utf8');

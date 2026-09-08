@@ -607,8 +607,22 @@ public class NativeBridge {
       send.putExtra(Intent.EXTRA_STREAM, uri);
       send.putExtra(Intent.EXTRA_SUBJECT, filename);
       send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+      /* THE GRANT HAS TO SURVIVE THE CHOOSER.
+       * A flag on the SEND intent alone is not reliably enough to let the app
+       * the user picks actually read the Uri: the system propagates a URI grant
+       * through a chooser from the intent's ClipData, and without one the
+       * target can be handed a Uri it is not permitted to open. The failure is
+       * silent on our side and shows up in the other app as "cannot open file",
+       * which is the worst possible place for it — this is the one path where
+       * the whole feature is someone else reading our file. Setting ClipData
+       * and repeating the flag on the chooser is the belt-and-braces form and
+       * costs nothing. */
+      try {
+        send.setClipData(android.content.ClipData.newRawUri(filename, uri));
+      } catch (Throwable t) { /* older shell: the flag above still applies */ }
       Intent chooser = Intent.createChooser(send, "Send to Claude");
       chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
       ctx.startActivity(chooser);
       return true;
     } catch (Exception e) {

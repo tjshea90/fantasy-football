@@ -832,9 +832,17 @@
         nm.appendChild(document.createTextNode(x.player ? x.player.name : '?'));
         var sm = el('small', null, ' ' + (x.player ? x.player.pos + ' ' + x.player.nfl : ''));
         nm.appendChild(sm);
-        if (x.player) { var gb0 = gameBadge(x.player.nfl); if (gb0) nm.appendChild(gb0); }
+        var gb0 = x.player ? gameBadge(x.player.nfl) : null;
+        if (gb0) nm.appendChild(gb0);
         if (x.onBye) nm.appendChild(el('span', 'tag out', 'bye'));
-        else if (!x.played) nm.appendChild(el('span', 'tag', 'to play'));
+        /* "TO PLAY" only when there is no kickoff badge. With one, the row read
+           "Bo Nix QB DEN Sun 4:05p TO PLAY" — the badge already says the game
+           has not happened, and says WHEN, which the tag never did. The cost was
+           not just noise: .row .nm is nowrap with text-overflow:ellipsis, so on a
+           narrower phone or a longer name the redundant tag is what pushes the
+           PLAYER'S NAME into the ellipsis. Kept when the schedule is unknown, so
+           nothing is lost when there is no badge to replace it. */
+        else if (!x.played && !gb0) nm.appendChild(el('span', 'tag', 'to play'));
       }
       r.appendChild(nm);
       var p = el('div', 'pts' + (x.onBye ? ' bye' : (x.played ? '' : ' pend')), x.onBye ? '0.0' : fmt(x.pts));
@@ -844,10 +852,57 @@
     });
     return d;
   }
+  /* BEFORE KICKOFF THERE IS NO STAT LINE, AND THAT USED TO BE A DEAD END.
+   * Every player row on the Live tab is tappable, and `Store.lineFor` returns
+   * nothing until the week has been synced — so on any day before the games
+   * (which is most days, and exactly when you are deciding a lineup) tapping a
+   * player produced a toast saying "no stats synced" and nothing else.
+   * The app already knows plenty about him at that moment: what it projects,
+   * when he plays, who he plays, and what the injury feed and Claude said. All
+   * of it was computed and none of it was reachable. This shows that instead.
+   * The manual-adjustment editor below is unchanged and still only appears once
+   * there IS a line to adjust — there is nothing to correct before kickoff. */
+  function showPlayerPreGame(rec) {
+    var p = rec.player, lines = [];
+    var b = window.Schedule ? Schedule.badge(p.nfl, week) : null;
+    var row = null;
+    try {
+      var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var all = Recommend.projectAll(week, rec.team.id, opp), i;
+      for (i = 0; i < all.length; i++) if (all[i].p && all[i].p.id === p.id) row = all[i];
+    } catch (e) { /* the schedule and the roster facts below still stand */ }
+
+    lines.push(p.pos + '  ·  ' + p.nfl + (rec.team ? '  ·  ' + rec.team.name : ''));
+    if (b) lines.push('Kicks off ' + b.text + '  ' + b.opp +
+                      (b.early ? '   — BEFORE SUNDAY' : ''));
+    else lines.push('No kickoff known for week ' + week + ' yet.');
+    if (row && row.onBye) lines.push('ON A BYE in week ' + week + ' — he scores 0.');
+    if (row && typeof row.proj === 'number') {
+      lines.push('Projected ' + fmt(row.proj) + ' points in this league\'s scoring.');
+    }
+    if (row && row.h && row.h.label) {
+      lines.push('');
+      lines.push('Injury feed: ' + row.h.label + (row.h.note ? ' — ' + row.h.note : ''));
+    }
+    if (row && row.ai && row.ai.reason) {
+      lines.push('');
+      lines.push('Claude (' + (row.ai.confidence || 'low') + '): ' + row.ai.reason);
+    }
+    if (row && row.why && row.why.length) {
+      lines.push('');
+      lines.push('How that number was built:');
+      row.why.forEach(function (w) { lines.push('  ' + w); });
+    }
+    lines.push('');
+    lines.push('Nothing has been scored for week ' + week + ' yet, so there is no ' +
+               'stat line to correct. Sync the week once his game has finished.');
+    modal(p.name, lines.join('\n'));
+  }
+
   function showPlayer(pid) {
     var rec = Store.playerById(pid); if (!rec) return;
     var line = Store.lineFor(week, pid);
-    if (!line) { toast(rec.player.name + ' — no stats synced for week ' + week); return; }
+    if (!line) { showPlayerPreGame(rec); return; }
     var sc = Scoring.score(line);
     /* The manual adjustment is the escape hatch for the two things the feed
        cannot settle by itself: the league-wide longest-play bonuses, which are
@@ -1948,10 +2003,21 @@
      * mismatch of the kind that caused the 124px dead band shows itself. */
     var tabsEl = $('tabs');
     var measured = (tabsEl && tabsEl.offsetHeight) ? tabsEl.offsetHeight : 0;
+    /* A PROBE, NOT getComputedStyle.
+       getPropertyValue('--tabh') hands back the SPECIFIED value of the custom
+       property — the literal string "calc(var(--tab-h) + 1px + ...)" — not a
+       resolved length, so parseFloat on it is NaN and this whole check would
+       have silently reported nothing. Custom properties only resolve when they
+       are USED, so the reliable way to ask "what does --tabh come out as" is to
+       give something that height and measure it. */
     var computed = 0;
     try {
-      var cv = getComputedStyle(document.documentElement).getPropertyValue('--tabh');
-      computed = Math.round(parseFloat(cv) || 0);
+      var probe = el('div');
+      probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;' +
+                            'height:var(--tabh);pointer-events:none';
+      document.body.appendChild(probe);
+      computed = probe.offsetHeight || 0;
+      document.body.removeChild(probe);
     } catch (e) { computed = 0; }
     var bits = [];
     bits.push('Tab bar: ' + (measured ? measured + 'px tall' : 'not measured yet'));
