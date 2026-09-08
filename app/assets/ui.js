@@ -1935,6 +1935,50 @@
       ? ('Detected system bars: ' + Math.round(ins.t) + 'px at the top, ' +
          Math.round(ins.b) + 'px at the bottom. The header and tab bar are padded by that much.')
       : 'The app has not received inset sizes from Android. Using the sliders below.'));
+
+    /* WHY THIS READOUT EXISTS (2026-09-08).
+     * Tj: "notice the bottom navigation has shifted up for some reason." The
+     * tab bar is position:fixed;bottom:0, so nothing in the page content can
+     * move it — only three numbers can, and until now none of them were
+     * visible: the system-bar inset Android reports, the saved adjBot slider,
+     * and the bar's own height. adjBot in particular is SAVED STATE that
+     * survives every update, so a value set once to fix something else looks
+     * exactly like a regression months later. All three are now on screen, and
+     * the measured height is compared against the computed one so a CSS
+     * mismatch of the kind that caused the 124px dead band shows itself. */
+    var tabsEl = $('tabs');
+    var measured = (tabsEl && tabsEl.offsetHeight) ? tabsEl.offsetHeight : 0;
+    var computed = 0;
+    try {
+      var cv = getComputedStyle(document.documentElement).getPropertyValue('--tabh');
+      computed = Math.round(parseFloat(cv) || 0);
+    } catch (e) { computed = 0; }
+    var bits = [];
+    bits.push('Tab bar: ' + (measured ? measured + 'px tall' : 'not measured yet'));
+    if (computed) bits.push('CSS expects ' + computed + 'px');
+    bits.push('bottom inset ' + Math.round(ins.b || 0) + 'px');
+    bits.push('your extra padding ' + (S.settings.adjBot || 0) + 'px');
+    cs.appendChild(el('p', 'hint', bits.join('  ·  ')));
+
+    if (measured && computed && Math.abs(measured - computed) > 2) {
+      var mm = el('p', 'warnText',
+        'The bar measures ' + measured + 'px but the stylesheet expects ' + computed +
+        'px. That gap is a layout bug, not a setting — tell Claude these two numbers.');
+      cs.appendChild(mm);
+    }
+    if (Number(S.settings.adjBot || 0) > 0) {
+      var w = el('p', 'warnText',
+        'Extra bottom padding is set to ' + S.settings.adjBot + 'px, which lifts the ' +
+        'tab bar by that much. This is a saved setting, so it survives every ' +
+        'update — if the bar looks too high, this is the first thing to try.');
+      cs.appendChild(w);
+      var fix = el('button', 'btn sm pri', 'Put the tab bar back down');
+      fix.addEventListener('click', function () {
+        S.settings.adjBot = 0; Store.save(); applyAdjust(); render();
+        toast('Extra bottom padding cleared');
+      });
+      cs.appendChild(fix);
+    }
     [['adjTop', 'Extra top padding'], ['adjBot', 'Extra bottom padding']].forEach(function (f) {
       var lab = el('label', 'f', f[1] + ': ' + (S.settings[f[0]] || 0) + 'px');
       var rng = el('input'); rng.type = 'range'; rng.min = '0'; rng.max = '80'; rng.step = '2';

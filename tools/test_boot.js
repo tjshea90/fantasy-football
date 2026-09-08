@@ -67,7 +67,7 @@ ok(pdb.indexOf('function diagnose') >= 0, 'a per-team route diagnostic exists');
 var css2 = fs.readFileSync('app/assets/app.css', 'utf8');
 /* was min-height:60px exactly; v3.1 raised it and the assertion is now a
    floor rather than an equality so growing the target never fails the suite */
-var mh0 = /\.tab\{[^}]*min-height:(\d+)px/.exec(css2);
+var mh0 = /--tab-h:(\d+)px/.exec(css2);
 ok(!!mh0 && Number(mh0[1]) >= 60, 'tab targets are at least 60px tall');
 ok(uiRaw.indexOf('scrollMem') >= 0, 'scroll position is remembered per tab');
 ok(uiRaw.indexOf('function jobStart') >= 0, 'long jobs live outside any one screen');
@@ -232,15 +232,29 @@ ok(/function renderTop/.test(uiRaw),
 
 /* ---- v3.1: the bottom tabs are a real touch target ---------------------- */
 var css3 = fs.readFileSync('app/assets/app.css', 'utf8');
-var mh = /\.tab\{[^}]*min-height:(\d+)px/.exec(css3);
-ok(!!mh && Number(mh[1]) >= 72, 'tab min-height is at least 72px (got ' + (mh ? mh[1] : 'none') + ')');
+var mh = /--tab-h:(\d+)px/.exec(css3);
+ok(!!mh && Number(mh[1]) >= 72,
+   'the tab height is at least 72px (got ' + (mh ? mh[1] : 'none') + ')');
+ok(/\.tab\{[^}]*min-height:var\(--tab-h\)/.test(css3),
+   'and .tab takes its height from that variable rather than repeating it');
 var dot = /\.tab \.dot\{font-size:(\d+)px/.exec(css3);
 ok(!!dot && Number(dot[1]) >= 22, 'the tab icon is at least 22px');
-var bp = /body\{padding-bottom:calc\((\d+)px/.exec(css3);
-ok(!!bp && Number(bp[1]) >= Number(mh[1]) + 24,
-   'body padding clears the taller tab bar (got ' + (bp ? bp[1] : 'none') + 'px)');
-var tb = /\.toast\{[^}]*bottom:calc\((\d+)px/.exec(css3);
-ok(!!tb && Number(tb[1]) >= Number(mh[1]) + 24, 'the toast clears the tab bar too');
+
+/* THESE TWO USED TO ASSERT THE BUG.
+ * The old rule was `body padding >= min-height + 24`, which does not describe
+ * anything real: the bar is --tab-h plus its 1px border, so demanding 24px MORE
+ * than that was demanding a dead band above it. body reserved a literal 124px
+ * for an 89px bar and the test called it correct, because the test had been
+ * written to match the number rather than the bar. Both now have to DERIVE from
+ * --tabh, so they cannot disagree with the bar or with each other. */
+ok(/--tabh:calc\(var\(--tab-h\) \+ 1px \+ var\(--ins-bot\) \+ var\(--adj-bot\)\)/.test(css3),
+   '--tabh is the real bar height: the tab, its border, and both insets');
+ok(/body\{padding-bottom:calc\(var\(--tabh\)/.test(css3),
+   'body reserves exactly the bar, derived  <-- not a literal that drifts');
+ok(/\.toast\{[^}]*bottom:calc\(var\(--tabh\)/.test(css3),
+   'the toast clears the bar from the same source');
+ok(!/124px/.test(css3.replace(/\/\*[\s\S]*?\*\//g, '')),
+   'the stale 124px is gone from the CSS (the comment explaining it may stay)');
 
 /* ---- v3.3: the model picker ---------------------------------------------- */
 var aiRaw2 = fs.readFileSync('app/assets/ai.js', 'utf8');
