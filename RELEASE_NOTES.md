@@ -3,6 +3,38 @@
 Newest first. Every version is one checkpoint zip and one APK; `VERSION` is the
 only place the number lives.
 
+## v4.6 — the bottom navigation, and a dead end on the Live tab
+
+**The nav bar.** Nothing in v4.5 moved it — it is pinned to the bottom of the
+screen and the only styling that version added was colours. I diffed it to be
+sure. But looking properly found a real problem underneath: the bar is 89 pixels
+tall and the page was reserving 124 for it, a stale number left over from when
+the tabs were shorter. That put a permanent 35-pixel dead strip above the bar.
+Fixed, and now derived from one number so it cannot drift again.
+
+**If it still looks too high, check Data → Screen fit.** There is an "Extra
+bottom padding" slider there, it is *saved*, and it survives every update — so a
+value set once months ago looks exactly like a new bug. That card now shows you
+the bar's real height, what the app expects it to be, the size of your phone's
+system bar, and your slider value, with a one-tap "put the tab bar back down".
+Tell me those numbers if it still looks wrong and I can settle it immediately.
+
+**Tapping a player before kickoff now does something.** It used to flash "no
+stats synced" and stop — on the screen you use most, on the days you actually
+use it. It now shows when he plays, who he plays, what the app projects him for,
+the injury note, and Claude's read if there is one. All of that was already
+being calculated; none of it was reachable.
+
+**"TO PLAY" is gone where the kickoff time already says so.** The row read
+"Bo Nix QB DEN Sun 4:05p TO PLAY". The time says the same thing and says when —
+and on a narrower phone that redundant tag was squeezing the player's *name* into
+an ellipsis.
+
+**One fix you will not see:** the file the app hands to the Claude app now
+carries its read permission properly through the share sheet. Without it, Claude
+could be given a file it is not allowed to open — and that failure shows up in
+Claude, not here, which is a miserable place to debug it.
+
 ## v4.5 — the three bugs you reported, two new features, and a full sweep
 
 ### The three you reported

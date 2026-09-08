@@ -213,3 +213,25 @@
 - [x] 15i. THE SWEEP. Three hard-coded lists that were silently not covering
           new files (two test runners, the ES2018 guard) now discover with a
           glob. Plus the smaller fixes recorded in STATE.md's v4.5 section.
+
+# ---- v4.6 — the 2026-09-08 report: "the bottom navigation has shifted up".
+
+- [x] 16a. THE TAB BAR. Nothing in v4.5 moved it (fixed;bottom:0, and the only
+          new CSS was additive), but the reserve underneath it was wrong: body
+          and the toast hard-coded 124px for an 89px bar, a leftover from the
+          60px era, pinning a 35px dead band. test_boot ASSERTED that bug
+          ("padding >= min-height + 24"). Both now derive from --tabh and the
+          assertions test the relationship instead of two literals.
+- [x] 16b. SELF-DIAGNOSING SCREEN FIT. Measured bar height vs what the CSS
+          expects, the bottom inset, and the saved adjBot slider — the one
+          thing that genuinely can lift the bar and that survives every update.
+          One-tap reset. Caught a getPropertyValue('--tabh') -> NaN bug in the
+          readout itself; it measures a probe now.
+- [x] 16c. THE LIVE TAB BEFORE KICKOFF. Tapping a player with no stat line was
+          a dead-end toast; it now shows the kickoff, the projection, the
+          injury note and Claude's read, all of which were already computed.
+          "TO PLAY" suppressed when a kickoff badge already says so — it was
+          ellipsising the player's name in a nowrap row.
+- [x] 16d. THE SHARE GRANT. exportShare relied on a flag the chooser does not
+          reliably propagate; ClipData set and the flag repeated, because this
+          is the one path whose whole purpose is another app reading our file.

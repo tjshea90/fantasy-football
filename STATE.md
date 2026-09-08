@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-07** · ladder 0-15 COMPLETE · **v4.5** · APK builds, signed, all 11 test suites green
+**Last updated: 2026-09-08** · ladder 0-16 COMPLETE · **v4.6** · APK builds, signed, all 11 test suites green
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
@@ -44,6 +44,67 @@ Next job: Tj running it and reporting what misbehaves.
 | free agents: Claude sync button, waiver wire online, league scoring, roster needs | **11d done** |
 | free agents show all positions, not just QB | **11b done** |
 | weekly advice: multiple pro sources averaged, converted to league scoring | **11e done** |
+
+## v4.6 — the tab bar, and a dead end on the busiest screen
+
+Tj, with a week-2 screenshot: *"notice the bottom navigation has shifted up for
+some reason."*
+
+**Nothing in v4.5 moved it.** The bar is `position:fixed;bottom:0`, so no amount
+of content can push it, and the only CSS v4.5 added was badge colours and the
+alert card. Diffed and confirmed. But looking properly found a real defect
+underneath, and the reason it was invisible is worse than the defect.
+
+**The bar is 89px tall** — `--tab-h` 88 plus its 1px border — and `body`'s
+`padding-bottom` and the toast's `bottom` both hard-coded **124px**. That is a
+leftover from when the tabs were 60px; when v3.1 grew them to 88 the two copies
+were updated by hand to a number that was already wrong. The page therefore
+reserved 35px more than the bar occupies and pinned a dead band above it.
+
+**`test_boot.js` asserted the bug.** The rule was `body padding >= min-height +
+24`, which does not describe anything real — the bar is the tab plus its border,
+so demanding 24px MORE than that was demanding the gap. The test had been
+written to match the number rather than the bar, so it went green for two years
+while the layout was wrong. Both values now derive from
+`--tabh: calc(var(--tab-h) + 1px + var(--ins-bot) + var(--adj-bot))`, one number
+governs the height, and the assertions test the relationship.
+
+**The thing that could genuinely move it is `adjBot`.** The Data tab has an
+"Extra bottom padding" slider, it is SAVED STATE, and it survives every update —
+so a value set once to fix something else looks exactly like a regression months
+later. Screen fit now prints the measured bar height, what the stylesheet
+expects, the bottom inset and the current adjBot, flags a mismatch, and offers a
+one-tap reset. The next occurrence answers itself.
+
+**A bug in that readout, caught before shipping.**
+`getComputedStyle(el).getPropertyValue('--tabh')` returns the SPECIFIED value of
+a custom property — the literal string `calc(var(--tab-h) + 1px + …)` — not a
+resolved length, so `parseFloat` was `NaN` and the whole check would have
+silently reported nothing. Custom properties only resolve when used, so it now
+measures a hidden probe given that height.
+
+### The Live tab before kickoff
+**Tapping a player was a dead end.** Every row is tappable and `Store.lineFor`
+returns nothing until the week is synced, so on any day before the games — which
+is most days, and exactly when a lineup is being decided — a tap produced a toast
+saying "no stats synced" and stopped. The app already had the projection, the
+kickoff, the injury note and Claude's read for that player; none of it was
+reachable. It now shows those instead. The manual-adjustment editor is unchanged
+and still appears only when there is a line to adjust.
+
+**"TO PLAY" is suppressed when a kickoff badge is present.** The row read
+"Bo Nix QB DEN Sun 4:05p TO PLAY"; the badge says the same thing and says when.
+The cost was not only noise — `.row .nm` is nowrap with `text-overflow:ellipsis`,
+so the redundant tag is what pushes the PLAYER'S NAME into the ellipsis on a
+narrower phone. Kept when there is no badge.
+
+### The share grant
+`exportShare` set `FLAG_GRANT_READ_URI_PERMISSION` on the send intent only. A
+URI grant propagates through a chooser from the intent's ClipData, so without one
+the app the user picks can be handed a Uri it is not permitted to open — and the
+failure is silent on our side, surfacing in the other app as "cannot open file".
+On the one path whose entire purpose is another app reading our file, that is the
+worst place for it. ClipData is now set and the flag repeated on the chooser.
 
 ## v4.5 — the 2026-09-07 list, and the bug that would have shipped
 (v4.3 was the mid-work checkpoint zip sent to Tj partway through the same
