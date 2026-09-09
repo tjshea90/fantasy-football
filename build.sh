@@ -36,6 +36,17 @@ printf 'window.APP_VERSION=%s;\n' "\"$VER\"" > app/assets/version.js
 echo "== aapt2 compile =="
 "$BTDIR/aapt2" compile --dir android/res -o "$OUT/res/res.zip"
 
+# seed.json is the SOURCE tools/mkseed.py turns into seed.js. index.html loads
+# seed.js and nothing has read the .json on the phone for many versions, but
+# aapt2 -A ships the whole directory, so 38 KB of dead weight rode along in
+# every APK. Staged copy: the bundle keeps the source, the APK does not carry
+# it. Anything genuinely unused by index.html can be added to this list.
+echo "== staging assets (excluding build-time sources) =="
+APKASSETS="$OUT/assets"
+rm -rf "$APKASSETS"; mkdir -p "$APKASSETS"
+cp app/assets/* "$APKASSETS"/
+rm -f "$APKASSETS/seed.json"
+
 echo "== aapt2 link =="
 "$BTDIR/aapt2" link \
   -o "$OUT/base.apk" \
@@ -43,7 +54,7 @@ echo "== aapt2 link =="
   --manifest android/AndroidManifest.xml \
   -R "$OUT/res/res.zip" \
   --java "$OUT/gen" \
-  -A app/assets \
+  -A "$APKASSETS" \
   --min-sdk-version 29 \
   --target-sdk-version "$API" \
   --version-code "$VCODE" --version-name "$VER" \

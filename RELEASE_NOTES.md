@@ -1,192 +1,190 @@
-# Release notes
+# v4.7 — what changed, and what to check on your phone
 
-Newest first. Every version is one checkpoint zip and one APK; `VERSION` is the
-only place the number lives.
-
-## v4.6 — the bottom navigation, and a dead end on the Live tab
-
-**The nav bar.** Nothing in v4.5 moved it — it is pinned to the bottom of the
-screen and the only styling that version added was colours. I diffed it to be
-sure. But looking properly found a real problem underneath: the bar is 89 pixels
-tall and the page was reserving 124 for it, a stale number left over from when
-the tabs were shorter. That put a permanent 35-pixel dead strip above the bar.
-Fixed, and now derived from one number so it cannot drift again.
-
-**If it still looks too high, check Data → Screen fit.** There is an "Extra
-bottom padding" slider there, it is *saved*, and it survives every update — so a
-value set once months ago looks exactly like a new bug. That card now shows you
-the bar's real height, what the app expects it to be, the size of your phone's
-system bar, and your slider value, with a one-tap "put the tab bar back down".
-Tell me those numbers if it still looks wrong and I can settle it immediately.
-
-**Tapping a player before kickoff now does something.** It used to flash "no
-stats synced" and stop — on the screen you use most, on the days you actually
-use it. It now shows when he plays, who he plays, what the app projects him for,
-the injury note, and Claude's read if there is one. All of that was already
-being calculated; none of it was reachable.
-
-**"TO PLAY" is gone where the kickoff time already says so.** The row read
-"Bo Nix QB DEN Sun 4:05p TO PLAY". The time says the same thing and says when —
-and on a narrower phone that redundant tag was squeezing the player's *name* into
-an ellipsis.
-
-**One fix you will not see:** the file the app hands to the Claude app now
-carries its read permission properly through the share sheet. Without it, Claude
-could be given a file it is not allowed to open — and that failure shows up in
-Claude, not here, which is a miserable place to debug it.
-
-## v4.5 — the three bugs you reported, two new features, and a full sweep
-
-### The three you reported
-- **The JSON error is fixed, and the cause was not what the message said.**
-  Three separate defects. The parser was anchored to the first `{` in the whole
-  answer and never moved it, so a single brace in Claude's between-search
-  narration poisoned every attempt. The stream discarded the *reason* the model
-  stopped, which is how a `max_tokens` truncation surfaced as a generic parse
-  failure with the diagnosis already thrown away. And it was quadratic, so a
-  long answer chewed the phone right after a two-minute wait. It now finds the
-  JSON in one pass and, when the answer was genuinely cut off, **rescues the
-  players that did arrive instead of losing the whole sync** — those searches
-  were already paid for. When it truly cannot, it says which of the real causes
-  it was.
-- **Sentences no longer stop mid-word.** The injury note was hard-cut at exactly
-  220 characters at ingest — that is why "Even still, Swift wil" appeared in
-  three places at once: the *why* line and the FLAGGED list read the same stored
-  string. Now 600 characters, cut at a sentence or a word boundary, with a
-  visible "…" when anything was dropped. For an injury note this matters more
-  than it looks: a cut in the wrong place can invert the meaning.
-- **"Re-default all teams now" actually re-defaults.** It was skipping every
-  slot you had touched — correct behaviour for the automatic fills that run on
-  boot and after each sync, which must never undo your decisions, but wrong for
-  a button whose whole purpose is asking for the defaults back. The more changes
-  you had made, the more certainly it did nothing. It now asks first (it is
-  discarding your picks), says how many, and tells you what it changed.
-
-### Use the Claude app instead of an API key
-A new card under **Sync advice** on the Advice tab, and under **Ask Claude about
-the wire** on the Rosters tab.
-
-1. Tap **Make the file for Claude** — the share sheet opens, pick Claude.
-2. Send it with **no message of your own**. The file explains itself.
-3. Claude gives you a file back. Tap **Load Claude's reply** and pick it.
-
-Everything fills in exactly as if the API key had done it. Because it costs you
-nothing extra, this path asks about **every player on your roster**, not just
-the ones the paid path judges worth researching. If the file picker is not
-available, you can paste the reply instead — it finds the JSON either way, even
-in a whole chat message.
-
-### When each player plays, and a warning before Thursday
-- Every player now carries his **day and kickoff time** next to his name, on
-  Live, Lineups, Rosters and Advice. Anyone playing **before Sunday** is in
-  amber.
-- An **alert card** leads the Live, Lineups and Advice tabs whenever you have
-  players in early games. It leads with the ones the app recommends that are
-  still on your bench, with a one-tap fix, and says how long you have.
-- The same warning now fires as a **notification with the app closed**.
-- All of this costs no extra data: the kickoff times come from the scoreboard
-  request the live poll was already making and throwing away.
-
-### The app now sleeps
-It did not before. The live poll kept running in the background — every 45
-seconds, pulling sixteen box scores on a Sunday — behind whatever you were
-actually doing. It now stops the moment the app leaves the screen and restarts
-when you come back, and the WebView is released properly so it stops holding
-memory it only needs while visible.
-
-### Fewer, politer requests
-Every tap of Sync advice used to refetch the entire ESPN projection feed and the
-whole injury list, even when a previous tap had just done it. After a failure
-that was the worst case: retrying pulled megabytes down again to reach the step
-that had failed. Both are now reused for a short window, and the sync report
-tells you when it reused rather than fetched — nothing pretends to be fresher
-than it is.
-
-### And one that would have stopped the app booting
-Found while sweeping: a single-word mistake in the new sleep code would have
-thrown before the app painted a pixel. Eleven passing test suites and a clean
-APK build said nothing, because not one of them actually ran the screen file.
-There is now a suite that does, and it proves the battery fix by counting live
-timers rather than by reading the code: boot arms one, backgrounding leaves
-zero, returning does not stack a second.
+You asked me to audit the app, fix what I found, and add two gestures. The
+audit turned up 22 defects across the scoring engine, the advice layer,
+persistence, the Java shell and the UI. **Two of them were silently changing
+numbers the app exists to get right.** All of them are fixed and pinned by
+tests; 13 suites, 0 red.
 
 ---
 
-## For your approval — considered, deliberately NOT built
+## The two that mattered
 
-You said to consider ideas from similar apps but not to make major changes
-without your say-so. These are the ones worth having; none of them are in this
-build. Say which you want.
+### 1. The auto-fill was benching players who had already played
 
-1. **A start/sit confidence bar per slot.** Sleeper and Yahoo both show how
-   clear-cut a decision is. Here it would be honest, because the app already
-   simulates: "start Olave over Adams — he wins 71% of simulated weeks". Small
-   change, uses `sim.js` as it stands.
-2. **Notify when a rostered player's injury status changes**, not only on the
-   morning check. The feed is already fetched; this is a comparison against the
-   previous fetch plus a notification.
-3. **A "what changed since you last looked" card** on the Live tab — scores,
-   new designations, lineup deadlines passed. Common in ESPN's app and genuinely
-   useful mid-week.
-4. **Opponent-aware waiver suggestions**: flag a free agent who is good *and*
-   plays the team your opponent's starter also faces. The app has both rosters
-   and the schedule, so nothing new is fetched.
-5. **Trade finder** rather than only a trade evaluator: scan the other nine
-   rosters for two-for-one swaps that help both sides under this scoring. This
-   is the biggest of the five and the one most likely to need iteration.
-6. **A season-long "points left on the bench" tally.** Bench regret exists
-   per week; totalling it is a line of arithmetic and a genuinely painful stat.
-7. **Widget or lock-screen reminder for early kickoffs.** The notification now
-   covers this; a widget would be the next step and is a real chunk of Java.
+`autoLineup` ranks a roster on projections and has no concept of time. So a
+player who had already banked 33 real points was compared on his 6.2 preseason
+number and lost his slot to somebody who had not kicked off yet — and
+`applyAuto` overwrote him, because the only thing it protected was a slot you
+set by hand. A slot the app filled itself was not one of those.
 
-## v2.9 — hardening
-- One card can no longer take down a whole screen. Every card added since v2.3
-  is built inside `addSafe`, and each screen is wrapped as well: a failure shows
-  as one red card naming what broke, with everything else still on screen.
-- Offline is now a sentence rather than a stack trace. `Native.online()` tells
-  "you have no connection" apart from "the feed is broken" — the same exception
-  at the socket, two very different things to read. Everything already synced
-  keeps working: scores, standings, the League tab, the last advice, the recap.
-- The ES2018 guard now covers every asset, not the original eight. It found
-  nothing, which is the point of running it.
-- Empty states everywhere new: no matchup, no final week, nobody on the wire,
-  no trade selected, no alarm bridge on an older shell.
+That is not a rare path. The auto-fill runs on boot, on every week change, and
+**after every sync including the quiet 45-second live poll**, for all ten
+teams. So it fired repeatedly, on its own, all Sunday afternoon. I reproduced a
+team total going from 33 to 0.
 
-## v2.8 — recap, schedule, second source
-- Weekly recap card with a share-to-league-chat button, optional one-cent
-  Claude write-up over facts computed on the phone.
-- Full-season round-robin schedule generator that refuses to touch a week that
-  already has results.
-- Sleeper wired in as a gap-filling second projection source, skill positions
-  only, used only after every ESPN route and only where ESPN had no week line.
+Everything downstream inherited the wrong number: the live matchup, the
+head-to-head result, the weekly most-points book, and the season points title.
 
-## v2.7 — lineup alerts
-- A pre-kickoff check that runs with the app closed: starters on a bye, ruled
-  OUT/IR/suspended/doubtful, and empty slots. Sunday at a time you set, plus
-  Thursday afternoon. Pure Java, no exact-alarm permission, no WebView.
-- "Run the check now" proves the whole path without waiting for Sunday.
+**Now:** once a player's game has started he cannot be moved by the automation,
+in either direction — he cannot be dropped from a slot and he cannot be added
+to one. The Lineups screen marks those slots "● started", dims them, and says
+why the app will not touch them. You can still change one yourself; it asks
+first, because the only good reason to do it is correcting the app to match
+what RTSports actually had.
 
-## v2.6 — the wire and trade values
-- Free-agent board built from the bundled database minus all ten rosters,
-  ranked in this league's points, leading with players who beat somebody you
-  are actually starting.
-- Usage trends (attempts, carries, targets) on the board and on player detail.
-- Trade evaluator on value above replacement times weeks remaining.
+### 2. Claude's verdicts were being thrown away for 15 of your 170 players
 
-## v2.5 — simulation
-- Live win probability, playoff/bye/title odds, seed distribution, power
-  rankings, luck index, bench regret. New League tab. No network.
+`ai.js` filed each verdict under `Names.canon(name)` — which formalises a first
+name, *Chris → christopher* — and `recommend.js` looked it up under
+`Espn.normName(name)`, which does not. The write and the read never met.
 
-## v2.4 — the Claude bill
-- Triage: settled / research / carried-forward. Searches sized to the players
-  actually being researched. Cached prompt prefix. Smart / Full / Cheap switch.
+That is **Chris Olave, Josh Allen, Joe Burrow, Mike Evans, Sam LaPorta, Josh
+Jacobs, Cam Skattebo, Tony Pollard, Jake Ferguson** and six more. Three costs:
 
-## v2.3 — sync efficiency and the feed canary
-- Final games are never refetched; box scores fetch three at a time.
-- A renamed scoring column or collapsed coverage now raises a red alarm.
-- The league book: every player ESPN reports, scored under this league's rules.
+- the projection adjustment was lost
+- the reasoning never appeared on the card, so nothing looked wrong
+- the triage read the same broken key, so they came back **"never checked" on
+  every single sync** — you paid for the same search again, week after week
 
-## v2.2 and earlier
-See `STATE.md`, which carries the full history including the two real feed
-bugs (a pick-six paid twice, uncredited two-point conversions), the frozen-UI
-root cause, and the streaming fix for the Anthropic call.
+And the bad one: Claude saying *"he is OUT, he will not play"* is supposed to
+remove a player from consideration entirely. For those fifteen it did nothing
+at all, and the app kept recommending him.
+
+**Now:** one tolerant reader (`Names.hit`) tries every spelling of a name, so
+nothing already cached on your phone needed migrating. The same defect existed
+in three more places and all four are fixed:
+
+- the **injury feed** — "Kenny Gainwell" in ESPN's feed against "Kenneth
+  Gainwell" on your roster meant no OUT flag at all. That is the exact failure
+  `names.js` was written for, on the one path where it costs a week.
+- **`Projections.find`** — a spelling miss silently dropped the ESPN weekly
+  line, the Sleeper line and the season pace (weights 3.0, 2.0 and 1.0 — most
+  of the blend) and fell back to a flat positional average.
+- the **ESPN/Sleeper merge** — the two feeds' second opinions were filed as two
+  different players whenever they spelled a name differently.
+
+---
+
+## The return-touchdown rule
+
+You settled it: *"a defense touchdown is only scored one time. individual
+player doesn't matter."*
+
+That was the one item `RULES_2026.md` had flagged as genuinely ambiguous in the
+rules image, and it had become a setting on the Data tab. The setting is now
+**gone**, not switched off — because while it existed it was wrong in both
+positions:
+
+- Turning it ON did not **move** the six points, it **added** them. The
+  returner got +6 and the D/ST still got +6, so one punt return was worth 12
+  league points. That is the same defect as the v1.8 pick-six, behind a switch.
+- The score cache never covered the flag, so flipping it changed no number on
+  screen until you restarted the app.
+
+Return touchdowns are still recorded on the player's line and shown on his
+card. They are worth 0. There is now exactly one place in the engine where a
+return TD scores: the D/ST.
+
+`RULES_2026.md` has been updated to record this as a stated fact rather than an
+open question.
+
+---
+
+## Your two gestures
+
+**Swipe left and right** moves between the seven tabs, in the order the bottom
+bar is in — the swipe reads that order from the bar itself, so the two can
+never disagree.
+
+**Pull down from the top** refreshes, on any tab. It runs the same sync the
+"Sync week" button runs, with the same progress bar, plus a schedule refresh.
+
+The care went into what it *doesn't* do:
+
+- the axis is decided once in the first few pixels and then sticks, so the
+  screen never scrolls and slides at the same time
+- a vertical drag reaches the browser untouched — the gesture only claims a
+  touch after it has committed to it
+- a `<select>`, a sideways-scrolling table, and anything inside a dialog keep
+  their own drags
+- pull-to-refresh only fires when you are already at the top; anywhere else a
+  downward drag is a scroll
+- both sleep when the app is backgrounded
+- a flick needs speed **and** distance. The first version changed tab on a 30px
+  twitch, which the test caught.
+
+**The back button also works properly now.** It used to quit the app from
+anywhere — including with a dialog open — because it deferred to a WebView
+history that this app never writes to. It now closes an open dialog, then
+returns to Live, and only then lets the app exit.
+
+---
+
+## Everything else that was fixed
+
+**Your API key was being written to the public Downloads folder.** "Export
+backup" serialised the whole state, `aiKey` included, in cleartext — and that
+is the file you would move to a PC or send to someone. It is redacted now, and
+restoring a backup no longer wipes the key already on your phone.
+
+**Saving got ~75× cheaper, and honest.** `rawSave` threw away the bridge's
+return value and reported success unconditionally, so a failed write looked
+like a good one. And at 14 scored weeks every lineup change rewrote **1.9 MB**
+through a blocking bridge call on the UI thread — 98.7% of it the league book
+and stat lines, which a lineup edit cannot touch. Those now live in their own
+file and are written only when a sync changes them: **1924 KB → 25 KB** per
+edit. Your existing save loads fine and splits itself on the first write.
+
+**The lineup alarm.** The check always understood that Tuesday through Saturday
+is "before Sunday" — but only two alarms ever ran it (Sunday, and Thursday at
+16:00), so a Wednesday opener or a December Saturday got no closed-app warning
+at all. It is one daily alarm now, with a 30-hour horizon and duplicate
+suppression so daily does not mean noisy. It also names only the players the
+app would actually **start**: the page now writes that list where the alarm can
+read it, instead of the alarm listing every bench player with an early game.
+
+Smaller ones: exponential backoff when you are offline (it retried every 60
+seconds, forever); one shared bye-week rule, because Java and JavaScript
+resolved byes differently; standings sort on win percentage; the week arrows
+stop at 17 instead of 18; 44px touch targets and a visible focus ring; both
+`innerHTML` error paths escaped and two unused `file://` WebView privileges
+turned off; text now follows your phone's font-size setting instead of being
+pinned at 100%; a timed-out request can no longer strand its response in the
+Java heap; `seed.json` (38 KB of build-time source) no longer ships in the APK.
+
+---
+
+## What to check on the phone
+
+1. **Swipe left/right across all seven tabs**, and check it does not fight
+   scrolling on the League and Data tabs, which are the longest.
+2. **Pull down to refresh** from the top of Live. It should sync the week.
+3. **Press back** with a dialog open (Data → Export a backup shows one) — it
+   should close the dialog, not the app.
+4. **On Sunday**, open Lineups mid-slate and check the "● started" markers and
+   that the auto-fill has left those slots alone.
+5. **Data → Export a backup**, then open the file — confirm your API key is not
+   in it.
+
+Everything deterministic is covered by `node tools/test_locks.js`,
+`test_gestures.js` and the other eleven suites.
+
+---
+
+## Still on the list, not built
+
+The three from the audit I would do next, if you want them:
+
+- **A "what it cost you" line on the recap.** The app already has every bench
+  player's scored line and the lineup you actually played. The gap between
+  them — and which single swap would have flipped the week — is the most-read
+  number in every app that has it, and it needs no network.
+- **A weekly name-folding check on the Data tab.** Three of this round's
+  defects were the same key mismatch in three modules. A card reporting how
+  many rostered players got no projection, no injury record and no Claude
+  verdict this week would have caught all three from the phone.
+- **Longest-completion attribution.** The +5 currently goes to the team's
+  leading passer rather than whoever actually threw that ball — ESPN's passing
+  group has no LONG column, so getting it exactly right means reading the play.
+  It may not be worth it; say the word.

@@ -348,7 +348,17 @@
             var filled = 0, second = 0, k;
             for (k in got.byName) {
               if (!Object.prototype.hasOwnProperty.call(got.byName, k)) continue;
-              var have = best.byName[k];
+              /* Match on IDENTITY, not on the exact string each feed printed.
+                 ESPN says "Cam Skattebo" and Sleeper says "Cameron Skattebo";
+                 keyed raw, those are two entries, so the second opinion this
+                 whole block exists to capture was silently filed as a separate
+                 player and the blend downstream still averaged one source. */
+              var hk = k;
+              if (best.byName[hk] === undefined && root.Names && root.Names.hitKey) {
+                var alt = root.Names.hitKey(best.byName, got.byName[k].fullName || k);
+                if (alt) hk = alt;
+              }
+              var have = best.byName[hk];
               if (have && have.week !== undefined) {
                 have.sleeperWeek = got.byName[k].week;         /* keep it */
                 have.sleeperLine = got.byName[k].weekLine;
@@ -356,7 +366,7 @@
                 continue;
               }
               if (have) { have.week = got.byName[k].week; have.weekLine = got.byName[k].weekLine; }
-              else best.byName[k] = got.byName[k];
+              else best.byName[hk] = got.byName[k];
               filled++;
             }
             best.weekly += filled; best.count += filled;

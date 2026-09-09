@@ -66,3 +66,8 @@ app/assets/schedule.js
 tools/test_schedule.js
 tools/test_net.js
 tools/test_lifecycle.js
+app/assets/gestures.js
+tools/test_gestures.js
+tools/test_locks.js
+android/res/xml/backup_rules.xml
+android/res/xml/data_extraction_rules.xml

@@ -235,3 +235,90 @@
 - [x] 16d. THE SHARE GRANT. exportShare relied on a flag the chooser does not
           reliably propagate; ClipData set and the flag repeated, because this
           is the one path whose whole purpose is another app reading our file.
+
+# ---- v4.7 — the 2026-09-09 audit, then Tj's two gestures.
+# A full read of every module found 22 defects. Two were silent and changed
+# numbers the app exists to get right. Everything below is fixed AND pinned.
+
+- [x] 17a. THE RETURN-TD RULE, SETTLED. Tj: "a defense touchdown is only scored
+          one time. individual player doesn't matter." `individualReturnTD` is
+          REMOVED, not defaulted — while it existed, switching it ON did not
+          MOVE the six points, it ADDED them (returner +6 AND D/ST +6 = 12 for
+          one score), and the score memo never covered the flag so flipping it
+          changed nothing on screen until a restart. RULES_2026.md updated: the
+          one genuine ambiguity in the rules image is now a stated fact.
+          → tools/test_locks.js §3
+- [x] 17b. KICKOFF LOCKS. autoLineup ranks on projections and knows nothing
+          about time, so the automatic auto-fill benched players who had
+          ALREADY PLAYED — reproduced: a man with 33 banked points removed, the
+          team total dropping 33 → 0. It runs after every sync including the
+          45-second live poll, for all ten teams, so it fired on its own all
+          Sunday. Store.isLocked() now binds the automation in both directions
+          (cannot be removed, cannot be added), a manual edit still gets
+          through after a confirm because this app mirrors a league run on
+          RTSports, and the Lineups screen marks and explains it.
+          → tools/test_locks.js §1
+- [x] 17c. THE NAME-KEY CLASS OF BUG, in all four places it lived. ai.js wrote
+          verdicts under Names.canon and recommend.js read them under
+          Espn.normName: 15 of 170 players — Chris Olave, Josh Allen, Joe
+          Burrow, Mike Evans — silently lost every adjustment, every reason,
+          and the hard "he is OUT, do not start him". The triage read the same
+          broken key, so those players came back "never checked" on EVERY sync
+          and were re-researched at cost, forever. Same shape in health() (the
+          injury feed), in Projections.find(), and in the ESPN/Sleeper merge.
+          One tolerant reader now: Names.hit/hitKey tries every spelling, so no
+          cache on disk needs migrating. variants() also gained both sides of a
+          curated alias, which it had never returned.
+          → tools/test_locks.js §2
+- [x] 17d. PERSISTENCE. rawSave threw away Native.save's boolean and returned
+          true unconditionally — a full disk read as a successful save, and
+          save()'s auto-backup gate was testing a constant. Measured at 14
+          scored weeks, every lineup edit rewrote 1.9 MB through a SYNCHRONOUS
+          bridge call on the JS thread, 98.7% of it book and stats that the
+          edit could not have touched. Both now live in their own file, written
+          only when a sync changes them: 1924 KB → 25 KB per edit. A ≤v4.6
+          single-file save still loads and splits itself on the first write.
+          → tools/test_locks.js §4
+- [x] 17e. THE API KEY STOPPED LEAVING. "Export backup" serialised the whole
+          state, aiKey included, into the PUBLIC Downloads folder in cleartext.
+          Redacted in exportJSON so every caller is safe by construction, and
+          an import no longer wipes the key already on the phone. Manifest
+          gained backup/extraction rules for the rotating snapshots.
+- [x] 17f. SWIPE BETWEEN TABS, PULL TO REFRESH. New app/assets/gestures.js —
+          standalone, driven by callbacks, and tested with synthetic touches
+          against a DOM stub because gesture code is exactly the kind that
+          reads right and is wrong under a thumb. Axis locked once and kept;
+          never steals a scroll; leaves a <select>, a sideways-scrolling table
+          and anything inside a modal alone; sleeps with the app. A flick needs
+          speed AND distance — the first version changed tab on a 30px twitch.
+          → tools/test_gestures.js
+- [x] 17g. THE BACK BUTTON. It deferred to WebView.canGoBack(), which in a page
+          that never pushes history is always false, so back quit the app from
+          anywhere — including with a confirm dialog open. The Activity now
+          asks the page (window.__onBack) and only finishes if the page
+          declines. That needed one modal stack, so modal() is built on
+          dialog() instead of being a second implementation that had quietly
+          missed focus handling, Escape and the ARIA roles.
+- [x] 17h. THE ALARM. The check correctly treats Tue-Sat as "before Sunday",
+          but only TWO weekly alarms ever ran it (Sunday, Thursday 16:00) — a
+          Wednesday opener or a December Saturday got no closed-app warning at
+          all. One daily alarm now, with a 30-hour horizon and duplicate
+          suppression so a daily run is not daily noise. It also names only the
+          players the app would actually START: schedule.js persists that list
+          into weekMeta, which the alarm already reads for kickoffs. Java's
+          norm() gained Locale.US — on a Turkish-locale phone every name with
+          an I stopped matching the injury feed.
+- [x] 17i. THE SMALLER ONES. Exponential offline backoff with Native.online()
+          consulted (was a flat 60s retry, forever). One shared Store.isOnBye,
+          because Java and JS resolved byes differently. Standings sort on win
+          PERCENTAGE. Week arrows stop at 17, not 18. 44px touch targets and a
+          visible focus ring. Both innerHTML error paths escaped, and the two
+          unused file:// WebView privileges turned off. setTextZoom follows the
+          phone's font scale instead of discarding it. httpForget leaves a
+          tombstone so a timed-out body is never stranded in the Java heap.
+          seed.json (38 KB, build-time source) no longer ships in the APK.
+- [x] 17j. THE TEST NET. test_lifecycle now RENDERS ALL SEVEN TABS through the
+          real tab handler — nothing had ever executed a view function, which
+          is most of ui.js. Three source-grep assertions that broke on a
+          refactor while the behaviour they named was still true were rewritten
+          to test the relationship instead of the literal.
