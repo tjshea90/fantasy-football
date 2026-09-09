@@ -18,6 +18,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Independent of any Claude session. A handoff between accounts is
+      # exactly when a regression slips through, because the account that
+      # picks the work up did not watch the account before it run these.
+      # Reported, not gated: a red suite must not block the APK, since a
+      # mid-task checkpoint is often legitimately red and still worth having.
+      - name: Test suites
+        continue-on-error: true
+        run: |
+          for t in tools/test_*.js tools/check_es2018.js; do
+            [ -f "$t" ] || continue
+            if node "$t" >/dev/null 2>&1; then echo "  OK    $(basename "$t")"
+            else echo "  FAIL  $(basename "$t")"; fi
+          done
+
       - name: Cache Android SDK
         uses: actions/cache@v4
         with:
