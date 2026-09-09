@@ -38,7 +38,14 @@ fi
 
 # Explicit destination: works whether or not tracking is configured.
 if git push -q origin "HEAD:refs/heads/$BR" >/dev/null 2>&1; then
-  # Self-heal the missing tracking ref so the cheap check works next time.
+  # Self-heal, so the cheap check above starts working and this stops paying
+  # for a network round trip on every tool call. The root cause seen here was
+  # an EMPTY remote.origin.fetch: `git clone --depth 1` of a repo with no
+  # commits leaves no refspec, so `git fetch origin` only ever writes
+  # FETCH_HEAD and refs/remotes/origin/* is never populated. A normal clone
+  # has this set already, so this is a no-op almost everywhere.
+  git config --get-all remote.origin.fetch >/dev/null 2>&1 || \
+    git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' 2>/dev/null || true
   git fetch -q origin "$BR:refs/remotes/origin/$BR" >/dev/null 2>&1 || true
   git branch --set-upstream-to="origin/$BR" "$BR" >/dev/null 2>&1 || true
   exit 0
