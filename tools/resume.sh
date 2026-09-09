@@ -66,11 +66,46 @@ BRIEF="$(
       echo "        say so rather than working on unprotected."
     fi
 
+    # WAS THE LAST SESSION CUT OFF MID-CHANGE?
+    # This is the question CHECKPOINT.md cannot answer about itself. The
+    # autosave hook commits after every edit, so a session killed by a usage
+    # cap leaves a CLEAN tree whose HEAD is a half-finished change — it looks
+    # exactly like a finished piece of work, and CHECKPOINT.md still describes
+    # the state as of the last DELIBERATE checkpoint, which may be several
+    # steps behind. Without this warning the next account reads a stale
+    # "Do this next", assumes everything up to HEAD is done, and builds on top
+    # of a half-written function.
+    #
+    # The tell: commits after the newest 'ckpt N:' or 'ship vN:'. Those two are
+    # the only ones a session makes on purpose.
+    LASTCKPT="$(git log -1 --format=%H --extended-regexp --grep='^(ckpt [0-9]+:|ship v)' 2>/dev/null || true)"
+    if [ -n "$LASTCKPT" ]; then
+      SINCE="$(git rev-list --count "$LASTCKPT"..HEAD 2>/dev/null || echo 0)"
+      if [ "${SINCE:-0}" -gt 0 ]; then
+        echo
+        echo "  !!    THE LAST SESSION WAS INTERRUPTED MID-CHANGE."
+        echo "        $SINCE automatic checkpoint(s) were saved AFTER the last"
+        echo "        deliberate one, which means the session stopped without"
+        echo "        finishing a step — almost certainly a usage cap."
+        echo
+        echo "        CHECKPOINT.md below describes the last DELIBERATE"
+        echo "        checkpoint, NOT the current HEAD. The code in these files"
+        echo "        may be half-written. Read the change before trusting it:"
+        echo
+        echo "          git diff $(git rev-parse --short "$LASTCKPT")..HEAD"
+        echo
+        git diff --stat "$LASTCKPT"..HEAD 2>/dev/null | tail -15 | sed 's/^/          /'
+        echo
+        echo "        Finish that change first, then checkpoint properly with"
+        echo "        tools/ckpt.sh before starting anything new."
+      fi
+    fi
+
     if [ -n "$DIRTY" ]; then
       echo
-      echo "  !!    UNCOMMITTED WORK IS PRESENT. The last session was interrupted"
-      echo "        mid-change. 'git diff' is what was in flight — read it before"
-      echo "        deciding anything; it is probably the task you are resuming."
+      echo "  !!    UNCOMMITTED WORK IS PRESENT — even the autosave hook did not"
+      echo "        get to this. 'git diff' is what was in flight; read it before"
+      echo "        deciding anything. It is probably the task you are resuming."
       printf '%s\n' "$DIRTY" | head -20 | sed 's/^/          /'
     fi
     echo

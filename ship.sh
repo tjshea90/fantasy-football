@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
-# ship.sh — checkpoint. Run after EVERY completed ladder step.
-# Naming is plain version numbers now: FFTracker_v1.8.zip / FFTracker_v1.8.apk.
+# ship.sh — MILESTONE release. Not the routine checkpoint; that is tools/ckpt.sh.
+#
+# GITHUB REPLACED THE ZIP (changed 2026-09-09).
+# This used to build FFTracker_v<V>.zip into the parent directory, because in
+# Cowork the zip was the only thing that survived the chat and the resume
+# procedure was "attach it to a new chat". None of that is true now: the repo
+# is the transport, every checkpoint is pushed, and a new session on any of the
+# three accounts clones it. A zip written next to the repo would not even be
+# committed — it would die with the container, which is the exact failure the
+# zip existed to prevent.
+#
+# So the gates below are unchanged (they are what make a release trustworthy)
+# and the output is now: a versioned APK committed under releases/, plus a
+# pushed commit. GitHub Actions builds its own APK from the same commit.
 # VERSION is the single source of truth (see tools/version.sh). If a zip for the
 # current version already exists, the version is bumped and written back, so two
 # checkpoints can never collide and every zip name says exactly what it is.
 set -uo pipefail
 D="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; cd "$D" || exit 1
-OUT="$(dirname "$D")"
+# (there is no longer an output directory outside the repo — see the header)
 # shellcheck source=tools/version.sh
 . "$D/tools/version.sh"
 NOTE="${1:-}"; [ -z "$NOTE" ] && { echo "FAIL: a one-line change note is required."; exit 1; }
@@ -99,7 +111,11 @@ V="$(ver_read)"
 # for either of us to tell the two builds apart. BUILDLOG.md travels in the
 # zip, so it is the only record that survives a resume: if it already logged a
 # ship at this version, this is a NEW build and the number must move.
-while [ -e "$OUT/FFTracker_v${V}.zip" ] || grep -q "| v${V} |" BUILDLOG.md 2>/dev/null; do
+# Both tests are now durable across containers. The old one checked for a zip
+# in the parent directory, which a fresh container never had — so a resumed
+# session happily re-shipped v3.0 on top of the v3.0 Tj already had installed.
+# releases/ and BUILDLOG.md are both committed, so neither can forget.
+while [ -e "releases/FFTracker-v${V}.apk" ] || grep -q "| v${V} |" BUILDLOG.md 2>/dev/null; do
   V="$(ver_next "$V")"
 done
 V0="$(ver_read)"
@@ -128,45 +144,59 @@ fi
 echo "  OK    version v$V (code $(ver_code "$V"))"
 
 DONE=$(grep -c '^- \[x\]' LADDER.md); TOT=$(grep -c '^- \[' LADDER.md)
-ZIP="$OUT/FFTracker_v${V}.zip"
 printf '%s | v%s | step %s/%s | %s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$V" "$DONE" "$TOT" "$NOTE" >> BUILDLOG.md
 grep -q '^BUILDLOG.md$' MANIFEST.txt || echo 'BUILDLOG.md' >> MANIFEST.txt
-# THE ZIP CARRIES .git ON PURPOSE (changed 2026-09-07).
-# In Cowork the zip is the only thing that survives the chat, so excluding the
-# history meant a resumed session got the final state of every file and no
-# record of how it got there. If a usage cap lands mid-change, that difference
-# is everything: with the history, `git log` and `git diff` say exactly what was
-# in flight; without it, the next session sees a tree it cannot reason about and
-# re-derives work that was already done. .lastbuild/ is gitignored so the 170 KB
-# APK is not re-stored on every checkpoint — it is added to the zip separately
-# below, which is why it is still in MANIFEST.txt.
-# ...and commit AGAIN, immediately before zipping. The first commit above runs
-# before the gates so the tests judge a committed tree; but BUILDLOG.md, VERSION
-# and sometimes MANIFEST.txt are all written AFTER it, so without this the zip
-# still carries a dirty tree and the next session is told it was interrupted.
+
+# The APK is COMMITTED, at a versioned path, so Tj can install it from the
+# GitHub app on his phone and so a later session can tell which build he
+# actually has. MANIFEST.txt is updated in the same breath because bootstrap.sh
+# checks it in both directions and would fail on the new file otherwise.
+APK="releases/FFTracker-v${V}.apk"
+if [ -f build/app-release.apk ]; then
+  mkdir -p releases && cp build/app-release.apk "$APK"
+  grep -q "^${APK}$" MANIFEST.txt || echo "$APK" >> MANIFEST.txt
+  echo "  OK    apk committed at $APK"
+else
+  echo "  WARN  no APK in build/ — nothing new to publish this ship"
+fi
+
+# Commit everything the gates produced. The earlier commit ran BEFORE them so
+# the tests judged a committed tree; BUILDLOG.md, VERSION, MANIFEST.txt and the
+# release APK are all written after it, so without this the tree is left dirty
+# and the next session is told it was interrupted when it was not.
 if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
   git add -A >/dev/null 2>&1
-  git commit -q -m "ship v$V: $NOTE
+  if bash tools/secretscan.sh; then
+    git commit -q -m "ship v$V: $NOTE
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" >/dev/null 2>&1
-  echo "  OK    working tree committed — the zip carries a clean history"
+    echo "  OK    working tree committed"
+  else
+    git reset -q >/dev/null 2>&1
+    echo "  FAIL  a credential is in the tree — nothing committed or published."
+    exit 1
+  fi
 fi
-( cd "$D" && zip -q -r "$ZIP" . -x 'sdk/*' 'build/*' '*.pyc' '*.log' '.ckpt/*' )
-# The last known-good APK travels INSIDE the zip too, so a resumed session can
-# hand Tj a working build immediately even before it rebuilds anything.
-if [ -f build/app-release.apk ]; then
-  mkdir -p .lastbuild && cp build/app-release.apk .lastbuild/app-release.apk
-  ( cd "$D" && zip -q "$ZIP" .lastbuild/app-release.apk )
+
+# THE SHIP IS NOT DONE UNTIL IT IS PUSHED. Everything above happened inside a
+# container that will be destroyed. Unlike ckpt.sh, this one is fatal on
+# failure: a "shipped" version that exists nowhere but here is a lie, and the
+# next session would bump past it and never build it again.
+if bash tools/push.sh; then
+  echo "  OK    pushed to GitHub"
+else
+  echo "  FAIL  COULD NOT PUSH. v$V exists only in this container and will be"
+  echo "        lost when the session ends. Retry:  git push origin HEAD"
+  exit 1
 fi
-[ -f build/app-release.apk ] && { cp build/app-release.apk "$OUT/FFTracker_v${V}.apk"; echo "  OK    apk copied out: FFTracker_v${V}.apk"; }
+
 echo "  OK    ladder $DONE/$TOT complete"
-echo "  zipped $(unzip -l "$ZIP" | tail -1 | awk '{print $2}') files, $(du -h "$ZIP" | cut -f1)"
 echo
-echo "== checkpoint saved =="
-echo "  $ZIP"
+echo "== shipped v$V =="
 echo
-echo "  To resume in a NEW chat: attach this zip and say"
-echo "  \"resume the tracker build\". Nothing else is needed."
+echo "  Tj installs it from:  github.com/tjshea90/fantasy-football"
+echo "                        -> $APK  (tap it, then Download)"
 echo
-echo "  This zip contains: every source file, the ladder with $DONE/$TOT ticked,"
-echo "  STATE.md, VERSION (v$V), and .lastbuild/app-release.apk."
+echo "  To continue in a NEW session, on ANY of the three Claude accounts:"
+echo "  open the repo and say \"continue\". The SessionStart hook briefs it"
+echo "  automatically — nothing is attached and nothing is explained."
