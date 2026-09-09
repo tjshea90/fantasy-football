@@ -13,6 +13,7 @@ releases/FFTracker-v4.7.apk
 tools/autosave.sh
 tools/resume.sh
 tools/secretscan.sh
+tools/push.sh
 BRIEF.md
 SPEC.md
 LADDER.md

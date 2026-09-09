@@ -41,10 +41,10 @@ for where the session actually stands." >/dev/null 2>&1
   fi
 fi
 
-# Push only when there is something to push. A no-op push still costs a network
-# round trip, and this runs after EVERY bash command — that latency would be
-# paid hundreds of times a session for nothing.
-AHEAD="$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
-[ "${AHEAD:-0}" -gt 0 ] && git push -q origin HEAD >/dev/null 2>&1
+# push.sh skips the network when there is provably nothing to push, and pushes
+# whenever it cannot prove that. Read the header there before "optimising" it —
+# the obvious version of this check fails silently on a checkout with no
+# remote-tracking ref, which is the one failure this whole file exists to stop.
+bash tools/push.sh >/dev/null 2>&1
 
 exit 0

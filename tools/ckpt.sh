@@ -125,12 +125,11 @@ fi
 # lost as if it had never been written, the moment a usage cap ends the session.
 # Best-effort: a failed push must not fail the checkpoint (the commit is made
 # either way, and autosave.sh retries the push after the next edit).
-AHEAD="$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
-if [ "${AHEAD:-0}" -gt 0 ]; then
-  if git push -q origin HEAD >/dev/null 2>&1; then
-    echo "  pushed to GitHub — a new session on any account resumes from here"
-  else
-    echo "  WARN  could not push ($AHEAD commit(s) local only). Retry: git push origin HEAD"
-  fi
+if bash tools/push.sh; then
+  echo "  pushed to GitHub — a new session on any account resumes from here"
+else
+  echo "  WARN  COULD NOT PUSH. This checkpoint exists only in this container,"
+  echo "        and containers do not survive the session. Retry by hand:"
+  echo "          git push origin HEAD"
 fi
 exit 0
