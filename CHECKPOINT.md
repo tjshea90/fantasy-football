@@ -1,12 +1,12 @@
-# CHECKPOINT 37 — read me first, then TASKS.md
+# CHECKPOINT 39 — read me first, then TASKS.md
 
-**Written:** 2026-09-09T22:58:07Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-09T23:01:50Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-de-Coworked the system: BRIEF.md cold-start/persistence/commands rewritten for Claude Code+GitHub, ship.sh publishes a committed APK + push instead of a zip nobody can attach, resume.sh now detects interrupted-mid-change (autosave leaves a CLEAN tree hiding a half-written commit), CLAUDE.md requires writing new requests into TASKS.md before coding
+added PreCompact hook (tools/toobig.sh): when a session grows big enough to auto-compact it saves everything and tells Tj to checkpoint and start a fresh session, since resuming from GitHub costs ~150 lines versus re-reading the whole conversation at full price on a cold cache
 
 ## Do this next
-Tj: verify v4.7 on the phone — Data > Test the projection feed, and Data > Test the key if he wants Claude's reads. Next code work continues from TASKS.md
+Tj: verify v4.7 on the phone — Data > Test the projection feed. Next code work continues from TASKS.md
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,11 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M CLAUDE.md
-     M app/assets/value.js
 
 ## Last ten checkpoints
 ```
+  4ce76c6 auto-checkpoint: 2026-09-09T23:01:39Z
+  198ab83 ckpt 37: de-Coworked the system: BRIEF.md cold-start/persistence/commands rewritten for Claude Code+GitHub, ship.sh publishes a committed APK + push instead of a zip nobody can attach, resume.sh now detects interrupted-mid-change (autosave leaves a CLEAN tree hiding a half-written commit), CLAUDE.md requires writing new requests into TASKS.md before coding
   c482bfb auto-checkpoint: 2026-09-09T22:57:24Z
   554e113 ckpt 35: cross-account handoff system finished and verified: SessionStart briefing, autosave hook on every edit and bash call, push.sh (fixes the silent no-push bug), secret scan for the public repo, MANIFEST repaired so bootstrap/ship work again, CI now runs the suites
   1e1bf9b auto-checkpoint: 2026-09-09T22:51:04Z
@@ -36,6 +36,4 @@ request in his own words and `git log` carries every step already taken.
   d963f2c Cross-account handoff: autosave hook, session-start briefing, push on checkpoint
   0225f84 Add auto-checkpoint hook; clean up test line in CLAUDE.md
   ca59689 auto-checkpoint: 2026-09-09T22:33:38Z
-  13bbe1a Add CLAUDE.md with checkpoint/resume process for multi-account work
-  04d08d8 Add prebuilt v4.7 APK for direct download
 ```
