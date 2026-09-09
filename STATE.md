@@ -1173,3 +1173,212 @@ manifest disagrees, and carries the last working APK inside the zip at
    own labelled row and survives a re-sync.
 3. Whether RTSports also pays an individual returner for a kick/punt return TD.
    Default follows the rules sheet (D/ST only); switchable on the Data tab.
+
+---
+
+# v4.7 — 2026-09-09. The audit, then the two gestures.
+
+## What was asked
+
+Tj attached the v4.6 zip and APK and asked for "a thorough scan for UI or code
+improvements, feature improvements, and bug fixes." I read every module and
+reproduced each finding by RUNNING the app's own code rather than by reading
+it. 22 defects. Then he replied with the rule decision, "fix all the criticals
+and whatever else you found", the two gestures, and "make sure any changes
+don't break anything else in the app."
+
+## The rule he settled — and why the setting is gone, not off
+
+> "a defense touchdown is only scored one time. individual player doesn't
+>  matter."
+
+v1.8 recorded `individualReturnTD` as the ONE genuine ambiguity in the rules
+image ("Kickoff/Punt return TD +6" is printed under Defense/ST — does the
+returner get paid too?) and made it a toggle on the Data tab. Tj has now
+answered it, so it is a fact and not a setting.
+
+It is REMOVED rather than pinned to false because while it existed it was wrong
+in both positions, and both halves are worth remembering:
+
+1. Switched ON it did not MOVE the six points, it ADDED them. `score()` paid
+   `L.ret.td` to the returner and still paid `D.retTD` to the defense in the
+   same pass: one punt return, 12 league points. **That is the v1.8 pick-six
+   defect exactly — two feeds describing one score, both counted — reintroduced
+   behind a switch, in the same file that fixed it.**
+2. `memoSig` covered `manualAdj` and the three bonus flags but not the RULES,
+   which `configure()` could mutate at runtime. So flipping the toggle changed
+   no number on screen until the app restarted. `RULES_2026.md` promised
+   "flipping it never needs a re-sync"; it needed a restart, silently.
+
+`RULES_EPOCH` is now in the memo signature and is deliberately unused: RULES is
+immutable again, so the signature is complete without it, but the next runtime
+rule would silently reintroduce (2) and the failure is invisible — the
+arithmetic is right, only the cache is stale.
+
+## The two silent ones
+
+### Auto-fill benched players who had already played
+
+`Recommend.autoLineup` ranks a roster on PROJECTIONS and has no concept of
+time. `Store.applyAuto` protected only slots marked manual — and a slot the app
+filled itself is not one of those. So a player who had banked 33 real points
+was compared on his 6.2 preseason number and lost his slot.
+
+`autoFillWeek` runs on boot, on every week change, and after EVERY sync
+including the quiet 45-second live poll, for all ten teams. Reproduced: team
+total 33 → 0, silently, with the app doing it to itself on a timer.
+
+Fix: `Store.isLocked(week, pid)` — a stat line with `played`, or a game whose
+state is not 'pre' (or whose kickoff has passed). Bound in BOTH directions in
+`applyAuto`: a started player cannot be removed from a slot and cannot be added
+to one. A MANUAL edit still gets through after a confirm, deliberately: this
+app mirrors a league actually run on RTSports and Tj sometimes has to correct a
+slot after the fact. The lock binds the automation, which is the thing that was
+silently wrong.
+
+### Claude's verdicts filed under a key nothing read
+
+`ai.js` wrote `byName[Names.canon(p.name)]`; `recommend.js` read
+`byName[Espn.normName(p.name)]`. canon() formalises the first name, so for
+every player with a nickname first name the write and the read never met.
+
+15 of this league's 170 — Chris Olave, Josh Allen, Joe Burrow, Mike Evans, Sam
+LaPorta, Josh Jacobs, Cam Skattebo, Tony Pollard, Jake Ferguson and six more.
+Three costs: the adjustment lost; the reasoning absent, so nothing LOOKED
+wrong; and `rosterContext` reading the same broken key, so they came back
+"never checked" on every sync and were re-researched at cost forever.
+
+Worst: a Claude "willPlay: false" is a HARD exclusion. For those fifteen it did
+nothing and the app kept recommending the player.
+
+The same defect lived in three more places, in a different shape — a map keyed
+by the FEED's spelling read with the ROSTER's: `health()` (so "Kenny Gainwell"
+OUT never reached "Kenneth Gainwell", the exact case names.js exists for),
+`Projections.find` (dropping the three heaviest projection sources to a flat
+positional prior), and the ESPN/Sleeper merge (filing one man as two).
+
+Fix: `Names.hit(map, name)` / `hitKey`, which tries every variant. Reading
+tolerantly rather than rewriting the writers means no cache on disk needed
+migrating — the entries an older build wrote are still found. `variants()` also
+gained both sides of a curated ALIAS pair, which it had never returned, so the
+alias list was useless to every lookup except an exact canon-to-canon compare.
+
+## Persistence: two defects, one of them growing all season
+
+`rawSave` called `Native.save`, discarded its boolean and returned true. A full
+disk read as a successful save, and `save()`'s `if (ok && saveCount % 10)`
+auto-backup gate was testing a constant.
+
+And measured on the real roster at 14 scored weeks:
+
+    whole state ........ 1,969,809 chars   written on EVERY save
+      league book ......   849 KB   44%    changes only on a sync
+      weekly stat lines  1,046 KB   54%    changes only on a sync
+      everything else ..    25 KB    1.3%  all a lineup edit touches
+
+Through a SYNCHRONOUS bridge call doing write + fsync + two renames on the
+renderer's JS thread — the blocking-bridge pattern BRIEF.md forbids, growing
+every week. book and stats now live in `fftracker_archive_v1`, written only
+when a sync marks them dirty. One lineup edit: 1924 KB → 25 KB.
+
+The archive can be one sync behind the main file if the app dies between the
+two writes. That is recoverable — the dirty flag survives, the next save
+retries, and a re-sync rebuilds both halves — and it is why this is two files
+and not three. Alerts.java reads teams, lineups, weekMeta, byes and settings
+out of the main file; none of those moved.
+
+## The API key was going to public Downloads
+
+`exportJSON` serialised the whole state, `aiKey` included, and the Export
+backup button hands that to `NativeBridge.export`, which writes it to
+`Downloads/` via MediaStore. Readable by any app with media access, and the one
+file he would move to a PC. Redacted in `exportJSON` rather than at the button,
+so every future caller is safe by construction; `importJSON` keeps the key
+already on the phone, so a redacted backup restores cleanly.
+
+## The gestures — and the one the test caught
+
+`app/assets/gestures.js` is standalone: `init()` takes callbacks and it reads
+no app state. That is what let `tools/test_gestures.js` drive it with synthetic
+touches against a DOM stub, and gesture code is exactly the kind that reads
+correctly and is wrong under a thumb.
+
+The axis is decided once in the first ~10px and then sticks; re-deciding per
+move event is what makes a screen scroll and slide at once. `preventDefault` is
+called only after the gesture is claimed, never speculatively. A `<select>`, a
+sideways-scrolling table and anything inside a dialog keep their own drags.
+Pull-to-refresh fires only at scrollTop 0.
+
+**The test caught a real one:** a flick was decided on velocity alone, and a
+25px twitch at the start of a scroll is over in a few milliseconds — a very
+high px/ms. It changed tab on a jerk. `FLICK_MIN_PX` is the floor that makes
+"fast" mean deliberate.
+
+## Back, and the second modal implementation
+
+`onKeyDown` deferred to `web.canGoBack()`, which in a page that never pushes
+history is ALWAYS false — so back quit the app from anywhere, including with a
+confirm dialog open, which on Android is where everyone presses it. The
+Activity now asks `window.__onBack()` and finishes only if the page declines
+(async, so the press is swallowed and the decision made in the callback).
+
+That needed one modal stack, which surfaced that `modal()` was a SECOND full
+modal implementation beside `dialog()` — its own backdrop, its own close — and
+had therefore silently missed everything dialog() gained. `modal()` is built on
+`dialog()` now, and both get focus-in/focus-return, Escape, `role="dialog"` and
+`data-nogesture`.
+
+## The alarm was only armed twice a week
+
+`Alerts.check` correctly treats Tue–Sat as "before Sunday" — matching
+schedule.js exactly, which I verified. But `rearm()` armed only Sunday and
+Thursday 16:00, so a Wednesday opener (which this season had, and which TASKS
+called out in v4.5) or a December Saturday got no closed-app warning at all.
+
+One daily alarm now. That needs two things a weekly one did not: a 30-hour
+horizon, or Tuesday's check names Sunday's whole slate and does it again
+Wednesday, Thursday and Friday; and duplicate suppression, or an identical
+sentence posts every morning about a lineup he has already decided about.
+
+It also names only the players the app would actually START. Java cannot run
+the recommender, but schedule.js already computes `shouldStart` (benched AND
+recommended) and now persists those ids into the same weekMeta the alarm reads
+for kickoffs. An empty list degrades to the old name-everyone behaviour rather
+than to silence.
+
+`Alerts.norm()` gained `Locale.US`. Java's `toLowerCase()` is locale-sensitive:
+on a Turkish-locale phone 'I' lowercases to a dotless 'ı', so every name with
+an I stopped matching the injury feed — while the comment above it says it must
+match `Espn.normName` character for character, and JS's `toLowerCase()` is
+locale-independent.
+
+## The test net, which was the real gap
+
+Nothing in the suite had ever executed a view function. ui.js is 145 KB and
+almost all of it is render code, so "the file evaluates and boot() survives"
+was proving very little. `test_lifecycle.js` now gives the DOM stub real tab
+buttons and walks all seven tabs through the REAL click handler — the same path
+a swipe takes — checking both for a throw and for render()'s own error card. I
+verified it is not vacuous by breaking `lineupCard` on purpose and watching it
+go red.
+
+Three source-grep assertions broke during this work while the behaviour they
+named was still true (a literal `setSlot(...)` call, `S = o; bumpGen(); save()`,
+`scheduleLive(60000)`). Each was rewritten to test the relationship instead of
+the literal — the same lesson as the v4.6 `124px` assertion that pinned a bug.
+
+One more, worth recording because it is a trap: a regex literal containing a
+double quote (`/["\\]/g`) made `test_boot`'s naive string-stripper treat the
+rest of the file as one string literal, and an unrelated assertion went red.
+The fix was a whitelist (`/[^A-Za-z0-9_|.:-]/g`) which is both safer and has no
+quote in it.
+
+## State at the end of v4.7
+
+13 suites green, ES2018 clean, APK 214 KB, 25 classes, no native libs, minSdk
+29 / targetSdk 36. `seed.json` (38 KB of build-time source) no longer ships in
+the APK — build.sh stages assets and drops it.
+
+Three candidates are LISTED and NOT BUILT at the end of RELEASE_NOTES.md, per
+his standing rule: bench-regret on the recap, a weekly name-folding self-check
+on the Data tab, and true longest-completion attribution.

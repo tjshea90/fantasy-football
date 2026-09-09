@@ -1,12 +1,12 @@
-# CHECKPOINT 22 — read me first, then TASKS.md
+# CHECKPOINT 23 — read me first, then TASKS.md
 
-**Written:** 2026-09-09T01:21:34Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-09T01:22:43Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-v4.7 docs: ladder 17a-17j, release notes, tasks
+ship: v4.7 — the audit fixed: return TD scores once, kickoff locks, the name-key bug in four places, honest+75x cheaper saves, API key out of Downloads, daily alarm; plus swipe between tabs, pull to refresh and a working back button
 
 ## Do this next
-see the first unticked box in TASKS.md
+verify on the phone
 
 ## How to resume, exactly
 ```bash
@@ -19,17 +19,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M LADDER.md
-     M MANIFEST.txt
-     M RELEASE_NOTES.md
-     M TASKS.md
-     M VERSION
-     M app/assets/projections.js
-     M app/assets/version.js
-     M build.sh
+     M STATE.md
 
 ## Last ten checkpoints
 ```
+  e7c2208 ckpt 22: v4.7 docs: ladder 17a-17j, release notes, tasks
   2df0576 ckpt 21: v4.7: alias variants both ways, new test_locks + test_gestures suites, every tab now renders in test_lifecycle
   90fb9fa ckpt 20: v4.7 wip: return TD scored once, name-key fixes, kickoff locks, split persistence, gestures, back button, alerts daily
   8442c73 ship v4.6: v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
@@ -39,5 +33,4 @@ request in his own words and `git log` carries every step already taken.
   cc29cb5 ship v4.5: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep
   f38d578 ckpt 14: ship: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep
   1c79298 ckpt 13: ship: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep, and a boot-stopping ReferenceError caught before it shipped
-  9e0623f ckpt 12: Docs complete: STATE.md carries the whole v4.3 narrative, LADDER.md step 15a-15i, RELEASE_NOTES.md written for Tj plus a 'For your approval' list of seven candidates from similar apps that were deliberately NOT built. TASKS.md 21/21. APK rebuilt clean.
 ```
