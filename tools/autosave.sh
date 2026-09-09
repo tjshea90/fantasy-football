@@ -45,6 +45,16 @@ fi
 # whenever it cannot prove that. Read the header there before "optimising" it —
 # the obvious version of this check fails silently on a checkout with no
 # remote-tracking ref, which is the one failure this whole file exists to stop.
-bash tools/push.sh >/dev/null 2>&1
+if ! bash tools/push.sh >/dev/null 2>&1; then
+  # A FAILED PUSH MUST NEVER BE SILENT.
+  # Committing locally and failing to push looks identical to working: the tree
+  # is clean, CHECKPOINT.md updates, every status line says saved. But the
+  # container is destroyed when the session ends, so those commits are as lost
+  # as work never written — and nobody finds out until the next account clones
+  # and the work simply is not there. Measured before this existed: three
+  # commits piled up with no output at all.
+  N="$(git rev-list --count '@{u}'..HEAD 2>/dev/null || echo 'Some')"
+  echo "{\"systemMessage\": \"PUSH TO GITHUB IS FAILING. $N commit(s) exist ONLY in this container and will be LOST when the session ends — the work is committed locally but is NOT on GitHub, so a new session on another account will not see it. Check the connection, then run:  git push origin HEAD\"}"
+fi
 
 exit 0
