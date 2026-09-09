@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r \".tool_input.file_path // .tool_input.notebook_path // .tool_response.filePath // empty\" | { read -r f; d=$(dirname \"$f\" 2>/dev/null); r=$(git -C \"$d\" rev-parse --show-toplevel 2>/dev/null); if [ -n \"$r\" ]; then ( cd \"$r\" && git add -A && { git diff --cached --quiet || git commit -q -m \"auto-checkpoint: $(date -u +%Y-%m-%dT%H:%M:%SZ)\"; } && git push -q origin \"$(git branch --show-current)\" ) >/dev/null 2>&1; fi; }; true",
+            "statusMessage": "Checkpointing to GitHub..."
+          }
+        ]
+      }
+    ]
+  }
+}

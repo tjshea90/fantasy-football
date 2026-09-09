@@ -43,4 +43,16 @@ of a clean shutdown when usage cuts off.
 
 Nothing special to do — just point the new session at this same GitHub repo.
 It will read the files above and continue from the last pushed commit.
-test line Wed Sep  9 22:33:38 UTC 2026
+
+## Automatic checkpointing (safety net, not a substitute)
+
+This repo has a hook (`.claude/settings.json`) that auto-commits and pushes
+any edited file within seconds, tagged `auto-checkpoint: <timestamp>` in
+`git log`. It exists so a session cut off mid-task loses at most a couple
+minutes of work, not hours.
+
+It does **not** replace the practices above — it's a dumb, unconditional
+safety net, not a substitute for deliberate, well-described commits. Still
+follow "commit and push after each complete step" and the checkpoint-before-
+ending process yourself; the hook just catches what would otherwise be lost
+between those points.
