@@ -85,7 +85,12 @@ N=$((N+1))
   echo
   echo "## Last ten checkpoints"
   echo '```'
-  git log --oneline -10 2>/dev/null | sed 's/^/  /'
+  # TRUNCATED ON PURPOSE. This block is reprinted into every future session's
+  # briefing, so a long checkpoint message is not paid once — it is paid on
+  # every cold start from now on. Ten verbose messages measured over 2,000
+  # chars here. The full text is never lost; `git log` has it in full, and the
+  # one that matters is expanded under "Just done" above.
+  git log --oneline -10 2>/dev/null | cut -c1-96 | sed 's/^/  /'
   echo '```'
 } > CHECKPOINT.md
 
