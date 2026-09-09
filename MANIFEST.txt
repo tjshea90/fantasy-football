@@ -14,6 +14,7 @@ tools/autosave.sh
 tools/resume.sh
 tools/secretscan.sh
 tools/push.sh
+tools/toobig.sh
 BRIEF.md
 SPEC.md
 LADDER.md
