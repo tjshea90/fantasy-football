@@ -379,6 +379,3 @@
                  rosteredSet: rosteredSet };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Value;
 })(typeof window !== 'undefined' ? window : this);
-
-// half-finished change, session died here
-function halfWritten(

@@ -18,12 +18,32 @@ your context. **Do not re-run bootstrap, do not re-plan, do not re-read
 finished work.** Continue from **Do this next** in `CHECKPOINT.md`, or the
 first unticked `[ ]` in `TASKS.md`.
 
-If that briefing did not appear, say so before working — it means the hook
-did not fire and the safety net below is probably not running either.
+**If you did not see that briefing, run `bash tools/resume.sh` before doing
+anything else, and tell Tj it did not fire** — it means the hook is not
+running, and the automatic saving below almost certainly is not either, so
+this session is working without a safety net.
 
-If it reported uncommitted changes, a previous session was cut off
-mid-change. `git diff` is what was in flight. Read it before deciding
-anything; it is almost certainly the task you are resuming.
+Read the two warnings it can raise:
+
+- **"INTERRUPTED MID-CHANGE"** — the last session was killed by a usage cap
+  part-way through a step. The tree is clean, but only because a hook
+  committed a half-written change. `CHECKPOINT.md` describes the state
+  *before* that, so it is stale. Run the `git diff` it names, finish that
+  change, checkpoint it — then start anything new.
+- **"UNCOMMITTED WORK IS PRESENT"** — the same thing, one step worse: not even
+  the hook got to it. `git diff` is what was in flight.
+
+## When Tj asks for something new
+
+**Write the request into `TASKS.md` in his own words, as unticked `[ ]`
+boxes, and checkpoint it before writing any code.** Until it is on disk the
+job exists only in a chat window that no other account can ever see. If usage
+runs out before the first checkpoint, the next account inherits the work but
+not the knowledge of what was asked — and it cannot ask him, because from his
+side he already explained it.
+
+Tick a box only when it is written, tested and committed, and name the test
+that proves it. The next account will not re-verify a ticked box.
 
 ## Saving work — three levels, and you are responsible for the middle one
 
