@@ -4,24 +4,97 @@
 (function (root) {
   'use strict';
   var KEY = 'fftracker_state_v1';
+  /* THE ARCHIVE — the two big, rarely-changing halves of the state (v4.7).
+   *
+   * Store.save() used to serialise the ENTIRE state and hand it to
+   * Native.save, which is a SYNCHRONOUS bridge call doing a write, an fsync
+   * and two renames on the renderer's JS thread — the blocking-bridge pattern
+   * BRIEF.md forbids. And it grew all season. Measured on the real roster at
+   * 14 scored weeks:
+   *
+   *     whole state ........ 1,969,809 chars   (~1.9 MB, written EVERY save)
+   *       league book ......   849 KB   44%    changes only on a sync
+   *       weekly stat lines  1,046 KB   54%    changes only on a sync
+   *       everything else ..    25 KB    1.3%  ALL a lineup edit touches
+   *
+   * Callers include setSlot on every dropdown change, applyAuto across all ten
+   * teams, and Schedule.ingest whenever a game changes state during a Sunday.
+   * So changing one dropdown in November wrote 1.9 MB, of which 25 KB could
+   * possibly have differed.
+   *
+   * book and stats now live in their own file and are written only when a sync
+   * actually changes them. In memory S is unchanged — it still carries both,
+   * so every reader, the auto-backup and the export are untouched. A lineup
+   * edit now writes ~25 KB instead of ~1.9 MB.
+   *
+   * WHY TWO FILES AND NOT THREE. The archive can be a sync behind the main
+   * state if the app dies between the two writes, and that is recoverable: the
+   * dirty flag survives in memory, the next save retries, and a re-sync of the
+   * week rebuilds both halves. Splitting further only multiplies the windows.
+   * The main file keeps its own .bak in Java, and so does this one.
+   *
+   * Alerts.java reads teams, lineups, weekMeta, byes and settings out of the
+   * main file. None of those moved. */
+  var ARCHIVE_KEY = 'fftracker_archive_v1';
   var S = null;
+  var archiveDirty = false;
 
   function nowISO() { return new Date().toISOString(); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
-  function rawLoad() {
+  function readKey(k) {
     try {
-      if (root.Native && root.Native.load) { var s = root.Native.load(KEY); return s ? JSON.parse(s) : null; }
-      var t = root.localStorage.getItem(KEY); return t ? JSON.parse(t) : null;
+      if (root.Native && root.Native.load) { var s = root.Native.load(k); return s ? JSON.parse(s) : null; }
+      var t = root.localStorage.getItem(k); return t ? JSON.parse(t) : null;
     } catch (e) { return null; }
   }
-  function rawSave(obj) {
-    var s = JSON.stringify(obj);
+  /* Returns TRUE only if the write actually landed. Native.save returns a
+     boolean and catches its own exceptions; this used to call it, throw the
+     result away and return true unconditionally — so a full disk or a failed
+     rename was reported as a successful save, and save()'s
+     `if (ok && saveCount % 10)` auto-backup gate was testing a constant. */
+  function writeKey(k, obj) {
     try {
-      if (root.Native && root.Native.save) { root.Native.save(KEY, s); return true; }
-      root.localStorage.setItem(KEY, s); return true;
+      var s = JSON.stringify(obj);
+      if (root.Native && root.Native.save) return root.Native.save(k, s) !== false;
+      root.localStorage.setItem(k, s); return true;
     } catch (e) { return false; }
   }
+
+  function rawLoad() {
+    var main = readKey(KEY);
+    if (!main) return null;
+    var arch = readKey(ARCHIVE_KEY);
+    if (arch && typeof arch === 'object') {
+      /* the archive is authoritative when present */
+      if (arch.book) main.book = arch.book;
+      if (arch.stats) main.stats = arch.stats;
+    }
+    /* ≤v4.6 wrote book and stats inside the main file. Nothing to do — they
+       are already on `main`, and the first save writes the archive out. */
+    if (!main.book) main.book = {};
+    if (!main.stats) main.stats = {};
+    return main;
+  }
+  /* The main file carries everything EXCEPT the two archive halves. They are
+     spliced out for the write and put straight back, so `S` is never observed
+     without them by anything else on this thread. */
+  function rawSave(obj) {
+    var book = obj.book, stats = obj.stats, ok;
+    try {
+      obj.book = undefined; obj.stats = undefined;
+      ok = writeKey(KEY, obj);
+    } finally {
+      obj.book = book; obj.stats = stats;
+    }
+    if (ok && archiveDirty) {
+      if (writeKey(ARCHIVE_KEY, { book: book, stats: stats })) archiveDirty = false;
+      else ok = false;   /* retried on the next save; the flag stays set */
+    }
+    return ok;
+  }
+  /* Every path that changes a scored week or the league book calls this. */
+  function markArchive() { archiveDirty = true; }
 
   function fromSeed(seed) {
     return {
@@ -51,14 +124,21 @@
          'full'   — every player every time, the pre-v2.4 behaviour
          'cheap'  — smart, on the cheap model */
       aiDepth: 'smart',
-      aiFreshDays: 3,          /* a clear verdict stays good this long */
-      individualReturnTD: false
+      aiFreshDays: 3           /* a clear verdict stays good this long */
+      /* individualReturnTD was here until v4.7. Tj settled the rules-sheet
+         ambiguity ("a defense touchdown is only scored one time") and the
+         setting is gone, not defaulted — see the note in scoring.js. An old
+         saved state may still carry the key; nothing reads it. */
     };
   }
 
   function init(seed) {
     S = rawLoad();
-    if (!S || !S.teams || !S.teams.length) { S = fromSeed(seed); save(); }
+    if (!S || !S.teams || !S.teams.length) { S = fromSeed(seed); markArchive(); save(); }
+    /* A state loaded from a ≤v4.6 save still has book and stats inside the
+       MAIN file. Writing the archive once on the next save splits them out;
+       until then rawLoad's fallback keeps reading them from where they are. */
+    if (!readKey(ARCHIVE_KEY)) markArchive();
     if (!S.byes) S.byes = seed.byes;
     if (!S.league) S.league = seed.league;
     if (!S.lineupManual) S.lineupManual = {};
@@ -71,9 +151,9 @@
         S.settings[k] = d[k];
       }
     }
-    if (root.Scoring && root.Scoring.configure) {
-      root.Scoring.configure({ individualReturnTD: S.settings.individualReturnTD });
-    }
+    /* v4.7: nothing to configure any more — the scoring rules are fixed at
+       load and cannot be changed at runtime, which is what makes score()'s
+       memo safe. A stale `individualReturnTD` key on an old save is inert. */
     return S;
   }
   function get() { return S; }
@@ -96,7 +176,11 @@
       /* The whole state object — teams, lineups, every week's matchups and
        * stat lines, transactions, settings — so a restore is never partial. */
       var ok = root.Native.backupAuto(JSON.stringify(S));
-      if (ok) { S.settings.autoBackupAt = nowISO(); rawSave(S); }
+      /* The timestamp is recorded in memory and rides out on the NEXT ordinary
+         save. It used to call rawSave() right here, so every auto-backup was
+         two full serialisations and two writes back to back — the snapshot,
+         then the whole state again, to store one date string. */
+      if (ok) S.settings.autoBackupAt = nowISO();
       return ok;
     } catch (e) { return false; }
   }
@@ -233,20 +317,76 @@
     if (S.lineupManual && S.lineupManual[w]) delete S.lineupManual[w][teamId];
     save();
   }
-  /* Write an auto-generated lineup in, leaving every hand-picked slot alone.
+  /* --- KICKOFF LOCKS (v4.7) -------------------------------------------
+   * THE BUG THIS EXISTS TO STOP. autoLineup ranks a roster on PROJECTIONS and
+   * has no concept of time, so a player who had already played and banked 33
+   * real points was compared on his 6.2 preseason number and lost his slot to
+   * somebody who had not kicked off yet. applyAuto then overwrote him, because
+   * the only thing it protected was a slot set by hand — and a slot the app
+   * filled itself is not one of those.
+   *
+   * That was not a rare path. autoFillWeek runs on boot, on every week change,
+   * and after EVERY sync including the quiet 45-second live poll, for all ten
+   * teams. So it fired repeatedly, on its own, all Sunday afternoon, and the
+   * team total silently dropped by whatever the benched player had scored —
+   * carrying the live matchup, the head-to-head result, the weekly most-points
+   * book and the season points title with it.
+   *
+   * Real lock semantics, both directions: once a player's game has started he
+   * can neither be REMOVED from a slot nor ADDED to one.
+   *
+   * A MANUAL edit is still allowed through — deliberately. This app mirrors a
+   * league actually run on RTSports, so Tj sometimes has to correct a slot
+   * after the fact to match what RTSports really had. The lock binds the
+   * AUTOMATION, which is the thing that was silently wrong; his own hands are
+   * his business, and the UI marks the slot so he can see what he is doing. */
+  function gameStarted(week, player) {
+    if (!player || !player.nfl) return false;
+    var m = S.weekMeta[String(week)];
+    var g = (m && m.games) ? m.games[String(player.nfl).toUpperCase()] : null;
+    if (!g) return false;                       /* no schedule stored: never guess */
+    if (g.state && g.state !== 'pre') return true;
+    var t = Date.parse(g.kick);                 /* 'pre' but the clock has passed */
+    return isFinite(t) && t <= Date.now();
+  }
+  /* Locked = he has produced stats, or his game has started. The stat line is
+     checked first because it is the one signal that cannot be wrong: if the
+     feed gave him a line, he played. */
+  function isLocked(week, pid) {
+    if (!pid) return false;
+    var l = lineFor(week, pid);
+    if (l && l.played) return true;
+    var rec = playerById(pid);
+    return gameStarted(week, rec ? rec.player : null);
+  }
+  /* slotKey -> true, for the UI's padlock. */
+  function lockedSlots(week, teamId) {
+    var L = getLineup(week, teamId), out = {}, k;
+    for (k in L) {
+      if (Object.prototype.hasOwnProperty.call(L, k) && isLocked(week, L[k])) out[k] = true;
+    }
+    return out;
+  }
+
+  /* Write an auto-generated lineup in, leaving every hand-picked slot alone —
+     and every slot whose player has already kicked off.
      Returns how many slots it actually changed. */
   function applyAuto(week, teamId, slots) {
     var L = getLineup(week, teamId), M = manualMap(week, teamId);
     var keys = slotKeys(), i, changed = 0, taken = {};
     for (i = 0; i < keys.length; i++) {
       var k = keys[i].key;
-      if (M[k] && L[k]) taken[L[k]] = 1;      /* manual picks hold their player */
+      /* manual picks AND started players hold their player: neither can be
+         moved, so the man in the slot is unavailable to every other slot */
+      if (L[k] && (M[k] || isLocked(week, L[k]))) taken[L[k]] = 1;
     }
     for (i = 0; i < keys.length; i++) {
       var key = keys[i].key;
       if (M[key]) continue;                    /* his choice, not ours */
+      if (L[key] && isLocked(week, L[key])) continue;   /* kicked off — untouchable */
       var want = slots[key] || null;
-      if (want && taken[want]) want = null;    /* already locked into a manual slot */
+      if (want && taken[want]) want = null;    /* already held by another slot */
+      if (want && isLocked(week, want)) want = null;    /* cannot start him now */
       if ((L[key] || null) === want) { if (want) taken[want] = 1; continue; }
       if (want) { L[key] = want; taken[want] = 1; } else delete L[key];
       changed++;
@@ -276,11 +416,28 @@
   }
 
   /* --- stats -------------------------------------------------------- */
-  function getStats(week) { var w = String(week); if (!S.stats[w]) S.stats[w] = {}; return S.stats[w]; }
-  function setLine(week, pid, line) { getStats(week)[pid] = line; }
+  function getStats(week) {
+    var w = String(week);
+    if (!S.stats[w]) { S.stats[w] = {}; markArchive(); }
+    return S.stats[w];
+  }
+  function setLine(week, pid, line) { getStats(week)[pid] = line; markArchive(); }
   function lineFor(week, pid) {
     var st = getStats(week);
     return st[pid] ? st[pid] : null;
+  }
+
+  /* --- byes ---------------------------------------------------------
+   * ONE ANSWER, because there were three. Alerts.java falls back to the
+   * league's bye table when a player's own `bye` is 0; teamWeekPoints and
+   * recommend.js read `p.bye` alone. A player added mid-season without a bye
+   * therefore scored normally in the app and was flagged by the notification —
+   * two parts of the same app disagreeing about whether he plays. */
+  function isOnBye(player, week) {
+    if (!player) return false;
+    var b = Number(player.bye);
+    if (!b && S.byes && player.nfl) b = Number(S.byes[String(player.nfl).toUpperCase()]) || 0;
+    return !!b && b === Number(week);
   }
 
   /* --- scoring roll-ups --------------------------------------------- */
@@ -297,7 +454,7 @@
       if (pid) {
         var rec = playerById(pid);
         p = rec ? rec.player : null;
-        if (p && p.bye === Number(week)) onBye = true;
+        if (isOnBye(p, week)) onBye = true;
         pts = onBye ? 0 : playerPoints(week, pid);
       }
       total += pts;
@@ -340,7 +497,17 @@
       var id = S.teams[i].id;
       rows.push({ id: id, name: S.teams[i].name, pts: t[id].pts, w: t[id].w, l: t[id].l, t: t[id].t });
     }
+    /* WIN PERCENTAGE, not raw wins. Every team plays every week, so these are
+       the same number — right up until a week's matchups were never entered
+       for one pair, at which point two teams have played a different number of
+       games and sorting on wins alone silently ranks the team with fewer
+       losses below the team with more. Ties broken on points, which is also
+       the league's own tiebreak (there is a points title with money on it). */
     rows.sort(function (x, y) {
+      var gx = x.w + x.l + x.t, gy = y.w + y.l + y.t;
+      var px = gx ? (x.w + x.t / 2) / gx : 0;
+      var py = gy ? (y.w + y.t / 2) / gy : 0;
+      if (py !== px) return py - px;
       if (y.w !== x.w) return y.w - x.w;
       return y.pts - x.pts;
     });
@@ -351,7 +518,29 @@
   }
 
   /* --- backup ------------------------------------------------------- */
-  function exportJSON() { return JSON.stringify(S, null, 1); }
+  /* THE API KEY NEVER LEAVES IN A BACKUP (v4.7).
+   *
+   * This serialised the whole state, aiKey and all, and the Export backup
+   * button hands that straight to NativeBridge.export, which writes it to the
+   * PUBLIC Downloads folder — readable by any app with media access, and the
+   * one file you would move to a PC or send to somebody. A live
+   * sk-ant-... key in cleartext, in Downloads, forever.
+   *
+   * Redacted here rather than at the button, so every future caller of
+   * exportJSON is safe by construction. importJSON keeps whatever key is
+   * already on the phone (see below), so a redacted backup restores cleanly
+   * and the key simply is not part of what travels. */
+  function exportJSON() {
+    var keep = S.settings ? S.settings.aiKey : undefined;
+    var out;
+    try {
+      if (S.settings) S.settings.aiKey = '';
+      out = JSON.stringify(S, null, 1);
+    } finally {
+      if (S.settings) S.settings.aiKey = keep;
+    }
+    return out;
+  }
   /* v3.7: this used to assign S = o and THEN call save(), which touches
      S.settings.savedAt — so a backup with no settings key threw a TypeError
      *after* the live season had already been replaced in memory. The catch
@@ -385,9 +574,13 @@
         o.settings[k] = cur[k];
       }
     }
-    S = o; bumpGen(); save(); return true;
+    /* Backups no longer carry the API key (see exportJSON), so a restore must
+       not wipe the one already on this phone. An empty key in the file means
+       "not included", never "clear it". */
+    if (!o.settings.aiKey && cur.aiKey) o.settings.aiKey = cur.aiKey;
+    S = o; bumpGen(); markArchive(); save(); return true;
   }
-  function resetToSeed(seed) { S = fromSeed(seed); save(); return S; }
+  function resetToSeed(seed) { S = fromSeed(seed); markArchive(); save(); return S; }
 
   /* ---- THE LEAGUE BOOK ---------------------------------------------------
    * Every player ESPN reported in a week, not just the ~170 who are rostered.
@@ -400,7 +593,7 @@
    *   row = { n:name, t:teamAbbr, p:leaguePoints, pa:passAtt, cr:carries, tg:targets }
    * Points are ALWAYS this league's points — the row is written from
    * Scoring.score(), never from anyone else's total. */
-  function setBook(week, rows) { S.book[String(week)] = rows; }
+  function setBook(week, rows) { S.book[String(week)] = rows; markArchive(); }
   function bookWeek(week) { var w = String(week); return S.book[w] || {}; }
   /* the last n scored weeks for one normalised name, most recent first */
   function bookTrend(key, throughWeek, n) {
@@ -436,9 +629,10 @@
     slotKeys: slotKeys, eligible: eligible,
     getLineup: getLineup, setSlot: setSlot, copyLineup: copyLineup,
     isManual: isManual, clearManual: clearManual, applyAuto: applyAuto,
+    isLocked: isLocked, lockedSlots: lockedSlots, gameStarted: gameStarted,
     getMatchups: getMatchups, setMatchups: setMatchups, addMatchup: addMatchup,
     getStats: getStats, setLine: setLine, lineFor: lineFor,
-    playerPoints: playerPoints, teamWeekPoints: teamWeekPoints,
+    playerPoints: playerPoints, teamWeekPoints: teamWeekPoints, isOnBye: isOnBye,
     seasonTotals: seasonTotals, standings: standings, weekIsScored: weekIsScored,
     exportJSON: exportJSON, importJSON: importJSON, resetToSeed: resetToSeed,
     autoBackup: autoBackup,

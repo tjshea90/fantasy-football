@@ -180,7 +180,48 @@
     return out;
   }
 
+  /* ---- lookup(map, name) — THE FIX FOR A WHOLE CLASS OF SILENT BUG -------
+   *
+   * v4.6 had the same defect in three places, and it was invisible from inside
+   * any one of them, because each module agreed with ITSELF:
+   *
+   *   1. ai.js wrote a Claude verdict under canon("Chris Olave") =
+   *      "christopher olave". recommend.js read it back under
+   *      Espn.normName("Chris Olave") = "chris olave". The two never met, so
+   *      for 15 of this league's 170 players every verdict was dropped —
+   *      including a hard "he is OUT, do not start him".
+   *   2. recommend.js wrote the injury cache under the FEED's spelling and
+   *      read it under the ROSTER's spelling, both raw. "Kenny Gainwell" in the
+   *      feed against "Kenneth Gainwell" on the roster meant no OUT flag —
+   *      exactly the failure this whole file exists to prevent.
+   *   3. projections.js indexed under the feed's spelling and looked up under
+   *      the roster's, so a mismatch dropped the three heaviest projection
+   *      sources and fell back to a flat positional average.
+   *
+   * doSync() already did it right, by inserting every variant into its index.
+   * That works when you own the write side. These three do not always — the
+   * cache on disk was written by an older build under whichever key that build
+   * used. So this reads TOLERANTLY instead: try every spelling of the name
+   * against the map and take the first hit. No migration, no rewrite of any
+   * cache, and it cannot matter which shape the writer chose.
+   *
+   * Use this for every by-name lookup into a map you did not build in the same
+   * function. `hit()` returns the value, `hitKey()` the key that matched. */
+  function hitKey(map, name) {
+    if (!map || !name) return null;
+    var v = variants(name), i;
+    for (i = 0; i < v.length; i++) {
+      if (v[i] && Object.prototype.hasOwnProperty.call(map, v[i])) return v[i];
+    }
+    return null;
+  }
+  function hit(map, name) {
+    var k = hitKey(map, name);
+    return k === null ? null : map[k];
+  }
+
   var API = { canon: canon, same: same, key: key, variants: variants,
+              hit: hit, hitKey: hitKey,
               normName: normName, NICK: NICK, ALIAS_PAIRS: ALIAS_PAIRS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.Names = API;

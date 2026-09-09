@@ -58,6 +58,16 @@ public class Alerts {
   public static final String ACTION = "com.tj.fftracker.CHECK_LINEUP";
   static final String PREFS = "fftracker_alerts";
   static final String STATE_FILE = "fftracker_state_v1";
+  /* How far ahead an early kickoff is worth mentioning. The alarm is daily
+     now, so without a horizon Tuesday's check would name Sunday's whole slate
+     and do it again on Wednesday, Thursday and Friday. 30 hours means a
+     Thursday-night game is raised on Wednesday afternoon and again Thursday
+     morning, and nothing is raised four days out. */
+  static final long EARLY_HORIZON_MS = 30L * 3600L * 1000L;
+  /* Do not re-post the same sentence over and over. A daily alarm running the
+     same check against an unchanged lineup would otherwise notify every single
+     day about a problem Tj has already seen and decided about. */
+  static final long REPEAT_QUIET_MS = 20L * 3600L * 1000L;
 
   /* ---- scheduling ------------------------------------------------------ */
 
@@ -95,14 +105,42 @@ public class Alerts {
     return PendingIntent.getBroadcast(ctx, 1000 + slot, i, flags);
   }
 
-  /** Re-arm everything the settings say should be armed. */
+  /** Fires at the next occurrence of hour:minute on ANY day. */
+  public static void scheduleDaily(Context ctx, int hour, int minute, int slot) {
+    AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+    if (am == null) return;
+    Calendar c = Calendar.getInstance();
+    c.set(Calendar.HOUR_OF_DAY, hour);
+    c.set(Calendar.MINUTE, minute);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    if (c.getTimeInMillis() <= System.currentTimeMillis()) c.add(Calendar.DAY_OF_YEAR, 1);
+    am.setWindow(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), 30 * 60 * 1000L,
+                 intentFor(ctx, slot));
+  }
+
+  /** Re-arm everything the settings say should be armed.
+   *
+   * WAS TWO WEEKLY ALARMS: Sunday at the chosen time, and Thursday at a
+   * hard-coded 16:00. The CHECK below correctly treats Tuesday through
+   * Saturday as "before Sunday" — but the SCHEDULE only ever ran it on two
+   * days, so a Wednesday opener (which this season had), a Black Friday game
+   * or a December Saturday doubleheader got no closed-app warning at all. The
+   * in-app banner covered those only if Tj happened to open the app, which is
+   * exactly the case the notification exists for.
+   *
+   * One daily alarm instead. Same check, same half-hour window, same absence
+   * of any special permission, and it stops depending on guessing which
+   * weekdays matter. The morning slot is his chosen time; the second is a late
+   * afternoon pass that catches a Thursday or Saturday night kickoff and a
+   * designation that landed after lunch. */
   public static void rearm(Context ctx) {
     android.content.SharedPreferences p =
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     if (!p.getBoolean("on", false)) return;
     int h = p.getInt("hour", 11), m = p.getInt("minute", 30);
-    schedule(ctx, Calendar.SUNDAY, h, m, 0);            /* the early-window check */
-    schedule(ctx, Calendar.THURSDAY, 16, 0, 1);         /* Thursday night, one day ahead */
+    scheduleDaily(ctx, h, m, 0);          /* every morning, at his time */
+    scheduleDaily(ctx, 16, 0, 1);         /* every afternoon, before a night game */
   }
 
   /* ---- the receiver ---------------------------------------------------- */
@@ -124,13 +162,28 @@ public class Alerts {
         public void run() {
           try {
             String msg = check(ctx, true);
+            android.content.SharedPreferences pf =
+                ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            long nowMs = System.currentTimeMillis();
             if (msg != null && msg.length() > 0) {
-              postNote(ctx, "Check your lineup", msg, 7001);
+              /* The alarm is daily now. Posting an identical sentence every
+                 morning about a lineup Tj has already looked at is how a
+                 useful alert becomes one he swipes away without reading, so
+                 the same text stays quiet for most of a day. Anything that
+                 CHANGES — a new designation, a different kickoff — is a
+                 different sentence and posts immediately. */
+              String lastMsg = pf.getString("lastPosted", "");
+              long lastAt = pf.getLong("lastPostedAt", 0);
+              boolean dup = msg.equals(lastMsg) && (nowMs - lastAt) < REPEAT_QUIET_MS;
+              if (!dup) {
+                postNote(ctx, "Check your lineup", msg, 7001);
+                pf.edit().putString("lastPosted", msg).putLong("lastPostedAt", nowMs).apply();
+              }
             }
-            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-               .putLong("lastRun", System.currentTimeMillis())
-               .putString("lastResult", msg == null || msg.length() == 0 ? "all clear" : msg)
-               .apply();
+            pf.edit()
+              .putLong("lastRun", nowMs)
+              .putString("lastResult", msg == null || msg.length() == 0 ? "all clear" : msg)
+              .apply();
           } catch (Throwable t) {
             android.util.Log.w("FFT", "alert check failed: " + t);
           } finally {
@@ -258,8 +311,32 @@ public class Alerts {
             java.util.Iterator<String> si = mine.keys();
             while (si.hasNext()) startingIds.add(mine.optString(si.next(), ""));
           }
+          /* WHICH benched players are worth naming.
+           *
+           * This used to list ANY rostered player with an early kickoff who
+           * was not starting. With seven bench spots that fires most weeks,
+           * usually about somebody Tj would never start — and an alert that is
+           * wrong most of the time is one he learns to swipe away, which costs
+           * him the week it is right.
+           *
+           * Java cannot run the recommender. But the PAGE already computes the
+           * right answer — schedule.js's earlyAlert() produces `shouldStart`,
+           * benched AND recommended — and since v4.7 it persists those ids
+           * into weekMeta alongside the kickoffs it already writes here for
+           * exactly this reason. So: lead with the ones the app would actually
+           * start, and keep the rest as a count.
+           *
+           * If the page has never written the list (an older save, or the
+           * recommender failed), `worth` is empty and every early benched
+           * player is named, exactly as before — a missing hint degrades to
+           * the old behaviour rather than to silence. */
+          java.util.HashSet<String> worth = new java.util.HashSet<String>();
+          JSONArray ss = wmw.optJSONArray("shouldStart");
+          for (int i = 0; ss != null && i < ss.length(); i++) worth.add(ss.optString(i, ""));
+
           long now = System.currentTimeMillis();
-          List<String> early = new ArrayList<String>();
+          List<String> named = new ArrayList<String>();
+          int otherCount = 0;
           long soonest = 0;
           for (JSONObject p : byId.values()) {
             if (p == null) continue;
@@ -270,29 +347,49 @@ public class Alerts {
             if (!"pre".equals(state)) continue;                       // started or done
             long kick = parseIso(g.optString("kick", ""));
             if (kick <= 0 || kick <= now) continue;                   // past, or unparseable
+            /* A DAILY alarm needs a horizon; two weekly ones did not. Without
+               it this would re-report Sunday's whole slate every morning from
+               Tuesday on, which is the alert fatigue this block is trying to
+               avoid in the first place. */
+            if (kick - now > EARLY_HORIZON_MS) continue;
             java.util.Calendar c = java.util.Calendar.getInstance();  // the PHONE's zone
             c.setTimeInMillis(kick);
             int dow = c.get(java.util.Calendar.DAY_OF_WEEK);          // Sun=1 .. Sat=7
             // Tue(3) .. Sat(7) are before Sunday. Sunday and Monday are not.
             if (dow < java.util.Calendar.TUESDAY) continue;
-            early.add(p.optString("name", "") + " (" + p.optString("pos", "") + ")");
+            boolean pick = worth.isEmpty() || worth.contains(p.optString("id"));
+            if (pick) named.add(p.optString("name", "") + " (" + p.optString("pos", "") + ")");
+            else otherCount++;
             if (soonest == 0 || kick < soonest) soonest = kick;
           }
-          if (!early.isEmpty()) {
+          if (!named.isEmpty()) {
             java.util.Calendar c = java.util.Calendar.getInstance();
             c.setTimeInMillis(soonest);
             String[] dn = { "", "Sunday", "Monday", "Tuesday", "Wednesday",
                             "Thursday", "Friday", "Saturday" };
             StringBuilder e = new StringBuilder();
-            e.append(early.size() == 1 ? "1 player plays " : early.size() + " players play ");
-            e.append("before Sunday and ").append(early.size() == 1 ? "is" : "are")
-             .append(" NOT in your lineup: ");
-            for (int i = 0; i < early.size() && i < 4; i++) {
-              if (i > 0) e.append(", ");
-              e.append(early.get(i));
+            boolean one = named.size() == 1;
+            if (worth.isEmpty()) {
+              e.append(one ? "1 player plays " : named.size() + " players play ");
+              e.append("before Sunday and ").append(one ? "is" : "are")
+               .append(" NOT in your lineup: ");
+            } else {
+              e.append(one ? "1 player the app would START plays "
+                           : named.size() + " players the app would START play ");
+              e.append("before Sunday and ").append(one ? "is" : "are")
+               .append(" on your bench: ");
             }
-            if (early.size() > 4) e.append(" +").append(early.size() - 4).append(" more");
+            for (int i = 0; i < named.size() && i < 4; i++) {
+              if (i > 0) e.append(", ");
+              e.append(named.get(i));
+            }
+            if (named.size() > 4) e.append(" +").append(named.size() - 4).append(" more");
             e.append(" — first kickoff ").append(dn[c.get(java.util.Calendar.DAY_OF_WEEK)]);
+            if (otherCount > 0) {
+              e.append(" (").append(otherCount)
+               .append(otherCount == 1 ? " other bench player also plays early)"
+                                       : " other bench players also play early)");
+            }
             // put it FIRST: it is the only item here with a deadline attached
             problems.add(0, e.toString());
           }
@@ -330,7 +427,14 @@ public class Alerts {
    *  alert that exists to catch exactly that will say nothing. */
   static String norm(String s) {
     if (s == null) return "";
-    String t = s.toLowerCase();
+    /* Locale.US, NOT the default locale. String.toLowerCase() is
+       locale-sensitive in Java: on a Turkish-locale phone 'I' lowercases to a
+       dotless 'ı', so every name containing an I stopped matching the injury
+       feed and the alert that exists to catch a ruled-out starter said
+       nothing. JavaScript's toLowerCase() is locale-independent, so the two
+       normalisers this comment says must agree character for character
+       silently disagreed on exactly one class of phone. */
+    String t = s.toLowerCase(java.util.Locale.US);
     t = t.replaceAll("[.\'`]", "");
     t = t.replace('-', ' ');
     t = t.replaceAll("\\b(jr|sr|ii|iii|iv|v)\\b", "");

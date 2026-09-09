@@ -65,11 +65,22 @@ window.__setAdjust = function (top, bot) {
   s.setProperty('--adj-top', (top || 0) + 'px');
   s.setProperty('--adj-bot', (bot || 0) + 'px');
 };
+/* The message goes into element TEXT, never markup. It used to be concatenated
+   straight into innerHTML — and an error message is not trusted input here:
+   NativeBridge puts up to 400 characters of an HTTP error BODY into it, so a
+   crafted response could inject script into the one page that holds the Native
+   bridge. Built with DOM nodes instead, which cannot be escaped wrong. */
 window.onerror = function (m, src, line, col, err) {
   var v = document.getElementById('view');
-  if (v) v.innerHTML = '<div class="card"><h2>Script error</h2><pre style="white-space:pre-wrap;font-size:12px;color:#f85149">' +
-    String(m) + '\n' + String(src).split('/').pop() + ':' + line + ':' + col +
-    (err && err.stack ? '\n\n' + err.stack : '') + '</pre></div>';
+  if (!v) return false;
+  v.innerHTML = '';
+  var card = document.createElement('div'); card.className = 'card';
+  var h = document.createElement('h2'); h.textContent = 'Script error';
+  var pre = document.createElement('pre');
+  pre.style.cssText = 'white-space:pre-wrap;font-size:12px;color:#f85149';
+  pre.textContent = String(m) + '\n' + String(src).split('/').pop() +
+    ':' + line + ':' + col + (err && err.stack ? '\n\n' + err.stack : '');
+  card.appendChild(h); card.appendChild(pre); v.appendChild(card);
   return false;
 };
 </script>
@@ -92,6 +103,8 @@ window.onerror = function (m, src, line, col, err) {
 <script src="schedule.js"></script>
 <!-- handoff.js needs Ai, Recommend and Value to already be defined -->
 <script src="handoff.js"></script>
+<!-- gestures.js is standalone: ui.js hands it callbacks, it reads nothing -->
+<script src="gestures.js"></script>
 <script src="ui.js"></script>
 </body>
 </html>

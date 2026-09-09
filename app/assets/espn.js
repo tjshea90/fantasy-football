@@ -342,9 +342,10 @@
     }
     return true;
   }
-  /* Record the individual returner too. Scored only when the league is
-     configured to pay him (Scoring.RULES.individualReturnTD); recorded either
-     way so switching the setting never needs a re-sync. */
+  /* Record WHO returned it. Worth zero points — the +6 for a return TD goes to
+     the D/ST once and only once (Tj, 2026-09-09; see the note in scoring.js).
+     Kept because the player card shows it, and because "he took one back" is
+     true and free to record off a scoring play we are already reading. */
   function creditReturn(res, txt) {
     var m = /^([A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+)*)\s+\d{1,3}\s*(?:Yd|Yard)/.exec(txt);
     if (!m) return;

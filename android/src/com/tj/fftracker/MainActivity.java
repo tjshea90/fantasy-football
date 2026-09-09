@@ -42,12 +42,32 @@ public class MainActivity extends Activity {
     s.setDomStorageEnabled(true);
     s.setDatabaseEnabled(true);
     s.setAllowFileAccess(true);
-    // Not what the app relies on any more (data ships as seed.js), but leaving
-    // these on means a future file:// read does not fail silently.
-    s.setAllowFileAccessFromFileURLs(true);
-    s.setAllowUniversalAccessFromFileURLs(true);
+    // OFF, deliberately. These were on "in case a future file:// read needs
+    // them" — and the comment beside them already said the data ships as
+    // seed.js, so nothing has needed them for many versions. What they cost is
+    // real: setAllowUniversalAccessFromFileURLs lets anything running in this
+    // page read any origin, in a WebView that also holds the Native bridge and
+    // renders text from ESPN, from Claude replies and from files the user
+    // picks. Two error paths concatenated straight into innerHTML until v4.7
+    // (index.html's onerror and ui.js's fatal fallback) — and NativeBridge puts
+    // 400 characters of an HTTP error BODY into that message. Narrow, but it
+    // was script injection into the most privileged page on the phone, for a
+    // capability nothing uses. Both are now escaped AND these are off.
+    s.setAllowFileAccessFromFileURLs(false);
+    s.setAllowUniversalAccessFromFileURLs(false);
     s.setCacheMode(WebSettings.LOAD_DEFAULT);
-    s.setTextZoom(100);
+    // Honour the phone's display-size setting. This was pinned at 100, which
+    // threw away the accessibility preference entirely — and the CSS runs down
+    // to 11px in places, so somebody who has made their system text larger got
+    // none of it. configChanges already lists fontScale, so the value arrives;
+    // it was simply discarded. Clamped: the layout is a fixed-height tab bar
+    // and dense tables, and past ~130% the rows stop fitting.
+    int zoom = 100;
+    try {
+      float fs = getResources().getConfiguration().fontScale;
+      if (fs > 0) zoom = Math.max(85, Math.min(130, Math.round(fs * 100)));
+    } catch (Throwable t) { zoom = 100; }
+    s.setTextZoom(zoom);
     web.setWebViewClient(new WebViewClient() {
       @Override public void onPageFinished(WebView v, String url) {
         pageReady = true;
@@ -111,7 +131,42 @@ public class MainActivity extends Activity {
     web.loadUrl("file:///android_asset/index.html");
   }
 
+  // ---- BACK ----------------------------------------------------------------
+  // This deferred to web.canGoBack(), which in a single-page app that never
+  // pushes a history entry is ALWAYS false. So back quit the app from
+  // anywhere: six panels deep in Data, or with a confirm dialog open. On
+  // Android, back is the reflex for dismissing a dialog, and here it closed
+  // the whole app instead.
+  //
+  // The page owns the answer, because only the page knows whether a modal is
+  // open or which tab is showing. __onBack() returns "1" if it handled the
+  // press. evaluateJavascript is asynchronous, so the decision cannot be made
+  // inline — instead the press is swallowed, the page is asked, and if it says
+  // it did nothing the activity is finished from the callback. That costs one
+  // frame and is invisible; the alternative is a synchronous bridge call,
+  // which is the one thing this app does not do.
+  private long lastBackAsk = 0;
   @Override public boolean onKeyDown(int code, KeyEvent e) {
+    if (code == KeyEvent.KEYCODE_BACK && web != null && pageReady) {
+      long now = System.currentTimeMillis();
+      // A double-tap while the round trip is in flight would ask twice and
+      // could finish() on the second answer after the first already handled
+      // it. Ignore a second press inside the window it takes to answer.
+      if (now - lastBackAsk < 400) return true;
+      lastBackAsk = now;
+      try {
+        web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'",
+            new android.webkit.ValueCallback<String>() {
+              @Override public void onReceiveValue(String v) {
+                // evaluateJavascript returns a JSON string, so "'1'" arrives
+                // quoted. Anything that is not a clear yes means the page did
+                // not handle it, including a null from a page that has gone.
+                if (v == null || v.indexOf('1') < 0) finish();
+              }
+            });
+        return true;
+      } catch (Throwable t) { /* fall through to the default */ }
+    }
     if (code == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
       web.goBack();
       return true;

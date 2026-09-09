@@ -87,8 +87,17 @@ public class NativeBridge {
                 (t.getMessage() != null ? ": " + t.getMessage() : "");
         }
         if (out == null) out = ERRMARK + "no response";
-        synchronized (results) { results.put(id, out); }
-        notifyPage(id);
+        boolean wanted;
+        synchronized (results) {
+          /* If the page gave up on this request while it was in flight, do not
+             file the body at all. httpForget used to be a plain remove(), so a
+             timeout that fired BEFORE the pool thread stored its result removed
+             nothing and the result — potentially megabytes — then landed in the
+             map with nobody left to collect it, for the life of the process. */
+          wanted = !abandoned.remove(id);
+          if (wanted) results.put(id, out);
+        }
+        if (wanted) notifyPage(id);
       } });
     } catch (Throwable t) {
       synchronized (results) {
@@ -108,11 +117,24 @@ public class NativeBridge {
     return chunkIfBig(b);
   }
 
-  /** Drop a result the page gave up on, so a timed-out request cannot leak. */
+  /** Drop a result the page gave up on, so a timed-out request cannot leak.
+   *  Leaves a tombstone when the body has not arrived yet, so the pool thread
+   *  discards it on arrival instead of parking it forever (see httpAsync). */
   @JavascriptInterface
   public void httpForget(String id) {
-    synchronized (results) { results.remove(id); }
+    synchronized (results) {
+      if (results.remove(id) == null) {
+        abandoned.add(id);
+        /* The set can only grow if a request never completes at all. Cap it:
+           an entry that old is from a call whose thread is gone. */
+        if (abandoned.size() > 64) abandoned.clear();
+      }
+    }
   }
+  /* ids the page timed out on before their body was stored. Guarded by
+     `results`, the same lock the body is filed under, so the check and the put
+     cannot interleave. */
+  private final java.util.HashSet<String> abandoned = new java.util.HashSet<String>();
 
   /* A value returned from an @JavascriptInterface method crosses a binder
    * transaction, and a large one can fail or be dropped — which is exactly why

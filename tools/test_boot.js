@@ -81,8 +81,20 @@ ok(storeRaw.indexOf('function applyAuto') >= 0, 'the store can apply an auto lin
 ok(storeRaw.indexOf('if (M[key]) continue') >= 0,
    'auto-fill skips slots the user set himself (the whole safety contract)');
 ok(uiRaw.indexOf('function autoFillWeek') >= 0, 'lineups are auto-defaulted');
-ok(uiRaw.indexOf('setSlot(week, t.id, k.key, this.value, true)') >= 0,
-   'a dropdown change is recorded as a manual pick');
+/* Was a grep for one literal call. v4.7 split the handler in two — a normal
+   change, and a change to a slot whose game has already kicked off, which
+   confirms first — so the literal stopped matching while the behaviour it
+   describes was still true in BOTH branches. Assert the contract instead:
+   every setSlot the lineup dropdown makes marks the pick as MANUAL. */
+var lineupSets = uiRaw.match(/Store\.setSlot\(week, t\.id, k\.key,[^)]*\)/g) || [];
+ok(lineupSets.length >= 2,
+   'the lineup dropdown still writes through Store.setSlot (' + lineupSets.length + ' call sites)');
+ok(lineupSets.length > 0 && lineupSets.every(function (c) { return /,\s*true\)$/.test(c); }),
+   'every one of them records the change as a manual pick');
+ok(storeRaw.indexOf('if (L[key] && isLocked(week, L[key])) continue') >= 0,
+   'auto-fill skips a slot whose player has already kicked off');
+ok(storeRaw.indexOf('if (want && isLocked(week, want)) want = null') >= 0,
+   'and never adds a player whose game has already started');
 ok(uiRaw.indexOf('function liveTick') >= 0 && uiRaw.indexOf('scheduleLive') >= 0,
    'live refresh polls while games are in progress');
 ok(uiRaw.indexOf("doSync({ quiet: true })") >= 0,
@@ -361,8 +373,15 @@ ok(/textModal\('Copy this backup'/.test(uiD),
 ok(/textModal\('Import a backup'/.test(uiD), 'the import path takes a paste properly');
 ok(/throw new Error\('no league settings in that file'\)/.test(stD),
    'importJSON validates the league block before touching live state');
-ok(stD.indexOf("S = o; bumpGen(); save();") > stD.indexOf("is malformed"),
+/* Was a grep for the exact call sequence, which broke in v4.7 when
+   markArchive() joined it — while the property being asserted (validate
+   first, swap last) was untouched. Locate the swap itself instead. */
+ok(/\n\s*S = o;/.test(stD) && stD.search(/\n\s*S = o;/) > stD.indexOf('is malformed'),
    'the swap happens AFTER every check, so a bad backup cannot clobber the season');
+ok(stD.indexOf('if (!o.settings.aiKey && cur.aiKey)') >= 0,
+   'restoring a backup does not wipe the API key it no longer carries');
+ok(/S\.settings\.aiKey = ''/.test(stD) && stD.indexOf('function exportJSON') >= 0,
+   'the exported backup is redacted — the key never reaches Downloads');
 ok(/o\.settings\[k\] === undefined/.test(stD),
    'an old backup is migrated onto the candidate, not onto the live state');
 ok(/textarea\{/.test(fs.readFileSync('app/assets/app.css', 'utf8')),

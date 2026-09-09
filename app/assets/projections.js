@@ -449,6 +449,16 @@
     if (!cache.byName) return null;
     var k = root.Espn.normName(player.name);
     if (cache.byName[k]) return cache.byName[k];
+    /* Then every other spelling of the same man. The index is keyed by the
+       FEED's name and this is the ROSTER's; an exact-match miss dropped the
+       ESPN weekly line, the Sleeper line and the season pace all at once —
+       weights 3.0, 2.0 and 1.0, i.e. most of the blend — and fell through to a
+       flat positional average. The "why" panel said "no projection on file",
+       which reads as a data gap rather than a spelling mismatch. */
+    if (root.Names && root.Names.hit) {
+      var v = root.Names.hit(cache.byName, player.name);
+      if (v) return v;
+    }
     if (player.pos === 'DEF') {
       var want = k.replace(/\b(d\/?st|dst|defense|def)\b/g, '').trim();
       var key;

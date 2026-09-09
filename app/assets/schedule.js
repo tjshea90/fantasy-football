@@ -238,6 +238,24 @@
     /* only the benched-but-recommended are ACTIONABLE — the rest is context */
     var shouldStart = [];
     for (i = 0; i < benched.length; i++) if (benched[i].recommended) shouldStart.push(benched[i]);
+    /* HAND THE ANSWER TO THE ALARM (v4.7).
+     * Alerts.java cannot run the recommender, so its closed-app notification
+     * used to name any benched player with an early kickoff — most weeks that
+     * is somebody Tj would never start, and an alert that is usually wrong is
+     * one he stops reading. This is the same list, computed properly, written
+     * into the same weekMeta the alarm already reads for kickoff times. Ids
+     * only: names would go stale against a roster edit, and the alarm has the
+     * roster in front of it anyway. */
+    if (teamId === root.Store.get().league.me) {
+      var ids = [], m2 = meta(week);
+      for (i = 0; i < shouldStart.length; i++) ids.push(shouldStart[i].id);
+      var sig2 = ids.join(',');
+      if (m2.shouldStartSig !== sig2) {
+        m2.shouldStart = ids;
+        m2.shouldStartSig = sig2;
+        root.Store.save();     /* signature-guarded, like the kickoffs above */
+      }
+    }
     return {
       week: week, rows: rows, starting: starting, benched: benched,
       shouldStart: shouldStart, soonest: soonest,

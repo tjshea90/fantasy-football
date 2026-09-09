@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Anthropic API key lives in fftracker_state_v1.json. allowBackup is on
+     (a season on one phone is worth restoring), but the rotating auto-backup
+     snapshots are not worth copying off the device, and the key is already
+     redacted from every export the user can produce (Store.exportJSON). -->
+<full-backup-content>
+  <exclude domain="file" path="backups/" />
+</full-backup-content>

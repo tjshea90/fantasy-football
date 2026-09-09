@@ -161,8 +161,18 @@ console.log('\n-- the live poll is not a fixed drumbeat --');
      'with nothing in progress it drops to 5-10 minutes rather than 45 seconds');
   ok(/live\.next = 0; return;/.test(block),
      'and once the week is final and synced it stops entirely');
-  ok(/scheduleLive\(60000\)/.test(block),
-     'a failure backs off to a minute instead of retrying immediately  <-- this is how a block happens');
+  /* Was a grep for the literal scheduleLive(60000). v4.7 made the backoff
+     EXPONENTIAL — a phone in airplane mode used to make a request a minute for
+     as long as the app was open — so the literal vanished while the property
+     it stands for got stronger. Assert the property. */
+  ok(/live\.fails = \(live\.fails \|\| 0\) \+ 1/.test(block),
+     'a failure is counted');
+  ok(/Math\.min\(600000, 60000 \* Math\.pow\(2/.test(block),
+     'and the retry backs off exponentially from a minute to a ten-minute ceiling  <-- this is how a block happens');
+  ok(/live\.fails = 0/.test(ucode),
+     'any successful poll resets the backoff, so a blip does not cost the rest of the day');
+  ok(/Native\.online/.test(block),
+     'and an offline phone is reported as offline rather than as a broken feed');
   ok(/if \(busy\)/.test(block),
      'a tick that lands while a sync is already running defers instead of stacking');
 }());

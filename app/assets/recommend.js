@@ -254,9 +254,14 @@
     });
   }
   function health(player) {
-    var rec = newsCache.byName ? newsCache.byName[norm(player.name)] : null;
+    /* Names.hit, not a raw key. The injury cache is keyed by the FEED's
+       spelling and this is the ROSTER's: "Kenny Gainwell" against "Kenneth
+       Gainwell" returned nothing, so a player ESPN had ruled OUT carried no
+       flag and stayed startable. That is the exact failure names.js was
+       written for, on the one path where it costs a whole week. */
+    var rec = newsCache.byName ? root.Names.hit(newsCache.byName, player.name) : null;
     if (!rec) return { f: 1, label: '', note: '' };
-    var s = rec.status, f = 1, lab = '';
+    var s = String(rec.status || ''), f = 1, lab = '';
     if (s.indexOf('OUT') >= 0 || s.indexOf('INJURED RESERVE') >= 0 ||
         s.indexOf('SUSPEND') >= 0 || s.indexOf('PUP') >= 0) { f = HEALTH.OUT; lab = 'OUT'; }
     else if (s.indexOf('DOUBT') >= 0) { f = HEALTH.DOUBTFUL; lab = 'DOUBTFUL'; }
@@ -308,8 +313,16 @@
     /* half strength when ESPN's weekly line already prices the matchup */
     var mfApplied = hasWeekly ? (1 + (mf.f - 1) * 0.5) : mf.f;
     var h = health(p);
-    var ai = aiCache.byName ? aiCache.byName[norm(p.name)] : null;
-    var onBye = Number(p.bye) === Number(week);
+    /* Names.hit: ai.js files verdicts under Names.canon and this used to read
+       under Espn.normName, so every verdict for a nickname-first-name player
+       ("Chris" -> "christopher") was silently discarded — adjustment, reasoning
+       AND the hard not-playing exclusion. 15 of this league's 170 players. */
+    var ai = aiCache.byName ? root.Names.hit(aiCache.byName, p.name) : null;
+    /* Store.isOnBye, not `p.bye === week`: it falls back to the league's bye
+       table when a player carries no bye of his own, which is what Alerts.java
+       has always done. The two used to disagree — the notification would warn
+       about a bye the app itself scored right through. */
+    var onBye = root.Store.isOnBye(p, week);
 
     var aiAdj = (ai && typeof ai.adjust === 'number') ? ai.adjust : 1;
     var proj = onBye ? 0 : base * mfApplied * h.f * aiAdj;
@@ -596,7 +609,10 @@
           settled.push({ name: p.name, why: 'ESPN has him ' + lab });
           return;
         }
-        var prev = aiCache.byName ? aiCache.byName[norm(p.name)] : null;
+        /* Names.hit for the same reason as projectOne: reading this under the
+           wrong key made 15 players come back "never checked" on EVERY sync,
+           so the triage paid for the same search again, week after week. */
+        var prev = aiCache.byName ? root.Names.hit(aiCache.byName, p.name) : null;
         var why = '';
         if (deep) why = 'full depth';
         else if (lab) why = 'ESPN lists him ' + lab;

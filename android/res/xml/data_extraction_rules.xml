@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ form of backup_rules.xml. Same reasoning: the season is worth
+     restoring, the rotating auto-backups are not worth copying off the device,
+     and device-to-device transfer gets the same treatment as cloud backup. -->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="file" path="backups/" />
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="file" path="backups/" />
+  </device-transfer>
+</data-extraction-rules>

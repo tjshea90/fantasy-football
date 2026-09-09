@@ -1,12 +1,12 @@
-# CHECKPOINT 18 — read me first, then TASKS.md
+# CHECKPOINT 20 — read me first, then TASKS.md
 
-**Written:** 2026-09-08T01:13:56Z · **version:** 4.6 · **tests:** all 11 suites green
+**Written:** 2026-09-09T01:12:57Z · **version:** 4.6 · **tests:** all 12 suites green
 
 ## Just done
-ship: v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
+v4.7 wip: return TD scored once, name-key fixes, kickoff locks, split persistence, gestures, back button, alerts daily
 
 ## Do this next
-verify on the phone
+see the first unticked box in TASKS.md
 
 ## How to resume, exactly
 ```bash
@@ -19,14 +19,32 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M LADDER.md
-     M RELEASE_NOTES.md
-     M STATE.md
-     M VERSION
-     M app/assets/version.js
+     M RULES_2026.md
+     M android/AndroidManifest.xml
+     M android/src/com/tj/fftracker/Alerts.java
+     M android/src/com/tj/fftracker/MainActivity.java
+     M android/src/com/tj/fftracker/NativeBridge.java
+     M app/assets/app.css
+     M app/assets/espn.js
+     M app/assets/index.html
+     M app/assets/names.js
+     M app/assets/projections.js
+     M app/assets/recommend.js
+     M app/assets/schedule.js
+     M app/assets/scoring.js
+     M app/assets/store.js
+     M app/assets/ui.js
+     M tools/test_boot.js
+     M tools/test_lifecycle.js
+     M tools/test_net.js
+    ?? android/res/xml/
+    ?? app/assets/gestures.js
+    ?? tools/test_gestures.js
 
 ## Last ten checkpoints
 ```
+  8442c73 ship v4.6: v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
+  156423a ckpt 18: ship: v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
   98fdf70 ckpt 17: Sweep of v4.5. (1) Tab bar: body and toast hard-coded 124px for an 89px bar — a stale number from the 60px era — pinning a 35px dead band; both now derive from --tabh, and the boot test that ASSERTED the bug ('padding >= min-height + 24') now tests the relationship. (2) Data > Screen fit is self-diagnosing: measured bar height, CSS expectation, bottom inset, and the SAVED adjBot slider with a one-tap reset. (3) Caught my own bug in that readout: getPropertyValue('--tabh') returns the literal calc() string, so parseFloat was NaN — replaced with a measuring probe. (4) 'TO PLAY' suppressed when a kickoff badge already says so; it was pushing the player's NAME into the ellipsis in a nowrap row. (5) Tapping a player before the week is synced was a dead-end toast — now a pre-game card with kickoff, projection, injury note and Claude's read, all already computed and previously unreachable. (6) Hardened the share URI grant (ClipData + flag on the chooser) on the unverified handoff path. 11 suites green.
   992853b ckpt 16: Tab bar: found the real layout bug behind the 'nav shifted up' report. The bar is 89px (--tab-h 88 + 1px border) but body{padding-bottom} and .toast{bottom} both hard-coded 124px — a leftover from when the tabs were 60px, updated by hand to a wrong number when v3.1 grew them. That pinned a 35px dead band above the bar. Worse, test_boot ASSERTED the bug: it required 'body padding >= min-height + 24', which describes nothing real. Both now derive from --tabh (= --tab-h + border + insets) so they cannot drift or disagree, and the assertions test the relationship instead of two literals. Also made the Data > Screen fit card self-diagnosing: measured bar height vs CSS expectation, the bottom inset, and the SAVED adjBot slider (which survives updates and would look exactly like a regression), with a one-tap reset.
   cc29cb5 ship v4.5: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep
@@ -35,6 +53,4 @@ request in his own words and `git log` carries every step already taken.
   9e0623f ckpt 12: Docs complete: STATE.md carries the whole v4.3 narrative, LADDER.md step 15a-15i, RELEASE_NOTES.md written for Tj plus a 'For your approval' list of seven candidates from similar apps that were deliberately NOT built. TASKS.md 21/21. APK rebuilt clean.
   8aa4058 ckpt 11: Sweep continued. check_es2018.js had a HARD-CODED file list — schedule.js, handoff.js and names.js were never checked while it reported 'all files ES2018-safe'; it now discovers app/assets/*.js (18 files, all pass). handoff: Array.isArray instead of a truthy .length (a STRING has one, so {"players":"none found"} was being accepted then applying nothing), and a reply with no week is refused rather than filed under undefined where the UI would never show it. Game badges now sit consistently after the team/bye text on every row; the pre-Sunday alert also leads the Advice tab; the exported briefing carries a kickoff column so the reader knows which decisions have a deadline. 11 suites green.
   49c7790 ckpt 10: Fixed the test that was pinning the ReferenceError instead of catching it (it asserted root.__appPause, the broken form). All 11 suites green, APK builds clean.
-  3bc3207 ckpt 9: CAUGHT A FATAL BUG I INTRODUCED. ui.js is (function(){...})() with NO root parameter — unlike the other twelve modules — so my 'root.__appPause = appPause' at its top level was a ReferenceError AT SCRIPT LOAD: the app would not have booted at all. Ten green suites and a clean APK build said nothing, because not one of them executed ui.js. Fixed to window.*, plus an !S guard on appPause/appResume (MainActivity.onResume can fire before boot() on a cold start, and S.weekMeta would throw into evaluateJavascript where nothing reports it). New tools/test_lifecycle.js runs ui.js in a real vm context against a DOM stub and proves the battery claim by COUNTING TIMERS: boot arms 1, pause leaves 0, resume does not stack. It also verifies boot really initialised 10 teams, after the first version of that assertion was vacuous and hid a boot failure for a round. 11 suites green.
-  cc126ea ckpt 8: Network/caching audit (4b). Found and fixed the real hammering path: every Sync advice tap refetched the full ESPN projection feed (400 players, MB) and the 800-record injury list unconditionally — so a run of retries after the Claude failure Tj photographed meant a burst of multi-MB requests at a public endpoint. Both now have freshness gates (20 min / 10 min), reuse is REPORTED not hidden, failed/empty results are never treated as a cache, and selfTest forces a real fetch. Also fixed two things I introduced: Schedule.ingest was calling Store.save() on every 45s poll tick (full-season disk write for unchanged data) — now signature-guarded; and earlyAlert ran bestLineup on every render of three tabs — now memoised. Normalised three root.Promise refs to the bare global the rest of the codebase uses. New tools/test_net.js, 33 assertions. 10 suites green.
 ```

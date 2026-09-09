@@ -98,11 +98,25 @@ errors, neither a rules error:
    play's parenthetical and credited to the passer and the receiver, or to the
    runner.
 
-ONE GENUINE AMBIGUITY remains in the rules image and is now a setting rather
-than a silent assumption: "Kickoff/Punt return TD +6" is printed under
-Defense/ST, so by default it pays the D/ST and not the individual returner.
-Data -> Scoring rules can switch it. Return touchdowns are recorded on the
-player's line either way, so flipping it never needs a re-sync.
+RESOLVED 2026-09-09 (v4.7). The rules image prints "Kickoff/Punt return TD +6"
+under Defense/ST, and v1.8 flagged it as the one genuine ambiguity: does the
+returning PLAYER also get paid? It became a setting on the Data tab.
+
+**Tj settled it: "a defense touchdown is only scored one time. individual
+player doesn't matter."** So the +6 goes to the D/ST, once, always. The setting
+is REMOVED, not defaulted to false, because while it existed it was wrong in
+both positions:
+
+  - Switched ON it did not MOVE the six points, it ADDED them. score() paid the
+    returner AND still paid the D/ST in the same pass, so one punt return was
+    worth 12 league points — the same defect as the pick-six above, behind a
+    switch.
+  - The score memo did not cover the flag, so flipping it changed no number on
+    screen until the app restarted.
+
+Return touchdowns are still recorded on the player's line and shown on his
+card. They are worth 0. There is now exactly one place in the engine where a
+return TD scores: the D/ST block.
 
 ## IMPLICATIONS FOR VALUATION
 - Weekly high-score prize + season points title ⇒ raw weekly ceiling has real

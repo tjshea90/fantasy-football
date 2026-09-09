@@ -18,20 +18,37 @@
     dst: { intercept: 2, sack: 2, fumbleRecovery: 2, defTD: 6, safety: 4, returnTD: 6 },
     /* points allowed, per game: [maxAllowedInclusive, points] */
     paTiers: [[0, 10], [10, 7], [20, 5], [30, 1], [9999, 0]],
-    weeklyLongBonus: 5,
-    /* THE ONE AMBIGUITY IN THE RULES IMAGE. "Kickoff/Punt return TD +6" is
-     * printed under Defense/ST, so by default the +6 goes to the D/ST unit and
-     * an individual returner gets nothing. Some RTSports setups also pay the
-     * returning player. Off by default = literal reading of the rules sheet.
-     * Toggled from Data -> Scoring rules; see Scoring.configure(). */
-    individualReturnTD: false
+    weeklyLongBonus: 5
   };
 
-  /* Runtime overrides for the genuinely ambiguous items only. Never used to
-   * change a rule that the rules sheet states plainly. */
+  /* RESOLVED BY TJ, 2026-09-09. This used to be a setting.
+   *
+   * "Kickoff/Punt return TD +6" is printed under Defense/ST on the rules sheet,
+   * and v1.8 called that the one genuine ambiguity in the image: does the
+   * returning PLAYER also get paid? It became `RULES.individualReturnTD`, a
+   * toggle on the Data tab, defaulting to the literal reading.
+   *
+   * Tj settled it: "a defense touchdown is only scored one time. individual
+   * player doesn't matter." So the +6 goes to the D/ST, once, always.
+   *
+   * The setting is GONE rather than pinned to false, because while it existed
+   * it was wrong in both positions. Turning it ON did not MOVE the six points,
+   * it ADDED them — score() paid `L.ret.td` to the returner and still paid
+   * `D.retTD` to the defense in the same pass, so one punt return scored 12
+   * league points. That is the same defect as the v1.8 pick-six (two feeds
+   * describing one score, both counted), reintroduced behind a switch. And the
+   * memo signature never covered the flag, so flipping it changed no number on
+   * screen until the app was restarted — the toggle could not even be trusted
+   * to do the wrong thing consistently.
+   *
+   * Return touchdowns are still RECORDED on the player's line (`L.ret.td`) —
+   * it is true, it is free, and the player card shows it as context. It is
+   * simply never scored. There is now exactly one place a return TD is worth
+   * points: the D/ST block below.
+   *
+   * configure() is kept as a no-op shim so an older saved state calling it
+   * with the dead key is harmless. */
   function configure(opts) {
-    if (!opts) return RULES;
-    if (opts.individualReturnTD !== undefined) RULES.individualReturnTD = !!opts.individualReturnTD;
     return RULES;
   }
 
@@ -93,11 +110,28 @@
    * invalidates the memo. The cache is non-enumerable: the whole state is
    * JSON.stringified on every save, and a cached object riding along in the
    * book would bloat every write. */
+  /* RULES_EPOCH is in the signature on purpose, and it is not currently used.
+   *
+   * The memo used to cover only manualAdj and the bonus flags — every input
+   * that could change a line. It did NOT cover the scoring RULES themselves,
+   * which `configure()` could mutate at runtime. So flipping the return-TD
+   * setting changed no number on screen: every line already scored kept its
+   * cached total until the app restarted. The setting is gone now (see the
+   * note on RULES), so RULES is immutable again and the signature is complete
+   * without this term.
+   *
+   * It stays because the NEXT runtime-configurable rule would silently
+   * reintroduce that bug, and it would be invisible — the arithmetic is right,
+   * only the cache is stale. Anything that mutates RULES must bump this, and
+   * tools/test_scoring.js asserts that a bump busts the cache. One integer. */
+  var RULES_EPOCH = 1;
   function memoSig(L) {
     var b = L.bonus;
-    return n(L.manualAdj) + '|' +
+    return RULES_EPOCH + '|' + n(L.manualAdj) + '|' +
       (b ? ((b.longComp ? 1 : 0) + (b.longRec ? 2 : 0) + (b.longRush ? 4 : 0)) : 0);
   }
+  /* Test seam and the hook any future configure() must call. */
+  function bumpRulesEpoch() { RULES_EPOCH++; return RULES_EPOCH; }
   function score(line) {
     var L = line || emptyLine();
     var sig = memoSig(L);
@@ -129,9 +163,9 @@
       total += add('Rec TD ' + n(C.td), n(C.td) * RULES.rec.td);
       total += add('Rec 2PT ' + n(C.twoPt), n(C.twoPt) * RULES.rec.twoPt);
     }
-    if (L.ret && RULES.individualReturnTD) {
-      total += add('Return TD ' + n(L.ret.td), n(L.ret.td) * RULES.dst.returnTD);
-    }
+    /* NOT SCORED HERE. A return touchdown is worth six points ONCE, to the
+       D/ST, in the D block below. L.ret.td is recorded for the player card and
+       is deliberately worth nothing. See the note on RULES above. */
     if (L.fum) total += add('Fumbles lost ' + n(L.fum.lost), n(L.fum.lost) * RULES.fumbleLost);
 
     if (K) {
@@ -246,8 +280,7 @@
         ['2-pt conversion (run or catch)', '+' + RULES.rush.twoPt],
         ['Fumble lost', String(RULES.fumbleLost)],
         ['Kick/punt return TD by this player',
-         RULES.individualReturnTD ? ('+' + D.returnTD + ' (paid to the player)')
-                                  : '0 — credited to the D/ST instead']
+         '0 — the +' + D.returnTD + ' goes to the D/ST, once']
       ] },
       { pos: 'K', title: 'K — kicking', rows: fg.concat([
         ['PAT made', '+' + K.xpMade],
@@ -333,7 +366,8 @@
   var API = { RULES: RULES, score: score, emptyLine: emptyLine,
               fgPoints: fgPoints, paPoints: paPoints, configure: configure,
               describe: describe, selfAudit: selfAudit,
-              applyWeeklyBonuses: applyWeeklyBonuses };
+              applyWeeklyBonuses: applyWeeklyBonuses,
+              _bumpRulesEpoch: bumpRulesEpoch };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.Scoring = API;
 })(typeof window !== 'undefined' ? window : this);

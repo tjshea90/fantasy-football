@@ -4,7 +4,7 @@
   var S, seed, view = 'live', week = 1, busy = false;
   /* live polling: a handle plus the last result, so every screen can say how
      fresh the numbers are without each one owning a timer */
-  var live = { timer: null, at: 0, inProgress: 0, err: '', next: 0 };
+  var live = { timer: null, at: 0, inProgress: 0, err: '', next: 0, fails: 0 };
   /* declared up here with `live` because scheduleLive() reads it and is defined
      above the sleep block; `var` hoisting makes that safe either way, but a
      reader should not have to know that to trust it */
@@ -51,7 +51,16 @@
   }
   function restoreFocus() {
     if (!focusKey) return;
-    var n = document.querySelector('[data-fk="' + focusKey + '"]');
+    /* data-fk values are built from team ids and slot keys, so they are ours —
+       but a selector assembled by string concatenation is one imported roster
+       away from being a syntax error that throws in the middle of a render.
+       A WHITELIST rather than an escape: every key this app produces looks
+       like `ln|myteam|RB1`, and anything that does not simply fails to match,
+       which costs a restored focus and nothing else. */
+    var safeKey = String(focusKey).replace(/[^A-Za-z0-9_|.:-]/g, '');
+    var n = null;
+    try { n = document.querySelector('[data-fk="' + safeKey + '"]'); }
+    catch (e) { n = null; }
     focusKey = null;
     if (!n) return;
     try { n.focus({ preventScroll: true }); } catch (e) { /* older WebView */ }
@@ -122,13 +131,37 @@
    * restore path. A mid-season export is tens of KB, so "Copy this backup"
    * was handing back an unusable string and "Paste a backup JSON" could not
    * take one. These replace all six. */
+  /* ONE MODAL STACK (v4.7). There were two implementations of a modal in this
+     file — dialog() and modal() — with their own backdrop, their own close and
+     their own click-outside. Neither could be dismissed with the Android BACK
+     button, which is the reflex, because back exited the whole app; neither
+     moved focus into itself; neither closed on Escape; and the swipe handler
+     added in this version needs to know when one is open. All of that wants a
+     single list of what is currently open, so modal() is now built on
+     dialog(), and this is the list. */
+  var modalStack = [];
+  function modalOpen() { return modalStack.length > 0; }
+  function closeTopModal() {
+    if (!modalStack.length) return false;
+    var top = modalStack[modalStack.length - 1];
+    top();
+    return true;
+  }
   function dialog(title, bodyText, build) {
     var back = el('div');
     back.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:60;' +
       'display:flex;align-items:center;justify-content:center;padding:18px';
+    /* Screen readers need to know this is a dialog and that the page behind it
+       is inert; `data-nogesture` tells gestures.js the same thing. */
+    back.setAttribute('role', 'dialog');
+    back.setAttribute('aria-modal', 'true');
+    back.setAttribute('data-nogesture', '');
     var box = el('div', 'card');
     box.style.cssText = 'max-width:560px;width:100%;max-height:82vh;overflow:auto;margin:0';
-    box.appendChild(el('h2', null, title));
+    var h = el('h2', null, title);
+    h.id = 'mdl' + (++modalSeq);
+    back.setAttribute('aria-labelledby', h.id);
+    box.appendChild(h);
     if (bodyText) {
       var pre = el('pre');
       pre.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
@@ -136,16 +169,39 @@
       pre.textContent = bodyText;
       box.appendChild(pre);
     }
-    var close = function () { if (back.parentNode) document.body.removeChild(back); };
+    var prevFocus = document.activeElement;
+    var closed = false;
+    var close = function () {
+      if (closed) return;
+      closed = true;
+      var i = modalStack.indexOf(close);
+      if (i >= 0) modalStack.splice(i, 1);
+      if (back.parentNode) document.body.removeChild(back);
+      /* hand focus back where it came from, or the page has none at all */
+      try { if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); }
+      catch (e) { /* older WebView */ }
+    };
     var row = el('div', 'dbrow');
     row.style.marginTop = '12px';
     build(box, row, close);
     box.appendChild(row);
     back.appendChild(box);
     back.addEventListener('click', function (e) { if (e.target === back) close(); });
+    /* Escape closes the top one — a hardware keyboard, or a phone with one. */
+    back.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) { e.stopPropagation(); close(); }
+    });
     document.body.appendChild(back);
+    modalStack.push(close);
+    /* Focus lands INSIDE the dialog, so the next tab press stays in it and a
+       screen reader announces the dialog rather than the page behind it. */
+    window.setTimeout(function () {
+      var f = box.querySelector('textarea, input, button');
+      try { if (f && f.focus) f.focus({ preventScroll: true }); } catch (e2) { }
+    }, 20);
     return close;
   }
+  var modalSeq = 0;
   /* A yes/no. `danger` paints the confirm button red — used for the two
      destructive ones so they do not look like every other button. */
   function confirmModal(title, bodyText, okLabel, onOk, danger) {
@@ -180,25 +236,17 @@
       }, 30);
     });
   }
+  /* A read-only panel with a Close button. This was a SECOND full modal
+     implementation with its own backdrop and its own close — so it silently
+     missed everything dialog() gained (the stack, back-button dismissal,
+     Escape, focus handling, the ARIA roles). One implementation now. */
   function modal(title, body, extra) {
-    var back = el('div');
-    back.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:60;' +
-      'display:flex;align-items:center;justify-content:center;padding:18px';
-    var box = el('div', 'card');
-    box.style.cssText = 'max-width:520px;width:100%;max-height:78vh;overflow:auto;margin:0';
-    box.appendChild(el('h2', null, title));
-    var pre = el('pre');
-    pre.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
-      'font-family:inherit;line-height:1.5';
-    pre.textContent = body;
-    box.appendChild(pre);
-    if (extra) box.appendChild(extra);
-    var ok = el('button', 'btn pri', 'Close');
-    ok.addEventListener('click', function () { document.body.removeChild(back); });
-    box.appendChild(ok);
-    back.appendChild(box);
-    back.addEventListener('click', function (e) { if (e.target === back) document.body.removeChild(back); });
-    document.body.appendChild(back);
+    return dialog(title, body, function (box, row, close) {
+      if (extra) box.appendChild(extra);
+      var ok = el('button', 'btn pri', 'Close');
+      ok.addEventListener('click', close);
+      row.appendChild(ok);
+    });
   }
   /* ---------- THE CLAUDE-APP ROUND TRIP (v4.5) --------------------------
    * Tj: "I should be able to export a file from the app, upload it to a Claude
@@ -429,7 +477,16 @@
   /* ---------- boot ---------- */
   function fatal(msg) {
     var v = $('view');
-    if (!v) { document.body.innerHTML = '<pre style="padding:16px;color:#f85149;white-space:pre-wrap">' + msg + '</pre>'; return; }
+    if (!v) {
+      /* textContent, not innerHTML: `msg` can carry an HTTP error body (see
+         index.html's onerror for the same fix). */
+      document.body.innerHTML = '';
+      var fp = document.createElement('pre');
+      fp.style.cssText = 'padding:16px;color:#f85149;white-space:pre-wrap';
+      fp.textContent = String(msg);
+      document.body.appendChild(fp);
+      return;
+    }
     v.innerHTML = '';
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Something went wrong'));
@@ -480,21 +537,105 @@
       }
     } catch (e) { /* never block startup for a badge */ }
   }
+  /* The tab order the bottom bar is in, read from the DOM so the two can never
+     disagree — a swipe moves through exactly the buttons he can see. */
+  function tabList() {
+    var t = document.querySelectorAll('#tabs .tab'), out = [], i;
+    for (i = 0; i < t.length; i++) out.push(t[i].getAttribute('data-v'));
+    return out;
+  }
+  /* The one place a tab change happens, whether it came from a tap or a swipe. */
+  function goTab(name) {
+    if (!name || name === view) return;
+    scrollMem[view] = curScroll();
+    view = name;
+    var t = document.querySelectorAll('#tabs .tab'), k;
+    for (k = 0; k < t.length; k++) {
+      var on = t[k].getAttribute('data-v') === name;
+      t[k].classList.toggle('on', on);
+      t[k].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    render();
+  }
   function wire() {
     var tabs = document.querySelectorAll('#tabs .tab'), i;
     for (i = 0; i < tabs.length; i++) {
+      tabs[i].setAttribute('role', 'tab');
+      tabs[i].setAttribute('aria-selected',
+        tabs[i].getAttribute('data-v') === view ? 'true' : 'false');
       tabs[i].addEventListener('click', function () {
-        scrollMem[view] = window.pageYOffset || document.documentElement.scrollTop || 0;
-        view = this.getAttribute('data-v');
-        var t = document.querySelectorAll('#tabs .tab'), k;
-        for (k = 0; k < t.length; k++) t[k].classList.toggle('on', t[k] === this);
-        render();
+        goTab(this.getAttribute('data-v'));
       });
     }
+    var nav = $('tabs'); if (nav) nav.setAttribute('role', 'tablist');
     $('wkPrev').addEventListener('click', function () { if (week > 1) { week--; commitWeek(); } });
-    $('wkNext').addEventListener('click', function () { if (week < 18) { week++; commitWeek(); } });
+    /* 17, not 18. The league's season is weeks 1-14 plus playoffs 15-17
+       (RULES_2026.md §LEAGUE STRUCTURE); week 18 has no matchups, no lineups
+       and nothing to show, and it was reachable purely because the guard was
+       written against the NFL calendar rather than this league's. */
+    $('wkNext').addEventListener('click', function () { if (week < LAST_WEEK) { week++; commitWeek(); } });
     $('syncBtn').addEventListener('click', syncWeek);
+    wireGestures();
   }
+  var LAST_WEEK = 17;
+
+  /* ---------- SWIPE BETWEEN TABS, PULL DOWN TO REFRESH (v4.7) -------------
+   * Tj: "make it so I can gesture swipe left and right to the different tabs
+   *      in addition to the bottom tab buttons. and also a gesture to pull
+   *      down to refresh anywhere in the app."
+   *
+   * The mechanics live in gestures.js, which knows nothing about this app.
+   * These are the four things it has to be told, and the reasoning is here
+   * because it is app knowledge, not gesture knowledge:
+   *
+   *  - `blocked` covers a modal being open AND a sync already running. A swipe
+   *    mid-sync would rebuild the screen under a job that is writing to it.
+   *  - `refresh` is deliberately the SAME path as the Sync week button rather
+   *    than a second one. "Refresh" meaning something different depending on
+   *    which tab you pulled on is how a gesture becomes untrustworthy. It also
+   *    freshens the schedule, which is nearly free (Schedule.refresh only goes
+   *    to the network if the stored copy is over three hours old).
+   *  - `scrollTop` is the page's, because <main> does not scroll — the body
+   *    does. Getting this wrong is what makes a pull-to-refresh fire halfway
+   *    down an article.
+   */
+  function wireGestures() {
+    if (!window.Gestures) return;
+    try {
+      Gestures.init({
+        tabs: tabList,
+        current: function () { return view; },
+        go: goTab,
+        viewEl: function () { return $('view'); },
+        scrollTop: curScroll,
+        blocked: function () { return modalOpen() || busy; },
+        refreshLabel: function () { return 'Refreshing week ' + week + '…'; },
+        refresh: function () {
+          if (window.Schedule) { try { Schedule.refresh(week, true); } catch (e) { } }
+          var p = doSync({ quiet: true });
+          return (p && p.then) ? p.then(function () { render(); }, function () { render(); })
+                               : Promise.resolve();
+        }
+      });
+    } catch (e) { /* a phone with no touch, or a stubbed DOM: buttons still work */ }
+  }
+
+  /* ---------- THE ANDROID BACK BUTTON (v4.7) -----------------------------
+   * MainActivity used to defer to WebView.canGoBack(), which in a page that
+   * never pushes a history entry is always false — so back quit the app from
+   * anywhere, including with a confirm dialog open, which on Android is the
+   * one place everybody presses it. The Activity now asks the page first and
+   * only finishes if the page says it did nothing.
+   *
+   * Order matters: a modal is the most recent thing he opened, so it goes
+   * first; then a tab that is not the one the app starts on; then let go. */
+  window.__onBack = function () {
+    try {
+      if (closeTopModal()) return true;
+      if (view !== 'live') { goTab('live'); return true; }
+    } catch (e) { /* never trap him in the app because a handler threw */ }
+    return false;
+  };
   function applyAdjust() {
     if (window.__setAdjust) window.__setAdjust(S.settings.adjTop || 0, S.settings.adjBot || 0);
   }
@@ -566,7 +707,7 @@
         else if (games[i].state === 'pre') pre++;
         else post++;
       }
-      live.inProgress = inProg; live.err = '';
+      live.inProgress = inProg; live.err = ''; live.fails = 0;   /* the backoff resets */
       if (inProg > 0) {
         return doSync({ quiet: true }).then(function () {
           live.at = Date.now();
@@ -582,8 +723,22 @@
       return null;
     }).catch(function (e) {
       live.err = (e && e.message) ? e.message : String(e);
-      scheduleLive(60000);
-    }).then(function () { if (view === 'live') renderHeader(); });
+      /* BACK OFF, and say whether this is the network or the feed.
+       * This used to re-arm at a flat 60s forever, so a phone in airplane mode
+       * made a request a minute for as long as the app was open — and the
+       * bridge already exposes online() precisely to tell "you are offline"
+       * apart from "the feed is broken", which look identical at the socket
+       * and are very different sentences to read. Doubling from a minute to a
+       * ten-minute ceiling means a long outage costs a handful of attempts
+       * instead of hundreds, and the first retry is still quick enough that a
+       * blip is invisible. Any success resets it (see the top of liveTick). */
+      var off = false;
+      try { off = !!(window.Native && Native.online && !Native.online()); } catch (e2) { }
+      if (off) live.err = 'offline';
+      live.fails = (live.fails || 0) + 1;
+      var wait = Math.min(600000, 60000 * Math.pow(2, Math.min(4, live.fails - 1)));
+      scheduleLive(wait);
+    }).then(function () { renderHeader(); });
   }
   /* ---------- SLEEPING WHEN THE APP IS NOT ON SCREEN --------------------
    * Tj: "make sure when the app is backgrounded that it properly sleeps and
@@ -621,10 +776,13 @@
     asleep = true;
     stopLive();                 /* the timer, not just its effects */
     live.next = 0;
+    /* A stray touch during teardown must not switch a tab or start a fetch. */
+    if (window.Gestures) { try { Gestures.enable(false); } catch (e) { } }
   }
   function appResume() {
     if (!asleep) return;
     asleep = false;
+    if (window.Gestures) { try { Gestures.enable(true); } catch (e) { } }
     if (!S) return;             /* not booted yet; boot() starts the poll itself */
     /* Coming back after a while is exactly when a flex-scheduling change would
        have landed, and it is cheap: refresh() only fetches if the stored copy
@@ -661,6 +819,7 @@
   function liveText() {
     if (asleep) return 'asleep';
     if (!S.settings.liveRefresh) return 'live off';
+    if (live.err === 'offline') return 'offline — will retry';
     if (live.err) return 'live: ' + live.err;
     if (live.inProgress) return live.inProgress + ' game' + (live.inProgress === 1 ? '' : 's') +
       ' live · updating every ' + (Number(S.settings.liveEvery) || 45) + 's';
@@ -1029,11 +1188,18 @@
     c.appendChild(h);
     var keys = Store.slotKeys();
     var L = Store.getLineup(week, t.id);
-    var manualCount = 0;
+    var locks = Store.lockedSlots(week, t.id);
+    var manualCount = 0, lockCount = 0;
     keys.forEach(function (k) {
       var isMan = Store.isManual(week, t.id, k.key);
+      var isLock = !!locks[k.key];
       if (isMan) manualCount++;
-      var lab = el('label', 'f', k.label + (isMan ? '  · yours' : (L[k.key] ? '  · auto' : '')));
+      if (isLock) lockCount++;
+      /* "locked" beats "yours"/"auto" in the label: once he has kicked off,
+         who chose him stopped mattering and whether he can still be changed
+         is the only question the row is being asked. */
+      var lab = el('label', 'f', k.label +
+        (isLock ? '  · ● started' : (isMan ? '  · yours' : (L[k.key] ? '  · auto' : ''))));
       /* WHEN DOES THE MAN IN THIS SLOT ACTUALLY PLAY? On the Lineups tab this
          is the single most useful fact on the row: a Thursday starter is a
          decision with a deadline, and every other slot can wait. */
@@ -1051,7 +1217,7 @@
       opts.forEach(function (p) {
         var usedIn = null, kk;
         for (kk in L) if (L[kk] === p.id && kk !== k.key) usedIn = kk;
-        var bye = Number(p.bye) === Number(week) ? ' [BYE]' : '';
+        var bye = Store.isOnBye(p, week) ? ' [BYE]' : '';
         /* the kickoff goes in the option text too — an <option> cannot carry a
            styled child, and when you are CHOOSING between two receivers "one
            of them plays Thursday" is exactly the tiebreak you want in view */
@@ -1065,9 +1231,29 @@
         sel.appendChild(o);
       });
       sel.value = L[k.key] || '';
+      if (isLock) sel.className = 'locked';
       /* the 4th argument is what marks this as HIS choice, not the app's */
       sel.addEventListener('change', function () {
-        Store.setSlot(week, t.id, k.key, this.value, true);
+        var newPid = this.value;
+        /* The AUTO-fill can never touch a started slot; Tj still can, because
+           this app mirrors a league actually run on RTSports and he sometimes
+           has to correct a slot after the fact to match what RTSports had.
+           But it is never what he MEANT to do, so it asks once. */
+        if (isLock || (newPid && Store.isLocked(week, newPid))) {
+          var self = this, prev = L[k.key] || '';
+          confirmModal('That game has already started',
+            'Changing this slot will not change what actually happened in your ' +
+            'league — it only changes what this app shows. Do it if you are ' +
+            'correcting the app to match RTSports; otherwise leave it alone.',
+            'Change it anyway', function () {
+              Store.setSlot(week, t.id, k.key, newPid, true);
+              if (window.Sim) Sim.invalidate();
+              render();
+            }, true);
+          self.value = prev;
+          return;
+        }
+        Store.setSlot(week, t.id, k.key, newPid, true);
         if (window.Sim) Sim.invalidate();   /* the win probability depends on it */
         render();
       });
@@ -1078,11 +1264,12 @@
     keys.forEach(function (k) {
       if (!L[k.key]) return;
       var r = Store.playerById(L[k.key]);
-      if (r && Number(r.player.bye) === Number(week)) byeCount++;
+      if (r && Store.isOnBye(r.player, week)) byeCount++;
     });
     var st = el('div', 'kv');
     st.appendChild(el('span', byeCount ? 'warnText' : null,
       filled + '/' + keys.length + ' filled · ' + manualCount + ' set by you' +
+      (lockCount ? '  ·  ' + lockCount + ' started' : '') +
       (byeCount ? '  ·  ' + byeCount + ' ON BYE' : '')));
     var b = el('button', 'btn sm', 'Copy wk ' + (week - 1));
     b.disabled = week <= 1;
@@ -1319,6 +1506,7 @@
       var b = el('button', 'fchip' + (faPos === k ? ' on' : ''),
                  k === 'VALUE' ? 'Best value' : (k === 'ALL' ? 'All positions' : k));
       b.setAttribute('data-fk', 'faChip|' + k);
+      b.setAttribute('aria-pressed', k === faPos ? 'true' : 'false');
       b.addEventListener('click', function () { faPos = k; render(); });
       chips.appendChild(b);
     });
@@ -2280,24 +2468,14 @@
       'games, checked against arithmetic done by hand off the rules sheet.'));
     c.appendChild(ad);
 
-    /* the single genuine ambiguity in the rules image */
-    var lab = el('label', 'f', 'Kick/punt return TD scored by an individual player');
-    var sel = el('select');
-    sel.appendChild(new Option('Goes to the D/ST only (matches the rules sheet)', 'no'));
-    sel.appendChild(new Option('Also pays the returning player +6', 'yes'));
-    sel.value = S.settings.individualReturnTD ? 'yes' : 'no';
-    sel.addEventListener('change', function () {
-      S.settings.individualReturnTD = this.value === 'yes';
-      Scoring.configure({ individualReturnTD: S.settings.individualReturnTD });
-      Store.save(); render();
-      toast('Return-TD rule updated — every week recomputes');
-    });
-    c.appendChild(lab); c.appendChild(sel);
+    /* This was a dropdown until v4.7 — the one item the rules image left
+       ambiguous. Tj settled it, so it is a stated fact now, not a setting. */
     c.appendChild(el('p', 'hint',
-      'Your rules sheet prints "Kickoff/Punt return TD +6" under Defense/ST, so ' +
-      'the default gives it to the D/ST. If RTSports also credits the returner, ' +
-      'switch this — the app records return touchdowns either way, so nothing ' +
-      'needs re-syncing.'));
+      'Return touchdowns: the +6 goes to the D/ST, once. A kick or punt return ' +
+      'TD pays the defense and not the returning player, and a defensive TD is ' +
+      'never scored twice. This was a setting until v4.7; you settled it, so it ' +
+      'is fixed in the engine now. The app still records return TDs on the ' +
+      'player\'s line so you can see them on his card — they are just worth 0.'));
 
     c.appendChild(el('p', 'hint',
       'Not modelled: the three league-wide +5 bonuses for longest completion, ' +
