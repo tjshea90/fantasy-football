@@ -85,13 +85,25 @@ N=$((N+1))
   echo
   echo "## Last ten checkpoints"
   echo '```'
-  # TRUNCATED ON PURPOSE. This block is reprinted into every future session's
-  # briefing, so a long checkpoint message is not paid once — it is paid on
-  # every cold start from now on. Ten verbose messages measured over 2,000
-  # chars here. The full text is never lost; `git log` has it in full, and the
-  # one that matters is expanded under "Just done" above.
-  git log --oneline -10 2>/dev/null | cut -c1-96 | sed 's/^/  /'
+  # DELIBERATE CHECKPOINTS ONLY, and truncated.
+  #
+  # Two separate wastes were measured here. First, the autosave hook commits
+  # after every edit and every bash command, so a plain `git log -10` filled
+  # this block with 'auto-checkpoint: <timestamp>' lines — 4 of 10 already,
+  # and 10 of 10 in any busy session. The next account would then inherit a
+  # history section containing no history, while still paying for it in every
+  # briefing. Second, the messages are reprinted on every future cold start,
+  # so a verbose one is not paid once but forever; ten of them measured over
+  # 2,000 chars. Nothing is lost either way — `git log` keeps everything, and
+  # the auto-checkpoints are counted just below.
+  git log --oneline -10 --extended-regexp --grep='^(ckpt [0-9]+:|ship v)' 2>/dev/null | cut -c1-96 | sed 's/^/  /'
   echo '```'
+  AUTOS="$(git log --oneline --grep='^auto-checkpoint:' "$(git log -1 --format=%H --extended-regexp --grep='^(ckpt [0-9]+:|ship v)' 2>/dev/null)"..HEAD 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${AUTOS:-0}" -gt 0 ]; then
+    echo
+    echo "($AUTOS automatic checkpoint(s) since the last deliberate one — the"
+    echo "session was still mid-step. \`git diff\` against it shows what changed.)"
+  fi
 } > CHECKPOINT.md
 
 # ---- commit -----------------------------------------------------------------
