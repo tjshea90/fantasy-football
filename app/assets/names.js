@@ -115,12 +115,21 @@
     ['deebo samuel', 'tyshun samuel']
   ];
   var ALIAS = {};
+  /* normalised spelling -> EVERY spelling in its group. canon() only needs one
+     representative, but variants() needs all of them: a map keyed under
+     "marquise brown" has to be findable from a roster that says "Hollywood
+     Brown", and collapsing to a single representative loses the other side.
+     That gap made the curated alias list useless to every by-name lookup
+     except an exact canon-to-canon comparison. */
+  var ALIAS_GROUP = {};
   (function () {
     var i, a, b;
     for (i = 0; i < ALIAS_PAIRS.length; i++) {
       a = ALIAS_PAIRS[i][0]; b = ALIAS_PAIRS[i][1];
       /* both directions collapse to the first spelling */
       ALIAS[a] = a; ALIAS[b] = a;
+      ALIAS_GROUP[a] = ALIAS_PAIRS[i];
+      ALIAS_GROUP[b] = ALIAS_PAIRS[i];
     }
   }());
 
@@ -170,13 +179,24 @@
   /* variants(name) — every spelling this key should also match, so a caller
      that wants a plain lookup table can insert all of them. */
   function variants(name) {
-    var c = canon(name), out = [c], n = normName(name), i, w, list;
-    if (n && n !== c) out.push(n);
+    var c = canon(name), out = [], n = normName(name), i, w, list;
+    /* deduped: the nickname expansion regenerates the plain form for any name
+       that was already short ("josh allen" -> canon "joshua allen" -> back to
+       "josh allen"), and doSync inserts every variant into an index */
+    function add(v) { if (v && out.indexOf(v) < 0) out.push(v); }
+    add(c);
+    if (n) add(n);
     w = c.split(' ');
     if (w.length >= 2 && NICK[w[0]]) {
       list = NICK[w[0]];
-      for (i = 0; i < list.length; i++) out.push([list[i]].concat(w.slice(1)).join(' '));
+      for (i = 0; i < list.length; i++) add([list[i]].concat(w.slice(1)).join(' '));
     }
+    /* Both sides of a curated alias. Without this the list was consulted only
+       by canon-to-canon comparisons: a lookup for "Hollywood Brown" against a
+       feed that says "Marquise Brown" missed, even though this file states in
+       so many words that they are one man. */
+    var grp = ALIAS_GROUP[c] || ALIAS_GROUP[n];
+    if (grp) { for (i = 0; i < grp.length; i++) add(grp[i]); }
     return out;
   }
 

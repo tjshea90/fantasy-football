@@ -612,7 +612,10 @@
         refreshLabel: function () { return 'Refreshing week ' + week + '…'; },
         refresh: function () {
           if (window.Schedule) { try { Schedule.refresh(week, true); } catch (e) { } }
-          var p = doSync({ quiet: true });
+          /* NOT quiet. A pull is a deliberate act, so it gets the same progress
+             bar the Sync week button gets — "box score 3 of 8" is the
+             difference between waiting and wondering whether it is stuck. */
+          var p = doSync({ quiet: false });
           return (p && p.then) ? p.then(function () { render(); }, function () { render(); })
                                : Promise.resolve();
         }
@@ -1171,7 +1174,10 @@
         ' in week ' + week + '. Re-defaulting throws those away and fills every ' +
         'team with the best projected legal lineup instead.\n\n' +
         'Nothing else is touched — rosters, scores and matchups all stay as they ' +
-        'are, and you can change any slot straight back afterwards.',
+        'are, and you can change any slot straight back afterwards.\n\n' +
+        'Any player whose game has already kicked off keeps his slot. Re-' +
+        'defaulting cannot move him, and it would corrupt this week\'s scores ' +
+        'if it could.',
         'Replace my picks', go, true);
     });
     head.appendChild(refill);
@@ -1290,6 +1296,17 @@
     st.appendChild(rb);
     st.style.marginTop = '10px'; st.style.alignItems = 'center';
     c.appendChild(st);
+    /* Say WHY the automation has stopped touching some of these. Without this,
+       "Reset to auto" appearing to half-work looks like a bug rather than the
+       rule it is — and an empty slot that auto-fill refuses to fill is the
+       most confusing version of that. */
+    if (lockCount) {
+      c.appendChild(el('p', 'hint',
+        lockCount + ' of these ' + (lockCount === 1 ? 'has' : 'have') + ' already ' +
+        'kicked off, so the app will not change ' + (lockCount === 1 ? 'it' : 'them') +
+        ' — auto-fill and "Reset to auto" both leave started slots alone. You can ' +
+        'still edit one by hand if you are correcting the app to match RTSports.'));
+    }
     return c;
   }
 

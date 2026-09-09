@@ -109,10 +109,30 @@ W.document = {
     return ids[id];
   },
   querySelector: function () { return null; },
-  querySelectorAll: function () { return []; },
+  /* REAL tab buttons for the '#tabs .tab' selector. Without them wire() binds
+     nothing, goTab() is unreachable, and every render path in the file — which
+     is most of the file — stays unexecuted. That was the gap that let the
+     lock UI, the swipe wiring and the back handler in untested. */
+  querySelectorAll: function (sel) {
+    if (String(sel).indexOf('.tab') >= 0) return tabEls;
+    return [];
+  },
   addEventListener: function (t, fn) { docHandlers[t] = fn; },
   removeEventListener: function () { }
 };
+var TAB_NAMES = ['live', 'lineups', 'rosters', 'standings', 'league', 'advice', 'data'];
+var tabEls = TAB_NAMES.map(function (n) {
+  var e = makeEl('button'); e.setAttribute('data-v', n); return e;
+});
+/* Click a tab the way a thumb does: through the handler wire() attached. */
+function clickTab(name) {
+  for (var i = 0; i < tabEls.length; i++) {
+    if (tabEls[i].getAttribute('data-v') === name) {
+      return tabEls[i]._h && tabEls[i]._h.click ? tabEls[i]._h.click.call(tabEls[i]) : null;
+    }
+  }
+  return null;
+}
 W.Option = function (label, value) {
   var o = makeEl('option'); o.textContent = label; o.value = value === undefined ? label : value;
   return o;
@@ -277,6 +297,57 @@ console.log('\n-- the sleep contract, in the source --');
   var i = c.indexOf('function scheduleLive');
   ok(/if \(asleep\) \{ live\.next = 0; return; \}/.test(c.slice(i, i + 320)),
      'the sleep guard sits at the one place a timer is armed');
+}());
+
+/* ---- EVERY SCREEN ACTUALLY RENDERS (v4.7) --------------------------------
+ * Until now nothing in the suite executed a single view function. ui.js is
+ * 145 KB and almost all of it is render code, so "the file evaluates and
+ * boot() survives" was proving very little about the app Tj opens. This walks
+ * all seven tabs through the real click handler, which is the same path a
+ * swipe now takes, and fails on the first one that throws.
+ *
+ * render() catches per-screen errors and paints a card instead, so a throw
+ * would NOT surface as an exception here — the card is the symptom. Both are
+ * checked. */
+console.log('\n-- every screen renders --');
+(function () {
+  var view = ids.view;
+  TAB_NAMES.forEach(function (name) {
+    var err = null;
+    try { clickTab(name); } catch (e) { err = e; }
+    ok(!err, 'the ' + name + ' tab renders without throwing' +
+       (err ? '  <-- ' + err.message : ''));
+    if (err) return;
+    /* render()'s own catch paints a card headed "This screen hit an error" */
+    var caught = null;
+    (function walk(n, depth) {
+      if (!n || depth > 6 || caught) return;
+      if (n.textContent === 'This screen hit an error') { caught = n; return; }
+      for (var i = 0; i < (n.children || []).length; i++) walk(n.children[i], depth + 1);
+    }(view, 0));
+    ok(!caught, '  ...and render() did not have to catch anything on ' + name);
+  });
+}());
+
+console.log('\n-- the back button --');
+(function () {
+  ok(typeof W.__onBack === 'function', 'the page exposes __onBack for MainActivity');
+  clickTab('data');
+  ok(W.__onBack() === true, 'from a non-Live tab, back is handled by the page');
+  ok(W.__onBack() === false,
+     'and from Live with nothing open it declines, so the Activity can finish');
+}());
+
+console.log('\n-- gestures are wired to the real tab order --');
+(function () {
+  ok(!!W.Gestures, 'gestures.js loaded alongside the rest');
+  /* The swipe order must be the bar's order. Reading it from the DOM is what
+     makes that true by construction; assert the stub sees the same seven. */
+  ok(tabEls.length === 7, 'seven tabs in the bar');
+  var pauseErr = null;
+  try { W.__appPause(); W.__appResume(); } catch (e) { pauseErr = e; }
+  ok(!pauseErr, 'pause/resume still clean now that they also toggle gestures' +
+     (pauseErr ? '  <-- ' + pauseErr.message : ''));
 }());
 
 console.log('\n-- nothing reached the network during boot --');

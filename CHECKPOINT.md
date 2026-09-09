@@ -1,9 +1,9 @@
-# CHECKPOINT 20 — read me first, then TASKS.md
+# CHECKPOINT 21 — read me first, then TASKS.md
 
-**Written:** 2026-09-09T01:12:57Z · **version:** 4.6 · **tests:** all 12 suites green
+**Written:** 2026-09-09T01:18:05Z · **version:** 4.6 · **tests:** all 13 suites green
 
 ## Just done
-v4.7 wip: return TD scored once, name-key fixes, kickoff locks, split persistence, gestures, back button, alerts daily
+v4.7: alias variants both ways, new test_locks + test_gestures suites, every tab now renders in test_lifecycle
 
 ## Do this next
 see the first unticked box in TASKS.md
@@ -19,30 +19,14 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M RULES_2026.md
-     M android/AndroidManifest.xml
-     M android/src/com/tj/fftracker/Alerts.java
-     M android/src/com/tj/fftracker/MainActivity.java
-     M android/src/com/tj/fftracker/NativeBridge.java
-     M app/assets/app.css
-     M app/assets/espn.js
-     M app/assets/index.html
      M app/assets/names.js
-     M app/assets/projections.js
-     M app/assets/recommend.js
-     M app/assets/schedule.js
-     M app/assets/scoring.js
-     M app/assets/store.js
      M app/assets/ui.js
-     M tools/test_boot.js
      M tools/test_lifecycle.js
-     M tools/test_net.js
-    ?? android/res/xml/
-    ?? app/assets/gestures.js
-    ?? tools/test_gestures.js
+    ?? tools/test_locks.js
 
 ## Last ten checkpoints
 ```
+  90fb9fa ckpt 20: v4.7 wip: return TD scored once, name-key fixes, kickoff locks, split persistence, gestures, back button, alerts daily
   8442c73 ship v4.6: v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
   156423a ckpt 18: ship: v4.6 — tab bar reserve fixed and self-diagnosing, pre-game player card, TO PLAY redundancy removed, share URI grant hardened
   98fdf70 ckpt 17: Sweep of v4.5. (1) Tab bar: body and toast hard-coded 124px for an 89px bar — a stale number from the 60px era — pinning a 35px dead band; both now derive from --tabh, and the boot test that ASSERTED the bug ('padding >= min-height + 24') now tests the relationship. (2) Data > Screen fit is self-diagnosing: measured bar height, CSS expectation, bottom inset, and the SAVED adjBot slider with a one-tap reset. (3) Caught my own bug in that readout: getPropertyValue('--tabh') returns the literal calc() string, so parseFloat was NaN — replaced with a measuring probe. (4) 'TO PLAY' suppressed when a kickoff badge already says so; it was pushing the player's NAME into the ellipsis in a nowrap row. (5) Tapping a player before the week is synced was a dead-end toast — now a pre-game card with kickoff, projection, injury note and Claude's read, all already computed and previously unreachable. (6) Hardened the share URI grant (ClipData + flag on the chooser) on the unverified handoff path. 11 suites green.
@@ -52,5 +36,4 @@ request in his own words and `git log` carries every step already taken.
   1c79298 ckpt 13: ship: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep, and a boot-stopping ReferenceError caught before it shipped
   9e0623f ckpt 12: Docs complete: STATE.md carries the whole v4.3 narrative, LADDER.md step 15a-15i, RELEASE_NOTES.md written for Tj plus a 'For your approval' list of seven candidates from similar apps that were deliberately NOT built. TASKS.md 21/21. APK rebuilt clean.
   8aa4058 ckpt 11: Sweep continued. check_es2018.js had a HARD-CODED file list — schedule.js, handoff.js and names.js were never checked while it reported 'all files ES2018-safe'; it now discovers app/assets/*.js (18 files, all pass). handoff: Array.isArray instead of a truthy .length (a STRING has one, so {"players":"none found"} was being accepted then applying nothing), and a reply with no week is refused rather than filed under undefined where the UI would never show it. Game badges now sit consistently after the team/bye text on every row; the pre-Sunday alert also leads the Advice tab; the exported briefing carries a kickoff column so the reader knows which decisions have a deadline. 11 suites green.
-  49c7790 ckpt 10: Fixed the test that was pinning the ReferenceError instead of catching it (it asserted root.__appPause, the broken form). All 11 suites green, APK builds clean.
 ```
