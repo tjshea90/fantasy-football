@@ -1,9 +1,5 @@
 # TASKS — the 2026-09-09 request, in Tj's words
 
-## 7. SIMULATED JOB (delete me)
-- [ ] 7a. Add a Week 5 recap card
-- [ ] 7b. Wire it into the Live tab
-
 > "a defense touchdown is only scored one time. individual player doesn't
 >  matter. fix all the criticals and whatever else you found in your report.
 >  make it so I can gesture swipe left and right to the different tabs in

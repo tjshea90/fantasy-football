@@ -1,12 +1,12 @@
-# CHECKPOINT 42 — read me first, then TASKS.md
+# CHECKPOINT 44 — read me first, then TASKS.md
 
-**Written:** 2026-09-09T23:07:34Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-09T23:08:13Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-wrote Tj's new request into TASKS.md before starting
+reverted the end-to-end handoff test: it simulated a cap landing mid-edit, pushed the half-written state, and a cold clone correctly received the INTERRUPTED warning, the file in flight, 'Do this next' and the unticked tasks. recap.js and TASKS.md restored
 
 ## Do this next
-start 7a: add the Week 5 recap card
+Tj: verify v4.7 on the phone — Data > Test the projection feed. Next code work continues from TASKS.md
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,13 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
+    M  TASKS.md
+    M  app/assets/recap.js
 
 ## Last ten checkpoints
 ```
+  79ed09e auto-checkpoint: 2026-09-09T23:07:37Z
+  07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
   87b5bba ckpt 41: audit fix: a failing push was completely silent — autosave committed locally, everything looked saved, and 3 commits piled up that would have died with the container. autosave now emits a loud systemMessage on push failure; ckpt warns and ship is fatal
   7795854 auto-checkpoint: 2026-09-09T23:06:28Z
   678787a ckpt 39: added PreCompact hook (tools/toobig.sh): when a session grows big enough to auto-compact it saves everything and tells Tj to checkpoint and start a fresh session, since resuming from GitHub costs ~150 lines versus re-reading the whole conversation at full price on a cold cache
@@ -35,6 +38,4 @@ request in his own words and `git log` carries every step already taken.
   c482bfb auto-checkpoint: 2026-09-09T22:57:24Z
   554e113 ckpt 35: cross-account handoff system finished and verified: SessionStart briefing, autosave hook on every edit and bash call, push.sh (fixes the silent no-push bug), secret scan for the public repo, MANIFEST repaired so bootstrap/ship work again, CI now runs the suites
   1e1bf9b auto-checkpoint: 2026-09-09T22:51:04Z
-  351443e auto-checkpoint: 2026-09-09T22:50:24Z
-  72cb32d ckpt 32: wired the cross-account handoff: autosave hook, SessionStart briefing, ckpt now pushes, secret scan, MANIFEST repaired
 ```
