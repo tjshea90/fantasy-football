@@ -1,4 +1,8 @@
-# TASKS — the 2026-09-09 request, in Tj's words
+# TASKS
+
+## TEST JOB
+- [ ] T1. Add marker ALPHA to value.js
+- [ ] T2. Add marker BETA to sim.js — the 2026-09-09 request, in Tj's words
 
 > "a defense touchdown is only scored one time. individual player doesn't
 >  matter. fix all the criticals and whatever else you found in your report.
