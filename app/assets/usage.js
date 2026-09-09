@@ -157,3 +157,6 @@
                  DEFAULT_RATES: DEFAULT_RATES };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Usage;
 })(typeof window !== 'undefined' ? window : this);
+
+// HALF_WRITTEN_BY_B cap hit here
+function unfinished(
