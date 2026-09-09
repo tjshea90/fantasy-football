@@ -1,6 +1,6 @@
-# CHECKPOINT 23 — read me first, then TASKS.md
+# CHECKPOINT 24 — read me first, then TASKS.md
 
-**Written:** 2026-09-09T01:22:43Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-09T01:22:55Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
 ship: v4.7 — the audit fixed: return TD scores once, kickoff locks, the name-key bug in four places, honest+75x cheaper saves, API key out of Downloads, daily alarm; plus swipe between tabs, pull to refresh and a working back button
@@ -23,6 +23,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  2265e04 ckpt 23: ship: v4.7 — the audit fixed: return TD scores once, kickoff locks, the name-key bug in four places, honest+75x cheaper saves, API key out of Downloads, daily alarm; plus swipe between tabs, pull to refresh and a working back button
   e7c2208 ckpt 22: v4.7 docs: ladder 17a-17j, release notes, tasks
   2df0576 ckpt 21: v4.7: alias variants both ways, new test_locks + test_gestures suites, every tab now renders in test_lifecycle
   90fb9fa ckpt 20: v4.7 wip: return TD scored once, name-key fixes, kickoff locks, split persistence, gestures, back button, alerts daily
@@ -32,5 +33,4 @@ request in his own words and `git log` carries every step already taken.
   992853b ckpt 16: Tab bar: found the real layout bug behind the 'nav shifted up' report. The bar is 89px (--tab-h 88 + 1px border) but body{padding-bottom} and .toast{bottom} both hard-coded 124px — a leftover from when the tabs were 60px, updated by hand to a wrong number when v3.1 grew them. That pinned a 35px dead band above the bar. Worse, test_boot ASSERTED the bug: it required 'body padding >= min-height + 24', which describes nothing real. Both now derive from --tabh (= --tab-h + border + insets) so they cannot drift or disagree, and the assertions test the relationship instead of two literals. Also made the Data > Screen fit card self-diagnosing: measured bar height vs CSS expectation, the bottom inset, and the SAVED adjBot slider (which survives updates and would look exactly like a regression), with a one-tap reset.
   cc29cb5 ship v4.5: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep
   f38d578 ckpt 14: ship: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep
-  1c79298 ckpt 13: ship: v4.5 — three reported bugs fixed, Claude-app round trip on both tabs, kickoff times + pre-Sunday alerts, the app sleeps when backgrounded, network/caching sweep, and a boot-stopping ReferenceError caught before it shipped
 ```

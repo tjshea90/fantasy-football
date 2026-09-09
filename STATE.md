@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-08** · ladder 0-16 COMPLETE · **v4.6** · APK builds, signed, all 11 test suites green
+**Last updated: 2026-09-09** · ladder 0-17 COMPLETE · **v4.7** · APK builds, signed, all 13 test suites green
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
