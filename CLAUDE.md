@@ -1,58 +1,66 @@
-# FF Tracker
+# FF Tracker — working agreement
 
-Android fantasy football tracker. Built across multiple Claude Code sessions
-and accounts, often interrupted mid-task when usage runs out. Follow this
-process so work is never lost and any session can pick up cold.
+Android fantasy football tracker (WebView + thin Java shell, no Gradle).
+Worked on from a phone, across **three different Claude accounts**. When one
+account's usage runs out mid-task, the next account opens this repo cold and
+continues. Everything below exists to make that handoff lossless.
 
-## Start of every session
+**The standing rules of the project itself** (ES2018 only, one universal APK,
+async bridge, the scoring engine as ground truth, never trust a build that
+printed an error) are printed at session start by `bootstrap.sh` and written
+in full in `BRIEF.md`. They are not repeated here. Do not violate them.
 
-Before making any change, read these to know exactly what's in progress:
+## Starting a session
 
-1. `RESUME.md` — plain-language "what to do next"
-2. `CHECKPOINT.md` — last session's state and any gotchas
-3. `TASKS.md` — outstanding task list
-4. `STATE.md` — full narrative history if more context is needed
+A `SessionStart` hook has already run `tools/resume.sh`, which pulled the
+latest from GitHub and printed `CHECKPOINT.md`, `TASKS.md` and the rules into
+your context. **Do not re-run bootstrap, do not re-plan, do not re-read
+finished work.** Continue from **Do this next** in `CHECKPOINT.md`, or the
+first unticked `[ ]` in `TASKS.md`.
 
-Then run `./build.sh` once to confirm the repo is in a working state before
-touching anything.
+If that briefing did not appear, say so before working — it means the hook
+did not fire and the safety net below is probably not running either.
 
-## While working
+If it reported uncommitted changes, a previous session was cut off
+mid-change. `git diff` is what was in flight. Read it before deciding
+anything; it is almost certainly the task you are resuming.
 
-- Work in small, complete steps. After each one that builds successfully,
-  **commit and push immediately** — do not batch several changes into one
-  uncommitted pile. Usage can run out without warning; anything not pushed
-  when the session ends may be lost.
-- Never commit a change to `app/` or `android/` without running `./build.sh`
-  first and confirming it succeeds. A broken commit is worse than no commit —
-  it hands the next session a broken checkpoint instead of an honest one.
-- Keep commit messages descriptive (this repo's convention — see `git log`).
+## Saving work — three levels, and you are responsible for the middle one
 
-## Before ending a session (or when usage is running low)
+**1. Automatic (hooks — happens without you).** `tools/autosave.sh` commits
+and pushes after every file edit and every bash command. It has no gate and
+runs no tests: a broken half-edit that is committed is recoverable, the same
+edit uncommitted dies with the session. This is what survives a usage cap
+landing mid-change. You do not call it.
 
-Update and commit+push, even if the task isn't finished:
+**2. Deliberate — `bash tools/ckpt.sh "what I just did" "what comes next"`.**
+**Run this after every completed step, not at the end of the session.** The
+autosave hook can preserve your *files* but it cannot know your *intent* —
+"what comes next" is the one thing no diff can reconstruct and the one thing
+the next account most needs. It runs every suite, records green or red
+honestly without gating, rewrites `CHECKPOINT.md`, commits and pushes.
+Skipping it is how a handoff loses a day even though every file was saved.
 
-- `CHECKPOINT.md` — what changed this session, what's left, anything the
-  next session needs to know that isn't obvious from the diff
-- `RESUME.md` — the next concrete step, in plain terms
-- `TASKS.md` — check off anything completed
+**3. Milestone — `bash ship.sh "note"`.** Full release gate: every suite must
+be green, `STATE.md` current, manifest agreeing, and the APK's dex must
+contain a class for every Java source. Use at real versions, not mid-task.
 
-Do this *before* the last available turn, not after — there's no guarantee
-of a clean shutdown when usage cuts off.
+## Before your usage runs out
 
-## Switching to a different Claude account
+You will usually get no warning, which is why level 2 is per-step rather than
+per-session. If you *do* notice you are running low, spend the remaining
+budget on `tools/ckpt.sh` with an honest, specific "what comes next" — not on
+one more edit.
 
-Nothing special to do — just point the new session at this same GitHub repo.
-It will read the files above and continue from the last pushed commit.
+## Building the APK
 
-## Automatic checkpointing (safety net, not a substitute)
+`bash build.sh` → `build/app-release.apk`. First run downloads the SDK
+(~600 MB, a few minutes); after that, seconds. GitHub Actions also builds an
+APK on every push — see `.github/workflows/build-apk.yml` — so a green run
+there is an independent check that the build is not broken.
 
-This repo has a hook (`.claude/settings.json`) that auto-commits and pushes
-any edited file within seconds, tagged `auto-checkpoint: <timestamp>` in
-`git log`. It exists so a session cut off mid-task loses at most a couple
-minutes of work, not hours.
+## This repo is public
 
-It does **not** replace the practices above — it's a dumb, unconditional
-safety net, not a substitute for deliberate, well-described commits. Still
-follow "commit and push after each complete step" and the checkpoint-before-
-ending process yourself; the hook just catches what would otherwise be lost
-between those points.
+`tools/secretscan.sh` blocks the autosave hook from committing anything
+shaped like a live credential. If it trips, remove the credential — do not
+bypass it. An API key pushed to a public repo has to be rotated, not deleted.

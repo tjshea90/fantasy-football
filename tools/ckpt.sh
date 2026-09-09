@@ -64,9 +64,13 @@ N=$((N+1))
   echo "${NEXT:-see the first unticked box in TASKS.md}"
   echo
   echo "## How to resume, exactly"
+  echo "Open this GitHub repo in a Claude Code session on ANY of the three"
+  echo "accounts and say \"continue\". The SessionStart hook runs tools/resume.sh,"
+  echo "which pulls the latest and prints this file automatically — nothing has"
+  echo "to be attached, uploaded or explained. If that briefing did not appear,"
+  echo "run it by hand:"
   echo '```bash'
-  echo "cd \"\$(dirname \"\$0\")\"   # wherever this bundle was unzipped"
-  echo "bash bootstrap.sh          # prints this file, TASKS.md and the git log"
+  echo "bash tools/resume.sh       # pull + this file + TASKS.md + the rules"
   echo '```'
   echo "Then continue from **Do this next** above. Do not re-plan, do not re-read"
   echo "finished work, do not ask Tj to re-explain anything — \`TASKS.md\` carries his"
@@ -87,6 +91,20 @@ N=$((N+1))
 
 # ---- commit -----------------------------------------------------------------
 git add -A >/dev/null 2>&1
+
+# THE ONE EXCEPTION TO "NO GATE".
+# Everything above is deliberately ungated: a red suite commits, a half-written
+# function commits, because a described broken state is recoverable and an
+# uncommitted one is not. A live credential is a different category. This repo
+# is PUBLIC and every checkpoint is pushed, so a key that reaches a commit has
+# to be rotated — deleting the commit does not undo it, GitHub keeps the object
+# reachable by SHA. So this refuses, and it is the only thing that does.
+if ! bash tools/secretscan.sh; then
+  git reset -q >/dev/null 2>&1
+  echo "  NOTHING COMMITTED. Remove the credential above and re-run this."
+  exit 1
+fi
+
 if git diff --cached --quiet 2>/dev/null; then
   echo "  ckpt $N: nothing changed on disk — no commit made"
 else
@@ -99,4 +117,20 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>" >/dev/null 2>&1
   echo "  ckpt $N committed · $TESTS"
 fi
 [ "$FAIL" -gt 0 ] && echo "  NOTE: red suites recorded, not hidden:$REDS"
+
+# ---- push --------------------------------------------------------------------
+# A commit that never leaves this container is not a checkpoint. The work is
+# split across three Claude accounts and each one starts in a FRESH container
+# that clones from GitHub — so anything only committed locally is exactly as
+# lost as if it had never been written, the moment a usage cap ends the session.
+# Best-effort: a failed push must not fail the checkpoint (the commit is made
+# either way, and autosave.sh retries the push after the next edit).
+AHEAD="$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
+if [ "${AHEAD:-0}" -gt 0 ]; then
+  if git push -q origin HEAD >/dev/null 2>&1; then
+    echo "  pushed to GitHub — a new session on any account resumes from here"
+  else
+    echo "  WARN  could not push ($AHEAD commit(s) local only). Retry: git push origin HEAD"
+  fi
+fi
 exit 0

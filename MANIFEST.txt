@@ -1,5 +1,18 @@
 # Every tracked file. Checked in BOTH directions by bootstrap.sh.
 # sdk/ and build/ are excluded by construction.
+#
+# GitHub is the transport now, not an attached zip. .lastbuild/app-release.apk
+# used to be listed because ship.sh added it to the zip separately; it is
+# gitignored, so in a clone it does not exist and bootstrap.sh failed on it
+# every time. The shipped APK lives at releases/ instead, which is a real
+# tracked file.
+CLAUDE.md
+.claude/settings.json
+.github/workflows/build-apk.yml
+releases/FFTracker-v4.7.apk
+tools/autosave.sh
+tools/resume.sh
+tools/secretscan.sh
 BRIEF.md
 SPEC.md
 LADDER.md
@@ -40,7 +53,6 @@ tools/test_boot.js
 app/assets/players.js
 app/assets/playerdb.js
 tools/mkplayers.py
-.lastbuild/app-release.apk
 VERSION
 tools/version.sh
 app/assets/version.js
