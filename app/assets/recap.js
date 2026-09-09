@@ -178,3 +178,6 @@
   root.Recap = { build: build, text: text, generateSchedule: generateSchedule };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Recap;
 })(typeof window !== 'undefined' ? window : this);
+
+// 7a in progress — cap hit RIGHT HERE
+function recapCard(week
