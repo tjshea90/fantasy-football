@@ -1,12 +1,12 @@
-# CHECKPOINT 48 — read me first, then TASKS.md
+# CHECKPOINT 50 — read me first, then TASKS.md
 
-**Written:** 2026-09-09T23:47:09Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-10T00:09:22Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (it was 720 tokens of completed work re-read every session), and CHECKPOINT.md's history block now lists deliberate checkpoints only — auto-checkpoint noise was already crowding it 4-of-10 and would have hit 10-of-10 in a busy session
+scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at midnight regardless of staleness - now compares commit timestamps (STATE.md vs last app/android change); ship.sh auto-prunes releases/ to the newest 3 APKs and keeps MANIFEST in sync; STATE.md records the GitHub move
 
 ## Do this next
-Tj: verify v4.7 on the phone — Data > Test the projection feed
+Tj: verify v4.7 on the phone - Data > Test the projection feed
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,12 +23,10 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M LADDER.md
-     M TASKS.md
-     M tools/ckpt.sh
 
 ## Last ten checkpoints
 ```
+  5d3fb69 ckpt 48: usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (
   1553bac ckpt 45: usage optimisation: bootstrap printed an 851-char JAVA_TOOL_OPTIONS dump into e
   53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
   07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
@@ -38,8 +36,4 @@ request in his own words and `git log` carries every step already taken.
   554e113 ckpt 35: cross-account handoff system finished and verified: SessionStart briefing, auto
   72cb32d ckpt 32: wired the cross-account handoff: autosave hook, SessionStart briefing, ckpt now
   031777f ship v4.7: v4.7 — the audit fixed: return TD scores once, kickoff locks, the name-key 
-  ab24683 ckpt 24: ship: v4.7 — the audit fixed: return TD scores once, kickoff locks, the name-
 ```
-
-(2 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
