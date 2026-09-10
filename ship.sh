@@ -36,8 +36,28 @@ if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
   bash tools/ckpt.sh "ship: $NOTE" "verify on the phone" >/dev/null 2>&1
   echo "  OK    committed the working tree before zipping"
 fi
-TODAY=$(date +%Y-%m-%d)
-grep -q "Last updated: $TODAY" STATE.md || { echo "  FAIL  STATE.md not updated today. The next chat would not know where this stands."; exit 1; }
+# IS STATE.md STALE? Asked properly, not by calendar.
+#
+# This used to be `grep "Last updated: $(date +%F)" STATE.md`, which fails the
+# moment the clock rolls past midnight even when STATE.md is perfectly current
+# — a session that shipped at 23:50 could not ship again at 00:10 without
+# faking a date. Worse, it PASSES for a whole day after one token edit, so it
+# never actually measured what it claims to.
+#
+# The real question is whether the narrative has kept up with the code. Commit
+# timestamps answer that and survive cloning (file mtimes do not — every file
+# in a fresh clone is stamped at clone time, so `find -newer` is meaningless
+# here).
+if [ -d .git ]; then
+  ST="$(git log -1 --format=%ct -- STATE.md 2>/dev/null || echo 0)"
+  SRC="$(git log -1 --format=%ct -- app android 2>/dev/null || echo 0)"
+  if [ "${ST:-0}" -lt "${SRC:-0}" ]; then
+    echo "  FAIL  STATE.md is older than the last change to app/ or android/."
+    echo "        It is the narrative the next account reads for WHY things are"
+    echo "        the way they are. Update it, then ship."
+    exit 1
+  fi
+fi
 bash bootstrap.sh >/dev/null 2>&1 || { echo "  FAIL  bootstrap does not pass. Fix MANIFEST.txt, then re-run."; bash bootstrap.sh | head -20; exit 1; }
 echo "  OK    STATE.md current, manifest agrees"
 
@@ -156,6 +176,24 @@ if [ -f build/app-release.apk ]; then
   mkdir -p releases && cp build/app-release.apk "$APK"
   grep -q "^${APK}$" MANIFEST.txt || echo "$APK" >> MANIFEST.txt
   echo "  OK    apk committed at $APK"
+
+  # PRUNE OLD RELEASES. Each APK is ~215 KB and every fresh session on every
+  # account clones all of them — twenty ships would be 4 MB of dead weight
+  # downloaded before a single line is read, to keep versions nobody installs.
+  # Three is enough to roll back to a known-good build. Older ones stay in git
+  # history (recoverable by SHA), they just stop riding along in the checkout.
+  KEEP=3
+  OLD="$(ls -1 releases/FFTracker-v*.apk 2>/dev/null | sort -V | head -n -"$KEEP")"
+  if [ -n "$OLD" ]; then
+    for f in $OLD; do
+      git rm -q --cached "$f" >/dev/null 2>&1 || true
+      rm -f "$f"
+      # MANIFEST is checked in BOTH directions, so a pruned file left listed
+      # would fail bootstrap.sh on the next session.
+      grep -vxF "$f" MANIFEST.txt > MANIFEST.tmp && mv MANIFEST.tmp MANIFEST.txt
+      echo "  ..    pruned old release $(basename "$f") (still in git history)"
+    done
+  fi
 else
   echo "  WARN  no APK in build/ — nothing new to publish this ship"
 fi

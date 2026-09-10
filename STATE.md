@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-09** · ladder 0-17 COMPLETE · **v4.7** · APK builds, signed, all 13 test suites green
+**Last updated: 2026-09-10** · ladder 0-17 COMPLETE · **v4.7** · APK builds, signed, all 13 test suites green · now on GitHub, worked across three Claude accounts
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
@@ -1382,3 +1382,50 @@ the APK — build.sh stages assets and drops it.
 Three candidates are LISTED and NOT BUILT at the end of RELEASE_NOTES.md, per
 his standing rule: bench-regret on the recap, a weekly name-folding self-check
 on the Data tab, and true longest-completion attribution.
+
+
+## The move to Claude Code + GitHub (2026-09-09/10)
+
+The project left Cowork. It is now a GitHub repo worked from Claude Code, on
+**three different Claude accounts** — when one account's usage runs out the
+next opens the same repo cold and continues. That single fact drove every
+change below, and it is why the old zip machinery is gone.
+
+**What replaced the zip.** In Cowork the zip was the only thing that survived
+the chat, so `ship.sh` built one and told the next chat to attach it. Nothing
+in that sentence is true now: the repo is the transport, the container is
+destroyed at session end, and a zip written beside the repo was never even
+committed. `ship.sh` now commits a versioned APK under `releases/` and pushes;
+the gates (13 suites, dex completeness, version bump, manifest) are unchanged.
+
+**Three levels of saving, and only the middle one needs a session's judgement.**
+- `tools/autosave.sh` runs from hooks after every edit and every bash command.
+  No tests, no gate, and it deliberately never rewrites CHECKPOINT.md —
+  inventing a "Do this next" would destroy the one thing a cold session needs.
+  This is what survives a cap landing mid-change.
+- `tools/ckpt.sh` is unchanged in spirit and now pushes. It is the only thing
+  that records INTENT, which no hook can reconstruct from a diff.
+- `ship.sh` is the milestone gate.
+
+**The handoff itself.** `tools/resume.sh` runs from a SessionStart hook: it
+fast-forwards from GitHub when that is safe, refuses to auto-merge when it is
+not, and prints CHECKPOINT.md + TASKS.md + the rules into the new session
+automatically. Tj types "continue" and nothing else.
+
+**Traps paid for here, so they are not paid again:**
+1. `git rev-list --count @{u}..HEAD` needs a remote-TRACKING ref. A branch made
+   from FETCH_HEAD has none, so the check errored, `|| echo 0` read as "nothing
+   to push", and commits silently never left the container. `tools/push.sh`
+   now pushes whenever it cannot PROVE there is nothing to push.
+2. A failing push was completely silent — measured, three commits piled up
+   looking exactly like success. Autosave now shouts, ckpt warns, ship is fatal.
+3. Autosave leaves a CLEAN tree holding a half-written change, which looks
+   identical to finished work. resume.sh detects auto-checkpoints stacked after
+   the last deliberate one and says so loudly.
+4. Anything reprinted in the briefing is paid on EVERY cold start forever, not
+   once: an 851-char JAVA_TOOL_OPTIONS dump, verbose commit messages, and a
+   fully-ticked TASKS.md were costing ~700 tokens a session between them.
+   TASKS.md is now reset when a job finishes and the job archived to LADDER.md.
+5. `ship.sh` gated on `Last updated: <today>` in this file, which fails at
+   midnight regardless of whether anything is actually stale. It now compares
+   commit timestamps: this file versus the last change to app/ or android/.
