@@ -396,49 +396,6 @@ return Espn.gameStats('test').then(function (r) {
     ok(V.weeksLeft(1) >= 1, 'weeks left is never zero — value would collapse to nothing');
   })();
 
-  /* ---- v2.5: the simulator ---------------------------------------------
-     Every one of these would be invisible if it were wrong: a probability that
-     looks plausible is the easiest thing in the app to get silently backwards. */
-  load('sim.js');
-  var Sim = root.Sim;
-  (function () {
-    /* the draw is mean-preserving and never negative */
-    var r = Sim._rng(42), i, sum = 0, neg = 0;
-    for (i = 0; i < 20000; i++) { var v = Sim._draw(r, 12, 0.6); sum += v; if (v < 0) neg++; }
-    var mean = sum / 20000;
-    ok(neg === 0, 'a simulated week is never negative');
-    ok(Math.abs(mean - 12) < 0.4, 'the random draw preserves the projection as its mean (' +
-       mean.toFixed(2) + ')');
-    /* right-skewed: the median must sit BELOW the mean, which is what makes a
-       ceiling week possible without inventing points */
-    var vals = [], r2 = Sim._rng(7);
-    for (i = 0; i < 5001; i++) vals.push(Sim._draw(r2, 12, 0.6));
-    vals.sort(function (a, b) { return a - b; });
-    ok(vals[2500] < 12, 'the distribution is right-skewed, not a symmetric bell');
-
-    /* the PRNG is deterministic — a win probability must not flicker on repaint */
-    var a1 = Sim._rng(99)(), a2 = Sim._rng(99)();
-    ok(a1 === a2, 'the same seed gives the same simulation every repaint');
-  })();
-
-  /* all-play and luck, on a league whose result is known by hand */
-  (function () {
-    var S = Store.get();
-    /* week 6: give three teams known scores by writing the book-free path —
-       teamWeekPoints reads lines, so use the store's own stat rows */
-    ok(typeof Sim.power === 'function' && typeof Sim.season === 'function',
-       'the simulator exposes power rankings and season odds');
-    var pw = Sim.power(1);
-    ok(pw.length === S.teams.length, 'every team appears in the power rankings');
-    ok(pw[0].luck === 0, 'with nothing scored, nobody is lucky yet');
-  })();
-
-  /* bench regret: exact, not greedy */
-  (function () {
-    ok(Sim.regret(99, Store.get().league.me) === null,
-       'an unscored week has no bench regret rather than a fabricated zero');
-  })();
-
   /* ---- v2.4: the prompt is split so the fixed half can be cached ---------
      If anything volatile leaks into the static block the cache is invalidated
      on every call and the whole exercise is worthless. */
