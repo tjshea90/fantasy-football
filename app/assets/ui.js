@@ -1308,42 +1308,63 @@
   }
 
   /* ---------- ROSTERS ---------- */
+  /* Which team's roster is showing — persists across renders, same pattern as
+     faPos below. Defaults to my own team, since that is the one actually
+     worth landing on. */
+  var rosterSel = null;
+  /* Teams as TABS, not one long scroll (v4.8). Tj: "instead of one long
+     vertical scrolling section, organize the teams into tabs so i can click
+     on each team and see their roster." Everything below the chip row —
+     the sorted position list, Drop, the add-a-player search — is exactly
+     what every team's card already did; only ONE team's card is built now,
+     instead of all ten stacked on top of each other. */
   function viewRosters(root) {
-    addSafe(root, 'The free-agent board', freeAgentCard);
     addSafe(root, 'The trade evaluator', tradeCard);
+
+    if (!rosterSel || !Store.team(rosterSel)) rosterSel = S.league.me;
+    var chips = el('div', 'fchips');
     S.teams.forEach(function (t) {
-      var c = el('div', 'card');
-      c.appendChild(el('h2', null, t.name + ' · ' + t.players.length + ' players'));
-      var order = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DEF: 5 };
-      t.players.slice().sort(function (a, b) {
-        if (order[a.pos] !== order[b.pos]) return order[a.pos] - order[b.pos];
-        return a.name.localeCompare(b.name);
-      }).forEach(function (p) {
-        var r = el('div', 'row');
-        r.appendChild(el('div', 'slot', p.pos));
-        var nm = el('div', 'nm');
-        nm.appendChild(document.createTextNode(p.name));
-        nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '') +
-          (p.projPG ? ' · proj ' + fmt(p.projPG) + '/wk' : '')));
-        /* after the team/bye text, matching every other player row in the app,
-           so a roster reads  Name   CHI · bye 7   Thu 8:20p */
-        var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
-        r.appendChild(nm);
-        var x = el('button', 'btn sm dan', 'Drop');
-        x.addEventListener('click', function () {
-          confirmModal('Drop ' + p.name + '?',
-            'Removes him from ' + t.name + ' in this app. It does not touch your ' +
-            'league site — do the drop there as well.', 'Drop him', function () {
-            Store.removePlayer(t.id, p.id);
-            render(); toast('Dropped ' + p.name);
-          }, true);
-        });
-        r.appendChild(x);
-        c.appendChild(r);
-      });
-      c.appendChild(addForm(t));
-      root.appendChild(c);
+      var b = el('button', 'fchip' + (rosterSel === t.id ? ' on' : ''),
+                 t.id === S.league.me ? t.name + ' (me)' : t.name);
+      b.setAttribute('aria-pressed', rosterSel === t.id ? 'true' : 'false');
+      b.addEventListener('click', function () { rosterSel = t.id; render(); });
+      chips.appendChild(b);
     });
+    root.appendChild(chips);
+
+    var t = Store.team(rosterSel);
+    if (!t) return;
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, t.name + ' · ' + t.players.length + ' players'));
+    var order = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DEF: 5 };
+    t.players.slice().sort(function (a, b) {
+      if (order[a.pos] !== order[b.pos]) return order[a.pos] - order[b.pos];
+      return a.name.localeCompare(b.name);
+    }).forEach(function (p) {
+      var r = el('div', 'row');
+      r.appendChild(el('div', 'slot', p.pos));
+      var nm = el('div', 'nm');
+      nm.appendChild(document.createTextNode(p.name));
+      nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '') +
+        (p.projPG ? ' · proj ' + fmt(p.projPG) + '/wk' : '')));
+      /* after the team/bye text, matching every other player row in the app,
+         so a roster reads  Name   CHI · bye 7   Thu 8:20p */
+      var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
+      r.appendChild(nm);
+      var x = el('button', 'btn sm dan', 'Drop');
+      x.addEventListener('click', function () {
+        confirmModal('Drop ' + p.name + '?',
+          'Removes him from ' + t.name + ' in this app. It does not touch your ' +
+          'league site — do the drop there as well.', 'Drop him', function () {
+          Store.removePlayer(t.id, p.id);
+          render(); toast('Dropped ' + p.name);
+        }, true);
+      });
+      r.appendChild(x);
+      c.appendChild(r);
+    });
+    c.appendChild(addForm(t));
+    root.appendChild(c);
   }
   /* ---------- ROSTERS: the wire (v2.6) ----------
    * Ranked in THIS league's points, which is the only reason to have it: every
