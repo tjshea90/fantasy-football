@@ -1071,13 +1071,22 @@
        decided across every game and not always resolvable, and a rare
        mis-parse. It survives a re-sync because it lives on the stat line, and
        it always shows up as its own labelled row so nothing is ever silently
-       fudged. */
+       fudged.
+       The number field stays HIDDEN until "Adjust" is pressed (v4.8). dialog()
+       auto-focuses the first input/button/textarea inside the card to seat
+       keyboard focus in the modal — and with the number field there from the
+       start, that first control was the field itself, so opening a player's
+       stats popped the Android keyboard on every tap, even a glance. The
+       button is now that first control; only pressing it reveals the field
+       and focuses it, which is the one moment the keyboard is actually wanted. */
     var wrap = el('div');
-    wrap.appendChild(el('label', 'f', 'Manual adjustment (points)'));
+    var adjBtn = el('button', 'btn sm', 'Adjust');
+    var editor = el('div'); editor.hidden = true; editor.style.marginTop = '8px';
+    editor.appendChild(el('label', 'f', 'Manual adjustment (points)'));
     var inp = el('input'); inp.type = 'number'; inp.step = '0.5';
     inp.value = String(Number(line.manualAdj) || 0);
     inp.style.width = '100%';
-    wrap.appendChild(inp);
+    editor.appendChild(inp);
     var row = el('div', 'kv'); row.style.marginTop = '8px';
     [['+5 longest play', 5], ['−5', -5], ['Clear', 0]].forEach(function (b) {
       var btn = el('button', 'btn sm', b[0]);
@@ -1086,7 +1095,7 @@
       });
       row.appendChild(btn);
     });
-    wrap.appendChild(row);
+    editor.appendChild(row);
     var save = el('button', 'btn pri', 'Save adjustment');
     save.style.marginTop = '8px';
     save.addEventListener('click', function () {
@@ -1094,7 +1103,14 @@
       Store.save(); render();
       toast(rec.player.name + ' adjusted to ' + fmt(Scoring.score(line).total));
     });
-    wrap.appendChild(save);
+    editor.appendChild(save);
+    adjBtn.addEventListener('click', function () {
+      adjBtn.hidden = true;
+      editor.hidden = false;
+      try { inp.focus(); } catch (e) { /* older WebView */ }
+    });
+    wrap.appendChild(adjBtn);
+    wrap.appendChild(editor);
 
     /* opportunity over the last three weeks, above the points. Touches are what
        predict next week; points are what happened last week. */
