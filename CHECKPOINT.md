@@ -1,12 +1,12 @@
-# CHECKPOINT 107 — read me first, then TASKS.md
+# CHECKPOINT 116 — read me first, then TASKS.md
 
-**Written:** 2026-09-11T21:46:44Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-11T21:52:23Z · **version:** 4.8 · **tests:** all 13 suites green
 
 ## Just done
-task 5: Roster tab is now per-team chips (defaults to my team) instead of all ten teams stacked vertically; task 6: free agents moved off the Roster tab into a new Wire tab (same freeAgentCard, just relocated); task 7: fixed renderHeader's stale tab-title map and the offline-sync toast wording left over from the deleted Table/League tabs
+shipped v4.8 properly: ship.sh had bumped the version and committed source with no APK in build/ (SDK wasn't installed yet in this container), so ran build.sh (installs the SDK, ~600MB first time), verified the resulting APK's dex has all 25 classes, and published it as releases/FFTracker-v4.8.apk (MANIFEST updated). Also fixed a bootstrap.sh false-positive: .claude/scheduled_tasks.lock (the ScheduleWakeup harness's own runtime file, already git-ignored) was flagged as a stray file on disk; now excluded by name the same way .ckpt/ already is.
 
 ## Do this next
-Tj: verify the full request on the phone - back button never exits, player-stat Adjust button, Table/League tabs gone, Live shows only your matchup, Roster is per-team tabs, free agents live under the new Wire tab
+all 7 of Tj's requests are done, tested, shipped, and the v4.8 APK is committed at releases/FFTracker-v4.8.apk — waiting on Tj to install it and confirm on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  3f8496a ship v4.8: v4.8: nav/UI refactor - back button never closes the app, Table/League tabs d
+  f0aedf9 ckpt 107: task 5: Roster tab is now per-team chips (defaults to my team) instead of all 
   d1bdbc7 ckpt 97: task 3: deleted the Table and League tabs entirely (viewStandings/viewLeague/pl
   91bda7d ckpt 66: task 1: android back button never closes the app (real tab-visit history + move
   faf3993 ckpt 52: wrote Tj's new nav/UI-refactor request into TASKS.md before starting
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   1553bac ckpt 45: usage optimisation: bootstrap printed an 851-char JAVA_TOOL_OPTIONS dump into e
   53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
   07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
-  87b5bba ckpt 41: audit fix: a failing push was completely silent — autosave committed locally,
-  678787a ckpt 39: added PreCompact hook (tools/toobig.sh): when a session grows big enough to aut
 ```
 
-(9 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
