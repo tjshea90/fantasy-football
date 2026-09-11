@@ -544,17 +544,38 @@
     for (i = 0; i < t.length; i++) out.push(t[i].getAttribute('data-v'));
     return out;
   }
-  /* The one place a tab change happens, whether it came from a tap or a swipe. */
-  function goTab(name) {
-    if (!name || name === view) return;
-    scrollMem[view] = curScroll();
-    view = name;
+  /* Tab history, for the Android back button (v4.8) — see __onBack below.
+     Every tab actually visited is pushed here; the last entry is always the
+     tab on screen. Capped well past anything a real session would build up,
+     just so switching tabs all day cannot grow this without bound. */
+  var navStack = [view];
+  function paintTabs(name) {
     var t = document.querySelectorAll('#tabs .tab'), k;
     for (k = 0; k < t.length; k++) {
       var on = t[k].getAttribute('data-v') === name;
       t[k].classList.toggle('on', on);
       t[k].setAttribute('aria-selected', on ? 'true' : 'false');
     }
+  }
+  /* The one place a tab change happens, whether it came from a tap or a swipe. */
+  function goTab(name) {
+    if (!name || name === view) return;
+    scrollMem[view] = curScroll();
+    view = name;
+    navStack.push(name);
+    if (navStack.length > 40) navStack.shift();
+    paintTabs(name);
+    render();
+  }
+  /* Back one step through the tab history, WITHOUT pushing a new entry — the
+     step being undone is popped instead. Never called with only one entry
+     left; __onBack checks that first. */
+  function goBackTab() {
+    navStack.pop();
+    var prev = navStack[navStack.length - 1];
+    scrollMem[view] = curScroll();
+    view = prev;
+    paintTabs(prev);
     render();
   }
   function wire() {
