@@ -132,46 +132,52 @@ public class MainActivity extends Activity {
   }
 
   // ---- BACK ----------------------------------------------------------------
-  // This deferred to web.canGoBack(), which in a single-page app that never
-  // pushes a history entry is ALWAYS false. So back quit the app from
-  // anywhere: six panels deep in Data, or with a confirm dialog open. On
-  // Android, back is the reflex for dismissing a dialog, and here it closed
-  // the whole app instead.
+  // Tj: "the back button should never close the app." It used to finish()
+  // the Activity the moment the page said it had nothing left to unwind —
+  // which is most presses, since that is true the instant you are back on
+  // the Live tab with no modal open. Back is supposed to be reversible;
+  // closing the app is not, and there is no way back in except relaunching
+  // from the home screen.
   //
-  // The page owns the answer, because only the page knows whether a modal is
-  // open or which tab is showing. __onBack() returns "1" if it handled the
-  // press. evaluateJavascript is asynchronous, so the decision cannot be made
-  // inline — instead the press is swallowed, the page is asked, and if it says
-  // it did nothing the activity is finished from the callback. That costs one
-  // frame and is invisible; the alternative is a synchronous bridge call,
-  // which is the one thing this app does not do.
+  // The page still owns the answer, because only the page knows whether a
+  // modal is open or which tab is showing — __onBack() returns "1" if it
+  // handled the press (closed a modal, or stepped back through the tab
+  // history) and evaluateJavascript is asynchronous, so the decision cannot
+  // be made inline: the press is swallowed, the page is asked, and the
+  // Activity itself is never finished either way. When the page says it had
+  // nothing left, moveTaskToBack sends the app behind whatever was open
+  // before it — home screen, another app, the launcher — instead of killing
+  // it. The process survives and the app reopens exactly where it was, which
+  // is what "never closes" has to mean.
+  //
+  // web.canGoBack() used to be consulted too, but this is a single-page app
+  // that never pushes a history entry, so it was always false — dead code,
+  // deleted rather than kept "just in case".
   private long lastBackAsk = 0;
   @Override public boolean onKeyDown(int code, KeyEvent e) {
-    if (code == KeyEvent.KEYCODE_BACK && web != null && pageReady) {
-      long now = System.currentTimeMillis();
-      // A double-tap while the round trip is in flight would ask twice and
-      // could finish() on the second answer after the first already handled
-      // it. Ignore a second press inside the window it takes to answer.
-      if (now - lastBackAsk < 400) return true;
-      lastBackAsk = now;
-      try {
-        web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'",
-            new android.webkit.ValueCallback<String>() {
-              @Override public void onReceiveValue(String v) {
-                // evaluateJavascript returns a JSON string, so "'1'" arrives
-                // quoted. Anything that is not a clear yes means the page did
-                // not handle it, including a null from a page that has gone.
-                if (v == null || v.indexOf('1') < 0) finish();
-              }
-            });
-        return true;
-      } catch (Throwable t) { /* fall through to the default */ }
+    if (code != KeyEvent.KEYCODE_BACK) return super.onKeyDown(code, e);
+    if (web == null || !pageReady) { moveTaskToBack(true); return true; }
+    long now = System.currentTimeMillis();
+    // A double-tap while the round trip is in flight would ask twice and
+    // could background the app on the second answer after the first already
+    // handled it. Ignore a second press inside the window it takes to answer.
+    if (now - lastBackAsk < 400) return true;
+    lastBackAsk = now;
+    try {
+      web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'",
+          new android.webkit.ValueCallback<String>() {
+            @Override public void onReceiveValue(String v) {
+              // evaluateJavascript returns a JSON string, so "'1'" arrives
+              // quoted. Anything that is not a clear yes means the page did
+              // not handle it, including a null from a page that has gone —
+              // background the app rather than finish() it either way.
+              if (v == null || v.indexOf('1') < 0) moveTaskToBack(true);
+            }
+          });
+    } catch (Throwable t) {
+      moveTaskToBack(true);   // never let a bridge failure close the app
     }
-    if (code == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
-      web.goBack();
-      return true;
-    }
-    return super.onKeyDown(code, e);
+    return true;
   }
 
   // ---- the offline Claude round trip: reading the reply file ---------------
