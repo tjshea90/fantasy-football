@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
               // evaluateJavascript returns a JSON string, so "'1'" arrives
               // quoted. Anything that is not a clear yes means the page did
               // not handle it, including a null from a page that has gone —
-              // background the app rather than finish() it either way.
+              // background the app rather than finishing it either way.
               if (v == null || v.indexOf('1') < 0) moveTaskToBack(true);
             }
           });
