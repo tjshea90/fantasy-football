@@ -74,7 +74,7 @@ function harness(overrides) {
   const G = env.win.Gestures;
   const state = {
     tab: 'live', refreshes: 0, scroll: 0, blocked: false,
-    tabs: ['live', 'lineups', 'rosters', 'advice', 'data']
+    tabs: ['live', 'lineups', 'rosters', 'wire', 'advice', 'data']
   };
   G.init(Object.assign({
     tabs: () => state.tabs,
