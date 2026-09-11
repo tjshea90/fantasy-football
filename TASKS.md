@@ -54,15 +54,36 @@
       auto-focus-first-control now lands on the Adjust button, not the number
       field. Verified by `node tools/test_lifecycle.js` (every screen still
       renders clean) and `node tools/check_es2018.js`.
-- [ ] 3. Delete the "Table" (standings) and "League" tabs entirely: remove
+- [x] 3. Delete the "Table" (standings) and "League" tabs entirely: remove
       the nav buttons in `index.html`, delete their view-render code in
       `ui.js` (and any helpers used only by them), and drop dead references
       elsewhere (e.g. `schedule.js`/`recap.js` if only used for those views).
-- [ ] 4. Stop computing/storing weekly matchup data for teams other than
+      DONE: removed the two `<button data-v="standings"/"league">` tabs from
+      index.html; deleted `viewStandings`, `viewLeague`, `playoffCard`,
+      `recapCard`, `pct()` from ui.js. sim.js and recap.js had NO remaining
+      consumer once those views were gone (grepped the whole app/assets +
+      tools tree) so both files are deleted outright, along with every
+      `Sim.invalidate()` call site in ui.js and the now-dead
+      `Store.standings`/`Store.seasonTotals` in store.js. MANIFEST.txt
+      updated to match. Verified by `bash bootstrap.sh` (manifest/disk agree)
+      and all 13 suites (`node tools/test_*.js`, `node tools/check_es2018.js`)
+      green with sim.js/recap.js removed from every load list.
+- [x] 4. Stop computing/storing weekly matchup data for teams other than
       "my team vs my opponent" each week. Only sync/score/keep the two teams
       in my matchup; other managers' rosters are still tracked (for
       taken/available players) but their weekly matchup results are not
       fetched, scored, or stored.
+      DONE: Live tab (`viewLive`) now renders only `myMatchupCard` — the
+      "rest of the week" loop and the now-pointless `matchupCard` function
+      and the "not in a matchup" idle-team block are gone. The Data tab's
+      matchup editor is no longer a 10-team schedule tool (add any pair,
+      generate a round robin, auto-pair the rest) — it is one card, "my
+      matchup", that only ever sets/changes/clears MY opponent for the
+      week via `Store.addMatchup(week, S.league.me, oppId)`. Nothing left
+      in the app ever reads or writes another pair. Verified by
+      `node tools/test_lifecycle.js` ("every screen renders" still passes
+      for live/data) and manual trace of every remaining `Store.getMatchups`
+      call site (just the two above).
 - [ ] 5. Roster tab: replace the single long vertical list of all teams with
       per-team tabs/sub-nav — click a team to see just its roster, with edit
       controls still available.
