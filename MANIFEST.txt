@@ -83,3 +83,4 @@ tools/test_gestures.js
 tools/test_locks.js
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
+releases/FFTracker-v4.8.apk
