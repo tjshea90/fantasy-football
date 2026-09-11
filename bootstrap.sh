@@ -28,8 +28,8 @@ fail=0
 # --- manifest, both directions ---
 mapfile -t listed < <(grep -v '^\s*$' MANIFEST.txt | grep -v '^#')
 disk=$(find . -type f -not -path './sdk/*' -not -path './build/*' -not -path './.git/*' \
-        -not -path './.ckpt/*' -not -path './.claude/*' -not -name '*.pyc' -not -name '*.log' \
-        -printf '%P\n' | sort)
+        -not -path './.ckpt/*' -not -path './.claude/scheduled_tasks.lock' \
+        -not -name '*.pyc' -not -name '*.log' -printf '%P\n' | sort)
 missing=(); for f in "${listed[@]}"; do [ -e "$f" ] || missing+=("$f"); done
 stale=$(comm -23 <(printf '%s\n' "$disk") <(printf '%s\n' "${listed[@]}" | sort))
 if [ ${#missing[@]} -gt 0 ]; then echo "  FAIL  listed in MANIFEST but not on disk:"; printf '          %s\n' "${missing[@]}"; fail=1; fi
