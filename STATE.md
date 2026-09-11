@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-10** · ladder 0-17 COMPLETE · **v4.7** · APK builds, signed, all 13 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-11** · ladder 0-17 COMPLETE · **v4.8** · nav/UI refactor (back never closes the app, Table/League tabs deleted, Live/Data narrowed to my matchup only, Roster is per-team tabs, free agents moved to a new Wire tab) · all 13 test suites green · now on GitHub, worked across three Claude accounts
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
