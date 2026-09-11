@@ -41,7 +41,7 @@ W.Native = { save: function (k, v) { disk[k] = v; return true; },
              load: function (k) { return disk[k] === undefined ? null : disk[k]; } };
 function load(f) { new Function('window', src(f))(W); }
 ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
- 'projections.js', 'usage.js', 'ai.js', 'recommend.js', 'sim.js', 'value.js', 'recap.js',
+ 'projections.js', 'usage.js', 'ai.js', 'recommend.js', 'value.js',
  'schedule.js', 'handoff.js'].forEach(load);
 W.Store.init(W.SEED);
 
