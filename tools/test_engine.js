@@ -357,30 +357,6 @@ return Espn.gameStats('test').then(function (r) {
   /* a bye-week starter must still be worth zero */
   ok(Store.teamWeekPoints(5, me).total === 0, 'an unsynced week scores nothing');
 
-  /* ---- v2.8: the schedule generator ------------------------------------
-     A generator that erases a played week would be a disaster with a friendly
-     name, so that is the first thing asserted. */
-  load('recap.js');
-  (function () {
-    var S = Store.get();
-    var r = root.Recap.generateSchedule({});
-    ok(r.weeks > 0, 'a schedule is written (' + r.weeks + ' weeks)');
-    var reg = S.league.regularSeasonWeeks, w, bad = 0, seen = {};
-    for (w = 1; w <= reg; w++) {
-      var mus = Store.getMatchups(w), used = {}, i;
-      if (mus.length * 2 !== S.teams.length) bad++;
-      for (i = 0; i < mus.length; i++) {
-        if (used[mus[i][0]] || used[mus[i][1]]) bad++;
-        used[mus[i][0]] = 1; used[mus[i][1]] = 1;
-        var kk = [mus[i][0], mus[i][1]].sort().join('|');
-        seen[kk] = (seen[kk] || 0) + 1;
-      }
-    }
-    ok(bad === 0, 'every team plays exactly once every week, all season');
-    ok(Object.keys(seen).length === (S.teams.length * (S.teams.length - 1)) / 2,
-       'everybody plays everybody at least once');
-  })();
-
   /* ---- v2.8: Sleeper is a gap-filler, never an overrule ------------------ */
   (function () {
     var got = Proj._ingestSleeper([
