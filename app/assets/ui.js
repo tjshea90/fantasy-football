@@ -1827,60 +1827,54 @@
 
   /* ---------- DATA ---------- */
   function viewData(root) {
-    /* matchups */
+    /* my matchup only (v4.8) — Tj: "do not waste any data or resources on
+       other fantasy managers weekly matchups... focus on mine vs my opponent
+       for each week." This used to be a full 10-team schedule editor (add
+       any pair, generate a round robin, auto-pair whoever was left) because
+       Table and League needed every team's matchup to compute standings and
+       simulate the rest of the league — both are gone, and the only thing
+       left that ever reads `Store.getMatchups` is the Live tab's "your
+       matchup" card. So the only thing worth setting here is who I play.
+       Store.addMatchup already drops any existing pair touching either team
+       before adding the new one, which is exactly "set/replace my opponent"
+       and also quietly cleans up a stray full-round-robin week left over
+       from before this version. */
     var c = el('div', 'card');
-    c.appendChild(el('h2', null, 'Week ' + week + ' matchups'));
-    var mus = Store.getMatchups(week);
-    mus.forEach(function (p, i) {
+    c.appendChild(el('h2', null, 'Week ' + week + ' — my matchup'));
+    var mus = Store.getMatchups(week), mineIdx = -1;
+    mus.forEach(function (p, i) { if (p[0] === S.league.me || p[1] === S.league.me) mineIdx = i; });
+    var mine = mineIdx >= 0 ? mus[mineIdx] : null;
+    if (mine) {
+      var oppId = mine[0] === S.league.me ? mine[1] : mine[0];
       var r = el('div', 'row');
-      r.appendChild(el('div', 'nm', nameOf(p[0]) + '  vs  ' + nameOf(p[1])));
-      var x = el('button', 'btn sm dan', 'Remove');
-      x.addEventListener('click', function () { mus.splice(i, 1); Store.setMatchups(week, mus); render(); });
-      r.appendChild(x); c.appendChild(r);
-    });
-    var sa = el('select'), sb = el('select');
-    S.teams.forEach(function (t) { sa.appendChild(new Option(t.name, t.id)); sb.appendChild(new Option(t.name, t.id)); });
-    if (S.teams.length > 1) sb.selectedIndex = 1;
-    var sp = el('div', 'split'); sp.style.marginTop = '8px';
-    sp.appendChild(sa); sp.appendChild(sb);
-    c.appendChild(sp);
-    var add = el('button', 'btn pri', 'Add matchup'); add.style.marginTop = '8px';
-    add.addEventListener('click', function () {
-      if (sa.value === sb.value) { toast('Pick two different teams'); return; }
-      Store.addMatchup(week, sa.value, sb.value); render();
-    });
-    c.appendChild(add);
-    /* the whole season at once (v2.8) — circle method, and it refuses to
-       touch a week that already has results */
-    var gen = el('button', 'btn', 'Generate the whole season');
-    gen.style.marginTop = '8px';
-    gen.addEventListener('click', function () {
-      var go = el('button', 'btn pri', 'Generate');
-      go.style.marginBottom = '8px';
-      go.addEventListener('click', function () {
-        var r = Recap.generateSchedule({});
-        var back = go.parentNode && go.parentNode.parentNode;
-        if (back && back.parentNode) back.parentNode.removeChild(back);
-        render();
-        toast('Wrote ' + r.weeks + ' week' + (r.weeks === 1 ? '' : 's') +
-              (r.skipped.length ? ', kept ' + r.skipped.length + ' already played' : ''));
+      r.appendChild(el('div', 'nm', 'vs ' + nameOf(oppId)));
+      var rm = el('button', 'btn sm dan', 'Clear');
+      rm.addEventListener('click', function () {
+        var m2 = mus.slice(); m2.splice(mineIdx, 1);
+        Store.setMatchups(week, m2); render();
       });
-      modal('Generate a full round robin?',
-        'Ten teams over ' + S.league.regularSeasonWeeks + ' weeks: a complete ' +
-        'round robin (everyone plays everyone once in nine weeks), then the first ' +
-        'five rounds again with the order swapped.\n\nAny week that already has ' +
-        'results is left exactly as it is — this cannot overwrite a played week.', go);
+      r.appendChild(rm);
+      c.appendChild(r);
+    } else {
+      c.appendChild(el('p', 'muted', 'No opponent set for week ' + week + '.'));
+    }
+    var others = S.teams.filter(function (t) { return t.id !== S.league.me; });
+    var sel = el('select');
+    others.forEach(function (t) {
+      var o = new Option(t.name, t.id);
+      if (oppId && t.id === oppId) o.selected = true;
+      sel.appendChild(o);
     });
-    c.appendChild(gen);
-
-    var auto = el('button', 'btn', 'Auto-pair remaining'); auto.style.marginTop = '8px';
-    auto.addEventListener('click', function () {
-      var used = {}; Store.getMatchups(week).forEach(function (p) { used[p[0]] = 1; used[p[1]] = 1; });
-      var free = S.teams.filter(function (t) { return !used[t.id]; });
-      while (free.length > 1) Store.addMatchup(week, free.shift().id, free.shift().id);
+    c.appendChild(el('label', 'f', mine ? 'Change opponent' : 'Set opponent'));
+    c.appendChild(sel);
+    var setBtn = el('button', 'btn pri', mine ? 'Change opponent' : 'Set opponent');
+    setBtn.style.marginTop = '8px';
+    setBtn.addEventListener('click', function () {
+      Store.addMatchup(week, S.league.me, sel.value);
       render();
+      toast('Week ' + week + ': you play ' + nameOf(sel.value));
     });
-    c.appendChild(auto);
+    c.appendChild(setBtn);
     root.appendChild(c);
 
     /* sync + diagnostics */
