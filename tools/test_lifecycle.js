@@ -335,7 +335,24 @@ console.log('\n-- the back button --');
   clickTab('data');
   ok(W.__onBack() === true, 'from a non-Live tab, back is handled by the page');
   ok(W.__onBack() === false,
-     'and from Live with nothing open it declines, so the Activity can finish');
+     'and from Live with nothing open it declines, so MainActivity backgrounds ' +
+     'the app instead of closing it (see MainActivity.onKeyDown)');
+
+  /* v4.8: back must walk the REAL tab history, not jump straight to Live —
+     "go back to the last thing", not "go back to the first thing". */
+  clickTab('rosters');
+  clickTab('advice');
+  clickTab('data');
+  ok(W.__onBack() === true && ids.view.querySelector('h1, h2, .card'), 'step 1 of 3');
+  ok(document.querySelector('#tabs .tab[data-v="advice"]').classList.contains('on'),
+     'back from data (reached via rosters, advice, data) lands on advice, not live');
+  ok(W.__onBack() === true, 'step 2 of 3');
+  ok(document.querySelector('#tabs .tab[data-v="rosters"]').classList.contains('on'),
+     'then rosters');
+  ok(W.__onBack() === true, 'step 3 of 3');
+  ok(document.querySelector('#tabs .tab[data-v="live"]').classList.contains('on'),
+     'then live — the tab the app opened on');
+  ok(W.__onBack() === false, 'and now the history is exhausted, same as before');
 }());
 
 console.log('\n-- gestures are wired to the real tab order --');
