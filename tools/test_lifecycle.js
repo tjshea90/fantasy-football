@@ -120,7 +120,7 @@ W.document = {
   addEventListener: function (t, fn) { docHandlers[t] = fn; },
   removeEventListener: function () { }
 };
-var TAB_NAMES = ['live', 'lineups', 'rosters', 'advice', 'data'];
+var TAB_NAMES = ['live', 'lineups', 'rosters', 'wire', 'advice', 'data'];
 var tabEls = TAB_NAMES.map(function (n) {
   var e = makeEl('button'); e.setAttribute('data-v', n); return e;
 });
