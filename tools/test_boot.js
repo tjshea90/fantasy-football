@@ -314,7 +314,6 @@ ok(/aiCheapModel/.test(uiRaw2), 'both models are pickable');
 var uiR = fs.readFileSync('app/assets/ui.js', 'utf8');
 var stR = fs.readFileSync('app/assets/store.js', 'utf8');
 var vaR = fs.readFileSync('app/assets/value.js', 'utf8');
-var siR = fs.readFileSync('app/assets/sim.js', 'utf8');
 var aiR2 = fs.readFileSync('app/assets/ai.js', 'utf8');
 ok(/keepAdj\[pid\]/.test(uiR),
    'a hand-entered adjustment survives a sync (the live poll wiped it every 45s)');
