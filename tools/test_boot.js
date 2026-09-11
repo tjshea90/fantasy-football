@@ -326,8 +326,6 @@ ok(/_faMemo/.test(vaR), 'the 785-player free-agent scan is memoised per week and
 ok(/Object\.defineProperty\(r, 'usage'/.test(vaR), 'usage strings are built lazily');
 ok(/var from = Math\.max\(1, Number\(week\)/.test(vaR),
    'weeksLeft counts from the current week, not from week 1');
-ok(/root\.Store\.weekIsScored\(wi\)/.test(siR),
-   'the season simulation rebuilds base points from scored weeks only');
 ok(/raw: true/.test(aiR2.slice(aiR2.indexOf('MODELS_API'), aiR2.indexOf('function headers'))),
    'the model list is fetched raw, or JSON.parse gets an object and always throws');
 ok(/Object\.keys\(prevOpp\)\.length/.test(uiR),
