@@ -346,7 +346,6 @@
             var was = S.settings.autoFill; S.settings.autoFill = true;
             var n = autoFillWeek(week);
             S.settings.autoFill = was;
-            if (window.Sim) Sim.invalidate();
             render();
             toast(n ? n + ' slot' + (n === 1 ? '' : 's') + ' updated' : 'Already set');
           });
@@ -674,7 +673,6 @@
   }
   function commitWeek() {
     S.settings.currentWeek = week; Store.save();
-    if (window.Sim) Sim.invalidate();
     autoFillWeek(week);
     startLive();
     renderTop();
@@ -1165,7 +1163,6 @@
         S.settings.autoFill = true;
         var n = autoFillWeek(week);
         S.settings.autoFill = was;
-        if (window.Sim) Sim.invalidate();
         render();
         toast(n ? (n + ' slot' + (n === 1 ? '' : 's') + ' updated'
                      + (manual ? ' · ' + manual + ' of your picks replaced' : ''))
@@ -1256,14 +1253,12 @@
             'correcting the app to match RTSports; otherwise leave it alone.',
             'Change it anyway', function () {
               Store.setSlot(week, t.id, k.key, newPid, true);
-              if (window.Sim) Sim.invalidate();
               render();
             }, true);
           self.value = prev;
           return;
         }
         Store.setSlot(week, t.id, k.key, newPid, true);
-        if (window.Sim) Sim.invalidate();   /* the win probability depends on it */
         render();
       });
       c.appendChild(lab); c.appendChild(sel);
@@ -1290,7 +1285,6 @@
     rb.disabled = !manualCount;
     rb.addEventListener('click', function () {
       Store.clearManual(week, t.id);
-      if (window.Sim) Sim.invalidate();
       var was = S.settings.autoFill; S.settings.autoFill = true;
       autoFillWeek(week);
       S.settings.autoFill = was;
@@ -1341,7 +1335,6 @@
             'Removes him from ' + t.name + ' in this app. It does not touch your ' +
             'league site — do the drop there as well.', 'Drop him', function () {
             Store.removePlayer(t.id, p.id);
-            if (window.Sim) Sim.invalidate();
             render(); toast('Dropped ' + p.name);
           }, true);
         });
@@ -1589,7 +1582,6 @@
     go.style.marginBottom = '8px';
     go.addEventListener('click', function () {
       Store.addPlayer(S.league.me, { name: f.name, pos: f.pos, nfl: f.nfl, bye: f.bye });
-      if (window.Sim) Sim.invalidate();
       var back = go.parentNode && go.parentNode.parentNode;
       if (back && back.parentNode) back.parentNode.removeChild(back);
       render(); toast('Added ' + f.name);
@@ -1869,7 +1861,6 @@
         var r = Recap.generateSchedule({});
         var back = go.parentNode && go.parentNode.parentNode;
         if (back && back.parentNode) back.parentNode.removeChild(back);
-        if (window.Sim) Sim.invalidate();
         render();
         toast('Wrote ' + r.weeks + ' week' + (r.weeks === 1 ? '' : 's') +
               (r.skipped.length ? ', kept ' + r.skipped.length + ' already played' : ''));
@@ -2808,7 +2799,6 @@
       if (!quiet || meta.allFinal) Store.autoBackup(true);
       autoFillWeek(week);
       /* projections and measured spread both just changed */
-      if (window.Sim) Sim.invalidate();
       busy = false; if (!quiet) jobEnd();
       render();
       if (!quiet) {
