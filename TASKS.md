@@ -84,13 +84,39 @@
       `node tools/test_lifecycle.js` ("every screen renders" still passes
       for live/data) and manual trace of every remaining `Store.getMatchups`
       call site (just the two above).
-- [ ] 5. Roster tab: replace the single long vertical list of all teams with
+- [x] 5. Roster tab: replace the single long vertical list of all teams with
       per-team tabs/sub-nav — click a team to see just its roster, with edit
       controls still available.
-- [ ] 6. New "Wire" tab: move all free-agent logic/UI out of the roster
+      DONE: `viewRosters` now renders one persistent `rosterSel` (defaults to
+      my team) plus a `.fchips` row of all ten team names — click one to
+      render just that team's card (sorted roster, Drop, the add-a-player
+      search). The trade evaluator stays above the chips since it is not
+      per-team. Verified by `node tools/test_lifecycle.js` (rosters tab
+      still renders clean) and manual read of the diff.
+- [x] 6. New "Wire" tab: move all free-agent logic/UI out of the roster
       section into its own top-level tab called "Wire". Keep the underlying
       functions/logic unchanged, just relocate the surface.
-- [ ] 7. Data tab: audit and fix anything that referenced Table/League views,
+      DONE: added a `data-v="wire"` tab button in index.html (between Roster
+      and Advice) and a `viewWire(root)` in ui.js that calls the SAME
+      untouched `freeAgentCard()` (and everything it calls — addFreeAgent,
+      faRow, Value.byPos/byVor/upgrades, the Claude wire-read button, the
+      Claude-app handoff card) that used to open on the Roster tab; it no
+      longer renders there. Verified by `node tools/test_lifecycle.js`
+      (`wire` added to `TAB_NAMES`, renders clean) and
+      `node tools/test_gestures.js` (swipe order picks it up from the DOM).
+- [x] 7. Data tab: audit and fix anything that referenced Table/League views,
       all-teams weekly matchups, or roster-embedded free agents so it stays
       accurate after 1-6 (e.g. "test" actions, data freshness/status rows,
       cache descriptions).
+      DONE: audited every remaining "standing/league/matchup/free agent/
+      waiver" mention in ui.js. Found and fixed two stale spots outside the
+      Data-tab matchup card itself (already rewritten under task 4):
+      `renderHeader`'s tab-title map still had `league`/`standings` keys and
+      was missing `wire`; the offline-sync toast still told Tj "standings,
+      the League tab... still work". Both fixed. Everything else that
+      matched (NFL real-world "who plays whom" opponent map used for
+      defense/kicker projections, the generic "rosters, scores and matchups
+      stay as they are" lineup-reset reassurance, historical comments) was
+      already accurate and untouched. Verified: all 13 suites green,
+      `node tools/check_es2018.js` clean, `bash bootstrap.sh` manifest/disk
+      agree (77 files).
