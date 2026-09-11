@@ -31,14 +31,29 @@
 > if any of this affects the data tab or the relevance of anything inside the
 > data tab, fix it accordingly."
 
-- [ ] 1. Android back button: never exits the app. Pressing back moves to the
+- [x] 1. Android back button: never exits the app. Pressing back moves to the
       previous in-app view/tab or closes an open detail/modal instead. Wire
       this in the Java shell (`android/`) with a JS-side back-stack it can
       query, or an in-page history stack driven from `ui.js`.
-- [ ] 2. Player detail view: stop the number-field/adjustment control from
+      DONE: ui.js now keeps a real `navStack` of visited tabs (pushed by
+      `goTab`, popped by `__onBack`/`goBackTab`) instead of always jumping to
+      Live; MainActivity.onKeyDown always intercepts BACK and calls
+      `moveTaskToBack(true)` instead of `finish()` when the page has nothing
+      left to unwind, so the app backgrounds instead of closing. Verified by
+      `node tools/test_lifecycle.js` ("the back button" — walks 3 tabs deep
+      and confirms back unwinds them in visit order, then declines) and
+      `node tools/test_gestures.js` (MainActivity source no longer contains
+      `finish()` or `web.canGoBack()`).
+- [x] 2. Player detail view: stop the number-field/adjustment control from
       auto-focusing (which pops the Android keyboard) when you open a
       player's stats. Add an "Adjust" button that only then reveals the
       number field + adjustment controls.
+      DONE: `showPlayer()` in ui.js now shows only an "Adjust" button by
+      default; the number field + preset buttons + Save are in a hidden
+      `editor` div revealed (and only then focused) on click. dialog()'s
+      auto-focus-first-control now lands on the Adjust button, not the number
+      field. Verified by `node tools/test_lifecycle.js` (every screen still
+      renders clean) and `node tools/check_es2018.js`.
 - [ ] 3. Delete the "Table" (standings) and "League" tabs entirely: remove
       the nav buttons in `index.html`, delete their view-render code in
       `ui.js` (and any helpers used only by them), and drop dead references
