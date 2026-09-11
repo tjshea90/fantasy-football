@@ -132,8 +132,8 @@ public class MainActivity extends Activity {
   }
 
   // ---- BACK ----------------------------------------------------------------
-  // Tj: "the back button should never close the app." It used to finish()
-  // the Activity the moment the page said it had nothing left to unwind —
+  // Tj: "the back button should never close the app." It used to finish the
+  // Activity the moment the page said it had nothing left to unwind —
   // which is most presses, since that is true the instant you are back on
   // the Live tab with no modal open. Back is supposed to be reversible;
   // closing the app is not, and there is no way back in except relaunching
