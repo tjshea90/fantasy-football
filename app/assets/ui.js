@@ -2841,8 +2841,8 @@
       live.err = off ? 'no connection — everything already synced still works' : raw;
       render();
       if (!quiet) {
-        toast(off ? 'No connection. Scores, standings, the League tab and advice ' +
-                    'from the last sync all still work.'
+        toast(off ? 'No connection. Scores and advice from the last sync all ' +
+                    'still work.'
                   : 'Sync failed: ' + raw, 8000);
       }
       return null;
