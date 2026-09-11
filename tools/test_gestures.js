@@ -247,11 +247,13 @@ function finish() {
      'the Android back button closes a modal before it does anything else');
   const mj = fs.readFileSync(path.join(__dirname, '..', 'android', 'src', 'com', 'tj',
                                        'fftracker', 'MainActivity.java'), 'utf8');
-  ok(mj.indexOf('__onBack') >= 0 && mj.indexOf('finish()') >= 0,
-     'and the Activity asks the page before quitting');
-  ok(!/if \(code == KeyEvent\.KEYCODE_BACK && web != null && web\.canGoBack\(\)\) \{\n      web\.goBack/.test(
-       mj.slice(0, mj.indexOf('__onBack'))),
-     'canGoBack is no longer the FIRST thing consulted (it is always false here)');
+  ok(mj.indexOf('__onBack') >= 0 && mj.indexOf('moveTaskToBack(true)') >= 0,
+     'and the Activity asks the page, backgrounding itself rather than finish()ing ' +
+     'when the page says it had nothing left');
+  ok(mj.indexOf('finish()') < 0,
+     'the back handler never calls finish() — back must never close this app');
+  ok(mj.indexOf('web.canGoBack()') < 0,
+     'canGoBack is gone entirely, not just reordered (it was always false here)');
 
   const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'assets', 'app.css'), 'utf8');
   ok(/overscroll-behavior-y:\s*contain/.test(css),
