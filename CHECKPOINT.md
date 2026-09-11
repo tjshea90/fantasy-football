@@ -1,12 +1,12 @@
-# CHECKPOINT 50 — read me first, then TASKS.md
+# CHECKPOINT 52 — read me first, then TASKS.md
 
-**Written:** 2026-09-10T00:09:22Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-11T21:21:28Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at midnight regardless of staleness - now compares commit timestamps (STATE.md vs last app/android change); ship.sh auto-prunes releases/ to the newest 3 APKs and keeps MANIFEST in sync; STATE.md records the GitHub move
+wrote Tj's new nav/UI-refactor request into TASKS.md before starting
 
 ## Do this next
-Tj: verify v4.7 on the phone - Data > Test the projection feed
+start on task 1: android back button should never close the app
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  3dbbef9 ckpt 50: scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at m
   5d3fb69 ckpt 48: usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (
   1553bac ckpt 45: usage optimisation: bootstrap printed an 851-char JAVA_TOOL_OPTIONS dump into e
   53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
@@ -35,5 +36,7 @@ request in his own words and `git log` carries every step already taken.
   198ab83 ckpt 37: de-Coworked the system: BRIEF.md cold-start/persistence/commands rewritten for 
   554e113 ckpt 35: cross-account handoff system finished and verified: SessionStart briefing, auto
   72cb32d ckpt 32: wired the cross-account handoff: autosave hook, SessionStart briefing, ckpt now
-  031777f ship v4.7: v4.7 — the audit fixed: return TD scores once, kickoff locks, the name-key 
 ```
+
+(1 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)
