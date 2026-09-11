@@ -338,13 +338,19 @@ console.log('\n-- the back button --');
     return false;
   }
   ok(typeof W.__onBack === 'function', 'the page exposes __onBack for MainActivity');
-  clickTab('data');
-  ok(W.__onBack() === true, 'from a non-Live tab, back is handled by the page');
+
+  /* The tab history is real now (v4.8), not "always jump to Live" — which
+     means it carries whatever the "every screen renders" pass above left in
+     it. Drain it to a known-empty stack first so the rest of this block does
+     not depend on run order. */
+  var guard = 0;
+  while (W.__onBack() && guard++ < 50) { }
+  ok(guard < 50, 'the tab history actually drains instead of looping forever');
   ok(W.__onBack() === false,
-     'and from Live with nothing open it declines, so MainActivity backgrounds ' +
+     'with nothing left to unwind, back declines so MainActivity backgrounds ' +
      'the app instead of closing it (see MainActivity.onKeyDown)');
 
-  /* v4.8: back must walk the REAL tab history, not jump straight to Live —
+  /* Back must walk the REAL tab history, not jump straight to Live —
      "go back to the last thing", not "go back to the first thing". */
   clickTab('rosters');
   clickTab('advice');
@@ -354,8 +360,8 @@ console.log('\n-- the back button --');
   ok(W.__onBack() === true, 'step 2 of 3 back');
   ok(tabOn('rosters'), 'then rosters');
   ok(W.__onBack() === true, 'step 3 of 3 back');
-  ok(tabOn('live'), 'then live — the tab the app opened on');
-  ok(W.__onBack() === false, 'and now the history is exhausted, same as before');
+  ok(tabOn('live'), 'back to the tab open before this sequence started');
+  ok(W.__onBack() === false, 'and now the history is exhausted again');
 }());
 
 console.log('\n-- gestures are wired to the real tab order --');
