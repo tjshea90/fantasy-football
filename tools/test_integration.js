@@ -176,7 +176,7 @@ var me = S.league.me;
   fresh.Native = { save: function (k, v) { d2[k] = v; return true; },
                    load: function (k) { return d2[k] === undefined ? null : d2[k]; } };
   ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
-   'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'value.js', 'recap.js',
+   'projections.js', 'usage.js', 'recommend.js', 'value.js',
    'ai.js'].forEach(function (f) {
     new Function('window', fs.readFileSync(path.join(__dirname, '..', 'app/assets', f), 'utf8'))(fresh);
   });
@@ -190,12 +190,7 @@ var me = S.league.me;
     ['upgrades', function () { return fresh.Value.upgrades(1, meId, null, 20); }],
     ['needs', function () { return fresh.Value.needs(1, meId, null); }],
     ['waiverContext', function () { return fresh.Value.waiverContext(1, meId, null, 2026, '2026-09-03'); }],
-    ['replacement', function () { return fresh.Value.replacement(1); }],
-    ['Sim.power', function () { return fresh.Sim.power(1); }],
-    ['Sim.season', function () { return fresh.Sim.season(1); }],
-    ['Recap.build', function () { return fresh.Recap.build(1); }],
-    ['Recap.text', function () { return fresh.Recap.text(1); }],
-    ['standings', function () { return fresh.Store.standings(1); }]
+    ['replacement', function () { return fresh.Value.replacement(1); }]
   ];
   var i, bad = [];
   for (i = 0; i < checks.length; i++) {
