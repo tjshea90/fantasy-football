@@ -62,10 +62,8 @@ app/assets/projections.js
 app/assets/ai.js
 tools/test_engine.js
 app/assets/usage.js
-app/assets/sim.js
 app/assets/value.js
 android/src/com/tj/fftracker/Alerts.java
-app/assets/recap.js
 RELEASE_NOTES.md
 tools/test_integration.js
 app/assets/names.js
