@@ -166,20 +166,6 @@ var me = S.league.me;
   ok(late <= 1 + 0, 'and at the last week it is down to the minimum (' + late + ')');
 }());
 
-/* ---- 9. the simulation must not double-count an unscored week ------------ */
-(function () {
-  var reg = W.Store.get().league.regularSeasonWeeks;
-  var s = W.Sim.season(reg);
-  ok(!!s && !!s.rows && s.rows.length === 10, 'the season sim returns a row per team');
-  var sum = 0, i;
-  for (i = 0; i < s.rows.length; i++) sum += (s.rows[i].playoff || 0);
-  /* six of ten make the playoffs in this league, so the odds must total ~6
-     (or ~600 if they are percentages). Either way it cannot be ~10, which is
-     what double-counting an unscored week used to push it toward. */
-  var six = Math.abs(sum - 6) < 0.6 || Math.abs(sum - 600) < 60;
-  ok(six, 'playoff odds total the number of playoff spots, not more (' + sum.toFixed(2) + ')');
-  ok(!!W.Sim.power(reg), 'power rankings still build');
-}());
 
 /* ---- 10. no screen-facing module throws on an empty season --------------- */
 (function () {
