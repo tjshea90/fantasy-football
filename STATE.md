@@ -45,6 +45,68 @@ Next job: Tj running it and reporting what misbehaves.
 | free agents show all positions, not just QB | **11b done** |
 | weekly advice: multiple pro sources averaged, converted to league scoring | **11e done** |
 
+## v4.8 — nav/UI refactor: back never closes the app, the app narrows to mine
+
+Tj's 2026-09-11 list, in full in `LADDER.md` §19. Seven asks, all shipped
+together because each one touched the same handful of screens:
+
+1. **The Android back button.** MainActivity deferred to the page (`__onBack`)
+   since v4.7, but the page's answer was "close the top modal, else jump
+   straight to Live" — not a real history, and pressing back from Live with
+   nothing open still `finish()`ed the Activity. ui.js now keeps a real
+   `navStack` of tabs actually visited (pushed by `goTab`, popped by
+   `__onBack`/`goBackTab`), so back walks it one step at a time like every
+   other Android app's back stack. And MainActivity no longer ever
+   `finish()`s on a BACK press at all — when the page has nothing left to
+   unwind it calls `moveTaskToBack(true)` instead, which backgrounds the app
+   (process alive, reopens instantly where it was) rather than killing it.
+   The dead `web.canGoBack()` branch (always false — this is a one-page app)
+   is gone too.
+2. **The keyboard popping up on every player tap.** `showPlayer()`'s manual-
+   adjustment number field was the first focusable control in its modal, and
+   `dialog()` auto-focuses the first one to seat keyboard/tab focus — so
+   opening ANY player's stats popped the Android keyboard, adjustment or not.
+   The field and its presets now live in a hidden `editor` div behind an
+   "Adjust" button; only pressing it reveals and focuses the field.
+3. **Table and League tabs, deleted entirely** — Tj: "I don't use these at
+   all." `viewStandings`, `viewLeague`, `playoffCard`, `recapCard`, `pct()`
+   are gone from ui.js; the two nav buttons are gone from index.html. Once
+   those views were gone, **sim.js and recap.js had no remaining caller
+   anywhere in the app** (grepped the whole tree) — both files deleted
+   outright, along with every `Sim.invalidate()` call site and the now-dead
+   `Store.standings`/`Store.seasonTotals` in store.js. That is not a small
+   cut: sim.js alone was a 425-line Monte-Carlo season simulator that existed
+   only to feed those two tabs.
+4. **Other managers' weekly matchups, stopped being tracked at all.** The
+   Live tab used to show every matchup, not just Tj's; the Data tab was a
+   full 10-team schedule editor (add any pair, generate a round robin,
+   auto-pair the rest) because Table/League needed every team's result to
+   compute standings and simulate the league. With both gone, the ONLY
+   remaining reader of `Store.getMatchups` is the Live tab's own-matchup
+   card — so Data tab's matchup section is now one thing: set/change/clear
+   who I play this week. Other teams' ROSTERS are unaffected and still fully
+   visible (that data was never the problem); only the manufactured weekly
+   pairing for teams that are not mine is gone.
+5. **Roster tab: per-team chips, not ten cards stacked in one scroll.**
+   `viewRosters` now holds one persisted `rosterSel` (defaults to my own
+   team) and a `.fchips` row of all ten team names; only the selected team's
+   card renders. The trade evaluator, being cross-team, stays pinned above
+   the chips rather than living under any one team.
+6. **A new Wire tab for free agents.** `freeAgentCard()` itself did not
+   change at all — same waiver ranking, same Claude wire-read button, same
+   Claude-app handoff card — it just no longer opens on Roster. A `viewWire`
+   wraps it under a new `data-v="wire"` tab between Roster and Advice.
+7. **The Data-tab sweep.** `renderHeader`'s tab-title map still carried
+   `league`/`standings` and was missing `wire`; the offline-sync toast still
+   told Tj "standings, the League tab... still work" after a failed sync.
+   Both fixed. Nothing else Data-tab-facing referenced the deleted views.
+
+All 13 suites (7 of them rewritten in step with the deletions — anything that
+loaded sim.js/recap.js, asserted the old 7-tab bar, or exercised the old
+"jump straight to Live" back handler) stay green; ES2018 clean; manifest and
+disk agree at 77 files (two fewer than v4.7 — sim.js and recap.js are gone,
+nothing replaced them).
+
 ## v4.6 — the tab bar, and a dead end on the busiest screen
 
 Tj, with a week-2 screenshot: *"notice the bottom navigation has shifted up for
