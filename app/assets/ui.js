@@ -2873,6 +2873,7 @@
       if (view === 'live') viewLive(root);
       else if (view === 'lineups') viewLineups(root);
       else if (view === 'rosters') viewRosters(root);
+      else if (view === 'wire') viewWire(root);
       else if (view === 'advice') viewAdvice(root);
       else viewData(root);
     } catch (e) {
