@@ -38,7 +38,7 @@ function load(f) {
 }
 /* the same order as index.html */
 ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
- 'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'value.js', 'recap.js',
+ 'projections.js', 'usage.js', 'recommend.js', 'value.js',
  'ai.js'].forEach(load);
 
 ok(!!W.SEED, 'the seed loaded');
