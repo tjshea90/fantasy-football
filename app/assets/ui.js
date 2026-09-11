@@ -1366,10 +1366,21 @@
     c.appendChild(addForm(t));
     root.appendChild(c);
   }
-  /* ---------- ROSTERS: the wire (v2.6) ----------
-   * Ranked in THIS league's points, which is the only reason to have it: every
-   * waiver list on the internet is computed in scoring where a completion is
-   * worth nothing, and here it is worth a point. */
+  /* ---------- WIRE (v4.8) ----------
+   * Tj: "move everything about free agents to a new tab called wire... keep
+   * all the logic and functions the same, just move it all to its own
+   * section. I don't want to see it in the roster section." This used to be
+   * the first card on the Roster tab; freeAgentCard() itself is untouched —
+   * every function it calls (addFreeAgent, faRow, Value.byPos/byVor/upgrades)
+   * is the same code doing the same lookups, just reachable from its own tab
+   * instead of stacked above ten rosters. */
+  function viewWire(root) {
+    addSafe(root, 'The free-agent board', freeAgentCard);
+  }
+  /* ---------- WIRE: ranked in THIS league's points (v2.6) ----------
+   * The only reason this exists at all: every waiver list on the internet is
+   * computed in scoring where a completion is worth nothing, and here it is
+   * worth a point. */
   function freeAgentCard() {
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Free agents · week ' + week));
