@@ -891,52 +891,35 @@
   }
 
   /* ---------- LIVE ---------- */
+  /* Only my matchup, ever (v4.8). Tj: "the weekly matchups between teams
+     other than mine I don't care about... focus on mine vs my opponent for
+     each week." The Data tab now only ever records one pair for a week —
+     me vs whoever I am playing — so `mus` here is that one pair or nothing;
+     the lookup still tolerates more because an older backup could carry a
+     full round robin imported before this version, and this must not choke
+     on it, just ignore everyone else in it. */
   function viewLive(root) {
     var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
     /* the pre-Sunday alert goes ABOVE everything on all three lineup-facing
        screens — it is time-critical and it is the one thing Tj said he forgets */
     addSafe(root, 'The early-game alert', earlyGameCard);
     var mus = Store.getMatchups(week);
-    if (!mus.length) {
+    var mine = null;
+    mus.forEach(function (pair) {
+      if (!mine && (pair[0] === S.league.me || pair[1] === S.league.me)) mine = pair;
+    });
+    if (!mine) {
       var c = el('div', 'card');
-      c.appendChild(el('h2', null, 'No matchups for week ' + week));
-      c.appendChild(el('p', 'muted', 'Add them on the Data tab, or below.'));
-      var b = el('button', 'btn pri', 'Set up week ' + week + ' matchups');
+      c.appendChild(el('h2', null, 'No matchup for week ' + week));
+      c.appendChild(el('p', 'muted', 'Set your opponent on the Data tab, or below.'));
+      var b = el('button', 'btn pri', 'Set up week ' + week + "'s matchup");
       b.addEventListener('click', function () { goTab('data'); });
       c.appendChild(b); root.appendChild(c);
+      return;
     }
-    /* Tj's own matchup comes first, always, and opens expanded. It is the one
-       card he actually watches; scrolling past four other games to find it is
-       the difference between a live scoreboard and a spreadsheet. */
-    var mine = null, rest = [];
-    mus.forEach(function (pair) {
-      if (pair[0] === S.league.me || pair[1] === S.league.me) mine = pair; else rest.push(pair);
-    });
-    if (mine) {
-      var me = mine[0] === S.league.me ? mine[0] : mine[1];
-      var them = mine[0] === S.league.me ? mine[1] : mine[0];
-      root.appendChild(myMatchupCard(me, them));
-    }
-    rest.forEach(function (pair) { root.appendChild(matchupCard(pair[0], pair[1])); });
-
-    var used = {}; mus.forEach(function (p) { used[p[0]] = 1; used[p[1]] = 1; });
-    var idle = S.teams.filter(function (t) { return !used[t.id]; });
-    if (idle.length && mus.length) {
-      var c2 = el('div', 'card');
-      c2.appendChild(el('h2', null, 'Not in a matchup this week'));
-      idle.forEach(function (t) {
-        var r = teamWeekRow(t);
-        c2.appendChild(r);
-      });
-      root.appendChild(c2);
-    }
-  }
-  function teamWeekRow(t) {
-    var res = Store.teamWeekPoints(week, t.id);
-    var r = el('div', 'row');
-    r.appendChild(el('div', 'nm', t.name));
-    r.appendChild(el('div', 'pts', fmt(res.total)));
-    return r;
+    var me = mine[0] === S.league.me ? mine[0] : mine[1];
+    var them = mine[0] === S.league.me ? mine[1] : mine[0];
+    root.appendChild(myMatchupCard(me, them));
   }
   /* The headline card: my team against my opponent, both lineups open, with
      what is still to play on each side — because a 12-point deficit with four
