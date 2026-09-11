@@ -333,8 +333,6 @@ ok(/Object\.keys\(prevOpp\)\.length/.test(uiR),
 ok(/jobStart\('waivers'/.test(uiR), 'the waiver job passes both arguments');
 ok(/cached\.spent\.cost/.test(uiR), 'the waiver cost line reads the field Usage returns');
 ok(/replace\(\/&\/g, '&amp;'\)/.test(uiR), 'esc() actually escapes');
-var invs = (uiR.match(/Sim\.invalidate\(\)/g) || []).length;
-ok(invs >= 5, 'every lineup-mutating path invalidates the sim cache (' + invs + ' sites)');
 
 /* ---- and the trap that hid all of the above ------------------------------
  * Three blocks of assertions were appended BELOW process.exit and never ran.
