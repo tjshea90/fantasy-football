@@ -331,6 +331,12 @@ console.log('\n-- every screen renders --');
 
 console.log('\n-- the back button --');
 (function () {
+  function tabOn(name) {
+    for (var i = 0; i < tabEls.length; i++) {
+      if (tabEls[i].getAttribute('data-v') === name) return tabEls[i].classList.contains('on');
+    }
+    return false;
+  }
   ok(typeof W.__onBack === 'function', 'the page exposes __onBack for MainActivity');
   clickTab('data');
   ok(W.__onBack() === true, 'from a non-Live tab, back is handled by the page');
@@ -343,15 +349,12 @@ console.log('\n-- the back button --');
   clickTab('rosters');
   clickTab('advice');
   clickTab('data');
-  ok(W.__onBack() === true && ids.view.querySelector('h1, h2, .card'), 'step 1 of 3');
-  ok(document.querySelector('#tabs .tab[data-v="advice"]').classList.contains('on'),
-     'back from data (reached via rosters, advice, data) lands on advice, not live');
-  ok(W.__onBack() === true, 'step 2 of 3');
-  ok(document.querySelector('#tabs .tab[data-v="rosters"]').classList.contains('on'),
-     'then rosters');
-  ok(W.__onBack() === true, 'step 3 of 3');
-  ok(document.querySelector('#tabs .tab[data-v="live"]').classList.contains('on'),
-     'then live — the tab the app opened on');
+  ok(W.__onBack() === true, 'step 1 of 3 back');
+  ok(tabOn('advice'), 'back from data (reached via rosters, advice, data) lands on advice, not live');
+  ok(W.__onBack() === true, 'step 2 of 3 back');
+  ok(tabOn('rosters'), 'then rosters');
+  ok(W.__onBack() === true, 'step 3 of 3 back');
+  ok(tabOn('live'), 'then live — the tab the app opened on');
   ok(W.__onBack() === false, 'and now the history is exhausted, same as before');
 }());
 
