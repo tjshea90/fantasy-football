@@ -377,3 +377,63 @@ finished job cost ~720 tokens per session to re-read forever.
 
 ### 6. Listed, not built — needs his say-so
 - [x] 6a. See the end of RELEASE_NOTES.md. Three candidates, none started.
+
+## 19. The 2026-09-11 request (archived from TASKS.md, complete 7/7)
+
+> "for this app , when I press the back button on android navigation, it
+>  closes the app. instead, make it go back to the last thing inside the app.
+>  the back button should never close the app.
+>
+>  when I press a player to see his stats, the android keyboard automatically
+>  appears because of the manual adjustment feature and its number field. make
+>  it so a number field and the adjustment feature only comes up if I press a
+>  button that says adjust.
+>
+>  get rid of the table and league sections entirely (the "table" and "league"
+>  tabs at the bottom of the app and the sections they open). I don't use these
+>  at all. delete the tabs and everything inside.
+>
+>  the weekly matchups between teams other than mine I don't care about. the
+>  focus of the app is my team vs my opponent every week and my roster and
+>  advice. the only thing I care about for other managers is their rosters so I
+>  know what players are taken or still available. so do not waste any data or
+>  resources on other fantasy managers weekly matchups. focus on mine vs my
+>  opponent for each week.
+>
+>  for the roster section, instead of one long vertical scrolling section,
+>  organize the teams into tabs so i can click on each team and see their
+>  roster and make changes to it if needed.
+>
+>  move everything about free agents to a new tab called wire. keep all the
+>  logic and functions the same, just move it all to its own section. I don't
+>  want to see it in the roster section.
+>
+>  if any of this affects the data tab or the relevance of anything inside the
+>  data tab, fix it accordingly."
+
+Shipped as v4.8. Full detail in STATE.md's "v4.8" section and in the
+individual commit history. Archived here because TASKS.md is reprinted into
+EVERY session briefing, and a finished job costs tokens per session to
+re-read forever.
+
+- [x] 1. Android back button never closes the app — real tab-visit history
+      (`navStack`) in ui.js, `MainActivity.onKeyDown` calls `moveTaskToBack`
+      instead of `finish()`. → `test_lifecycle.js` "the back button",
+      `test_gestures.js`.
+- [x] 2. Player-stat adjustment field hidden behind an "Adjust" button — no
+      more auto-focused number field popping the keyboard on open.
+- [x] 3. Table and League tabs deleted entirely, plus sim.js and recap.js
+      (no remaining caller once those views were gone) and the dead
+      Store.standings/seasonTotals.
+- [x] 4. Live and Data tabs narrowed to MY matchup only — no more full
+      10-team schedule editor or other-team matchup cards. Other managers'
+      rosters are still fully visible on the Roster tab.
+- [x] 5. Roster tab is per-team chips (defaults to my team), not all ten
+      teams stacked in one scroll.
+- [x] 6. New Wire tab: free agents moved off Roster, same untouched logic.
+- [x] 7. Data-tab sweep: fixed the header's stale tab-title map and the
+      offline-sync toast wording left over from the deleted tabs.
+- [x] 8. (found during ship) bootstrap.sh's manifest check falsely flagged
+      `.claude/scheduled_tasks.lock` — the ScheduleWakeup harness's own
+      runtime file — as a stray file on disk. Excluded by name, same
+      treatment as `.ckpt/`.
