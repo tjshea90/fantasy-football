@@ -464,57 +464,9 @@
     }
     return { total: Math.round(total * 100) / 100, detail: detail };
   }
-  function seasonTotals(throughWeek) {
-    var last = throughWeek || S.league.regularSeasonWeeks;
-    var out = {}, i, w;
-    for (i = 0; i < S.teams.length; i++) out[S.teams[i].id] = { pts: 0, w: 0, l: 0, t: 0, weeks: {} };
-    for (w = 1; w <= last; w++) {
-      var mus = getMatchups(w), got = {};
-      for (i = 0; i < S.teams.length; i++) {
-        var tid = S.teams[i].id, r = teamWeekPoints(w, tid);
-        got[tid] = r.total;
-        out[tid].pts += r.total; out[tid].weeks[w] = r.total;
-      }
-      for (i = 0; i < mus.length; i++) {
-        var a = mus[i][0], b = mus[i][1];
-        if (!out[a] || !out[b]) continue;
-        if (!weekIsScored(w)) continue;
-        if (got[a] > got[b]) { out[a].w++; out[b].l++; }
-        else if (got[b] > got[a]) { out[b].w++; out[a].l++; }
-        else { out[a].t++; out[b].t++; }
-      }
-    }
-    for (i = 0; i < S.teams.length; i++) out[S.teams[i].id].pts = Math.round(out[S.teams[i].id].pts * 100) / 100;
-    return out;
-  }
   function weekIsScored(week) {
     var m = S.weekMeta[String(week)];
     return !!(m && m.synced && m.allFinal);
-  }
-  function standings(throughWeek) {
-    var t = seasonTotals(throughWeek), rows = [], i;
-    for (i = 0; i < S.teams.length; i++) {
-      var id = S.teams[i].id;
-      rows.push({ id: id, name: S.teams[i].name, pts: t[id].pts, w: t[id].w, l: t[id].l, t: t[id].t });
-    }
-    /* WIN PERCENTAGE, not raw wins. Every team plays every week, so these are
-       the same number — right up until a week's matchups were never entered
-       for one pair, at which point two teams have played a different number of
-       games and sorting on wins alone silently ranks the team with fewer
-       losses below the team with more. Ties broken on points, which is also
-       the league's own tiebreak (there is a points title with money on it). */
-    rows.sort(function (x, y) {
-      var gx = x.w + x.l + x.t, gy = y.w + y.l + y.t;
-      var px = gx ? (x.w + x.t / 2) / gx : 0;
-      var py = gy ? (y.w + y.t / 2) / gy : 0;
-      if (py !== px) return py - px;
-      if (y.w !== x.w) return y.w - x.w;
-      return y.pts - x.pts;
-    });
-    for (i = 0; i < rows.length; i++) rows[i].rankWL = i + 1;
-    var byPts = rows.slice().sort(function (x, y) { return y.pts - x.pts; });
-    for (i = 0; i < byPts.length; i++) byPts[i].rankPts = i + 1;
-    return { byRecord: rows, byPoints: byPts };
   }
 
   /* --- backup ------------------------------------------------------- */
