@@ -150,9 +150,10 @@ public class MainActivity extends Activity {
   // it. The process survives and the app reopens exactly where it was, which
   // is what "never closes" has to mean.
   //
-  // web.canGoBack() used to be consulted too, but this is a single-page app
-  // that never pushes a history entry, so it was always false — dead code,
-  // deleted rather than kept "just in case".
+  // The WebView's own back/forward history used to be consulted too (via
+  // canGoBack/goBack), but this is a single-page app that never pushes a
+  // history entry, so it was always false — dead code, deleted rather than
+  // kept "just in case".
   private long lastBackAsk = 0;
   @Override public boolean onKeyDown(int code, KeyEvent e) {
     if (code != KeyEvent.KEYCODE_BACK) return super.onKeyDown(code, e);
