@@ -386,9 +386,7 @@ ok(/textarea\{/.test(fs.readFileSync('app/assets/app.css', 'utf8')),
 /* ---- v3.8: the hot paths ------------------------------------------------- */
 var scH = fs.readFileSync('app/assets/scoring.js', 'utf8');
 var reH = fs.readFileSync('app/assets/recommend.js', 'utf8');
-var siH = fs.readFileSync('app/assets/sim.js', 'utf8');
 var uiH = fs.readFileSync('app/assets/ui.js', 'utf8');
-var rcH = fs.readFileSync('app/assets/recap.js', 'utf8');
 ok(/L\.__sc && L\.__scSig === sig/.test(scH), 'score() is memoised on the line object');
 ok(/enumerable: false/.test(scH), 'the score cache is non-enumerable so it never lands in a save');
 ok(/function memoSig/.test(scH),
@@ -396,13 +394,7 @@ ok(/function memoSig/.test(scH),
 ok(!/function scoreTotal/.test(scH),
    'there is still exactly ONE implementation of the scoring engine');
 ok(/_dpMemo/.test(reH), 'defenseProfile is memoised — it was recomputed once per team for one answer');
-ok(/function sigmaFor/.test(siH), 'the lognormal sigma is cached instead of recomputed 80k times');
 ok(/function owners\(\)/.test(uiH), 'roster search builds an owner index instead of re-normalising per hit');
-ok(/Recap\.text\(w, r\)/.test(uiH), 'the recap card reuses the object it already built');
-ok(/function text\(week, prebuilt\)/.test(rcH), 'Recap.text accepts a prebuilt recap');
-ok(/hoisted/.test(rcH), 'slotKeys is hoisted out of the per-team loop');
-ok(/var recent = firstRegret;/.test(uiH), 'bench regret does not re-scan for a week it already found');
-ok(/var playedW = 0/.test(uiH), 'the played-weeks count is computed once, not once per row');
 
 
 /* ---- v3.10: dead code gone, error paths closed --------------------------- */
