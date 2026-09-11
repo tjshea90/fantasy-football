@@ -1,12 +1,12 @@
-# CHECKPOINT 116 — read me first, then TASKS.md
+# CHECKPOINT 119 — read me first, then TASKS.md
 
-**Written:** 2026-09-11T21:52:23Z · **version:** 4.8 · **tests:** all 13 suites green
+**Written:** 2026-09-11T21:53:06Z · **version:** 4.8 · **tests:** all 13 suites green
 
 ## Just done
-shipped v4.8 properly: ship.sh had bumped the version and committed source with no APK in build/ (SDK wasn't installed yet in this container), so ran build.sh (installs the SDK, ~600MB first time), verified the resulting APK's dex has all 25 classes, and published it as releases/FFTracker-v4.8.apk (MANIFEST updated). Also fixed a bootstrap.sh false-positive: .claude/scheduled_tasks.lock (the ScheduleWakeup harness's own runtime file, already git-ignored) was flagged as a stray file on disk; now excluded by name the same way .ckpt/ already is.
+archived the finished 2026-09-11 job from TASKS.md into LADDER.md (§19) and reset TASKS.md to the no-active-job template, per the working agreement
 
 ## Do this next
-all 7 of Tj's requests are done, tested, shipped, and the v4.8 APK is committed at releases/FFTracker-v4.8.apk — waiting on Tj to install it and confirm on the phone
+waiting on Tj to verify v4.8 on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  fbd498c ckpt 116: shipped v4.8 properly: ship.sh had bumped the version and committed source wit
   3f8496a ship v4.8: v4.8: nav/UI refactor - back button never closes the app, Table/League tabs d
   f0aedf9 ckpt 107: task 5: Roster tab is now per-team chips (defaults to my team) instead of all 
   d1bdbc7 ckpt 97: task 3: deleted the Table and League tabs entirely (viewStandings/viewLeague/pl
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   5d3fb69 ckpt 48: usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (
   1553bac ckpt 45: usage optimisation: bootstrap printed an 851-char JAVA_TOOL_OPTIONS dump into e
   53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
-  07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
 ```
 
-(5 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
