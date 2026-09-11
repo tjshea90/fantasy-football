@@ -872,7 +872,7 @@
       c.appendChild(el('h2', null, 'No matchups for week ' + week));
       c.appendChild(el('p', 'muted', 'Add them on the Data tab, or below.'));
       var b = el('button', 'btn pri', 'Set up week ' + week + ' matchups');
-      b.addEventListener('click', function () { view = 'data'; render(); });
+      b.addEventListener('click', function () { goTab('data'); });
       c.appendChild(b); root.appendChild(c);
     }
     /* Tj's own matchup comes first, always, and opens expanded. It is the one
