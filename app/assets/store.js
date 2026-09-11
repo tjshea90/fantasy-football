@@ -585,7 +585,7 @@
     getMatchups: getMatchups, setMatchups: setMatchups, addMatchup: addMatchup,
     getStats: getStats, setLine: setLine, lineFor: lineFor,
     playerPoints: playerPoints, teamWeekPoints: teamWeekPoints, isOnBye: isOnBye,
-    seasonTotals: seasonTotals, standings: standings, weekIsScored: weekIsScored,
+    weekIsScored: weekIsScored,
     exportJSON: exportJSON, importJSON: importJSON, resetToSeed: resetToSeed,
     autoBackup: autoBackup,
     setBook: setBook, bookWeek: bookWeek, bookTrend: bookTrend, bookNames: bookNames
