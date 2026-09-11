@@ -1,12 +1,12 @@
-# CHECKPOINT 97 — read me first, then TASKS.md
+# CHECKPOINT 107 — read me first, then TASKS.md
 
-**Written:** 2026-09-11T21:43:03Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-11T21:46:44Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-task 3: deleted the Table and League tabs entirely (viewStandings/viewLeague/playoffCard/recapCard + sim.js/recap.js, both fully unused once those views were gone) and Store.standings/seasonTotals; task 4: Live tab now shows only my matchup, Data tab's matchup editor only sets my opponent, not a 10-team schedule
+task 5: Roster tab is now per-team chips (defaults to my team) instead of all ten teams stacked vertically; task 6: free agents moved off the Roster tab into a new Wire tab (same freeAgentCard, just relocated); task 7: fixed renderHeader's stale tab-title map and the offline-sync toast wording left over from the deleted Table/League tabs
 
 ## Do this next
-task 5: roster tab per-team sub-tabs; task 6: new Wire tab for free agents (move freeAgentCard out of viewRosters)
+Tj: verify the full request on the phone - back button never exits, player-stat Adjust button, Table/League tabs gone, Live shows only your matchup, Roster is per-team tabs, free agents live under the new Wire tab
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  d1bdbc7 ckpt 97: task 3: deleted the Table and League tabs entirely (viewStandings/viewLeague/pl
   91bda7d ckpt 66: task 1: android back button never closes the app (real tab-visit history + move
   faf3993 ckpt 52: wrote Tj's new nav/UI-refactor request into TASKS.md before starting
   3dbbef9 ckpt 50: scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at m
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
   87b5bba ckpt 41: audit fix: a failing push was completely silent — autosave committed locally,
   678787a ckpt 39: added PreCompact hook (tools/toobig.sh): when a session grows big enough to aut
-  198ab83 ckpt 37: de-Coworked the system: BRIEF.md cold-start/persistence/commands rewritten for 
 ```
 
-(30 automatic checkpoint(s) since the last deliberate one — the
+(9 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
