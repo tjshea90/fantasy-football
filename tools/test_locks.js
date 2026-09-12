@@ -284,7 +284,7 @@ console.log('\n-- 5. schedule.js hands the alarm the ACTIONABLE list --');
   const sb = boot({});
   const { Store, Schedule } = sb;
   const S = Store.get();
-  S.weekMeta['3'] = { schedAt: Date.now(), games: {
+  S.weekMeta['3'] = { schedAt: Date.now(), kickoffs: {
     CHI: { kick: new Date(Date.now() + 20 * 3600e3).toISOString(), state: 'pre', opp: 'GB', home: true },
     IND: { kick: new Date(Date.now() + 4 * 86400e3).toISOString(), state: 'pre', opp: 'HOU', home: false }
   } };
