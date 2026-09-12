@@ -293,10 +293,16 @@ public class Alerts {
        * when he does not, which is the case he actually described.
        *
        * NO NETWORK IS NEEDED. schedule.js writes the week's kickoff times into
-       * weekMeta[week].games in the same state file this method already reads,
-       * precisely so the alarm can reason about them with no WebView. If the
-       * page has never stored a schedule the block simply does nothing — a
-       * missing kickoff must never manufacture an alert.
+       * weekMeta[week].kickoffs in the same state file this method already
+       * reads, precisely so the alarm can reason about them with no WebView.
+       * If the page has never stored a schedule the block simply does
+       * nothing — a missing kickoff must never manufacture an alert.
+       *
+       * NOT "games": that key belonged to ui.js's doSync, which writes a
+       * plain integer game count into the same weekMeta[week] object for the
+       * Data tab's display — a genuine collision that made the Data tab show
+       * "[object Object] games" once schedule.js's map clobbered the count.
+       * Fixed by giving schedule.js its own key instead of sharing this one.
        *
        * Only players NOT already in the lineup are reported. Someone already
        * starting on Thursday is not a problem, and an alert that fires for a
@@ -304,7 +310,7 @@ public class Alerts {
       try {
         JSONObject wm = S.optJSONObject("weekMeta");
         JSONObject wmw = wm == null ? null : wm.optJSONObject(String.valueOf(week));
-        JSONObject gs = wmw == null ? null : wmw.optJSONObject("games");
+        JSONObject gs = wmw == null ? null : wmw.optJSONObject("kickoffs");
         if (gs != null) {
           java.util.HashSet<String> startingIds = new java.util.HashSet<String>();
           if (mine != null) {
