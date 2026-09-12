@@ -1,12 +1,12 @@
-# CHECKPOINT 84 — read me first, then TASKS.md
+# CHECKPOINT 88 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T05:43:24Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-12T05:51:16Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-job complete and archived: moved the 2026-09-12 request (7/7 items) from TASKS.md into LADDER.md §19 with what proves each one, reset TASKS.md to the no-active-job placeholder plus a new 'try it on the phone' item under Waiting on Tj. Nothing left queued.
+CRITICAL BUG FOUND WHILE INVESTIGATING WHY TJ HAS v5.0: 'keepAdj' was referenced at ui.js's sync path (doSync) but never declared — a ReferenceError on the first matched player of EVERY sync, since the v4.2 baseline per a sibling branch's diagnosis. This is why 'Sync week' has been silently broken on main/v4.7 (and inherited into this branch) this whole time. Fixed by declaring and populating keepAdj from the existing stats before the wipe, exactly as branch claude/resume-logic-claude-code-2ye25r independently fixed it. Also hardened test_boot.js's regression check, which only grepped for the USE site (keepAdj[pid]) and stayed green the whole time the DECLARATION was missing — added a second assertion for the declaration itself. Also discovered: at least 3 OTHER unmerged branches (android-app-nav-ui-refactor-os6q53 v4.8, resume-logic-claude-code-2ye25r v4.8, live-tab-dual-scores-h2nxyf v5.0) forked from the same v4.7 base as this one and shipped independently; main is still stuck at v4.7; Tj's phone has v5.0 from the live-tab-dual-scores branch, which has NONE of this session's nav-refactor work but DOES have a Table-tab manual-score-entry feature this branch's work would delete. Told Tj directly; waiting on his call for how to reconcile.
 
 ## Do this next
-waiting on Tj to try the phone build and report back; no active job — next session should just re-read CHECKPOINT.md and confirm nothing new is queued in TASKS.md
+waiting on Tj's decision on how to reconcile the 4 divergent branches (this one, android-app-nav-ui-refactor-os6q53, resume-logic-claude-code-2ye25r, live-tab-dual-scores-h2nxyf) before doing any merge work
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  fea715f ckpt 84: job complete and archived: moved the 2026-09-12 request (7/7 items) from TASKS.
   033e178 ckpt 81: verified the build: ran build.sh end-to-end (first run, downloaded the Android 
   26dc8b6 ckpt 80: tasks 3-7 done: deleted the Table/League tabs and their view code entirely (vie
   21fd85f ckpt 61: task 1 done: Android back button now unwinds a real tab-visit history (ui.js na
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   1553bac ckpt 45: usage optimisation: bootstrap printed an 851-char JAVA_TOOL_OPTIONS dump into e
   53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
   07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
-  87b5bba ckpt 41: audit fix: a failing push was completely silent — autosave committed locally,
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
