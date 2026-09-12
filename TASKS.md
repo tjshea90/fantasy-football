@@ -47,12 +47,14 @@ just relocated off the Table tab since Table stays deleted.)
       `node tools/test_integration.js` #14, a real executed test (imports a
       manualScores-stripped backup, calls setManualScore, asserts no throw)
       rather than a source-text grep. Full suite green (ckpt 104).
-- [ ] 4. Add the score-entry UI (`weeklyScoresCard`, verbatim logic from the
+- [x] 4. Add the score-entry UI (`weeklyScoresCard`, verbatim logic from the
       v5.0 branch: one row per team but mine, typed final score or blank to
       fall back to the computed lineup total) plus a compact standings table
       so entering a score has somewhere to show its result — both relocated
       to the **Data tab**, since the Table tab that used to host them is
-      deleted per the 2026-09-12 request.
+      deleted per the 2026-09-12 request. DONE, plus the `.scoreInput` CSS.
+      Tested: full suite green, `test_lifecycle.js`'s every-screen-renders
+      walk exercises both new cards on Data (ckpt 108).
 - [ ] 5. Port the Live-tab redesign from `live-tab-dual-scores-h2nxyf`: two
       side-by-side score boxes (`liveScoreBox`, one per side, each with its
       own open lineup) instead of one merged card — matches Tj's own words to
