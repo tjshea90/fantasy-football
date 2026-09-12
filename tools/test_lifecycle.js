@@ -333,9 +333,9 @@ console.log('\n-- the back button --');
 (function () {
   ok(typeof W.__onBack === 'function', 'the page exposes __onBack for MainActivity');
   clickTab('data');
-  ok(W.__onBack() === true, 'from a non-Live tab, back is handled by the page');
+  ok(W.__onBack() === true, 'from a non-Live tab, back unwinds the visit history');
   ok(W.__onBack() === false,
-     'and from Live with nothing open it declines, so the Activity can finish');
+     'and once the trail is empty it declines — the Activity backgrounds instead of closing');
 }());
 
 console.log('\n-- gestures are wired to the real tab order --');
