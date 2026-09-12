@@ -559,3 +559,54 @@ card.
 - [x] 21c. Full 13-suite regression, ES2018 clean, two real `build.sh` runs
       (Alerts.java's rename, then the final build). Shipped as v5.3
       (versionCode 503).
+
+
+## 22. The 2026-09-12d request — v5.3's fixes were both incomplete, plus
+      repo cleanup (archived from TASKS.md, 7/7 done, 1 item blocked on
+      access and handed to Tj)
+
+> "Look at the attached screenshot. The data tab still shows empty boxes with
+> no team names for me to enter scores. I want a small box next to each team
+> name where I can enter that team's score each week and it saves the data
+> for calculating other things in the app like wins and losses and total
+> points weekly and all time. When you are done making this delete all the
+> stale branches and inputs and make sure that all future builds update from
+> the latest version linearly and don't make separate branches"
+
+§21's two fixes both shipped but neither actually held up — v5.3's screenshot
+showed the identical two symptoms. Lesson for whoever reads this next: a fix
+that only stops something happening AGAIN is not a fix for a value already
+poisoned on disk, and a UI bug diagnosed from a screenshot alone (no browser,
+no real device) can be wrong about *why* something looks broken even when the
+*what* is right.
+
+- [x] 22a. `[object Object]` — the real fix: v5.3 only stopped the future
+      write; it never repaired `weekMeta[week].games` already corrupted on
+      Tj's phone from before v5.3 installed. `Store.init()` now migrates any
+      already-poisoned `.games` on load — rescues the map into `.kickoffs`,
+      reconstructs a real count from it. Pinned with a test that corrupts a
+      saved state the way v5.2/v5.3 actually did and re-inits from disk.
+- [x] 22b. Invisible team names — the real fix: §21's "it was the paragraph"
+      diagnosis was wrong. Actual cause was CSS specificity —
+      `input[type=number]{width:100%}` (0,1,1) always beat
+      `.scoreInput{width:76px}` (0,1,0) regardless of source order, so the
+      box was always full-width and always squeezed the name to nothing,
+      since the card was first built in §20. Fixed by raising the selector
+      to `input.scoreInput` (ties specificity, wins on source order).
+      Pinned with a real specificity calculator, verified against both the
+      broken and fixed selector by hand.
+- [x] 22c. Full regression + two real `build.sh` runs. Shipped as v5.4
+      (versionCode 504).
+- [x] 22d. Fast-forwarded `origin/main` to this branch (3dbbef9 -> e30a21a).
+- [ ] 22e. Deleting the 3 stale sibling branches — BLOCKED, not done:
+      `git push origin --delete` returns HTTP 403 for this session (checked
+      the proxy status, not a network fluke — a real permission boundary),
+      and no available GitHub MCP tool deletes a branch either. Tj told to
+      delete `android-app-nav-ui-refactor-os6q53`,
+      `resume-logic-claude-code-2ye25r`, `live-tab-dual-scores-h2nxyf`
+      himself. **If a future session has branch-delete access, finish this.**
+- [x] 22f. Added "Branches — main is the only source of truth" to CLAUDE.md:
+      what happened, and what a future session should do (check whether
+      `main` moved before starting; get finished work onto `main` before
+      ending). Honest about the limit — which branch a NEW session lands on
+      is a platform decision, not something a repo file can bind.
