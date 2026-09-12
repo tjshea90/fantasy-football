@@ -403,11 +403,18 @@ ok(!/function scoreTotal/.test(scH),
 ok(/_dpMemo/.test(reH), 'defenseProfile is memoised — it was recomputed once per team for one answer');
 ok(/function sigmaFor/.test(siH), 'the lognormal sigma is cached instead of recomputed 80k times');
 ok(/function owners\(\)/.test(uiH), 'roster search builds an owner index instead of re-normalising per hit');
-ok(/Recap\.text\(w, r\)/.test(uiH), 'the recap card reuses the object it already built');
 ok(/function text\(week, prebuilt\)/.test(rcH), 'Recap.text accepts a prebuilt recap');
 ok(/hoisted/.test(rcH), 'slotKeys is hoisted out of the per-team loop');
-ok(/var recent = firstRegret;/.test(uiH), 'bench regret does not re-scan for a week it already found');
-ok(/var playedW = 0/.test(uiH), 'the played-weeks count is computed once, not once per row');
+/* the three assertions this replaced ('the recap card reuses the object it
+   already built', 'bench regret does not re-scan...', 'the played-weeks
+   count is computed once...') checked hot-path patterns INSIDE recapCard and
+   viewLeague/viewStandings. v4.8 deleted those screens outright (Tj: "get
+   rid of the table and league sections entirely... delete the tabs and
+   everything inside") — there is no longer a hot path there to regress, so
+   asserting the pattern still exists in ui.js would just be asserting dead
+   code was not deleted. Recap.text and recap.js's own hot paths (checked
+   above) are unaffected: Recap.generateSchedule on the Data tab still calls
+   them. */
 
 
 /* ---- v3.10: dead code gone, error paths closed --------------------------- */
