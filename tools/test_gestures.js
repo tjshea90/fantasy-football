@@ -247,8 +247,8 @@ function finish() {
      'the Android back button closes a modal before it does anything else');
   const mj = fs.readFileSync(path.join(__dirname, '..', 'android', 'src', 'com', 'tj',
                                        'fftracker', 'MainActivity.java'), 'utf8');
-  ok(mj.indexOf('__onBack') >= 0 && mj.indexOf('finish()') >= 0,
-     'and the Activity asks the page before quitting');
+  ok(mj.indexOf('__onBack') >= 0 && mj.indexOf('moveTaskToBack(true)') >= 0,
+     'and the Activity asks the page before backgrounding — never finish(), so back never closes the app');
   ok(!/if \(code == KeyEvent\.KEYCODE_BACK && web != null && web\.canGoBack\(\)\) \{\n      web\.goBack/.test(
        mj.slice(0, mj.indexOf('__onBack'))),
      'canGoBack is no longer the FIRST thing consulted (it is always false here)');
