@@ -30,8 +30,13 @@ weekly-scores card added in the branch-reconciliation job (LADDER.md §20d).
       that construct a weekMeta fixture with the old shape
       (test_locks.js, test_schedule.js) — not a workaround at the display
       site, which would leave `gameStarted`/Alerts silently reading garbage
-      whenever a sync ran after a schedule ingest.
-- [ ] 2. Rebuild `weeklyScoresCard` (ui.js, Data tab) to match Tj's exact
+      whenever a sync ran after a schedule ingest. DONE exactly as planned.
+      Tested: new `test_schedule.js` test that actually calls the real
+      `Schedule.ingest()` after a sync-shaped count is on the same object
+      and proves the count survives — not a source grep. Full suite green,
+      real `build.sh` run twice (Alerts.java's rename compiles) (ckpt 138,
+      142).
+- [x] 2. Rebuild `weeklyScoresCard` (ui.js, Data tab) to match Tj's exact
       spec: drop the explanatory paragraph (that's the "large" he means),
       keep exactly one row per team (all but his own) — team name as a
       plain label, one input box next to it, nothing else. Saving (on
@@ -40,7 +45,11 @@ weekly-scores card added in the branch-reconciliation job (LADDER.md §20d).
       the branch-reconciliation job) — this is a display/layout simplification
       only, not a data-layer change, unless testing this turns up a real
       reason the fields "look blank" (e.g. drop the placeholder preview text
-      if that's what reads as "blank").
+      if that's what reads as "blank"). DONE — also dropped the placeholder
+      preview text, since a faint auto-computed number in an otherwise-empty
+      box was itself part of what made it read as "blank". Tested: full
+      suite green, `test_lifecycle.js`'s every-screen-renders walk exercises
+      the simplified card (ckpt 142). Shipped as v5.3 (versionCode 503).
 
 Ticking a box means: written, tested, committed, and the test that proves it is
 named in the box. **Never tick a box you have not verified** — the next account
