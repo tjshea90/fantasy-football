@@ -1,12 +1,12 @@
-# CHECKPOINT 104 — read me first, then TASKS.md
+# CHECKPOINT 108 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T06:06:06Z · **version:** 5.1 · **tests:** all 13 suites green
+**Written:** 2026-09-12T06:07:44Z · **version:** 5.1 · **tests:** all 13 suites green
 
 ## Just done
-reconciliation task 3 done: ported the manual weekly-score data layer into store.js from resume-logic-claude-code-2ye25r/live-tab-dual-scores-h2nxyf -- S.manualScores, getManualScore/setManualScore/teamWeekScore, seasonTotals routed through teamWeekScore so a hand-entered score drives win/loss. Also found and fixed a real bug the source branches both had: importJSON() defaults every other pre-existing field (lineupManual, stats, book...) onto an old backup being restored but was never updated to default manualScores too, so restoring an old backup left S.manualScores undefined and the next setManualScore/getManualScore call would throw. Added 'if (!o.manualScores) o.manualScores = {}' to match the established pattern. Added a real executed test (test_integration.js #14) that actually imports a manualScores-stripped backup and calls setManualScore afterward, rather than another source-text regex -- this is the same shape of gap as the keepAdj crash found earlier this session, so it earned a real test, not a grep.
+reconciliation task 4 done: added weeklyScoresCard (verbatim logic from the source branches -- one row per team but mine, typed final score or blank to fall back to the computed total) and a compact standingsCard (just the win/loss table the old Table tab used to open with) to the top of the Data tab, plus the .scoreInput CSS the input needs to not blow out its row. Both are the Table tab's actual capability, relocated rather than dropped, since Table itself stays deleted per the 2026-09-12 request. Full suite green including test_lifecycle's every-screen-renders walk, which now exercises both new cards.
 
 ## Do this next
-task 4 next: relocate the weeklyScoresCard UI (verbatim from the source branches) plus a compact standings table onto the Data tab, since the Table tab that used to host both is deleted
+task 5 next: port the Live-tab two-box redesign (liveScoreBox/.mu2/.halfbox) from live-tab-dual-scores-h2nxyf, replacing the single merged myMatchupCard, and move feedWarnBanner from Live to Data
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  e612ec0 ckpt 104: reconciliation task 3 done: ported the manual weekly-score data layer into sto
   eb7e0b0 ckpt 96: reconciliation tasks 1-2 done: ported the more robust MainActivity.java back-bu
   fc43689 ckpt 93: wrote the branch-reconciliation job into TASKS.md before starting: full investi
   69e6b9b ckpt 91: corrected the build for Tj: per his answer, dropped consideration of porting v5
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   26dc8b6 ckpt 80: tasks 3-7 done: deleted the Table/League tabs and their view code entirely (vie
   21fd85f ckpt 61: task 1 done: Android back button now unwinds a real tab-visit history (ui.js na
   84cdb98 ckpt 52: wrote Tj's new nav/UI overhaul request into TASKS.md verbatim before starting (
-  3dbbef9 ckpt 50: scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at m
 ```
 
-(7 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
