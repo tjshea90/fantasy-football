@@ -64,16 +64,19 @@ just relocated off the Table tab since Table stays deleted.)
       early-game alert from Live too (still on Lineups + Advice), removed
       unused `.mu`/`.side`/`.vs` CSS, added `.mu2`/`.halfbox`. Full suite
       green (ckpt 114).
-- [ ] 6. Port the Lineups-tab narrowing from the same branch: show only my
+- [x] 6. Port the Lineups-tab narrowing from the same branch: show only my
       team and this week's opponent (not all ten), with `autoFillTeam` split
       out of `autoFillWeek` so the "re-default" button is scoped to just the
       two shown teams while the other ~8 still auto-fill silently in the
-      background.
-- [ ] 7. Explicitly NOT porting: the other nav-refactor branch's deletion of
+      background. DONE. Updated `test_integration.js`'s button locator (it
+      searched for the literal button text, which no longer exists — now
+      locates the handler itself). Full suite green (ckpt 120).
+- [x] 7. Explicitly NOT porting: the other nav-refactor branch's deletion of
       the Data tab's full matchup editor down to "just set my opponent" — it
       would break standings for every OTHER team, which task 3/4 above need
-      full-league matchup data to compute at all. Recording this here so a
-      future session doesn't wonder why it wasn't ported too.
+      full-league matchup data to compute at all. Recorded here so a future
+      session doesn't wonder why it wasn't ported too. (No code change is
+      the deliverable for this one.)
 - [ ] 8. Full regression pass (13 suites + ES2018 + a real `build.sh`), bump
       VERSION again if warranted, rebuild and re-send the APK to Tj.
 
