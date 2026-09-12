@@ -1547,6 +1547,262 @@
     return wrap;
   }
 
+  /* ---------- WIRE (v2.6, moved to its own tab in v4.8) ----------
+   * Tj: "move everything about free agents to a new tab called wire. keep
+   * all the logic and functions the same, just move it all to its own
+   * section. I don't want to see it in the roster section." This card and
+   * addFreeAgent are unchanged from the Rosters tab they used to sit in —
+   * only the tab that renders them moved.
+   *
+   * Ranked in THIS league's points, which is the only reason to have it: every
+   * waiver list on the internet is computed in scoring where a completion is
+   * worth nothing, and here it is worth a point. */
+  function viewWire(root) {
+    addSafe(root, 'The free-agent board', freeAgentCard);
+  }
+  function freeAgentCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Free agents · week ' + week));
+    var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+    var ups = Value.upgrades(week, S.league.me, opp, 80);
+    if (ups.length) {
+      c.appendChild(el('p', null, ups.length + ' available player' + (ups.length === 1 ? '' : 's') +
+        ' project higher than somebody you are starting:'));
+      ups.slice(0, 6).forEach(function (u) {
+        var r = el('div', 'row');
+        r.appendChild(el('div', 'slot', u.fa.pos));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(u.fa.name));
+        nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' + fmt(u.fa.v) + ' proj — ' +
+          '+' + fmt(u.gain) + ' over ' + u.over.name + ' in your ' + u.over.slot));
+        r.appendChild(nm);
+        var b = el('button', 'btn sm', 'Add');
+        b.addEventListener('click', function () { addFreeAgent(u.fa); });
+        r.appendChild(b);
+        c.appendChild(r);
+      });
+    } else {
+      c.appendChild(el('p', 'muted', 'Nobody on the wire beats a player you are starting this week.'));
+    }
+    /* ---- Claude's read of the wire (v3.4) ------------------------------
+     * The button is here rather than on the Data tab because this is where he
+     * is looking when he wants it. The app has already decided WHO is free and
+     * what they are worth in league points; this call adds only what a stat
+     * line cannot see — who just got hurt ahead of somebody, who just took a
+     * job — and re-ranks the shortlist for THIS roster. */
+    var wcard = el('div');
+    var wsync = el('button', 'btn pri', 'Ask Claude about the wire');
+    var wnote = el('p', 'hint', '');
+    var cached = Value.waiverLoad();
+
+    if (!Ai.configured()) {
+      wsync.disabled = true;
+      wnote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". ' +
+        'Everything above works without one; this only adds the news layer.';
+    } else {
+      wnote.textContent = 'Reads this week\'s waiver-wire and injury news for the ' +
+        'shortlist above, then ranks it for your roster under THIS league\'s ' +
+        'scoring. Public waiver lists are half-PPR standard and are wrong about ' +
+        'quarterbacks here by roughly a factor of two.';
+    }
+    wsync.addEventListener('click', function () {
+      var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var ctx;
+      try {
+        ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season, new Date().toISOString().slice(0, 10));
+      } catch (e) {
+        wnote.textContent = 'Could not build the roster context: ' + (e && e.message ? e.message : e);
+        return;
+      }
+      wsync.disabled = true; wsync.textContent = 'Reading the wire…';
+      jobStart('waivers', 'Claude is reading the waiver wire…');
+      Ai.askWaivers(ctx, function (msg, pct) { jobStep(msg, pct); })
+        .then(function (res) {
+          Value.waiverSave(res);
+          jobEnd();
+          toast('Wire read — ' + res.adds.length + ' adds');
+          render();
+        })['catch'](function (e) {
+          jobEnd();
+          wsync.disabled = false; wsync.textContent = 'Ask Claude about the wire';
+          wnote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
+            '  ·  the ranked board above is unaffected and still works.';
+        });
+    });
+    var wrow = el('div', 'dbrow'); wrow.appendChild(wsync);
+    wcard.appendChild(wrow); wcard.appendChild(wnote);
+    c.appendChild(wcard);
+
+    /* The same round trip as the Advice tab, on the same card component, for
+       the same reason: this is the button that costs money per press, so the
+       free alternative belongs directly beneath it. Note that unlike the API
+       path it works with NO key at all — which is why it is added outside the
+       Ai.configured() branch above. */
+    try {
+      c.appendChild(handoffCard({
+        title: 'Or use the Claude app — no API key, no cost',
+        blurb: 'Makes a file listing every free agent the app has priced in this ' +
+               'league\'s scoring, plus your starting lineup and where it is thin. ' +
+               'Send it to the Claude app with no message of your own; Claude reads ' +
+               'the wire news and ranks it for this roster. Load the reply here and ' +
+               'it fills in the board below.',
+        build: function () {
+          var o = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+          return Handoff.buildWaivers(week, S.league.me, o, S.league.season,
+                                      new Date().toISOString().slice(0, 10));
+        },
+        apply: function (txt) {
+          var o = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+          /* the pool is rebuilt so "was he in the list we sent" is answered
+             against the CURRENT wire, not a stale one — a player signed since
+             the export must not come back marked verified */
+          var wc = Value.waiverContext(week, S.league.me, o, S.league.season,
+                                       new Date().toISOString().slice(0, 10));
+          return Handoff.importReply(txt, { week: week, pool: wc.pool });
+        },
+        status: function () {
+          var cch = Value.waiverLoad();
+          if (!cch || !cch.adds || !cch.adds.length) return '';
+          return 'Currently showing: ' + cch.adds.length + ' add' +
+                 (cch.adds.length === 1 ? '' : 's') + ' from ' +
+                 (cch.model || 'Claude') + ', week ' + (cch.week || '?') + '.';
+        }
+      }));
+    } catch (e) { /* never take the Wire tab down for this */ }
+
+    if (cached && cached.adds && cached.adds.length) {
+      var age = Math.round((Date.now() - (cached.at || 0)) / 3600000);
+      var stale = (cached.week !== week);
+      c.appendChild(el('div', 'subhd', "Claude's read of the wire"));
+      c.appendChild(el('p', stale ? 'warnText' : 'muted',
+        (stale ? 'FROM WEEK ' + cached.week + ' — re-sync for this week. ' : '') +
+        (cached.needs || '') + (cached.summary ? '  ' + cached.summary : '')));
+      /* grouped by position, because that is the question being asked */
+      var seen = {}, order = [];
+      cached.adds.forEach(function (a) {
+        if (!seen[a.pos]) { seen[a.pos] = []; order.push(a.pos); }
+        seen[a.pos].push(a);
+      });
+      order.forEach(function (k) {
+        c.appendChild(el('div', 'subhd', k + ' — Claude'));
+        seen[k].forEach(function (a) {
+          var r = el('div', 'row');
+          r.appendChild(el('div', 'slot', '#' + a.rank));
+          var nm = el('div', 'nm');
+          nm.appendChild(document.createTextNode(a.name));
+          var bits = [a.nfl];
+          if (typeof a.proj === 'number') bits.push(fmt(a.proj) + ' proj');
+          if (a.onBye) bits.push('ON BYE');
+          if (a.overStarter) bits.push('beats ' + a.overStarter);
+          bits.push(a.confidence + ' confidence');
+          nm.appendChild(el('small', null, '  ' + bits.join(' · ') +
+            (a.verified ? '' : '  ·  NOT IN THE APP\'S POOL — check he is actually free') +
+            (a.why ? '  —  ' + a.why : '')));
+          r.appendChild(nm);
+          if (a.verified) {
+            var ab = el('button', 'btn sm', 'Add');
+            ab.addEventListener('click', function () {
+              addFreeAgent({ name: a.name, pos: a.pos, nfl: a.nfl, bye: a.bye });
+            });
+            r.appendChild(ab);
+          }
+          c.appendChild(r);
+        });
+      });
+      c.appendChild(el('p', 'hint',
+        'Read ' + (age < 1 ? 'just now' : age + 'h ago') + ' with ' + (cached.model || 'Claude') +
+        ', ' + cached.searchBudget + ' searches allowed' +
+        (cached.spent && typeof cached.spent.cost === 'number' ? ', about $' + cached.spent.cost.toFixed(3) : '') +
+        '. Availability and the projections come from this app; the news and the ' +
+        'ranking come from Claude. Rows it could not match to the app\'s pool are ' +
+        'marked — verify those on your league site before claiming.'));
+    }
+
+    /* ---- the board, BY POSITION ---------------------------------------
+     * It used to be one list of the top 40 by league points, and it came out
+     * as forty quarterbacks. That was not a data fault: this league pays a
+     * point per completion, so a startable QB is worth about twice a startable
+     * RB, and any single sort across positions puts every QB on top. Nobody
+     * picking up a free agent wants QB1-40. Sections per position, plus one
+     * genuinely comparable mixed ranking on value-over-replacement. */
+    var chips = el('div', 'fchips');
+    ['ALL', 'VALUE'].concat(Value.POS).forEach(function (k) {
+      var b = el('button', 'fchip' + (faPos === k ? ' on' : ''),
+                 k === 'VALUE' ? 'Best value' : (k === 'ALL' ? 'All positions' : k));
+      b.setAttribute('data-fk', 'faChip|' + k);
+      b.setAttribute('aria-pressed', k === faPos ? 'true' : 'false');
+      b.addEventListener('click', function () { faPos = k; render(); });
+      chips.appendChild(b);
+    });
+    c.appendChild(chips);
+
+    var groups = Value.byPos(week, 0);
+    function faRow(f, showPos) {
+      var r2 = el('div', 'row');
+      r2.appendChild(el('div', 'slot', showPos ? f.pos : (f.nfl || f.pos)));
+      var nm2 = el('div', 'nm');
+      nm2.appendChild(document.createTextNode(f.name));
+      var vor = (typeof f.vor === 'number' && f.vor > 0.05)
+        ? '  ·  +' + fmt(f.vor) + ' over the next ' + f.pos + ' on the wire' : '';
+      nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE' : '') +
+        ' · ' + fmt(f.v) + ' proj' + vor + '  (' + f.src + ')' +
+        (f.usage ? '\n' + f.usage : '')));
+      r2.appendChild(nm2);
+      var b2 = el('button', 'btn sm', 'Add');
+      b2.addEventListener('click', function () { addFreeAgent(f); });
+      r2.appendChild(b2);
+      return r2;
+    }
+
+    if (faPos === 'VALUE') {
+      c.appendChild(el('p', 'muted',
+        'Ranked by points above the best free agent at the same position. This ' +
+        'is the only ranking on this screen that compares a QB with a running ' +
+        'back honestly — raw points never can, because a completion pays 1 here.'));
+      Value.byVor(week, 30).forEach(function (f) { c.appendChild(faRow(f, true)); });
+    } else {
+      var show = faPos === 'ALL' ? Value.POS : [faPos];
+      var perPos = faPos === 'ALL' ? 6 : 30;
+      show.forEach(function (k) {
+        var rows = groups[k] || [];
+        if (!rows.length) return;
+        var hd = el('div', 'subhd');
+        hd.textContent = k + '  ·  ' + rows.length + ' available';
+        c.appendChild(hd);
+        rows.slice(0, perPos).forEach(function (f) { c.appendChild(faRow(f, false)); });
+        if (rows.length > perPos && faPos === 'ALL') {
+          var more = el('button', 'btn sm', 'All ' + rows.length + ' ' + k + 's');
+          more.addEventListener('click', function () { faPos = k; render(); });
+          c.appendChild(more);
+        }
+      });
+    }
+    c.appendChild(el('p', 'hint',
+      'Everyone in the bundled player database who is not on one of the ten ' +
+      'rosters, grouped by position and ranked by this league\'s points — ESPN\'s ' +
+      'projected stat line for this week re-scored here where there is one, and ' +
+      'what he has actually scored in this app where there is not. Each row says ' +
+      'which. Adding a player here does not tell your league site anything; do ' +
+      'the real add there.'));
+    return c;
+  }
+  function addFreeAgent(f) {
+    var t = Store.team(S.league.me);
+    if (!t) return;
+    var go = el('button', 'btn pri', 'Add to my roster');
+    go.style.marginBottom = '8px';
+    go.addEventListener('click', function () {
+      Store.addPlayer(S.league.me, { name: f.name, pos: f.pos, nfl: f.nfl, bye: f.bye });
+      if (window.Sim) Sim.invalidate();
+      var back = go.parentNode && go.parentNode.parentNode;
+      if (back && back.parentNode) back.parentNode.removeChild(back);
+      render(); toast('Added ' + f.name);
+    });
+    modal('Add ' + f.name + '?',
+      'This adds him to YOUR roster in this app (' + t.players.length + ' players now). ' +
+      'It does not touch your league site — do the waiver claim there as well.', go);
+  }
+
   function table(head, rows) {
     var t = el('table'), thead = el('thead'), tr = el('tr');
     head.forEach(function (h) { tr.appendChild(el('th', null, h)); });
