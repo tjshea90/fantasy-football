@@ -205,7 +205,7 @@ console.log('\n-- current week only --');
   ok(W.Schedule.get(WEEK + 1) === null,
      'nothing is stored for a week that was never ingested — it does not prefetch the season');
   var m = W.Store.get().weekMeta[String(WEEK)];
-  ok(m && m.games && m.schedAt, 'the schedule is persisted in weekMeta, where Alerts.java can read it');
+  ok(m && m.kickoffs && m.schedAt, 'the schedule is persisted in weekMeta, where Alerts.java can read it');
 }());
 
 console.log('\n-- the app sleeps when it is not on screen --');
