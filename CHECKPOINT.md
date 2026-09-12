@@ -1,12 +1,12 @@
-# CHECKPOINT 91 — read me first, then TASKS.md
+# CHECKPOINT 93 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T05:56:48Z · **version:** 5.1 · **tests:** all 13 suites green
+**Written:** 2026-09-12T06:02:04Z · **version:** 5.1 · **tests:** all 13 suites green
 
 ## Just done
-corrected the build for Tj: per his answer, dropped consideration of porting v5.0's manual-score-entry feature (this branch already deletes Table/League per his original request, so nothing to port). Bumped VERSION 4.7 -> 5.1 by hand (not the normal +0.1 ship.sh bump) specifically to produce a versionCode (501) higher than the v5.0 build already on his phone from the unrelated live-tab-dual-scores-h2nxyf branch — otherwise Android refuses the install as a downgrade. Verified android/debug.keystore is byte-identical across both branches (both descend from the same v4.2-committed keystore), so this signs identically to what's on his phone and should install as a normal update, keeping his existing app data (rosters, week state) intact rather than requiring an uninstall. Rebuilt and reverified: javac/d8 clean, 25/25 classes, signature OK. Sent the v5.1 APK to Tj.
+wrote the branch-reconciliation job into TASKS.md before starting: full investigation of the 3 other unmerged sibling branches is done (android-app-nav-ui-refactor-os6q53 v4.8, resume-logic-claude-code-2ye25r v4.8, live-tab-dual-scores-h2nxyf v5.0), and the merge plan is recorded as 8 concrete steps with what's being ported from where and, just as importantly, what's explicitly NOT being ported and why (their Data-tab matchup-editor simplification would break the standings feature also being ported in).
 
 ## Do this next
-waiting on Tj to confirm the v5.1 APK actually installs over v5.0 on his phone without an uninstall, and to test the nav-refactor features; separately, still waiting on his direction for the 3 other stale unmerged branches and whether main should be fast-forwarded to this branch's work
+start on task 1: port the more robust MainActivity.java back-button handling from android-app-nav-ui-refactor-os6q53 (handles web==null/!pageReady and a thrown bridge call by backgrounding instead of falling through to default finish())
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  69e6b9b ckpt 91: corrected the build for Tj: per his answer, dropped consideration of porting v5
   02511da ckpt 88: CRITICAL BUG FOUND WHILE INVESTIGATING WHY TJ HAS v5.0: 'keepAdj' was reference
   fea715f ckpt 84: job complete and archived: moved the 2026-09-12 request (7/7 items) from TASKS.
   033e178 ckpt 81: verified the build: ran build.sh end-to-end (first run, downloaded the Android 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   3dbbef9 ckpt 50: scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at m
   5d3fb69 ckpt 48: usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (
   1553bac ckpt 45: usage optimisation: bootstrap printed an 851-char JAVA_TOOL_OPTIONS dump into e
-  53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
