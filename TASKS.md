@@ -33,14 +33,20 @@ just relocated off the Table tab since Table stays deleted.)
       `bootstrap.sh` from the same branch (harness runtime file wrongly
       flagged as a stray file on disk). DONE, verified `bash bootstrap.sh`
       runs clean to completion (ckpt 96).
-- [ ] 3. Port the manual weekly-score data layer from `resume-logic-claude-
+- [x] 3. Port the manual weekly-score data layer from `resume-logic-claude-
       code-2ye25r` / `live-tab-dual-scores-h2nxyf`: `Store.manualScores`,
       `getManualScore`/`setManualScore`/`teamWeekScore`, and route
       `seasonTotals` through `teamWeekScore` so a hand-entered score drives
       standings/W-L. (Explicitly keeping `Store.standings`/`seasonTotals`/
       sim.js/recap.js alive to support this — rejecting the OTHER nav-refactor
       twin's choice to delete them as dead code, since they are not dead once
-      this feature exists.)
+      this feature exists.) DONE — also found and fixed a real bug neither
+      source branch had: `importJSON` never defaulted `manualScores` on a
+      restored old backup the way it does every other field, so a restore
+      left it `undefined` and the next call threw. Tested:
+      `node tools/test_integration.js` #14, a real executed test (imports a
+      manualScores-stripped backup, calls setManualScore, asserts no throw)
+      rather than a source-text grep. Full suite green (ckpt 104).
 - [ ] 4. Add the score-entry UI (`weeklyScoresCard`, verbatim logic from the
       v5.0 branch: one row per team but mine, typed final score or blank to
       fall back to the computed lineup total) plus a compact standings table
