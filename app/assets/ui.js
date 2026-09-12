@@ -544,9 +544,17 @@
     for (i = 0; i < t.length; i++) out.push(t[i].getAttribute('data-v'));
     return out;
   }
+  /* Every tab actually visited, in order, so BACK can return to wherever he
+     came from instead of jumping straight to Live — see __onBack below.
+     `fromBack` marks a pop so returning to a tab never re-records it: without
+     that guard, Live -> Lineups -> back -> Lineups -> back would push
+     Lineups right back onto the stack it was just popped from and back would
+     never actually leave Lineups. */
+  var navHistory = [];
   /* The one place a tab change happens, whether it came from a tap or a swipe. */
-  function goTab(name) {
+  function goTab(name, fromBack) {
     if (!name || name === view) return;
+    if (!fromBack) navHistory.push(view);
     scrollMem[view] = curScroll();
     view = name;
     var t = document.querySelectorAll('#tabs .tab'), k;
