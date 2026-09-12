@@ -1101,9 +1101,22 @@
       wrap);
   }
 
-  /* ---------- LINEUPS ---------- */
+  /* ---------- LINEUPS ----------
+   * Tj, to a different session: "only have me and my opponent in it... delete
+   * all the other teams because I will not be entering their lineups." Just
+   * these two teams are shown, resolved off the schedule so it follows him
+   * into a new opponent every week with nothing to configure. The other ~8
+   * teams still auto-fill in the background (autoFillWeek runs for the whole
+   * league regardless of this screen) so whichever of them rotates in as a
+   * future opponent already has a lineup ready — he never has to touch them
+   * here. */
   function viewLineups(root) {
     addSafe(root, 'The early-game alert', earlyGameCard);
+    var mine = Store.team(S.league.me), them = null;
+    Store.getMatchups(week).forEach(function (pair) {
+      if (pair[0] === S.league.me) them = Store.team(pair[1]);
+      else if (pair[1] === S.league.me) them = Store.team(pair[0]);
+    });
     var head = el('div', 'card');
     head.appendChild(el('h2', null, 'Week ' + week + ' lineups'));
     head.appendChild(el('p', 'muted',
