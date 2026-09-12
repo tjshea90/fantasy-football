@@ -377,3 +377,76 @@ finished job cost ~720 tokens per session to re-read forever.
 
 ### 6. Listed, not built — needs his say-so
 - [x] 6a. See the end of RELEASE_NOTES.md. Three candidates, none started.
+
+
+## 19. The 2026-09-12 request (archived from TASKS.md, complete 7/7)
+
+> "for this app , when I press the back button on android navigation, it
+>  closes the app. instead, make it go back to the last thing inside the app.
+>  the back button should never close the app.
+>
+>  when I press a player to see his stats, the android keyboard automatically
+>  appears because of the manual adjustment feature and its number field. make
+>  it so a number field and the adjustment feature only comes up if I press a
+>  button that says adjust.
+>
+>  get rid of the table and league sections entirely (the "table" and
+>  "league" tabs at the bottom of the app and the sections they open). I
+>  don't use these at all. delete the tabs and everything inside.
+>
+>  the weekly matchups between teams other than mine I don't care about. the
+>  focus of the app is my team vs my opponent every week and my roster and
+>  advice. the only thing I care about for other managers is their rosters so
+>  I know what players are taken or still available. so do not waste any data
+>  or resources on other fantasy managers weekly matchups. focus on mine vs
+>  my opponent for each week.
+>
+>  for the roster section, instead of one long vertical scrolling section,
+>  organize the teams into tabs so i can click on each team and see their
+>  roster and make changes to it if needed.
+>
+>  move everything about free agents to a new tab called wire. keep all the
+>  logic and functions the same, just move it all to its own section. I
+>  don't want to see it in the roster section.
+>
+>  if any of this affects the data tab or the relevance of anything inside
+>  the data tab, fix it accordingly."
+
+Not yet released as a numbered version — build.sh was run to confirm it
+compiles and packages (APK builds, 25/25 classes, signed OK) but `ship.sh`
+(the STATE.md/manifest/version gate) has not been run for this batch.
+Archived here anyway per the working agreement (TASKS.md is reprinted into
+every session briefing) since all seven items are written, tested and
+committed. Full detail in TASKS.md's commit history (ckpt 61, 80, 81).
+
+- [x] 19a. Android back button unwinds a real tab-visit trail (`navHistory` in
+      ui.js) instead of jumping straight to Live, and MainActivity now calls
+      `moveTaskToBack(true)` instead of `finish()` when the trail is empty —
+      back can no longer close the app. → `test_lifecycle.js`, `test_gestures.js`
+- [x] 19b. showPlayer's manual-adjustment number field no longer auto-focuses
+      (the real bug: `dialog()` auto-focuses the first input/button, and the
+      number field used to be first). Hidden behind a new "Adjust" button;
+      the field and its controls only enter the DOM once tapped.
+- [x] 19c. Table (Standings) and League tabs deleted entirely — the two tab
+      buttons, both `render()` dispatch cases, `viewStandings`, `viewLeague`,
+      `recapCard`, `playoffCard`, `pct()`. The underlying sim.js/recap.js/
+      store.js engine functions they called are left in place — nothing in
+      the UI calls them anymore, but they're still directly unit-tested as
+      library code (test_integration.js's robustness sweep, test_engine.js).
+- [x] 19d. Live tab now renders only my-team-vs-opponent — deleted the loop
+      over every other pairing's matchup card, the "Not in a matchup this
+      week" scoreboard, and the now-dead `matchupCard`/`teamWeekRow`.
+- [x] 19e. Rosters tab restructured: one chip-tab per team (`.fchips`/
+      `.fchip`, the same style the free-agent filter already used), showing
+      one team's roster at a time via `teamRosterCard()`, instead of all ten
+      stacked in one scroll. Defaults to Tj's own team.
+- [x] 19f. New Wire tab. `freeAgentCard`/`addFreeAgent` moved verbatim (same
+      code, same logic) out of Rosters into a new `viewWire`.
+- [x] 19g. Data tab audited for anything referencing the deleted tabs or the
+      old layout: found and fixed one stale offline-sync toast that still
+      named "standings, the League tab"; the matchup editor, player database
+      tools and diagnostics needed no changes.
+- [x] 19h. Full 13-suite regression pass, ES2018 clean, and `build.sh` run
+      end-to-end (first SDK download in this environment) to confirm the
+      MainActivity.java change actually compiles — the JS suite can't check
+      that. APK built and signed clean.
