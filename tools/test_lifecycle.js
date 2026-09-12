@@ -303,7 +303,7 @@ console.log('\n-- the sleep contract, in the source --');
  * Until now nothing in the suite executed a single view function. ui.js is
  * 145 KB and almost all of it is render code, so "the file evaluates and
  * boot() survives" was proving very little about the app Tj opens. This walks
- * all seven tabs through the real click handler, which is the same path a
+ * every tab through the real click handler, which is the same path a
  * swipe now takes, and fails on the first one that throws.
  *
  * render() catches per-screen errors and paints a card instead, so a throw
