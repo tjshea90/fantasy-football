@@ -1148,37 +1148,49 @@
      * the defaults back, and every hand-edit he makes marks that slot manual,
      * so the more changes he made the more certainly the button did nothing.
      * The per-team "Reset to auto" fifty lines below had it right all along:
-     * it calls clearManual FIRST. This is now the same operation across all
-     * ten teams, which is what its name has always claimed.
+     * it calls clearManual FIRST. This is now the same operation across every
+     * team this screen shows.
      *
      * It asks first, because discarding hand-picks is exactly the kind of
      * thing that must not happen on a mis-tap — and unlike the old version, it
-     * can now say how many picks are at stake. */
-    var refill = el('button', 'btn'); refill.textContent = 'Re-default all teams now';
+     * can now say how many picks are at stake.
+     *
+     * Scoped to just the two teams this screen shows: Tj said he will never
+     * enter a lineup for any team but his own and this week's opponent, so a
+     * button that reset all ten was resetting eight teams he cannot even see
+     * here. The other eight still auto-fill on their own every week
+     * (autoFillWeek runs for the whole league regardless of this screen) —
+     * this button just no longer touches them. */
+    var shown = [mine]; if (them) shown.push(them);
+    var refill = el('button', 'btn');
+    refill.textContent = them ? 'Re-default both lineups now' : 'Re-default my lineup now';
     refill.style.marginTop = '8px';
     refill.addEventListener('click', function () {
       var manual = 0;
-      S.teams.forEach(function (t) {
+      shown.forEach(function (t) {
         var M = (S.lineupManual[String(week)] || {})[t.id] || {}, k;
         for (k in M) if (Object.prototype.hasOwnProperty.call(M, k)) manual++;
       });
       function go() {
-        S.teams.forEach(function (t) { Store.clearManual(week, t.id); });
+        shown.forEach(function (t) { Store.clearManual(week, t.id); });
         var was = S.settings.autoFill;
         S.settings.autoFill = true;
-        var n = autoFillWeek(week);
+        var n = 0;
+        shown.forEach(function (t) { n += autoFillTeam(week, t.id); });
         S.settings.autoFill = was;
         if (window.Sim) Sim.invalidate();
         render();
         toast(n ? (n + ' slot' + (n === 1 ? '' : 's') + ' updated'
                      + (manual ? ' · ' + manual + ' of your picks replaced' : ''))
-                : 'Every team already holds its recommended lineup');
+                : (shown.length > 1 ? 'Both teams already hold their recommended lineup'
+                                     : 'Your team already holds its recommended lineup'));
       }
       if (!manual) { go(); return; }
-      confirmModal('Re-default all ten teams?',
+      confirmModal('Re-default ' + (shown.length > 1 ? 'both lineups' : 'your lineup') + '?',
         'You have hand-picked ' + manual + ' slot' + (manual === 1 ? '' : 's') +
-        ' in week ' + week + '. Re-defaulting throws those away and fills every ' +
-        'team with the best projected legal lineup instead.\n\n' +
+        ' in week ' + week + '. Re-defaulting throws ' + (manual === 1 ? 'it' : 'those') +
+        ' away and fills ' + (shown.length > 1 ? 'both teams' : 'your team') +
+        ' with the best projected legal lineup instead.\n\n' +
         'Nothing else is touched — rosters, scores and matchups all stay as they ' +
         'are, and you can change any slot straight back afterwards.\n\n' +
         'Any player whose game has already kicked off keeps his slot. Re-' +
@@ -1188,11 +1200,14 @@
     });
     head.appendChild(refill);
     root.appendChild(head);
-    /* my team first — it is the only one he edits weekly */
-    var mine = null, rest = [];
-    S.teams.forEach(function (t) { if (t.id === S.league.me) mine = t; else rest.push(t); });
-    if (mine) root.appendChild(lineupCard(mine));
-    rest.forEach(function (t) { root.appendChild(lineupCard(t)); });
+    root.appendChild(lineupCard(mine));
+    if (them) root.appendChild(lineupCard(them));
+    else {
+      var nc = el('div', 'card');
+      nc.appendChild(el('h2', null, 'No opponent set for week ' + week));
+      nc.appendChild(el('p', 'muted', 'Add this week\'s matchup on the Data tab to see their lineup here.'));
+      root.appendChild(nc);
+    }
   }
   function lineupCard(t) {
     var c = el('div', 'card' + (t.id === S.league.me ? ' me' : ''));
