@@ -862,9 +862,11 @@
     $('syncBtn').disabled = busy;
   }
 
-  /* The canary is worthless in a log nobody opens, so it is the first thing on
-     the Live tab in red. It only appears when a sync actually saw something
-     wrong — a renamed scoring column, or coverage that collapsed. */
+  /* The canary is worthless in a log nobody opens, so it is the first thing
+     on the Data tab in red — moved off Live when that tab was cut down to
+     just the my-vs-opponent scoreboard (v5.2). It only appears when a sync
+     actually saw something wrong — a renamed scoring column, or coverage
+     that collapsed. */
   function feedWarnBanner() {
     var wm = S.weekMeta[String(week)];
     if (!wm || !wm.feedWarn) return null;
@@ -876,76 +878,71 @@
     return c;
   }
 
-  /* ---------- LIVE ---------- */
+  /* ---------- LIVE ----------
+   * Tj, to a different session: "the only thing I want on the live tab is my
+   * team roster... and the points calculated in real time on one side... and
+   * on the other side my opponent's points... nothing else should be in the
+   * live tab." So this is ONLY the my-vs-opponent card — no feed-warning
+   * banner (moved to Data), no early-game alert (stays on Lineups, where he
+   * still edits a roster), no other matchups, no idle-teams list. He only
+   * cares about his own matchup and never scrolls past anything to find it,
+   * because there is nothing else on the screen. */
   function viewLive(root) {
-    var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
-    /* the pre-Sunday alert goes ABOVE everything on all three lineup-facing
-       screens — it is time-critical and it is the one thing Tj said he forgets */
-    addSafe(root, 'The early-game alert', earlyGameCard);
     var mus = Store.getMatchups(week);
-    if (!mus.length) {
-      var c = el('div', 'card');
-      c.appendChild(el('h2', null, 'No matchups for week ' + week));
-      c.appendChild(el('p', 'muted', 'Add them on the Data tab, or below.'));
-      var b = el('button', 'btn pri', 'Set up week ' + week + ' matchups');
-      b.addEventListener('click', function () { goTab('data'); });
-      c.appendChild(b); root.appendChild(c);
-    }
-    /* Tj: "the weekly matchups between teams other than mine I don't care
-       about... focus on mine vs my opponent for each week." The other
-       pairings' live cards and the "not in a matchup" scoreboard used to
-       render here too — pure other-manager weekly-scoring noise he never
-       asked for — so this tab now builds and shows exactly one matchup. */
     var mine = null;
     mus.forEach(function (pair) {
       if (pair[0] === S.league.me || pair[1] === S.league.me) mine = pair;
     });
-    if (mine) {
-      var me = mine[0] === S.league.me ? mine[0] : mine[1];
-      var them = mine[0] === S.league.me ? mine[1] : mine[0];
-      root.appendChild(myMatchupCard(me, them));
+    if (!mine) {
+      var c = el('div', 'card');
+      c.appendChild(el('h2', null, 'No opponent set for week ' + week));
+      c.appendChild(el('p', 'muted', 'Add this week\'s matchup on the Data tab.'));
+      var b = el('button', 'btn pri', 'Set up week ' + week + ' matchup');
+      b.addEventListener('click', function () { goTab('data'); });
+      c.appendChild(b); root.appendChild(c);
+      return;
     }
+    var me = mine[0] === S.league.me ? mine[0] : mine[1];
+    var them = mine[0] === S.league.me ? mine[1] : mine[0];
+    root.appendChild(myMatchupCard(me, them));
   }
-  /* The headline card: my team against my opponent, both lineups open, with
-     what is still to play on each side — because a 12-point deficit with four
-     starters yet to play is a completely different situation from the same
-     deficit with none. */
+  /* The headline section: my team's live score on the left, my opponent's on
+     the right, as two separate boxes rather than one merged card — each is
+     self-contained (name, live total, its own open lineup) so either can be
+     read, and tapped into, without the other. A shared banner above still
+     says who is leading, because that comparison belongs to neither side
+     alone. Every player row in BOTH boxes is tappable (via lineupDetail ->
+     showPlayer), which is what shows the live stat line behind a score. */
   function myMatchupCard(meId, oppId) {
     var A = Store.team(meId), B = Store.team(oppId);
     var ra = Store.teamWeekPoints(week, meId), rb = Store.teamWeekPoints(week, oppId);
-    var c = el('div', 'card me');
-    c.appendChild(el('h2', null, 'Your matchup · week ' + week));
-    var mu = el('div', 'mu');
-    [[A, ra, rb], [null, null, null], [B, rb, ra]].forEach(function (x) {
-      if (!x[0]) { mu.appendChild(el('div', 'vs', 'vs')); return; }
-      var s = el('div', 'side' + (x[1].total > x[2].total ? ' win' : ''));
-      s.appendChild(el('div', 'nm', x[0].name));
-      s.appendChild(el('div', 'pt', fmt(x[1].total)));
-      var yet = x[1].detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
-      s.appendChild(el('div', 'sub', yet + ' yet to play'));
-      mu.appendChild(s);
-    });
-    c.appendChild(mu);
-
+    var wrap = el('div');
+    var head = el('div', 'card me');
+    head.appendChild(el('h2', null, 'Your matchup · week ' + week));
     var diff = ra.total - rb.total;
     var banner = el('div', 'banner' + (diff > 0 ? ' good' : (diff < 0 ? ' bad' : '')));
     banner.textContent = diff === 0 ? 'Level' :
       (diff > 0 ? 'You lead by ' + fmt(diff) : 'You trail by ' + fmt(-diff));
-    c.appendChild(banner);
+    head.appendChild(banner);
+    wrap.appendChild(head);
 
-    var mineYet = ra.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; });
-    var theirYet = rb.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; });
-    var note = el('p', 'muted');
-    note.textContent = mineYet.length || theirYet.length
-      ? ('Still to play — you: ' +
-         (mineYet.length ? mineYet.map(function (d) { return d.player ? d.player.name : d.slot; }).join(', ') : 'nobody') +
-         ' · them: ' +
-         (theirYet.length ? theirYet.map(function (d) { return d.player ? d.player.name : d.slot; }).join(', ') : 'nobody'))
-      : 'Every starter on both sides has a stat line for this week.';
-    c.appendChild(note);
-
-    c.appendChild(openLineup(A, ra));
-    c.appendChild(openLineup(B, rb));
+    var cols = el('div', 'mu2');
+    cols.appendChild(liveScoreBox(A, ra, true));
+    cols.appendChild(liveScoreBox(B, rb, false));
+    wrap.appendChild(cols);
+    return wrap;
+  }
+  /* One team's live score box: name, running total, how many starters are
+     still to play, then that team's lineup — open, and every row tappable
+     for the live stat breakdown behind its points. Used for both halves of
+     the split Live-tab matchup, mine and my opponent's alike. */
+  function liveScoreBox(team, res, isMine) {
+    var c = el('div', 'card halfbox' + (isMine ? ' me' : ''));
+    c.appendChild(el('h2', null, team.name));
+    c.appendChild(el('div', 'bigfig', fmt(res.total)));
+    var yet = res.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
+    c.appendChild(el('div', 'sub muted', yet + ' yet to play'));
+    c.appendChild(openLineup(team, res));
     return c;
   }
   function openLineup(team, res) {
