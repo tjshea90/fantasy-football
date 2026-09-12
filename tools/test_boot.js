@@ -318,6 +318,13 @@ var siR = fs.readFileSync('app/assets/sim.js', 'utf8');
 var aiR2 = fs.readFileSync('app/assets/ai.js', 'utf8');
 ok(/keepAdj\[pid\]/.test(uiR),
    'a hand-entered adjustment survives a sync (the live poll wiped it every 45s)');
+/* This regex alone passed for a long time while `keepAdj` was never
+   DECLARED — the usage site above matched, so every sync threw a
+   ReferenceError on the first player, and the test still went green. A
+   pattern check on the read site without one on the write site is the same
+   hole the v3.10 review already burned once. */
+ok(/var keepAdj = \{\}/.test(uiR),
+   'keepAdj is actually declared — v4.9 fix for a ReferenceError that crashed every sync');
 ok(/S\.settings\.pidHigh/.test(stR),
    'player ids come from a persisted high-water mark, so a dropped id is never reused');
 ok(/_pidIndex/.test(stR), 'playerById is an index, not a scan of a freshly built array');
