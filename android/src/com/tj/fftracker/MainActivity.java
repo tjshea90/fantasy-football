@@ -142,9 +142,18 @@ public class MainActivity extends Activity {
   // open or which tab is showing. __onBack() returns "1" if it handled the
   // press. evaluateJavascript is asynchronous, so the decision cannot be made
   // inline — instead the press is swallowed, the page is asked, and if it says
-  // it did nothing the activity is finished from the callback. That costs one
-  // frame and is invisible; the alternative is a synchronous bridge call,
-  // which is the one thing this app does not do.
+  // it did nothing the activity backgrounds itself from the callback. That
+  // costs one frame and is invisible; the alternative is a synchronous bridge
+  // call, which is the one thing this app does not do.
+  //
+  // Tj: "the back button should never close the app." __onBack() now unwinds
+  // a real tab-visit history (ui.js's navHistory) before it ever runs out, so
+  // reaching this point means he is already at the one tab with nothing
+  // behind it. Even then this used to call finish(), which tears the
+  // Activity down — the next launch is a cold start, seed reload and all.
+  // moveTaskToBack behaves like pressing Home instead: the process and its
+  // WebView stay alive, onPause/onStop above already make it sleep properly,
+  // and reopening the app is instant because nothing was ever destroyed.
   private long lastBackAsk = 0;
   @Override public boolean onKeyDown(int code, KeyEvent e) {
     if (code == KeyEvent.KEYCODE_BACK && web != null && pageReady) {
