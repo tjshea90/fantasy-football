@@ -20,16 +20,19 @@ score-entry feature specifically — dropping the now-deleted Table tab that
 carried it. "Merge it all" reopens that: the feature is being ported back in,
 just relocated off the Table tab since Table stays deleted.)
 
-- [ ] 1. Port the more robust Android back-button handling from
+- [x] 1. Port the more robust Android back-button handling from
       `android-app-nav-ui-refactor-os6q53`'s `MainActivity.java`: my version
       falls through to `super.onKeyDown()` (i.e. default `finish()`) when
       `web` is null, the page isn't ready yet, or the bridge call itself
       throws — three narrow windows where "never closes the app" doesn't
       actually hold. Their version backgrounds (`moveTaskToBack`) in all
-      three cases instead.
-- [ ] 2. Port the `.claude/scheduled_tasks.lock` false-positive fix in
+      three cases instead. DONE, verified `node tools/test_gestures.js`
+      still green (checks MainActivity no longer calls finish()) + full
+      suite (ckpt 96).
+- [x] 2. Port the `.claude/scheduled_tasks.lock` false-positive fix in
       `bootstrap.sh` from the same branch (harness runtime file wrongly
-      flagged as a stray file on disk).
+      flagged as a stray file on disk). DONE, verified `bash bootstrap.sh`
+      runs clean to completion (ckpt 96).
 - [ ] 3. Port the manual weekly-score data layer from `resume-logic-claude-
       code-2ye25r` / `live-tab-dual-scores-h2nxyf`: `Store.manualScores`,
       `getManualScore`/`setManualScore`/`teamWeekScore`, and route
