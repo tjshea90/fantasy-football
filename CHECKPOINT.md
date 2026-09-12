@@ -1,12 +1,12 @@
-# CHECKPOINT 81 — read me first, then TASKS.md
+# CHECKPOINT 84 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T05:42:25Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-12T05:43:24Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-verified the build: ran build.sh end-to-end (first run, downloaded the Android SDK) after the MainActivity.java back-button change — javac compiled clean, d8 confirmed every source file produced a class (25/25), APK signed OK at build/app-release.apk (210K). This is the one change the JS test suite cannot check (it's Node, not a real compiler), so it needed a real build to trust it.
+job complete and archived: moved the 2026-09-12 request (7/7 items) from TASKS.md into LADDER.md §19 with what proves each one, reset TASKS.md to the no-active-job placeholder plus a new 'try it on the phone' item under Waiting on Tj. Nothing left queued.
 
 ## Do this next
-job finished — all 7 of Tj's requested items done, tested, committed and now build-verified. Tell Tj to try it on the phone: the back button, the Adjust button on a player's stat card, the Roster team tabs, and the new Wire tab. Nothing else queued in TASKS.md.
+waiting on Tj to try the phone build and report back; no active job — next session should just re-read CHECKPOINT.md and confirm nothing new is queued in TASKS.md
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  033e178 ckpt 81: verified the build: ran build.sh end-to-end (first run, downloaded the Android 
   26dc8b6 ckpt 80: tasks 3-7 done: deleted the Table/League tabs and their view code entirely (vie
   21fd85f ckpt 61: task 1 done: Android back button now unwinds a real tab-visit history (ui.js na
   84cdb98 ckpt 52: wrote Tj's new nav/UI overhaul request into TASKS.md verbatim before starting (
@@ -35,5 +36,7 @@ request in his own words and `git log` carries every step already taken.
   53c689e ckpt 44: reverted the end-to-end handoff test: it simulated a cap landing mid-edit, push
   07d0984 ckpt 42: wrote Tj's new request into TASKS.md before starting
   87b5bba ckpt 41: audit fix: a failing push was completely silent — autosave committed locally,
-  678787a ckpt 39: added PreCompact hook (tools/toobig.sh): when a session grows big enough to aut
 ```
+
+(2 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)
