@@ -1,12 +1,12 @@
-# CHECKPOINT 96 — read me first, then TASKS.md
+# CHECKPOINT 104 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T06:03:13Z · **version:** 5.1 · **tests:** all 13 suites green
+**Written:** 2026-09-12T06:06:06Z · **version:** 5.1 · **tests:** all 13 suites green
 
 ## Just done
-reconciliation tasks 1-2 done: ported the more robust MainActivity.java back-button handling from android-app-nav-ui-refactor-os6q53 (backgrounds instead of falling through to default finish() when web is null, the page isn't ready, or the bridge call itself throws -- 3 real gaps in the first cut of this fix); ported the .claude/scheduled_tasks.lock false-positive fix into bootstrap.sh from the same branch. Full suite green, bootstrap.sh runs clean.
+reconciliation task 3 done: ported the manual weekly-score data layer into store.js from resume-logic-claude-code-2ye25r/live-tab-dual-scores-h2nxyf -- S.manualScores, getManualScore/setManualScore/teamWeekScore, seasonTotals routed through teamWeekScore so a hand-entered score drives win/loss. Also found and fixed a real bug the source branches both had: importJSON() defaults every other pre-existing field (lineupManual, stats, book...) onto an old backup being restored but was never updated to default manualScores too, so restoring an old backup left S.manualScores undefined and the next setManualScore/getManualScore call would throw. Added 'if (!o.manualScores) o.manualScores = {}' to match the established pattern. Added a real executed test (test_integration.js #14) that actually imports a manualScores-stripped backup and calls setManualScore afterward, rather than another source-text regex -- this is the same shape of gap as the keepAdj crash found earlier this session, so it earned a real test, not a grep.
 
 ## Do this next
-task 3 next: port the manual weekly-score data layer into store.js (S.manualScores, getManualScore/setManualScore/teamWeekScore, seasonTotals routed through teamWeekScore) from resume-logic-claude-code-2ye25r / live-tab-dual-scores-h2nxyf
+task 4 next: relocate the weeklyScoresCard UI (verbatim from the source branches) plus a compact standings table onto the Data tab, since the Table tab that used to host both is deleted
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  eb7e0b0 ckpt 96: reconciliation tasks 1-2 done: ported the more robust MainActivity.java back-bu
   fc43689 ckpt 93: wrote the branch-reconciliation job into TASKS.md before starting: full investi
   69e6b9b ckpt 91: corrected the build for Tj: per his answer, dropped consideration of porting v5
   02511da ckpt 88: CRITICAL BUG FOUND WHILE INVESTIGATING WHY TJ HAS v5.0: 'keepAdj' was reference
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   21fd85f ckpt 61: task 1 done: Android back button now unwinds a real tab-visit history (ui.js na
   84cdb98 ckpt 52: wrote Tj's new nav/UI overhaul request into TASKS.md verbatim before starting (
   3dbbef9 ckpt 50: scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at m
-  5d3fb69 ckpt 48: usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(7 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
