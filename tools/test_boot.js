@@ -488,7 +488,10 @@ ok(/wrong merge is far more/.test(nmH),
  * checks the actual outcome: equal-or-higher specificity, and (for an exact
  * tie) declared later in the file, which is what actually decides a tie. */
 (function () {
-  var css = fs.readFileSync('app/assets/app.css', 'utf8');
+  /* comments stripped first — the fix's own comment quotes the old,
+     buggy selector as an example, which would otherwise be the first
+     ".scoreInput{" match in the file */
+  var css = fs.readFileSync('app/assets/app.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   function specificity(sel) {
     var ids = (sel.match(/#[\w-]+/g) || []).length;
     var classesEtc = (sel.match(/\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+/g) || []).length;
