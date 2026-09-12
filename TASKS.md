@@ -49,21 +49,66 @@
       get built into the DOM after that button is tapped. Tested: full suite
       green, incl. `tools/test_lifecycle.js`'s "every screen renders" walk
       which exercises player cards; committed (ckpt 61).
-- [ ] 3. Delete the "Table" and "League" bottom tabs entirely, plus all
-      their section code/views/logic, from the app.
-- [ ] 4. Stop computing/storing/displaying weekly matchup data for manager
+- [x] 3. Delete the "Table" and "League" bottom tabs entirely, plus all
+      their section code/views/logic, from the app — DONE: removed both
+      `<button data-v="standings">`/`<button data-v="league">` from
+      index.html's `#tabs`, removed their `render()` dispatch cases, and
+      deleted `viewStandings`, `viewLeague`, `recapCard`, `playoffCard` and
+      `pct()` from ui.js (the shared `table()` helper they used is kept —
+      Advice/Roster/trade cards still use it). Left the underlying engine
+      modules (sim.js's season/power/regret/positionCV/matchup, recap.js's
+      build/text, Store.standings) in place since they're still directly
+      unit-tested as library functions (test_integration.js's robustness
+      sweep, test_engine.js, test_boot.js) — nothing calls them from the UI
+      anymore, so no resources are spent on them, but deleting tested code
+      nobody asked to delete would be scope creep. Tested: full suite green
+      (removed 3 test_boot.js assertions that checked hot-path patterns
+      *inside* the deleted screens — they were asserting dead code, not
+      testing behavior; see the comment left in their place).
+- [x] 4. Stop computing/storing/displaying weekly matchup data for manager
       pairings other than "my team vs my opponent." Keep other managers'
       rosters (for taken/available player status) but drop their
-      week-to-week matchup tracking to avoid wasting data/resources.
-- [ ] 5. Roster section: replace the single long vertical scroll of all
+      week-to-week matchup tracking to avoid wasting data/resources — DONE:
+      viewLive (ui.js) now builds only `myMatchupCard` for the week; deleted
+      the `rest.forEach(matchupCard)` loop over every other pairing, the
+      "Not in a matchup this week" idle-teams scoreboard, and the now-dead
+      `matchupCard`/`teamWeekRow` functions. (The League tab's "the rest of
+      the week" table and season-wide sims were also the other half of this
+      — gone with task 3.) Data tab's matchup editor (add/remove/generate
+      the schedule) was deliberately left alone: that's schedule-structure
+      admin, not a weekly analysis of other managers, and it's how the app
+      knows who "my opponent" even is. Tested: full suite green, incl. the
+      "every screen renders" walk on Live.
+- [x] 5. Roster section: replace the single long vertical scroll of all
       teams with per-team tabs — click a team to view/edit that team's
-      roster.
-- [ ] 6. Create a new "Wire" tab and move all free-agent functionality
+      roster — DONE: `viewRosters` (ui.js) now renders the trade evaluator
+      once, then a chip row (one per team, reusing the `.fchips`/`.fchip`
+      style the free-agent position filter already used) that picks
+      `rosterSel`; only the selected team's roster card renders, built by
+      the new `teamRosterCard(t)` helper (same drop-button/add-player-form
+      logic as before, just extracted). Defaults to Tj's own team first.
+      Tested: full suite green, incl. "every screen renders" clicking
+      through Rosters.
+- [x] 6. Create a new "Wire" tab and move all free-agent functionality
       there verbatim (same logic/functions, just relocated). Remove free
-      agents from the roster section entirely.
-- [ ] 7. Audit the Data tab for anything that referenced Table/League tabs,
+      agents from the roster section entirely — DONE: added `data-v="wire"`
+      to index.html's tab bar, added `view === 'wire'` to render()'s
+      dispatch, added `viewWire(root)` in ui.js. `freeAgentCard` and
+      `addFreeAgent` are byte-for-byte the same code, physically moved to a
+      new WIRE section (after `manualRow`, before `table()`) and now called
+      only from `viewWire` — `viewRosters` no longer references them at
+      all. Tested: full suite green, incl. "every screen renders" clicking
+      through Wire.
+- [x] 7. Audit the Data tab for anything that referenced Table/League tabs,
       other-managers'-matchups data, or the old roster/free-agent layout,
-      and fix/update it to match the new structure.
+      and fix/update it to match the new structure — DONE: grepped ui.js for
+      `standings`/`league`/`Sim.`/`Recap.`/`playoffCard`/`Table`/`League tab`
+      after the deletions; found and fixed one stale offline-sync toast that
+      said "Scores, standings, the League tab and advice... still work" (now
+      says "Scores, your roster and advice..."). The Data tab's matchup
+      editor, player database tools, scoring/AI/usage cards and screen-fit
+      diagnostics don't reference the deleted tabs or the old roster/free-
+      agent layout and needed no changes. Tested: full suite green.
 
 Ticking a box means: written, tested, committed, and the test that proves it is
 named in the box. **Never tick a box you have not verified** — the next account
