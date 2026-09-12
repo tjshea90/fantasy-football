@@ -107,6 +107,9 @@
       stats: {},        /* week -> playerId -> stat line */
       weekMeta: {},     /* week -> {synced, games, flags} */
       lineupManual: {},  /* week -> teamId -> {slotKey: 1} — slots Tj set himself */
+      manualScores: {},  /* week -> teamId -> a hand-entered final point total,
+                            for a team whose lineup is not tracked in this app
+                            (see Store.setManualScore) */
       book: {},         /* week -> normName -> compact line for EVERY player (see setBook) */
       transactions: [],
       settings: defaults(seed)
