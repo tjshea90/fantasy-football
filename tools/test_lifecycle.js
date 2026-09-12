@@ -354,8 +354,9 @@ console.log('\n-- gestures are wired to the real tab order --');
 (function () {
   ok(!!W.Gestures, 'gestures.js loaded alongside the rest');
   /* The swipe order must be the bar's order. Reading it from the DOM is what
-     makes that true by construction; assert the stub sees the same seven. */
-  ok(tabEls.length === 7, 'seven tabs in the bar');
+     makes that true by construction; assert the stub sees the same tabs as
+     TAB_NAMES (Table and League are gone, Wire is new — v4.8). */
+  ok(tabEls.length === TAB_NAMES.length, TAB_NAMES.length + ' tabs in the bar');
   var pauseErr = null;
   try { W.__appPause(); W.__appResume(); } catch (e) { pauseErr = e; }
   ok(!pauseErr, 'pause/resume still clean now that they also toggle gestures' +
