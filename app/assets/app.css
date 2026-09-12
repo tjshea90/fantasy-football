@@ -95,8 +95,17 @@ select,input[type=text],input[type=number]{width:100%;background:var(--panel2);
 select:disabled{opacity:.5}
 /* the per-team weekly score box on the Data tab's weekly-scores card — fixed
    width so it sits at the end of a name row instead of claiming the full
-   row like every other input in the app */
-.scoreInput{width:76px;text-align:right;flex:none}
+   row like every other input in the app.
+   `input.scoreInput`, NOT `.scoreInput`: the base rule above is
+   `input[type=number]`, which — attribute selector plus the element itself —
+   outweighs a bare class selector (specificity (0,1,1) vs (0,1,0)) no matter
+   which rule comes later in the file. `.scoreInput{width:76px}` alone never
+   actually won that fight, so the box rendered at the base rule's
+   width:100%, filled the whole row, and squeezed the team-name label next to
+   it down to nothing. Matching the element in the selector ties the
+   specificity, and this rule being the LATER one in the file is what wins
+   the tie. */
+input.scoreInput{width:76px;text-align:right;flex:none}
 /* A slot whose player has already kicked off. NOT disabled: Tj can still
    correct it to match RTSports, and the change handler asks first. Dimmed and
    flagged so he can see at a glance which decisions are still live. */
