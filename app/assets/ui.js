@@ -1071,13 +1071,23 @@
        decided across every game and not always resolvable, and a rare
        mis-parse. It survives a re-sync because it lives on the stat line, and
        it always shows up as its own labelled row so nothing is ever silently
-       fudged. */
+       fudged.
+       Tj: "when I press a player to see his stats, the android keyboard
+       automatically appears because of the manual adjustment feature and its
+       number field." dialog() focuses the first input/button it finds in the
+       modal, and a number input WAS the first thing here — so opening any
+       already-scored player's card popped the keyboard uninvited. The field
+       now only exists in the DOM once "Adjust" is pressed, which is a
+       deliberate tap and earns the keyboard it summons. */
     var wrap = el('div');
-    wrap.appendChild(el('label', 'f', 'Manual adjustment (points)'));
+    var adjBtn = el('button', 'btn', 'Adjust');
+    var form = el('div'); form.hidden = true;
+    form.style.marginTop = '8px';
+    form.appendChild(el('label', 'f', 'Manual adjustment (points)'));
     var inp = el('input'); inp.type = 'number'; inp.step = '0.5';
     inp.value = String(Number(line.manualAdj) || 0);
     inp.style.width = '100%';
-    wrap.appendChild(inp);
+    form.appendChild(inp);
     var row = el('div', 'kv'); row.style.marginTop = '8px';
     [['+5 longest play', 5], ['−5', -5], ['Clear', 0]].forEach(function (b) {
       var btn = el('button', 'btn sm', b[0]);
@@ -1086,7 +1096,7 @@
       });
       row.appendChild(btn);
     });
-    wrap.appendChild(row);
+    form.appendChild(row);
     var save = el('button', 'btn pri', 'Save adjustment');
     save.style.marginTop = '8px';
     save.addEventListener('click', function () {
@@ -1094,7 +1104,14 @@
       Store.save(); render();
       toast(rec.player.name + ' adjusted to ' + fmt(Scoring.score(line).total));
     });
-    wrap.appendChild(save);
+    form.appendChild(save);
+    adjBtn.addEventListener('click', function () {
+      adjBtn.hidden = true;
+      form.hidden = false;
+      try { inp.focus(); } catch (e) { /* older WebView */ }
+    });
+    wrap.appendChild(adjBtn);
+    wrap.appendChild(form);
 
     /* opportunity over the last three weeks, above the points. Touches are what
        predict next week; points are what happened last week. */
