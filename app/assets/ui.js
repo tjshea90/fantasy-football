@@ -953,32 +953,6 @@
     d.open = true;
     return d;
   }
-  function matchupCard(aId, bId) {
-    var A = Store.team(aId), B = Store.team(bId);
-    var ra = Store.teamWeekPoints(week, aId), rb = Store.teamWeekPoints(week, bId);
-    var c = el('div', 'card');
-    var mu = el('div', 'mu');
-    [[A, ra, rb], [null, null, null], [B, rb, ra]].forEach(function (x) {
-      if (!x[0]) { mu.appendChild(el('div', 'vs', 'vs')); return; }
-      var s = el('div', 'side' + (x[1].total > x[2].total ? ' win' : ''));
-      s.appendChild(el('div', 'nm', x[0].name));
-      s.appendChild(el('div', 'pt', fmt(x[1].total)));
-      var yet = x[1].detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
-      var empty = x[1].detail.filter(function (d) { return !d.pid; }).length;
-      s.appendChild(el('div', 'sub', yet + ' to play' + (empty ? ' · ' + empty + ' empty' : '')));
-      mu.appendChild(s);
-    });
-    c.appendChild(mu);
-    var diff = Math.abs(ra.total - rb.total);
-    var lead = ra.total >= rb.total ? A.name : B.name;
-    var d = el('div', 'sub muted');
-    d.style.textAlign = 'center'; d.style.marginTop = '4px'; d.style.fontSize = '12px';
-    d.textContent = diff === 0 ? 'tied' : lead + ' by ' + fmt(diff);
-    c.appendChild(d);
-    c.appendChild(lineupDetail(A, ra));
-    c.appendChild(lineupDetail(B, rb));
-    return c;
-  }
   function lineupDetail(team, res) {
     var d = el('details');
     var s = el('summary', null, team.name + ' lineup ▾');
