@@ -146,41 +146,52 @@ public class MainActivity extends Activity {
   // costs one frame and is invisible; the alternative is a synchronous bridge
   // call, which is the one thing this app does not do.
   //
-  // Tj: "the back button should never close the app." __onBack() now unwinds
-  // a real tab-visit history (ui.js's navHistory) before it ever runs out, so
+  // Tj: "the back button should never close the app." __onBack() unwinds a
+  // real tab-visit history (ui.js's navHistory) before it ever runs out, so
   // reaching this point means he is already at the one tab with nothing
   // behind it. Even then this used to call finish(), which tears the
   // Activity down — the next launch is a cold start, seed reload and all.
   // moveTaskToBack behaves like pressing Home instead: the process and its
   // WebView stay alive, onPause/onStop above already make it sleep properly,
   // and reopening the app is instant because nothing was ever destroyed.
+  //
+  // "Never" has to cover the edges too, not just the common path. The first
+  // cut of this fix only backgrounded from inside the evaluateJavascript
+  // callback — so a press before the page finished loading (`!pageReady`),
+  // with no WebView at all (`web == null`), or where the bridge call itself
+  // threw synchronously, all fell through to `super.onKeyDown()`, which is
+  // `finish()` on a bare Activity. Three narrow windows where "never closes
+  // the app" quietly did not hold. Every one of those paths now backgrounds
+  // explicitly instead of falling through.
+  //
+  // The WebView's own back/forward history (canGoBack/goBack) is gone too —
+  // this is a single-page app that never pushes a history entry, so it was
+  // always false, dead code kept "just in case" rather than for a reason.
   private long lastBackAsk = 0;
   @Override public boolean onKeyDown(int code, KeyEvent e) {
-    if (code == KeyEvent.KEYCODE_BACK && web != null && pageReady) {
-      long now = System.currentTimeMillis();
-      // A double-tap while the round trip is in flight would ask twice and
-      // could finish() on the second answer after the first already handled
-      // it. Ignore a second press inside the window it takes to answer.
-      if (now - lastBackAsk < 400) return true;
-      lastBackAsk = now;
-      try {
-        web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'",
-            new android.webkit.ValueCallback<String>() {
-              @Override public void onReceiveValue(String v) {
-                // evaluateJavascript returns a JSON string, so "'1'" arrives
-                // quoted. Anything that is not a clear yes means the page did
-                // not handle it, including a null from a page that has gone.
-                if (v == null || v.indexOf('1') < 0) moveTaskToBack(true);
-              }
-            });
-        return true;
-      } catch (Throwable t) { /* fall through to the default */ }
+    if (code != KeyEvent.KEYCODE_BACK) return super.onKeyDown(code, e);
+    if (web == null || !pageReady) { moveTaskToBack(true); return true; }
+    long now = System.currentTimeMillis();
+    // A double-tap while the round trip is in flight would ask twice and
+    // could background the app on the second answer after the first already
+    // handled it. Ignore a second press inside the window it takes to answer.
+    if (now - lastBackAsk < 400) return true;
+    lastBackAsk = now;
+    try {
+      web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'",
+          new android.webkit.ValueCallback<String>() {
+            @Override public void onReceiveValue(String v) {
+              // evaluateJavascript returns a JSON string, so "'1'" arrives
+              // quoted. Anything that is not a clear yes means the page did
+              // not handle it, including a null from a page that has gone —
+              // background the app rather than finishing it either way.
+              if (v == null || v.indexOf('1') < 0) moveTaskToBack(true);
+            }
+          });
+    } catch (Throwable t) {
+      moveTaskToBack(true);   // never let a bridge failure close the app
     }
-    if (code == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
-      web.goBack();
-      return true;
-    }
-    return super.onKeyDown(code, e);
+    return true;
   }
 
   // ---- the offline Claude round trip: reading the reply file ---------------
