@@ -147,6 +147,25 @@
     if (!S.lineupManual) S.lineupManual = {};
     if (!S.manualScores) S.manualScores = {};
     if (!S.book) S.book = {};
+    /* v5.4: weekMeta[week].games used to collide with schedule.js's
+       per-team kickoff map (see schedule.js's ingest()) — a save written
+       before that fix (v5.3) can still be carrying an object there instead
+       of doSync's integer game count, and the Data tab would print
+       "[object Object] games" forever until the next full sync happened to
+       overwrite it. Renaming the WRITE site only stops the collision going
+       forward; a save already on disk needs this one-time rescue: recover
+       the map into `.kickoffs` if nothing has ingested one already, then
+       clear `.games` so the count reads as "not synced" instead of an
+       object until the next real sync fills it in. */
+    var wmKey;
+    for (wmKey in S.weekMeta) {
+      if (!Object.prototype.hasOwnProperty.call(S.weekMeta, wmKey)) continue;
+      var wm = S.weekMeta[wmKey];
+      if (wm && wm.games !== undefined && typeof wm.games !== 'number') {
+        if (!wm.kickoffs) wm.kickoffs = wm.games;
+        delete wm.games;
+      }
+    }
     /* migration: fill in settings added after this save was written */
     var d = defaults(seed), k;
     if (!S.settings) S.settings = d;
