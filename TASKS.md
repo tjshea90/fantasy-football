@@ -55,12 +55,15 @@ just relocated off the Table tab since Table stays deleted.)
       deleted per the 2026-09-12 request. DONE, plus the `.scoreInput` CSS.
       Tested: full suite green, `test_lifecycle.js`'s every-screen-renders
       walk exercises both new cards on Data (ckpt 108).
-- [ ] 5. Port the Live-tab redesign from `live-tab-dual-scores-h2nxyf`: two
+- [x] 5. Port the Live-tab redesign from `live-tab-dual-scores-h2nxyf`: two
       side-by-side score boxes (`liveScoreBox`, one per side, each with its
       own open lineup) instead of one merged card — matches Tj's own words to
       that session ("my team roster and points on one side... my opponent's
       points on the other... nothing else should be in the live tab"). Move
-      `feedWarnBanner` off Live onto Data to match.
+      `feedWarnBanner` off Live onto Data to match. DONE, dropped the
+      early-game alert from Live too (still on Lineups + Advice), removed
+      unused `.mu`/`.side`/`.vs` CSS, added `.mu2`/`.halfbox`. Full suite
+      green (ckpt 114).
 - [ ] 6. Port the Lineups-tab narrowing from the same branch: show only my
       team and this week's opponent (not all ten), with `autoFillTeam` split
       out of `autoFillWeek` so the "re-default" button is scoped to just the
