@@ -450,3 +450,74 @@ committed. Full detail in TASKS.md's commit history (ckpt 61, 80, 81).
       end-to-end (first SDK download in this environment) to confirm the
       MainActivity.java change actually compiles — the JS suite can't check
       that. APK built and signed clean.
+
+
+## 20. The 2026-09-12b request — branch reconciliation (archived from
+      TASKS.md, complete 8/8)
+
+> "Find out what the other branches did and merge it all into one app with
+> the features and findings and fixes from all the branches."
+
+**Why this job exists at all.** Tj installed v5.0 on his phone and it had
+none of §19's nav-refactor work. Investigation found the "one branch,
+cross-account handoff" model this file's own working agreement assumes had
+been silently broken: Claude Code on the web puts every session on its own
+throwaway branch, and none of the last several sessions merged back to
+`main`, which sat stuck at v4.7 the whole time. Four branches had forked from
+that same point and shipped independently:
+  - `claude/fantasy-app-nav-ui-1i09vx` (this one) — §19's nav-refactor.
+  - `claude/android-app-nav-ui-refactor-os6q53`, v4.8 — the IDENTICAL
+    nav-refactor request, one day earlier, from a different account.
+  - `claude/resume-logic-claude-code-2ye25r`, v4.8, then
+    `claude/live-tab-dual-scores-h2nxyf`, v5.0 (what was actually on Tj's
+    phone) — an unrelated line of work: a manual weekly-score-entry feature,
+    a real sync-crashing bug fix, and a Live/Lineups narrowing of their own.
+
+Told to Tj plainly; he chose to drop the score-entry feature's old home (the
+Table tab, already deleted in §19) and then asked for everything else to be
+merged into one app. That is this job.
+
+- [x] 20a. Ported the MORE ROBUST back-button handling from the
+      `os6q53` twin: my §19 fix only backgrounded from inside the
+      evaluateJavascript callback, so a press with no WebView, before the
+      page finished loading, or where the bridge call itself threw
+      synchronously all fell through to `super.onKeyDown()` — `finish()` on
+      a bare Activity. Three real gaps in "never closes the app." All three
+      now background explicitly.
+- [x] 20b. Ported a `bootstrap.sh` fix from the same branch:
+      `.claude/scheduled_tasks.lock` (the ScheduleWakeup harness's own
+      runtime file) was wrongly flagged as a stray file on disk.
+- [x] 20c. Ported the manual weekly-score data layer from the
+      resume-logic/live-tab-dual-scores lineage: `Store.manualScores`,
+      `getManualScore`/`setManualScore`/`teamWeekScore`, `seasonTotals`
+      routed through `teamWeekScore`. Also found and fixed a real bug
+      NEITHER source branch had: `importJSON` never defaulted
+      `manualScores` on a restored old backup the way it does every other
+      field, so a restore left it `undefined` and the next call threw.
+      Pinned with a real executed test (not a source grep) in
+      `test_integration.js` #14.
+- [x] 20d. Relocated the score-entry UI (`weeklyScoresCard`, verbatim logic)
+      plus a compact win/loss `standingsCard` onto the Data tab, since the
+      Table tab that used to host both is gone per §19.
+- [x] 20e. Ported the Live-tab two-box redesign (`liveScoreBox`/`.mu2`/
+      `.halfbox`) from `live-tab-dual-scores-h2nxyf` — my team's live score
+      and my opponent's as two side-by-side cards under one banner, instead
+      of one merged card. Matches Tj's own words to that session: "nothing
+      else should be in the live tab." Moved `feedWarnBanner` to Data to
+      match; the early-game alert stays on Lineups and Advice.
+- [x] 20f. Ported the Lineups-tab narrowing from the same branch:
+      `autoFillTeam` split out of `autoFillWeek`, only my team and this
+      week's opponent shown, "re-default" scoped to just those two. The
+      other ~8 teams still auto-fill silently in the background.
+- [x] 20g. Explicitly did NOT port the `os6q53` twin's further step of
+      cutting the Data tab's matchup editor down to "just set my opponent" —
+      it would break standings for every OTHER team, which 20c/20d need
+      full-league matchup data to compute at all. Decision recorded so it
+      isn't second-guessed as an oversight later.
+- [x] 20h. Full 13-suite regression + ES2018 + a real `build.sh` (VERSION
+      bumped 5.1 -> 5.2, versionCode 502) after every step. Sent to Tj.
+
+**Still open, not part of this job:** whether `main` should be fast-forwarded
+to this branch (a clean fast-forward, zero conflicts, since main never moved
+past the common ancestor) and whether the 3 stale sibling branches should be
+deleted. Asked; Tj deferred it until after the merge above shipped.
