@@ -599,6 +599,7 @@
     if (!o.byes) o.byes = S.byes;
     if (!o.lineups) o.lineups = {};
     if (!o.lineupManual) o.lineupManual = {};
+    if (!o.manualScores) o.manualScores = {};
     if (!o.stats) o.stats = {};
     if (!o.book) o.book = {};
     if (!o.weekMeta) o.weekMeta = {};
