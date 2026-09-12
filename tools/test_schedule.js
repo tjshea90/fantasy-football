@@ -208,6 +208,29 @@ console.log('\n-- current week only --');
   ok(m && m.kickoffs && m.schedAt, 'the schedule is persisted in weekMeta, where Alerts.java can read it');
 }());
 
+console.log('\n-- weekMeta[week].games and .kickoffs do not collide (v5.3) --');
+(function () {
+  /* This is the actual bug that shipped: ui.js's doSync writes a plain
+     integer game COUNT into weekMeta[week].games for the Data tab's "N
+     games" display. schedule.js's ingest() used to write its per-NFL-team
+     kickoff MAP into that same key — whichever ran more recently won, and
+     since the live poll calls ingest() far more often than a sync runs, the
+     count usually lost, and the Data tab printed "[object Object] games".
+     Proven here by actually calling ingest() (not asserting the key names on
+     source text) after a sync-shaped count is already on the same object, and
+     checking the count survives untouched. */
+  var wk = 9, S2 = W.Store.get();
+  S2.weekMeta[String(wk)] = { games: 14, synced: true, allFinal: false };
+  W.Schedule.ingest(wk, [{
+    date: iso(0, 13), state: 'in',
+    teams: [{ abbr: 'KC', homeAway: 'home' }, { abbr: 'DEN', homeAway: 'away' }]
+  }]);
+  var after = S2.weekMeta[String(wk)];
+  ok(after.games === 14, 'the sync game COUNT is untouched by a schedule ingest  (got ' + after.games + ')');
+  ok(after.kickoffs && after.kickoffs.KC && after.kickoffs.DEN,
+     'and the kickoff MAP lands in its own key, not on top of the count');
+}());
+
 console.log('\n-- the app sleeps when it is not on screen --');
 (function () {
   var ui = fs.readFileSync(path.join(__dirname, '..', 'app/assets/ui.js'), 'utf8');
