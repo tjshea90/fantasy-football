@@ -1,12 +1,12 @@
-# CHECKPOINT 120 — read me first, then TASKS.md
+# CHECKPOINT 124 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T06:12:20Z · **version:** 5.1 · **tests:** all 13 suites green
+**Written:** 2026-09-12T06:13:18Z · **version:** 5.2 · **tests:** all 13 suites green
 
 ## Just done
-reconciliation task 6 done: ported the Lineups-tab narrowing from live-tab-dual-scores-h2nxyf -- autoFillTeam split out of autoFillWeek so it can run for a single team, viewLineups now resolves mine + this week's opponent off the schedule and shows only those two lineupCards (with a 'no opponent set' placeholder if none), and the re-default button/confirm text is scoped to whichever of the two teams are actually shown ('Re-default both lineups now' vs 'Re-default my lineup now' with no opponent set). The other ~8 teams still auto-fill silently in the background since autoFillWeek is untouched. Updated test_integration.js's button-locator (searched for literal text 'Re-default all teams now', which no longer exists -- now locates the handler by refill.addEventListener instead). Full suite green.
+reconciliation task 8 done: bumped VERSION 5.1 -> 5.2, ran the full 13-suite regression + ES2018 check (all green) and a real build.sh end-to-end -- javac/d8 clean, 25/25 classes, signed OK, versionCode 502 (above both the 501 already sent and the 500 sibling branch on Tj's phone). All 8 reconciliation tasks from TASKS.md are now done: back-button robustness ported, bootstrap.sh fix ported, manual weekly-score data layer ported (plus a real import-migration bug found and fixed that neither source branch had), weekly-scores+standings cards relocated to Data, Live tab two-box redesign ported, Lineups narrowed to mine+opponent ported, Data-tab matchup-editor divergence explicitly rejected with reasoning recorded. Sending v5.2 to Tj next.
 
 ## Do this next
-task 7/8 next: nothing further to actively port (task 7 is a no-op decision already recorded), so run the full regression + build.sh, bump VERSION, and re-send Tj the reconciled APK
+waiting on Tj to confirm v5.2 installs over v5.1 without an uninstall and to try everything end to end; still waiting on his decision about fast-forwarding main and deleting the 3 stale branches, which he deferred by asking for the merge-everything work first
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  fd722c2 ckpt 120: reconciliation task 6 done: ported the Lineups-tab narrowing from live-tab-dua
   5c04087 ckpt 114: reconciliation task 5 done: ported the Live-tab two-box redesign from live-tab
   38f7ea5 ckpt 108: reconciliation task 4 done: added weeklyScoresCard (verbatim logic from the so
   e612ec0 ckpt 104: reconciliation task 3 done: ported the manual weekly-score data layer into sto
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   02511da ckpt 88: CRITICAL BUG FOUND WHILE INVESTIGATING WHY TJ HAS v5.0: 'keepAdj' was reference
   fea715f ckpt 84: job complete and archived: moved the 2026-09-12 request (7/7 items) from TASKS.
   033e178 ckpt 81: verified the build: ran build.sh end-to-end (first run, downloaded the Android 
-  26dc8b6 ckpt 80: tasks 3-7 done: deleted the Table/League tabs and their view code entirely (vie
 ```
 
-(5 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
