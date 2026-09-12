@@ -891,38 +891,20 @@
       b.addEventListener('click', function () { view = 'data'; render(); });
       c.appendChild(b); root.appendChild(c);
     }
-    /* Tj's own matchup comes first, always, and opens expanded. It is the one
-       card he actually watches; scrolling past four other games to find it is
-       the difference between a live scoreboard and a spreadsheet. */
-    var mine = null, rest = [];
+    /* Tj: "the weekly matchups between teams other than mine I don't care
+       about... focus on mine vs my opponent for each week." The other
+       pairings' live cards and the "not in a matchup" scoreboard used to
+       render here too — pure other-manager weekly-scoring noise he never
+       asked for — so this tab now builds and shows exactly one matchup. */
+    var mine = null;
     mus.forEach(function (pair) {
-      if (pair[0] === S.league.me || pair[1] === S.league.me) mine = pair; else rest.push(pair);
+      if (pair[0] === S.league.me || pair[1] === S.league.me) mine = pair;
     });
     if (mine) {
       var me = mine[0] === S.league.me ? mine[0] : mine[1];
       var them = mine[0] === S.league.me ? mine[1] : mine[0];
       root.appendChild(myMatchupCard(me, them));
     }
-    rest.forEach(function (pair) { root.appendChild(matchupCard(pair[0], pair[1])); });
-
-    var used = {}; mus.forEach(function (p) { used[p[0]] = 1; used[p[1]] = 1; });
-    var idle = S.teams.filter(function (t) { return !used[t.id]; });
-    if (idle.length && mus.length) {
-      var c2 = el('div', 'card');
-      c2.appendChild(el('h2', null, 'Not in a matchup this week'));
-      idle.forEach(function (t) {
-        var r = teamWeekRow(t);
-        c2.appendChild(r);
-      });
-      root.appendChild(c2);
-    }
-  }
-  function teamWeekRow(t) {
-    var res = Store.teamWeekPoints(week, t.id);
-    var r = el('div', 'row');
-    r.appendChild(el('div', 'nm', t.name));
-    r.appendChild(el('div', 'pts', fmt(res.total)));
-    return r;
   }
   /* The headline card: my team against my opponent, both lineups open, with
      what is still to play on each side — because a 12-point deficit with four
