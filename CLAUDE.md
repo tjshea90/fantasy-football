@@ -33,6 +33,40 @@ Read the two warnings it can raise:
 - **"UNCOMMITTED WORK IS PRESENT"** — the same thing, one step worse: not even
   the hook got to it. `git diff` is what was in flight.
 
+## Branches — `main` is the only source of truth (learned the hard way, 2026-09-12)
+
+Claude Code on the web puts each session on its own auto-generated branch
+rather than reusing one — a platform decision this repo cannot bind from the
+inside, and CLAUDE.md used to say nothing about it. The result: four sessions
+in one day forked from the same point on `main`, each thinking it was the
+sole continuation of this working agreement, and shipped four incompatible
+versions (v4.8 twice, independently; v5.0) with `main` never moving. Tj's
+phone ended up running a build with none of the work another account had
+already finished. Untangling it cost most of a day. Do not let it happen
+again:
+
+- **Before starting real work, check whether `main` has moved past your
+  starting point** (`git log origin/main` vs your branch's merge-base). If it
+  has, someone else's finished work is sitting there uninherited — pull it in
+  before adding more on top, the same way you would if `CHECKPOINT.md` had
+  described an interrupted session.
+- **When you finish something worth keeping, get it onto `main`.** If you are
+  already on `main`, this is automatic (`ckpt.sh`/`ship.sh` already push
+  there). If a fresh session finds itself on some other branch, fast-forward
+  or merge that branch's work into `main` before ending the session — do not
+  leave it stranded on a branch nobody else will think to look at.
+- **If you discover another branch with real, uninherited work on it** (the
+  situation above, not just an old abandoned experiment), tell Tj plainly
+  before merging it in blind — a design decision on one branch may
+  contradict one just made on another (this happened: one branch added a
+  feature to the Table tab the same day another branch deleted the Table
+  tab). Reconciling divergent work is a judgment call each time, not
+  something to automate away.
+- The most reliable way to avoid a new branch appearing at all: Tj resuming
+  the *same* Claude Code session/conversation rather than starting a new one
+  from claude.ai/code. That is a habit on his end, not something this file
+  can enforce.
+
 ## When Tj asks for something new
 
 **Write the request into `TASKS.md` in his own words, as unticked `[ ]`
