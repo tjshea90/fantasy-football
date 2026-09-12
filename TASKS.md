@@ -13,7 +13,7 @@ His screenshot showed the Data tab with two things circled: the sync-status
 line reading "in progress · [object Object] games · updated 14:19..." and the
 weekly-scores card added in the branch-reconciliation job (LADDER.md §20d).
 
-- [ ] 1. Root-cause and fix the `[object Object]` in the sync-status text
+- [x] 1. Root-cause and fix the `[object Object]` in the sync-status text
       (`renderHeader`/`viewData` in ui.js, both read `weekMeta[week].games`
       expecting a number). Found already, before writing this: a genuine
       field-name collision, not new to this session — `schedule.js`'s
