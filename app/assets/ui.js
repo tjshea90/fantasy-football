@@ -2717,6 +2717,16 @@
         for (j = 0; j < v.length; j++) byName[v[j]] = pl.id;
       });
       var stats = Store.getStats(week), matched = 0, seenPid = {};
+      /* A hand-entered adjustment must survive the wipe below, or every
+         re-sync (which a live poll does every 45s) silently erases it. This
+         capture used to be missing entirely — `keepAdj[pid]` below referenced
+         a variable that was never declared, so it threw a ReferenceError on
+         the FIRST matched player of EVERY sync since the v4.2 baseline,
+         leaving the "0 of N matched" banner stuck no matter what. */
+      var keepAdj = {};
+      Object.keys(stats).forEach(function (k) {
+        if (stats[k] && stats[k].manualAdj) keepAdj[k] = stats[k].manualAdj;
+      });
       /* wipe this week's lines so a re-sync is idempotent */
       Object.keys(stats).forEach(function (k) { delete stats[k]; });
 
@@ -2731,9 +2741,9 @@
           allLines.push({ key: key, line: L, abbr: r.players[key].abbr });
           var pid = byName[key];
           if (pid) {
-        if (keepAdj[pid]) L.manualAdj = keepAdj[pid];
-        stats[pid] = L; seenPid[pid] = 1; matched++;
-      }
+            if (keepAdj[pid]) L.manualAdj = keepAdj[pid];
+            stats[pid] = L; seenPid[pid] = 1; matched++;
+          }
         }
         var ab;
         for (ab in r.teamAgg) {
