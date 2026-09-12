@@ -168,6 +168,24 @@ summary::-webkit-details-marker{display:none}
 
 /* ---- v1.8 ---- */
 .card.me{border-color:var(--accent);box-shadow:0 0 0 1px rgba(240,169,43,.18)}
+
+/* ---- Live tab: two side-by-side live-score boxes -------------------------
+   .halfbox is a normal .card at half width. Flex's default align-items:
+   stretch matches the two boxes' heights even when one roster is longer, so
+   the pair still reads as a single row. Everything below tightens the
+   roster rows enough to survive a real phone's ~170px-per-box budget without
+   truncating the one thing that matters — the player's name. */
+.mu2{display:flex;gap:8px;align-items:stretch}
+.mu2 .halfbox{flex:1;min-width:0}
+.halfbox h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.halfbox .sub{font-size:11px;margin:1px 0 6px}
+.halfbox .bigfig{font-size:23px;margin:2px 0}
+.halfbox .row{padding:6px 0;gap:5px}
+.halfbox .row .slot{width:26px;font-size:10px}
+.halfbox .row .nm{font-size:12px}
+.halfbox .row .nm small{font-size:9px}
+.halfbox .row .pts{width:36px;font-size:12px}
+.halfbox summary{font-size:11px}
 .banner{margin-top:8px;padding:9px 11px;border-radius:9px;text-align:center;
   font-weight:600;font-size:15px;background:var(--panel2);border:1px solid var(--line)}
 .banner.good{color:var(--good);border-color:#1f4529;background:rgba(46,160,67,.10)}
