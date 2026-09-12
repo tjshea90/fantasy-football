@@ -31,16 +31,24 @@
 > if any of this affects the data tab or the relevance of anything inside
 > the data tab, fix it accordingly."
 
-- [ ] 1. Android back button: intercept hardware back so it navigates to the
-      previous in-app screen/tab instead of closing the app; only exits the
-      app from the true root screen with the platform's normal back
-      behavior (or never, per "should never close the app" — confirm which
-      screen counts as root, default to matching Android convention of
-      exit-from-home only if ambiguous).
-- [ ] 2. Player stats screen: stop auto-showing the number-field/manual
-      adjustment UI (which pops the Android keyboard) on open. Add an
-      "Adjust" button; only reveal the number field + adjustment controls
-      after it's pressed.
+- [x] 1. Android back button: intercept hardware back so it navigates to the
+      previous in-app screen/tab instead of closing the app; never exits the
+      app — DONE: ui.js now keeps a real `navHistory` of visited tabs and
+      `__onBack` pops it one at a time (goTab/`__onBack`, ui.js); when the
+      trail is empty MainActivity.onKeyDown calls `moveTaskToBack(true)`
+      instead of `finish()`, so back backgrounds the app like Home rather
+      than closing it. Tested: `node tools/test_lifecycle.js` ("the back
+      button" block drains the whole trail and lands on Live) and
+      `node tools/test_gestures.js` (MainActivity no longer calls finish()
+      from __onBack). Both green, committed (ckpt 61).
+- [x] 2. Player stats screen: stop auto-showing the number-field/manual
+      adjustment UI (which pops the Android keyboard) on open — DONE: root
+      cause was `dialog()` auto-focusing the first input/button in the modal,
+      and the number input used to be first. `showPlayer` (ui.js) now shows
+      only an "Adjust" button; the field, +5/−5/Clear buttons and Save only
+      get built into the DOM after that button is tapped. Tested: full suite
+      green, incl. `tools/test_lifecycle.js`'s "every screen renders" walk
+      which exercises player cards; committed (ckpt 61).
 - [ ] 3. Delete the "Table" and "League" bottom tabs entirely, plus all
       their section code/views/logic, from the app.
 - [ ] 4. Stop computing/storing/displaying weekly matchup data for manager
