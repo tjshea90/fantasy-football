@@ -1888,7 +1888,7 @@
     });
   }
 
-  /* ---------- DATA: weekly scores + standings (v5.2, reconciled in) --------
+  /* ---------- DATA: weekly scores + standings ------------------------------
    * Tj, to a different session: "I only want to enter their points scored
    * for each week, and the app should determine whether they won or lost and
    * update all relevant parts of the app accordingly." Every team but his
@@ -1901,14 +1901,18 @@
    * This card, and the standings table under it, used to live on the Table
    * tab. That tab is gone (the 2026-09-12 request deleted it outright), so
    * both are relocated here rather than dropped — the capability survived,
-   * only its home changed. */
+   * only its home changed.
+   *
+   * v5.3: Tj, directly — "get rid of the large section with blank fields...
+   * make a simple section where I can type in the weekly points for every
+   * team. For example, it will say Ron then have a box." The explanatory
+   * paragraph and the faint placeholder preview (that week's auto-computed
+   * total, shown greyed-out in an otherwise-empty box) are both gone — they
+   * were exactly what made an intentionally blank, ready-to-type field read
+   * as clutter. One row per team: its name, then its box. Nothing else. */
   function weeklyScoresCard() {
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Enter week ' + week + ' scores'));
-    c.appendChild(el('p', 'muted',
-      'Your score and your opponent\'s track live automatically on the Live ' +
-      'tab. For every other team, type their final score from the league ' +
-      'site — it drives the record below and who won.'));
     S.teams.forEach(function (t) {
       if (t.id === S.league.me) return;
       var row = el('div', 'row');
@@ -1916,7 +1920,6 @@
       var manual = Store.getManualScore(week, t.id);
       var inp = el('input'); inp.type = 'number'; inp.step = '0.1'; inp.className = 'scoreInput';
       inp.value = manual !== null ? String(manual) : '';
-      inp.placeholder = fmt(Store.teamWeekPoints(week, t.id).total);
       inp.addEventListener('change', function () {
         Store.setManualScore(week, t.id, inp.value);
         if (window.Sim) Sim.invalidate();
