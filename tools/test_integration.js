@@ -303,5 +303,49 @@ var me = S.league.me;
      'the toast now says what actually happened');
 }());
 
+/* ---- 14. manual weekly scores: the read-through, and importing an OLD
+ * backup that predates the field ----------------------------------------
+ * teamWeekScore is the one function standings/win-loss/the live card must
+ * all read a team's score through, so this checks the read-through itself
+ * rather than grepping for it. It also imports a backup shaped like one
+ * saved before manualScores existed — importJSON defaults every other
+ * pre-existing field this way (lineupManual, stats, book, ...) but the
+ * corresponding `if (!o.manualScores) o.manualScores = {}` line is new
+ * enough, and easy enough to leave out by hand, that it deserves its own
+ * check rather than trusting the pattern was followed by eye. Without it,
+ * S.manualScores stays undefined after a restore and the next
+ * getManualScore/setManualScore throws on the field access — exactly the
+ * kind of bug a source-text regex on "manualScores" would not catch, the
+ * same shape as the keepAdj crash this session found by accident. */
+(function () {
+  var tid = W.Store.get().teams[1].id;
+  ok(W.Store.getManualScore(6, tid) === null, 'no manual score on file reads back null');
+  var computed = W.Store.teamWeekPoints(6, tid).total;
+  var through = W.Store.teamWeekScore(6, tid);
+  near(through.total, computed, 'teamWeekScore falls back to the computed total with nothing entered');
+  ok(through.manual === false, 'and says so');
+
+  W.Store.setManualScore(6, tid, 88.5);
+  var m = W.Store.teamWeekScore(6, tid);
+  near(m.total, 88.5, 'teamWeekScore prefers a manual entry once one is on file');
+  ok(m.manual === true, 'and says so');
+  near(W.Store.seasonTotals(6)[tid].weeks[6], 88.5,
+       'seasonTotals reads the manual score too, not the computed one underneath it');
+
+  W.Store.setManualScore(6, tid, '');
+  ok(W.Store.getManualScore(6, tid) === null, 'clearing it (blank input) removes the override');
+
+  /* now the import-migration path: a backup shaped like a pre-manualScores save */
+  var backup = JSON.parse(W.Store.exportJSON());
+  delete backup.manualScores;
+  ok(backup.manualScores === undefined, 'the fixture really is missing the field, not just empty');
+  W.Store.importJSON(JSON.stringify(backup));
+  var threw = null;
+  try { W.Store.setManualScore(7, tid, 42); } catch (e) { threw = e; }
+  ok(!threw, 'setManualScore does not throw after restoring a backup that predates manualScores' +
+     (threw ? '  <-- ' + threw.message : ''));
+  near(W.Store.getManualScore(7, tid), 42, 'and the value it just set reads back correctly');
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
