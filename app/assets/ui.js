@@ -676,16 +676,23 @@
    * on permanently without ever undoing a decision he made.
    * Opponent teams get the same treatment, because a live matchup total is
    * meaningless if the other nine rosters are empty. */
-  function autoFillWeek(w) {
-    if (!S.settings.autoFill) return 0;
+  /* One team's slice of autoFillWeek below, pulled out so the Lineups tab's
+     "re-default" button can run it for just the two teams it shows (mine and
+     this week's opponent) instead of looping all ten. Does not itself check
+     S.settings.autoFill — callers that mean "only if auto-fill is on" (the
+     background boot/sync path) check it once before looping; the button
+     means it unconditionally, same as it always has. */
+  function autoFillTeam(w, tid) {
     if (!window.Recommend || !Recommend.autoLineup) return 0;
     var opp = (S.weekMeta[String(w)] && S.weekMeta[String(w)].opponents) || null;
+    try {
+      return Store.applyAuto(w, tid, Recommend.autoLineup(w, tid, opp));
+    } catch (e) { return 0; /* one bad roster must not stop the rest */ }
+  }
+  function autoFillWeek(w) {
+    if (!S.settings.autoFill) return 0;
     var total = 0;
-    S.teams.forEach(function (t) {
-      try {
-        total += Store.applyAuto(w, t.id, Recommend.autoLineup(w, t.id, opp));
-      } catch (e) { /* one bad roster must not stop the rest */ }
-    });
+    S.teams.forEach(function (t) { total += autoFillTeam(w, t.id); });
     return total;
   }
 
