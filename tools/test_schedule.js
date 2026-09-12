@@ -256,7 +256,7 @@ console.log('\n-- the background alarm can see kickoffs too --');
     'android/src/com/tj/fftracker/Alerts.java'), 'utf8');
   var code = al.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   ok(/static long parseIso/.test(code), 'Alerts.java can parse an ESPN kickoff timestamp');
-  ok(/weekMeta[\s\S]{0,200}optJSONObject\("games"\)/.test(code),
+  ok(/weekMeta[\s\S]{0,200}optJSONObject\("kickoffs"\)/.test(code),
      'and reads the kickoff times the page persisted, so it needs no network');
   ok(/startingIds\.contains/.test(code),
      'it only reports players NOT already in the lineup — an alert for a correct ' +
