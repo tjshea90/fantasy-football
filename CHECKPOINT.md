@@ -1,12 +1,12 @@
-# CHECKPOINT 160 — read me first, then TASKS.md
+# CHECKPOINT 162 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T20:04:36Z · **version:** 5.4 · **tests:** all 13 suites green
+**Written:** 2026-09-12T20:07:03Z · **version:** 5.4 · **tests:** all 13 suites green
 
 ## Just done
-task 4 done: bumped VERSION 5.3 -> 5.4, full 13-suite regression + ES2018 + a real build.sh -- javac/d8 clean, 25/25 classes, signed OK, versionCode 504. Both real bugs (the games/kickoffs migration, the CSS specificity fix) are shipped. Sending v5.4 to Tj before moving to the branch cleanup he confirmed.
+task 5 done partially: fast-forwarded origin/main from 3dbbef9 to this branch's HEAD (3bf64b2) -- confirmed with git ls-remote. Attempted to delete the 3 stale sibling branches (android-app-nav-ui-refactor-os6q53, resume-logic-claude-code-2ye25r, live-tab-dual-scores-h2nxyf) via git push --delete but got a consistent HTTP 403 on every attempt (checked the agent proxy status first -- no relay failures logged, so this is a real permission-scope denial, not a network glitch): this session's git credentials can push/update refs but not delete them. Branches still exist on GitHub; confirmed main updated and branches intact via ls-remote, no partial/corrupted state. Will tell Tj he needs to delete them himself. Task 6 done: added a new 'Branches -- main is the only source of truth' section to CLAUDE.md documenting exactly what happened today and what a future session should do -- check whether main has moved before starting work, get finished work onto main before ending a session, and never merge a discovered branch's work in blind without telling Tj first. Honest about the limit: which branch a NEW session lands on is a platform decision this repo cannot bind.
 
 ## Do this next
-task 5 next: fast-forward main to this branch and delete the 3 stale sibling branches
+waiting on Tj: (a) delete the 3 stale branches himself since this session cannot, (b) confirm v5.4 on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  3bf64b2 ckpt 160: task 4 done: bumped VERSION 5.3 -> 5.4, full 13-suite regression + ES2018 + a 
   124b688 ckpt 157: tasks 1-3 done: (1) added a one-time migration in Store.init() that heals a we
   8b5b35f ckpt 149: wrote Tj's follow-up bug report into TASKS.md before starting -- both v5.3 fix
   8f4e9c1 ckpt 147: Data-tab bug fix + score-entry redesign job complete and archived: moved the 2
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   4d42e58 ckpt 127: branch-reconciliation job complete and archived: moved the 2026-09-12b request
   f58c1b8 ckpt 124: reconciliation task 8 done: bumped VERSION 5.1 -> 5.2, ran the full 13-suite r
   fd722c2 ckpt 120: reconciliation task 6 done: ported the Lineups-tab narrowing from live-tab-dua
-  5c04087 ckpt 114: reconciliation task 5 done: ported the Live-tab two-box redesign from live-tab
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
