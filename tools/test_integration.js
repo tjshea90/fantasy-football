@@ -290,7 +290,11 @@ var me = S.league.me;
      behaviour on purpose, and STATE.md records that this trap has bitten
      three times already */
   var code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-  var i = code.indexOf('Re-default all teams now');
+  /* the literal text changed from "Re-default all teams now" to a pair
+     scoped to whichever teams the Lineups tab shows (v5.2: just mine and
+     this week's opponent) — locate the block by the handler's own name
+     instead of a wording that no longer exists. */
+  var i = code.indexOf("refill.addEventListener('click'");
   ok(i > 0, 'the re-default button still exists');
   var block = code.slice(i, i + 1600);
   ok(/clearManual/.test(block),
