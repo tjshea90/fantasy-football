@@ -32,46 +32,46 @@ cause on each, found before writing this:
   raised to matching specificity (`input.scoreInput`), not another look at
   the JS structure, which was already correct.
 
-- [ ] 1. Fix `[object Object]` for real: migrate any already-corrupted
+- [x] 1. Fix `[object Object]` for real: migrate any already-corrupted
       `weekMeta[week].games` (non-number) in `Store.init()` — rescue the
       per-team map into `.kickoffs` if that key isn't already set, then clear
       `.games` so the display recovers cleanly until the next real sync.
-- [ ] 2. Fix the invisible team names for real: `input.scoreInput{...}` in
+      DONE — reconstructs a real count from the rescued map rather than
+      leaving it blank. Tested: `test_integration.js` #15 actually corrupts a
+      saved state the way v5.2/v5.3 did, persists it, re-inits from disk (the
+      exact path a real app launch takes), and checks the repair.
+- [x] 2. Fix the invisible team names for real: `input.scoreInput{...}` in
       app.css so it wins the specificity fight against the base
-      `input[type=number]{width:100%}` rule.
-- [ ] 3. Re-verify (screenshot-equivalent: real executed tests, not source
-      grep) that both are actually fixed, not just plausible.
-- [ ] 4. Confirm the manual-score data layer (already built, ckpt 104) is
-      sound end to end now that the UI to reach it will finally work: typing
-      a score saves it, and it drives wins/losses and season-total points —
-      this was tested at the Store level already; no new data-layer work
-      expected, just confirming nothing else is broken.
-- [ ] 5. Now that this ships: fast-forward `main` to this branch (Tj
-      confirmed — "when you are done making this delete all the stale
-      branches") and delete the 3 stale sibling branches
-      (`android-app-nav-ui-refactor-os6q53`, `resume-logic-claude-code-
-      2ye25r`, `live-tab-dual-scores-h2nxyf`).
-- [ ] 6. "Make sure all future builds update from the latest version linearly
-      and don't make separate branches" — be honest about what a repo change
-      can and cannot guarantee here: which branch a NEW Claude Code session
-      lands on is decided by the platform when the session is created (see
-      CLAUDE.md's own note that Claude Code on the web has been landing each
-      session on its own auto-generated branch, which is the root cause of
-      the whole branch-fragmentation mess from earlier today), not by
-      anything committed to this repo — a session cannot bind a future
-      session's branch from inside itself. What IS in scope: leave `main`
-      current (task 5) and add a clear instruction to CLAUDE.md/BRIEF.md that
-      any session finding itself on a fresh branch should check `main` first
-      and fast-forward/merge back before finishing, so drift like this
-      degrades gracefully next time instead of silently compounding.
-      Tj should also know: starting a new session from claude.ai/code
-      against this exact conversation (not a fresh one) is the surest way to
-      stay on one line.
-- [ ] 7. Regarding "delete all the stale branches and inputs" — "inputs" is
-      ambiguous (no evidence any manual score was actually saved yet, since
-      the entry boxes have been unusable through v5.2 and v5.3). NOT
-      deleting any season data on a guess; flagging this to Tj rather than
-      guessing at a destructive action on real data.
+      `input[type=number]{width:100%}` rule. DONE. Tested: `test_boot.js`
+      computes real CSS specificity for both selectors and checks the actual
+      outcome (tie + source order), not a source grep — verified by hand
+      that it fails against the old `.scoreInput` selector and passes
+      against the fix.
+- [x] 3. Re-verify (screenshot-equivalent: real executed tests, not source
+      grep) that both are actually fixed, not just plausible. DONE — see 1/2.
+- [x] 4. Confirm the manual-score data layer (already built, ckpt 104) is
+      sound end to end now that the UI to reach it will finally work.
+      Unaffected — full suite green throughout, including the earlier
+      real-executed manual-score tests.
+- [x] 5. Fast-forward `main` to this branch — DONE, `origin/main` moved
+      3dbbef9 -> e30a21a (confirmed via `git ls-remote`). Deleting the 3
+      stale sibling branches — BLOCKED: `git push origin --delete` returned
+      HTTP 403 on every attempt (checked the agent proxy status first: no
+      relay failures logged, so this is a real permission-scope denial, not
+      a network glitch). This session's git credentials can push/update refs
+      but not delete them, and no GitHub MCP tool in this session's toolset
+      deletes a branch either. Tj needs to delete these three himself
+      (GitHub web UI, Branches page, or `git push origin --delete <name>`
+      from a machine with full access): `android-app-nav-ui-refactor-os6q53`,
+      `resume-logic-claude-code-2ye25r`, `live-tab-dual-scores-h2nxyf`.
+- [x] 6. Added a "Branches — main is the only source of truth" section to
+      CLAUDE.md (see the file) documenting what happened and what a future
+      session should do. Honest limit recorded: a NEW session's branch is a
+      platform decision this repo cannot bind from the inside.
+- [x] 7. Regarding "delete all the stale branches and inputs" — flagged to
+      Tj rather than guessing at a destructive action on real data; no
+      evidence any manual score was actually saved given the entry boxes
+      were unusable through v5.2/v5.3.
 
 Ticking a box means: written, tested, committed, and the test that proves it is
 named in the box. **Never tick a box you have not verified** — the next account
