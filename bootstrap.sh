@@ -26,9 +26,17 @@ echo "== FF Season Tracker — bootstrap =="
 echo "working dir: $D"; echo
 fail=0
 # --- manifest, both directions ---
+# .claude/scheduled_tasks.lock is the harness's own runtime state for the
+# ScheduleWakeup/Routine feature, not project content — it is already
+# git-ignored (.git/info/exclude), so excluded here too rather than flagged
+# as a stray file on every session that happens to use a scheduled wakeup.
+# .claude/settings.json (the SessionStart hook config) is real project
+# content and stays fully checked, so this excludes the one file by name
+# rather than the whole directory.
 mapfile -t listed < <(grep -v '^\s*$' MANIFEST.txt | grep -v '^#')
 disk=$(find . -type f -not -path './sdk/*' -not -path './build/*' -not -path './.git/*' \
-        -not -path './.ckpt/*' -not -name '*.pyc' -not -name '*.log' -printf '%P\n' | sort)
+        -not -path './.ckpt/*' -not -path './.claude/scheduled_tasks.lock' \
+        -not -name '*.pyc' -not -name '*.log' -printf '%P\n' | sort)
 missing=(); for f in "${listed[@]}"; do [ -e "$f" ] || missing+=("$f"); done
 stale=$(comm -23 <(printf '%s\n' "$disk") <(printf '%s\n' "${listed[@]}" | sort))
 if [ ${#missing[@]} -gt 0 ]; then echo "  FAIL  listed in MANIFEST but not on disk:"; printf '          %s\n' "${missing[@]}"; fail=1; fi
