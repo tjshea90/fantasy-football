@@ -145,6 +145,7 @@
     if (!S.byes) S.byes = seed.byes;
     if (!S.league) S.league = seed.league;
     if (!S.lineupManual) S.lineupManual = {};
+    if (!S.manualScores) S.manualScores = {};
     if (!S.book) S.book = {};
     /* migration: fill in settings added after this save was written */
     var d = defaults(seed), k;
