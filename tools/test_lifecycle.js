@@ -332,8 +332,20 @@ console.log('\n-- every screen renders --');
 console.log('\n-- the back button --');
 (function () {
   ok(typeof W.__onBack === 'function', 'the page exposes __onBack for MainActivity');
+  /* The "every screen renders" block above already walked every tab in
+     order, so there is a real trail sitting behind 'data' before this test
+     even starts — that IS the feature (Tj: "go back to the last thing inside
+     the app"), so drain it rather than assuming a single hop. */
   clickTab('data');
   ok(W.__onBack() === true, 'from a non-Live tab, back unwinds the visit history');
+  var steps = 1;
+  while (W.__onBack() === true) { steps++; if (steps > TAB_NAMES.length + 1) break; }
+  ok(steps > 1 && steps <= TAB_NAMES.length,
+     'it walks back through the whole trail, one tab at a time, and terminates');
+  var onLive = tabEls.some(function (t) {
+    return t.getAttribute('data-v') === 'live' && t.classList.contains('on');
+  });
+  ok(onLive, 'draining the trail lands back on Live, where the trail started');
   ok(W.__onBack() === false,
      'and once the trail is empty it declines — the Activity backgrounds instead of closing');
 }());
