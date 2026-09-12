@@ -351,5 +351,35 @@ var me = S.league.me;
   near(W.Store.getManualScore(7, tid), 42, 'and the value it just set reads back correctly');
 }());
 
+/* ---- 15. a save already poisoned by the games/kickoffs collision heals on
+ * the next boot -----------------------------------------------------------
+ * The Data tab printed "[object Object] games" because weekMeta[week].games
+ * held a per-team kickoff map (written by an old schedule.js) instead of
+ * doSync's integer count. Renaming the write site (v5.3) only stops it
+ * happening AGAIN — a save from before that fix is already on disk with the
+ * object sitting there, and nothing besides a fresh full sync would ever
+ * overwrite it. This drives the actual migration path end to end: corrupt a
+ * saved state the way v5.2/v5.3 actually did, persist it, re-init from that
+ * disk state (exactly what happens on the next app launch), and check the
+ * repair — not a source grep for the migration code existing. */
+(function () {
+  var wk = 11, S3 = W.Store.get();
+  var fakeKickoffMap = {
+    KC: { kick: '2026-01-01T18:00:00Z', state: 'pre', opp: 'DEN' },
+    DEN: { kick: '2026-01-01T18:00:00Z', state: 'pre', opp: 'KC' },
+    SF: { kick: '2026-01-01T21:00:00Z', state: 'pre', opp: 'LAR' },
+    LAR: { kick: '2026-01-01T21:00:00Z', state: 'pre', opp: 'SF' }
+  };
+  S3.weekMeta[String(wk)] = { synced: true, allFinal: false, games: fakeKickoffMap };
+  W.Store.save();
+  W.Store.init(W.SEED);   /* the same call boot() makes on every launch */
+  var healed = W.Store.get().weekMeta[String(wk)];
+  ok(typeof healed.games === 'number', 'the poisoned .games (an object) is now a number  (got ' +
+     JSON.stringify(healed.games) + ')');
+  ok(healed.games === 2, 'reconstructed from the rescued kickoff map (4 teams = 2 games)');
+  ok(healed.kickoffs && healed.kickoffs.KC && healed.kickoffs.SF,
+     'and the map itself was rescued into .kickoffs rather than discarded');
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
