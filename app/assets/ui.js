@@ -1856,8 +1856,62 @@
     });
   }
 
+  /* ---------- DATA: weekly scores + standings (v5.2, reconciled in) --------
+   * Tj, to a different session: "I only want to enter their points scored
+   * for each week, and the app should determine whether they won or lost and
+   * update all relevant parts of the app accordingly." Every team but his
+   * own, right where the standings it feeds are shown — type a number and
+   * the record below updates with nothing else to touch. Left blank (or
+   * cleared), it falls back to that team's own auto-computed lineup total,
+   * same as always; his own score and his live opponent's are never entered
+   * here, since those already track live on the Live tab.
+   *
+   * This card, and the standings table under it, used to live on the Table
+   * tab. That tab is gone (the 2026-09-12 request deleted it outright), so
+   * both are relocated here rather than dropped — the capability survived,
+   * only its home changed. */
+  function weeklyScoresCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Enter week ' + week + ' scores'));
+    c.appendChild(el('p', 'muted',
+      'Your score and your opponent\'s track live automatically on the Live ' +
+      'tab. For every other team, type their final score from the league ' +
+      'site — it drives the record below and who won.'));
+    S.teams.forEach(function (t) {
+      if (t.id === S.league.me) return;
+      var row = el('div', 'row');
+      row.appendChild(el('div', 'nm', t.name));
+      var manual = Store.getManualScore(week, t.id);
+      var inp = el('input'); inp.type = 'number'; inp.step = '0.1'; inp.className = 'scoreInput';
+      inp.value = manual !== null ? String(manual) : '';
+      inp.placeholder = fmt(Store.teamWeekPoints(week, t.id).total);
+      inp.addEventListener('change', function () {
+        Store.setManualScore(week, t.id, inp.value);
+        if (window.Sim) Sim.invalidate();
+        render();
+      });
+      row.appendChild(inp);
+      c.appendChild(row);
+    });
+    return c;
+  }
+  /* Just the win/loss table that used to open the Table tab — enough to see
+     what entering a score above just did, without rebuilding the season
+     points and weekly-high-score cards nobody asked to keep. */
+  function standingsCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Standings'));
+    var st = Store.standings(Math.max(week, 1));
+    c.appendChild(table(['Team', 'W', 'L', 'T', 'Points'], st.byRecord.map(function (r) {
+      return { me: r.id === S.league.me, cells: [r.name, r.w, r.l, r.t, fmt(r.pts)] };
+    })));
+    return c;
+  }
+
   /* ---------- DATA ---------- */
   function viewData(root) {
+    addSafe(root, 'Weekly scores', weeklyScoresCard);
+    addSafe(root, 'Standings', standingsCard);
     /* matchups */
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Week ' + week + ' matchups'));
