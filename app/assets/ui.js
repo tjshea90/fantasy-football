@@ -1907,6 +1907,7 @@
 
   /* ---------- DATA ---------- */
   function viewData(root) {
+    var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
     addSafe(root, 'Weekly scores', weeklyScoresCard);
     addSafe(root, 'Standings', standingsCard);
     /* matchups */
