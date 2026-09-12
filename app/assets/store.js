@@ -468,6 +468,38 @@
     }
     return { total: Math.round(total * 100) / 100, detail: detail };
   }
+  /* --- manual weekly scores -------------------------------------------
+   * Tj enters a full starting lineup for his own team every week, but for
+   * an opponent he does not manage in this app the lineup grind is not worth
+   * it — he reads one number off the league site instead. This is that
+   * number: a per-team, per-week override that stands in for the
+   * lineup-computed total wherever one is not being tracked. */
+  function getManualScore(week, teamId) {
+    var wk = S.manualScores[String(week)];
+    return (wk && Object.prototype.hasOwnProperty.call(wk, teamId)) ? wk[teamId] : null;
+  }
+  function setManualScore(week, teamId, pts) {
+    var w = String(week);
+    if (!S.manualScores[w]) S.manualScores[w] = {};
+    if (pts === null || pts === '' || pts === undefined || isNaN(Number(pts))) {
+      delete S.manualScores[w][teamId];
+    } else {
+      S.manualScores[w][teamId] = Math.round(Number(pts) * 100) / 100;
+    }
+    save();
+  }
+  /* The one function standings, win/loss and the live matchup card should
+   * all read a team's weekly score through: a manual entry wins when one is
+   * on file, otherwise it falls back to the computed lineup total — so
+   * entering (or clearing) one number updates every one of those places at
+   * once, with nothing else to keep in sync by hand. */
+  function teamWeekScore(week, teamId) {
+    var m = getManualScore(week, teamId);
+    if (m !== null) return { total: m, manual: true, detail: [] };
+    var r = teamWeekPoints(week, teamId);
+    r.manual = false;
+    return r;
+  }
   function seasonTotals(throughWeek) {
     var last = throughWeek || S.league.regularSeasonWeeks;
     var out = {}, i, w;
@@ -475,7 +507,7 @@
     for (w = 1; w <= last; w++) {
       var mus = getMatchups(w), got = {};
       for (i = 0; i < S.teams.length; i++) {
-        var tid = S.teams[i].id, r = teamWeekPoints(w, tid);
+        var tid = S.teams[i].id, r = teamWeekScore(w, tid);
         got[tid] = r.total;
         out[tid].pts += r.total; out[tid].weeks[w] = r.total;
       }
