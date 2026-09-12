@@ -521,3 +521,41 @@ merged into one app. That is this job.
 to this branch (a clean fast-forward, zero conflicts, since main never moved
 past the common ancestor) and whether the 3 stale sibling branches should be
 deleted. Asked; Tj deferred it until after the merge above shipped.
+
+
+## 21. The 2026-09-12c request — Data tab bug + score-entry redesign
+      (archived from TASKS.md, complete 2/2)
+
+> "Review the screenshot attached. There are errors circled. This is in the
+> data tab. Get rid of the large circled section with blank fields and make a
+> simple section where I can type in the weekly points for every team. For
+> example, it will say Ron then have a box for me to type Ron's points for
+> that week. When all the teams points are entered, it will save the data and
+> use the points to calculate wins losses and total points for the week and
+> season in the other sections of the app"
+
+Sent as a screenshot of the Data tab with two things circled: the sync-status
+line reading "in progress · [object Object] games", and §20d's weekly-scores
+card.
+
+- [x] 21a. Root-caused and fixed the `[object Object]`: a genuine field-name
+      collision, pre-existing and unrelated to §19/§20 — `schedule.js`'s
+      `ingest()` wrote a per-NFL-team kickoff map into `weekMeta[week].games`,
+      the SAME key `doSync` (ui.js) used for a plain integer game count and
+      `store.js`'s `gameStarted()` read back expecting the map. Whichever ran
+      more recently won; the live poll calls `ingest()` far more often than a
+      sync runs, so the count was clobbered into an object almost
+      immediately, and the Data tab printed it. Alerts.java also reads this
+      exact key natively from the persisted state file. Fixed by giving
+      schedule.js its own key, `weekMeta[week].kickoffs`, across schedule.js,
+      store.js, Alerts.java, and every test fixture that assumed the old
+      shape. Pinned with a real test that calls the actual `Schedule.ingest`
+      and proves the count survives, not a source-text grep.
+- [x] 21b. Simplified `weeklyScoresCard` to exactly what Tj asked for: team
+      name label, one input box, nothing else — dropped the explanatory
+      paragraph and the greyed-out placeholder preview, both of which were
+      making an intentionally-empty, ready-to-type box read as "blank
+      fields."
+- [x] 21c. Full 13-suite regression, ES2018 clean, two real `build.sh` runs
+      (Alerts.java's rename, then the final build). Shipped as v5.3
+      (versionCode 503).
