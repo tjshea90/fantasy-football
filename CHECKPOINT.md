@@ -1,12 +1,12 @@
-# CHECKPOINT 61 — read me first, then TASKS.md
+# CHECKPOINT 80 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T05:30:31Z · **version:** 4.7 · **tests:** all 13 suites green
+**Written:** 2026-09-12T05:41:33Z · **version:** 4.7 · **tests:** all 13 suites green
 
 ## Just done
-task 1 done: Android back button now unwinds a real tab-visit history (ui.js navHistory/goTab/__onBack) instead of jumping straight to Live, and MainActivity.onKeyDown backgrounds via moveTaskToBack(true) instead of finish() when the trail is empty, so back can never close the app. task 2 done: showPlayer's manual-adjustment number field (which auto-focused and popped the keyboard via dialog()'s auto-focus-first-input) is now hidden behind an Adjust button and only built/shown on tap. Updated test_gestures.js and test_lifecycle.js for the new back-button semantics. All 13 suites green.
+tasks 3-7 done: deleted the Table/League tabs and their view code entirely (viewStandings, viewLeague, recapCard, playoffCard, pct — kept table() and the underlying sim.js/recap.js/store.js engine modules since they're still directly unit-tested library code, just no longer called from any screen); trimmed viewLive to render only my-team-vs-opponent (deleted the other-managers matchup loop, the idle-teams scoreboard, and the now-dead matchupCard/teamWeekRow); restructured viewRosters into per-team chip tabs (teamRosterCard helper) instead of one long vertical list of all ten rosters; moved freeAgentCard+addFreeAgent verbatim into a new Wire tab (viewWire), out of Rosters; fixed a stale offline-toast string that still mentioned standings/the League tab. All 7 of Tj's requested items are done and TASKS.md is updated with what was tested for each. Full 13-suite run green throughout (test_boot.js's 3 hot-path assertions for the deleted screens were removed as they were asserting dead code, not behavior; test_gestures.js/test_lifecycle.js updated for the new 6-tab bar).
 
 ## Do this next
-task 3 next: delete the Table (standings) and League tabs and their view code from ui.js/index.html, then trim other-managers weekly-matchup rendering per task 4
+nothing further requested — this job is done; verify build.sh still produces an APK, then Tj should try the phone: back-button feel, the Adjust button on a player card, Roster team tabs, and the new Wire tab, before this gets archived to LADDER.md
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  21fd85f ckpt 61: task 1 done: Android back button now unwinds a real tab-visit history (ui.js na
   84cdb98 ckpt 52: wrote Tj's new nav/UI overhaul request into TASKS.md verbatim before starting (
   3dbbef9 ckpt 50: scan fixes: ship.sh's STATE.md gate compared the CALENDAR DATE so it broke at m
   5d3fb69 ckpt 48: usage scan: archived the finished 2026-09-09 job from TASKS.md into LADDER.md (
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   87b5bba ckpt 41: audit fix: a failing push was completely silent — autosave committed locally,
   678787a ckpt 39: added PreCompact hook (tools/toobig.sh): when a session grows big enough to aut
   198ab83 ckpt 37: de-Coworked the system: BRIEF.md cold-start/persistence/commands rewritten for 
-  554e113 ckpt 35: cross-account handoff system finished and verified: SessionStart briefing, auto
 ```
 
-(8 automatic checkpoint(s) since the last deliberate one — the
+(18 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
