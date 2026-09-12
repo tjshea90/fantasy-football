@@ -163,7 +163,17 @@
       var wm = S.weekMeta[wmKey];
       if (wm && wm.games !== undefined && typeof wm.games !== 'number') {
         if (!wm.kickoffs) wm.kickoffs = wm.games;
-        delete wm.games;
+        /* `.games` is a display-only counter (never read for scoring), so a
+           reconstructed count is fine here: every entry in the kickoff map
+           is one team, and a normal game has two, so half the entry count
+           is the game count doSync would have written. Better than leaving
+           the sync-status line reading "undefined games" once the corrupted
+           value is gone. */
+        var teamCount = 0, tk;
+        for (tk in wm.kickoffs) {
+          if (Object.prototype.hasOwnProperty.call(wm.kickoffs, tk)) teamCount++;
+        }
+        wm.games = Math.round(teamCount / 2);
       }
     }
     /* migration: fill in settings added after this save was written */
