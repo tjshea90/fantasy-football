@@ -499,16 +499,24 @@ ok(/wrong merge is far more/.test(nmH),
     for (var i = 0; i < 3; i++) { if (a[i] !== b[i]) return a[i] - b[i]; }
     return 0;
   }
-  var baseIdx = css.indexOf('input[type=number]');
-  var scoreIdx = css.indexOf('.scoreInput{');
-  ok(baseIdx >= 0 && scoreIdx >= 0, 'both the base input rule and .scoreInput exist in app.css');
-  var baseSpec = specificity('input[type=text],input[type=number]');
-  var scoreSpec = specificity(css.slice(scoreIdx).match(/^[^{]+/)[0]);
+  var braceIdx = css.indexOf('.scoreInput{');
+  ok(braceIdx >= 0, '.scoreInput exists in app.css');
+  /* the actual selector text, not just the class name — everything between
+     the PREVIOUS rule's closing brace and this rule's opening brace, so a
+     selector spelled "input.scoreInput" is captured whole rather than just
+     the ".scoreInput" tail of it */
+  var openBrace = css.indexOf('{', braceIdx);
+  var selStart = css.lastIndexOf('}', braceIdx) + 1;
+  var scoreSelector = css.slice(selStart, openBrace).trim();
+  var baseSelector = 'input[type=number]';
+  var baseSpec = specificity(baseSelector);
+  var scoreSpec = specificity(scoreSelector);
   ok(cmp(scoreSpec, baseSpec) >= 0,
-     '.scoreInput\'s specificity (' + scoreSpec + ') is not lower than the base input rule\'s (' +
-     baseSpec + ')  <-- (0,1,0) < (0,1,1) is exactly the bug: 76px never applied');
+     '"' + scoreSelector + '" specificity (' + scoreSpec + ') is not lower than "' + baseSelector +
+     '"\'s (' + baseSpec + ')  <-- (0,1,0) < (0,1,1) was exactly the bug: 76px never applied');
   if (cmp(scoreSpec, baseSpec) === 0) {
-    ok(scoreIdx > baseIdx, 'and on an exact specificity tie, .scoreInput is declared LATER, which is what wins it');
+    ok(css.indexOf(baseSelector) < braceIdx,
+       'and on an exact specificity tie, "' + scoreSelector + '" is declared LATER, which is what wins it');
   }
 }());
 
