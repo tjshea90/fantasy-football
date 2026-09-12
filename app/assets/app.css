@@ -100,6 +100,10 @@ select,input[type=text],input[type=number]{width:100%;background:var(--panel2);
   color:var(--fg);border:1px solid var(--line);border-radius:9px;
   padding:11px 9px;font-size:14px;min-height:44px}
 select:disabled{opacity:.5}
+/* the per-team weekly score box on the Data tab's weekly-scores card — fixed
+   width so it sits at the end of a name row instead of claiming the full
+   row like every other input in the app */
+.scoreInput{width:76px;text-align:right;flex:none}
 /* A slot whose player has already kicked off. NOT disabled: Tj can still
    correct it to match RTSports, and the change handler asks first. Dimmed and
    flagged so he can see at a glance which decisions are still live. */
