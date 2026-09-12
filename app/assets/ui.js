@@ -631,19 +631,27 @@
     } catch (e) { /* a phone with no touch, or a stubbed DOM: buttons still work */ }
   }
 
-  /* ---------- THE ANDROID BACK BUTTON (v4.7) -----------------------------
+  /* ---------- THE ANDROID BACK BUTTON (v4.7, revised) ---------------------
    * MainActivity used to defer to WebView.canGoBack(), which in a page that
    * never pushes a history entry is always false — so back quit the app from
    * anywhere, including with a confirm dialog open, which on Android is the
    * one place everybody presses it. The Activity now asks the page first and
-   * only finishes if the page says it did nothing.
+   * only leaves if the page says it did nothing (and even then, MainActivity
+   * backgrounds rather than closes — see its onKeyDown).
+   *
+   * Tj: "make it go back to the last thing inside the app" — jumping straight
+   * to Live from six tabs deep was still wrong, just wrong in a different
+   * direction: it threw away wherever he actually came from. navHistory (see
+   * goTab) is the real trail of tabs visited, so back unwinds it one tab at a
+   * time, same as the Android convention everywhere else on the phone.
    *
    * Order matters: a modal is the most recent thing he opened, so it goes
-   * first; then a tab that is not the one the app starts on; then let go. */
+   * first; then unwind the tab trail; then let the Activity decide (which
+   * now means "send to background", never "close"). */
   window.__onBack = function () {
     try {
       if (closeTopModal()) return true;
-      if (view !== 'live') { goTab('live'); return true; }
+      if (navHistory.length) { goTab(navHistory.pop(), true); return true; }
     } catch (e) { /* never trap him in the app because a handler threw */ }
     return false;
   };
