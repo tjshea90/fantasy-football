@@ -98,7 +98,14 @@
       sig.push(keys[i] + byTeam[keys[i]].kick + byTeam[keys[i]].state);
     }
     var joined = sig.join('|');
-    m.games = byTeam;
+    /* NOT `m.games` — that key already belonged to ui.js's doSync, which
+       writes a plain integer game COUNT into the same weekMeta[week] object
+       for the Data tab's "N games" display. The live poll calls this
+       ingest() far more often than a sync runs, so the count kept getting
+       clobbered by this per-team MAP a moment after any sync — the display
+       read `m.games` expecting a number and got "[object Object]" instead.
+       Own key, no collision. */
+    m.kickoffs = byTeam;
     m.schedAt = Date.now();
     if (m.schedSig === joined) return byTeam;   /* nothing moved — no write */
     m.schedSig = joined;
@@ -109,7 +116,7 @@
     return byTeam;
   }
 
-  function get(week) { return meta(week).games || null; }
+  function get(week) { return meta(week).kickoffs || null; }
   function at(week) { return meta(week).schedAt || 0; }
   function stale(week) {
     var g = get(week);
