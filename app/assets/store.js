@@ -347,7 +347,10 @@
   function gameStarted(week, player) {
     if (!player || !player.nfl) return false;
     var m = S.weekMeta[String(week)];
-    var g = (m && m.games) ? m.games[String(player.nfl).toUpperCase()] : null;
+    /* weekMeta[week].kickoffs — schedule.js's per-NFL-team kickoff map. NOT
+       `.games`: that key belongs to doSync's plain game COUNT, and the two
+       used to collide on the same field (see schedule.js's ingest()). */
+    var g = (m && m.kickoffs) ? m.kickoffs[String(player.nfl).toUpperCase()] : null;
     if (!g) return false;                       /* no schedule stored: never guess */
     if (g.state && g.state !== 'pre') return true;
     var t = Date.parse(g.kick);                 /* 'pre' but the clock has passed */
