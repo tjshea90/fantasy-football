@@ -84,7 +84,7 @@ console.log('\n-- 1. a player who has kicked off cannot be moved by the automati
   const swift = find("D'Andre Swift"), jt = find('Jonathan Taylor');
 
   /* No stat line at all — the lock has to come from the SCHEDULE this time. */
-  S.weekMeta[String(wk)] = { games: {
+  S.weekMeta[String(wk)] = { kickoffs: {
     CHI: { kick: new Date(Date.now() - 3600e3).toISOString(), state: 'in', opp: 'GB', home: true },
     IND: { kick: new Date(Date.now() + 3 * 86400e3).toISOString(), state: 'pre', opp: 'HOU', home: false }
   } };
