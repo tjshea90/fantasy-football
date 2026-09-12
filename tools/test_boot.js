@@ -476,5 +476,41 @@ ok(!/Espn\.normName\(p\.name\)\] = \{/.test(fs.readFileSync('app/assets/ai.js', 
 ok(/wrong merge is far more/.test(nmH),
    'names.js records WHY the obvious same-team rule was rejected');
 
+/* ---- the score-input width actually wins its specificity fight ----------
+ * `.scoreInput{width:76px}` used to lose outright to the base
+ * `input[type=number]{width:100%}` rule — an attribute selector plus the
+ * element itself outweighs a bare class, (0,1,1) beats (0,1,0), no matter
+ * which rule is later in the file. The Data tab's score box rendered
+ * full-width and squeezed the team-name label next to it to nothing. A
+ * source-text check for ".scoreInput" existing would have stayed green
+ * through that whole bug — it only proves the selector is spelled somewhere,
+ * not that it wins. This computes real CSS specificity for both rules and
+ * checks the actual outcome: equal-or-higher specificity, and (for an exact
+ * tie) declared later in the file, which is what actually decides a tie. */
+(function () {
+  var css = fs.readFileSync('app/assets/app.css', 'utf8');
+  function specificity(sel) {
+    var ids = (sel.match(/#[\w-]+/g) || []).length;
+    var classesEtc = (sel.match(/\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+/g) || []).length;
+    var elements = (sel.match(/(^|[\s,>+~])[a-zA-Z][\w-]*/g) || []).length;
+    return [ids, classesEtc, elements];
+  }
+  function cmp(a, b) {
+    for (var i = 0; i < 3; i++) { if (a[i] !== b[i]) return a[i] - b[i]; }
+    return 0;
+  }
+  var baseIdx = css.indexOf('input[type=number]');
+  var scoreIdx = css.indexOf('.scoreInput{');
+  ok(baseIdx >= 0 && scoreIdx >= 0, 'both the base input rule and .scoreInput exist in app.css');
+  var baseSpec = specificity('input[type=text],input[type=number]');
+  var scoreSpec = specificity(css.slice(scoreIdx).match(/^[^{]+/)[0]);
+  ok(cmp(scoreSpec, baseSpec) >= 0,
+     '.scoreInput\'s specificity (' + scoreSpec + ') is not lower than the base input rule\'s (' +
+     baseSpec + ')  <-- (0,1,0) < (0,1,1) is exactly the bug: 76px never applied');
+  if (cmp(scoreSpec, baseSpec) === 0) {
+    ok(scoreIdx > baseIdx, 'and on an exact specificity tie, .scoreInput is declared LATER, which is what wins it');
+  }
+}());
+
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
