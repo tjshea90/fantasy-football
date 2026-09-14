@@ -1,12 +1,12 @@
-# CHECKPOINT 82 — read me first, then TASKS.md
+# CHECKPOINT 90 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T23:02:34Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T23:08:01Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-task 5 done: injury/questionable tags (same flags the Advice tab already computed via Recommend.projectAll) now also show on the Rosters tab, the Lineups tab (both mine and this week's opponent), and the Live tab's open lineup rows -- reusing the exact same ESPN-injury-feed-derived flags everywhere so a player never reads healthy on one screen and hurt on another. The injury feed itself now auto-refreshes by riding the existing live-score poll (liveTick), gated by loadNews's own 10-minute freshness cache, so it updates roughly every 10 minutes (or faster during a live game's 45s cadence) without any manual sync tap. Fixed a syntax error from a misplaced statement inside an if/else-if chain during the Live tab edit -- caught by check_es2018.js/test_lifecycle.js before commit. All 13 suites green.
+wrote up the full 2026-09-14e job (5 requests) in STATE.md under its own dated section -- design reasoning, the four rejected third-party projection sources and why (NFL.com anonymous access returns null data, FantasyPros 403s without a paid key, Yahoo needs OAuth, MyFantasyLeague needs a real hosted league ID), the two bugs the test suites caught before commit, and the one known pre-existing limitation left intentionally un-fixed (unscoped/stale Claude-verdict lookup in projectOne, affects every team equally, not introduced today). Moved the finished job from TASKS.md to LADDER.md section 27 with each box named against the test that proves it, and reset TASKS.md to no-active-job plus an updated 'waiting on Tj' phone-confirmation list for today's changes.
 
 ## Do this next
-all 5 of Tj's requested changes are implemented. Next: do the standing post-update sweep CLAUDE.md requires (UI/efficiency/bug-fix pass across everything touched today), re-verify with all suites + a real build.sh, then ship.sh and publish the GitHub Release per the standing rule.
+run ship.sh -- first real build.sh run on this container will download the Android SDK (~600MB), so it may take a few minutes. Verify the dex contains every class, all 13 suites gate green, then trigger publish-release.yml, verify the Release actually published (assets non-empty), and send Tj the plain tappable Release link per the CLAUDE.md standing rule -- not a code block.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  4cd42ce ckpt 82: task 5 done: injury/questionable tags (same flags the Advice tab already comput
   e10158d ckpt 75: tasks 1-4 done: (1) app now auto-advances to the current NFL week on cold boot 
   41a9374 ckpt 52: wrote Tj's 5-part request (auto-select current NFL week everywhere, stop showin
   b59fff0 ckpt 148: corrected the standing rule immediately on Tj's feedback: a fenced code block 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   7da2ea2 ckpt 134: built the real GitHub Release pipeline Tj asked for, after confirming this ses
   3c3ecc2 ckpt 129: wrote Tj's request to style the ship-link message like a real GitHub Release (
   a853fb4 ckpt 127: made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL 
-  c9cd2dd ckpt 125: fixed the download link format itself: Tj's screenshot showed the GitHub mobil
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(7 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
