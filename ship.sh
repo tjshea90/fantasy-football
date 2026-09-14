@@ -285,16 +285,25 @@ echo "  OK    ladder $DONE/$TOT complete"
 echo
 echo "== shipped v$V =="
 echo
-echo "  Tj installs it from — send him this exact link, /raw/ not /blob/"
-echo "  (the GitHub app's own preview cannot render a binary; /raw/ forces a"
-echo "  real download instead):"
-echo
 if [ "$MAINOK" -eq 1 ]; then
+  echo "  publish-release.yml is now publishing the Release from tag v$V —"
+  echo "  usually under a minute, but it runs asynchronously and it DOES call"
+  echo "  the GitHub API, so verify before telling Tj it's ready: poll"
+  echo "  mcp__github__get_release_by_tag (owner tjshea90, repo fantasy-football,"
+  echo "  tag v$V) until it returns, or check mcp__github__actions_list for the"
+  echo "  run's conclusion. Then send him:"
+  echo
+  echo "    https://github.com/tjshea90/fantasy-football/releases/tag/v$V"
+  echo
+  echo "  This works immediately, no waiting, if the Release publish is still"
+  echo "  pending or fails for any reason:"
   echo "    https://github.com/tjshea90/fantasy-football/raw/main/$APK"
 else
+  echo "  main was NOT reconciled above, so no tag was pushed and no Release"
+  echo "  will be published. Send him this instead, once reconciled:"
+  echo
   echo "    https://github.com/tjshea90/fantasy-football/raw/$CURBRANCH/$APK"
-  echo "    (main is NOT current — the main-branch link would 404 until that"
-  echo "    branch is reconciled onto main; see CLAUDE.md 'Branches')"
+  echo "    (main is NOT current — reconcile first; see CLAUDE.md 'Branches')"
 fi
 echo
 echo "  To continue in a NEW session, on ANY of the three Claude accounts:"
