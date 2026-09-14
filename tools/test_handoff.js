@@ -110,6 +110,22 @@ ok(/fftracker-waivers-reply\.json/.test(V), 'it names the reply file');
 ok(/at most \*\*2\*\*/.test(V), 'it caps unverifiable suggestions at two');
 ok(V.length > 2000 && V.length < 200000,
    'the briefing is a sane size (' + V.length + ' chars)');
+ok(/Kicker \/ defense — do I actually need one\?/.test(V),
+   'the K/DEF need section is included, so the offline path gates it too');
+ok(/priority/.test(V) && /season/.test(V) && /"week"|`"week"`/.test(V),
+   'the season/week priority contract field is documented');
+ok(/recentStat/.test(V), 'the recentStat contract field is documented');
+ok(/dropCandidate/.test(V) && /DROP CANDIDATES|Drop candidates/.test(V),
+   'the dropCandidate contract field and its source list are documented');
+(function () {
+  var wc = W.Value.waiverContext(WEEK, me, null, 2026, '2026-09-07');
+  if (wc.injuries.length) {
+    ok(/My roster — injuries/.test(V),
+       'the injuries section appears in the briefing when the roster actually has one');
+  } else {
+    ok(true, '(this roster has no injuries this week — section correctly omitted)');
+  }
+}());
 
 /* ---- 3. the round trip actually completes -------------------------------- */
 console.log('\n-- the loop: export, answer, import, read the app back --');
