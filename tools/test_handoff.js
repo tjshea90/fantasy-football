@@ -327,6 +327,9 @@ console.log('\n-- one implementation, not two --');
   var code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   ok(/Ai\.normalizeAdvice/.test(code) && /Ai\.normalizeWaivers/.test(code),
      'the importer uses ai.js\'s normalisers rather than its own');
+  ok(/Ai\.normalizeInjuries/.test(code) && /Ai\.dropCandidateIndex/.test(code),
+     'and the two new v5.5 normalisers — the injury outlook and the drop-candidate ' +
+     'position guard are not reimplemented here either');
   ok(/Ai\.parseAnswer/.test(code), 'and ai.js\'s tolerant JSON finder');
   ok(/Recommend\.mergeAi/.test(code) && /Value\.waiverSave/.test(code),
      'and the same storage path a live sync uses');
