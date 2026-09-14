@@ -420,10 +420,10 @@
   /* Which of a list of players got no projection at all. The advice screen
      shows this, because a starting QB silently falling back to his preseason
      number is exactly the kind of thing that hides in plain sight. */
-  function missing(players) {
+  function missing(players, week) {
     var out = [], i;
     for (i = 0; i < players.length; i++) {
-      var r = find(players[i]);
+      var r = find(players[i], week);
       if (!r || r.week === undefined) {
         out.push({ name: players[i].name, pos: players[i].pos,
                    partial: !!(r && r.season !== undefined) });
