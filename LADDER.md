@@ -707,3 +707,32 @@ flow again.
       every v5.5 addition is in it, then sent the file to Tj directly.
 - [x] 5. New `test_boot.js` assertions pin all four fixes; full 13-suite
       regression + ES2018 gate green; shipped as v5.6 via `ship.sh`.
+
+
+## 25. The projection-feed screenshot + the Claude-Pro-subscription question
+      (archived from TASKS.md, 2/2 done)
+
+> "Tell me if the attached screenshot error is a big deal. If it is, fix it.
+> Also I no longer have a Claude api key. Is there a way to automate using
+> Claude reasoning in the fantasy app without doing the export and import to
+> the Claude chat? For example, is there an api key for my regular Claude
+> pro subscription that I already have that is separate from buying a
+> dedicated key? Is there any other way I can use Claude inside the app
+> without api key"
+
+Full write-up in STATE.md under "v5.7 — the 'limit only' fallback route was
+permanently broken".
+
+- [x] 1. Not a big-deal-for-his-data bug (coverage was already complete,
+      QB numbers healthy) but a real structural one: `projections.js`'s last
+      ESPN fallback shape (`tiny`/"limit only") had no `sort` field, which
+      ESPN's API now hard-rejects when paired with `limit` — not transient,
+      permanently broken, and running on every sync because none of the
+      three routes ahead of it alone clears the early-stop threshold. Fixed
+      by adding the same `sortPercOwned` field `lean` already carries.
+      Pinned in `test_net.js`.
+- [x] 2. Answered directly: a Claude.ai Pro subscription and an Anthropic
+      API key are separate products/billing; no consumer-login mechanism
+      exists for a third-party app to use in place of a key. The existing
+      `handoff.js` offline round trip is already the zero-cost path using
+      his Pro subscription — not a workaround, the actual mechanism.
