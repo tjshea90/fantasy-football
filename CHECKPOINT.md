@@ -1,12 +1,12 @@
-# CHECKPOINT 145 — read me first, then TASKS.md
+# CHECKPOINT 148 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:48:30Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:50:11Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-saved Tj's exact message-style request into the CLAUDE.md standing rule: every future ship-link message now follows his Portfolio-project template (vX.Y is shipped / what went green / release published / recorded in BUILDLOG.md / Grab it here + link) with one honest substitution -- 'Run #N went green' becomes 'every test suite and the ES2018 gate went green' since this repo's actual gate is ship.sh running locally, not a numbered remote CI run, and I'm not copying wording that would misstate how this repo works
+corrected the standing rule immediately on Tj's feedback: a fenced code block is copyable but NOT clickable, so it failed the actual goal (a link he can just tap). Switched both the Release link and the raw-file fallback to plain tappable text, never wrapped in backticks/code fences -- a bare URL is both tappable and still long-press-copyable on a phone, so nothing was lost
 
 ## Do this next
-none -- no active job. Send Tj the v5.7 link in the new message format to confirm it reads right
+none -- no active job. Resend the v5.7 link as an actual clickable link this time
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
   c20caaf ckpt 143: verified the Release pipeline end-to-end and closed the loop: triggered publis
   66dcf03 ckpt 137: redesigned the release trigger after discovering git tag-push 403s for this se
   7da2ea2 ckpt 134: built the real GitHub Release pipeline Tj asked for, after confirming this ses
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
   bacf3fa ckpt 119: recovered from the exact incident CLAUDE.md warns about by name: this whole se
   a8e4db7 ckpt 116: added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj th
-  ecabeb7 ship v5.7: fix the permanently-broken 'limit only' projection-feed fallback route (ESPN 
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
