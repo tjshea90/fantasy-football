@@ -463,9 +463,22 @@
 
   /* ---- lookup --------------------------------------------------------- */
   /* D/ST entries come back as "Eagles D/ST" style names; roster DEFs are
-     stored by NFL code, so match on the team nickname too. */
-  function find(player) {
+     stored by NFL code, so match on the team nickname too.
+     `week`, when passed, is the WEEK BEING ASKED ABOUT — not necessarily the
+     week this cache actually holds. Tj, 2026-09-14: "in the advice tab, when
+     I go to week 2, it still shows me cached numbers for week 1 projections
+     which doesn't make sense." Before this, find() answered from whatever
+     was last fetched regardless of which week the caller meant, so a week-2
+     screen quietly showed week-1's ESPN/Sleeper numbers under a "week 2
+     projection" label. A cache from a different week is not a worse answer
+     to this question, it is an answer to a DIFFERENT question — so it is
+     withheld entirely (both the weekly line and the season pace, which
+     travel with the same fetch and are only as current as it is), leaving
+     the caller to show blank/loading until refresh() actually runs for the
+     week in view. */
+  function find(player, week) {
     if (!cache.byName) return null;
+    if (week !== undefined && week !== null && Number(cache.week) !== Number(week)) return null;
     var k = root.Espn.normName(player.name);
     if (cache.byName[k]) return cache.byName[k];
     /* Then every other spelling of the same man. The index is keyed by the
