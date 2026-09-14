@@ -672,3 +672,38 @@ that before touching this feature again rather than re-deriving it.
 - [x] 9. Swept all touched files for bugs/dead code/UI issues before calling
       it done (nothing found beyond what was already fixed inline — see
       STATE.md); bumped VERSION 5.4 -> 5.5; shipped via `ship.sh`.
+
+
+## 24. The stale-injury-feed bug report (archived from TASKS.md, 5/5 done)
+
+> "After refreshing the waiver wire section, it shows stale news about
+> preseason NFL. See the screenshot attached. This information is stale.
+> Diagnose this. And confirm that if I do a make the file for Claude app
+> prompt about the wire that it follows the new criteria that you updated
+> for v5.5"
+
+Found within minutes of Tj installing v5.5 — a real gap in the feature just
+shipped. Full diagnosis, including a genuinely separate CSS bug caught only
+by rendering the real app.css in a headless Chromium (pre-installed in this
+environment) rather than trusting a source read, is written up in STATE.md
+under "v5.5b — the stale-injury-feed bug, and a real CSS bug caught by
+rendering it". Read that before touching the injury card or the wire-sync
+flow again.
+
+- [x] 1. `Recommend.newsCache()` exported (mirrors the existing `aiCache`
+      getter pattern).
+- [x] 2. The roster-injuries card shows a freshness line ("Injury feed: N
+      records, Xh ago" / "not synced yet") and its own "Sync injury feed"
+      button — no API key needed, it is only the ESPN endpoint. Also fixed
+      the actual garbled-text bug: the note now renders in a sibling `.kv`
+      line instead of the row's own nowrap `<small>`, which — verified by
+      rendering the real stylesheet in headless Chromium, not by reading the
+      CSS and guessing — wraps instead of ellipsizing when a long text run
+      shares a nowrap flex line with an inline-block tag span.
+- [x] 3. "Ask Claude about the wire" now force-refreshes the injury feed
+      BEFORE building the context Claude reasons over, so a paid call never
+      reasons from stale "settled fact" ESPN designations.
+- [x] 4. Generated a real `Handoff.buildWaivers()` sample and confirmed
+      every v5.5 addition is in it, then sent the file to Tj directly.
+- [x] 5. New `test_boot.js` assertions pin all four fixes; full 13-suite
+      regression + ES2018 gate green; shipped as v5.6 via `ship.sh`.
