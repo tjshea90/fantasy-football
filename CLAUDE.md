@@ -117,7 +117,11 @@ there is an independent check that the build is not broken.
 
 **Every session, every account: the moment `ship.sh` succeeds, tell Tj the
 direct GitHub link to the new APK in your reply.** Not a description of
-where to look — the actual URL, ready to tap. Use `/raw/`, never `/blob/`:
+where to look — the actual URL, ready to tap. Use `/raw/`, never `/blob/`,
+and **put it in its own fenced code block, exactly like this — not bold, not
+plain inline text** (Tj asked specifically, 2026-09-14: a code block is what
+renders with a one-tap copy button in the chat client; bold/plain text does
+not):
 
 ```
 https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v<VERSION>.apk
