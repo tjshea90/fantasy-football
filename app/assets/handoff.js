@@ -307,6 +307,59 @@
                  (typeof s.proj === 'number' ? s.proj.toFixed(1) : '?') + ' |');
     }
     lines.push('');
+    if (ctx.injuries && ctx.injuries.length) {
+      lines.push('## My roster — injuries');
+      lines.push('');
+      lines.push('Research the rest-of-season outlook for each of these NOT on a bye —');
+      lines.push('severity, body part, expected timeline — and report it in the `injuries`');
+      lines.push('list at the end even if he does not need replacing. The bye ones need no');
+      lines.push('research; just echo the reason already given.');
+      lines.push('');
+      for (i = 0; i < ctx.injuries.length; i++) {
+        var inj = ctx.injuries[i];
+        lines.push('- **' + inj.name + '** (' + inj.pos + ', ' + inj.nfl + ') — ' +
+                   inj.status + (inj.note ? ': ' + inj.note : ''));
+      }
+      lines.push('');
+    }
+    lines.push('## Kicker / defense — do I actually need one?');
+    lines.push('');
+    lines.push('A streamed kicker or D/ST for one good matchup is exactly the kind of');
+    lines.push('small weekly change that matters least in this league — see **priority**');
+    lines.push('below. Only rank a K or DEF add when the matching line here says NEEDED;');
+    lines.push('otherwise omit K and DEF from your answer entirely.');
+    lines.push('');
+    lines.push('- K: ' + ((ctx.kdefNeed && ctx.kdefNeed.K)
+                 ? '**NEEDED** — mine is on bye or ruled out this week'
+                 : 'not needed — my kicker is available'));
+    lines.push('- DEF: ' + ((ctx.kdefNeed && ctx.kdefNeed.DEF)
+                 ? '**NEEDED** — mine is on bye or ruled out this week'
+                 : 'not needed — my defense is available'));
+    lines.push('');
+    var anyDrop = false;
+    if (ctx.dropCandidates) {
+      for (k in ctx.dropCandidates) {
+        if (Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k) &&
+            ctx.dropCandidates[k].length) { anyDrop = true; break; }
+      }
+    }
+    if (anyDrop) {
+      lines.push('## Drop candidates — my own weakest player at each position');
+      lines.push('');
+      lines.push('Ranked by rest-of-season value, worst first. A `dropCandidate` on an add');
+      lines.push('**must** be chosen from the matching position\'s list here, or left an');
+      lines.push('empty string — never a name at a different position, and never one you');
+      lines.push('invented.');
+      lines.push('');
+      for (k in ctx.dropCandidates) {
+        if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
+        if (!ctx.dropCandidates[k].length) continue;
+        lines.push('- **' + k + '**: ' + ctx.dropCandidates[k].map(function (d) {
+          return d.name + ' (ROS value ' + d.ros.toFixed(1) + ')';
+        }).join(', '));
+      }
+      lines.push('');
+    }
     if (ctx.needs && ctx.needs.length) {
       lines.push('**Where this roster is thinnest** (a starter within 4 points of the best');
       lines.push('free agent at his own position — i.e. barely better than replacement):');
