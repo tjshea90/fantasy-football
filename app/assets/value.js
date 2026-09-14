@@ -347,8 +347,79 @@
     return out.filter(function (x) { return x.gap < 4; }).slice(0, 5);
   }
 
+  /* ---- MY roster, injuries, deterministic (v5.5) -------------------------
+   * Reuses Recommend.projectAll rather than reading the ESPN feed a second
+   * way, so this can never disagree with the Advice tab about who is hurt —
+   * one source of truth for injury status, shared rather than reimplemented.
+   * Needs no API key: this is the ESPN designation and note, on screen the
+   * moment the Wire tab opens. Claude, when synced, adds a season-outlook
+   * READ on top of this list — it never replaces it. */
+  function myInjuries(week, allProj) {
+    var out = [], i;
+    for (i = 0; i < allProj.length; i++) {
+      var x = allProj[i];
+      if (x.onBye) {
+        out.push({ name: x.p.name, pos: x.p.pos, nfl: x.p.nfl, status: 'BYE',
+                   note: 'on bye in week ' + week, onBye: true });
+      } else if (x.h && x.h.label) {
+        out.push({ name: x.p.name, pos: x.p.pos, nfl: x.p.nfl, status: x.h.label,
+                   note: x.h.note || '', onBye: false });
+      }
+    }
+    return out;
+  }
+
+  /* ---- K/DEF need: true only when every K (or every DEF) on my roster is
+   * on bye or ruled OUT this week. This is the ONE exception under which a
+   * kicker or defense add is worth anything to Tj, per his own rule: low
+   * priority otherwise, no exception either way if my own is startable. */
+  function kdefNeedFrom(allProj) {
+    var out = { K: false, DEF: false }, k;
+    for (k in out) {
+      if (!Object.prototype.hasOwnProperty.call(out, k)) continue;
+      var mine = allProj.filter(function (x) { return x.p.pos === k; });
+      out[k] = !mine.length || mine.every(function (x) {
+        return x.onBye || (x.h && x.h.label === 'OUT');
+      });
+    }
+    return out;
+  }
+
+  /* ---- drop candidates, per position, weakest REST-OF-SEASON value first -
+   * Bench players only, when there are any — a starter is offered only as a
+   * last resort when the position has no bench depth at all, so Claude
+   * always has something to weigh a pickup against rather than nothing.
+   * Ranked on ROS (points above replacement TIMES weeks left), the same
+   * arithmetic trade() already uses — not this week's number — because a
+   * player who barely helps this week but matters for two more months must
+   * not be offered ahead of one who is dead weight all season. This is what
+   * keeps "give more priority to entire season recommendations... over
+   * small weekly changes" honest instead of just a sentence in the prompt. */
+  function dropCandidatesFrom(allProj, startIds, repl, left, perPos) {
+    var byPosAll = {}, i;
+    for (i = 0; i < allProj.length; i++) {
+      var x = allProj[i], p = x.p;
+      var r = repl[p.pos] || 0;
+      var ros = (x.base - r) * left;
+      if (!byPosAll[p.pos]) byPosAll[p.pos] = [];
+      byPosAll[p.pos].push({ id: p.id, name: p.name, pos: p.pos, ros: ros,
+                              bench: !startIds[p.id] });
+    }
+    var out = {}, k;
+    for (k in byPosAll) {
+      if (!Object.prototype.hasOwnProperty.call(byPosAll, k)) continue;
+      var list = byPosAll[k];
+      var bench = list.filter(function (x2) { return x2.bench; });
+      var pool = (bench.length ? bench : list).slice();
+      pool.sort(function (a, b) { return a.ros - b.ros; });
+      out[k] = pool.slice(0, perPos || 3);
+    }
+    return out;
+  }
+
   function waiverContext(week, teamId, opponents, season, today) {
     var g = byPos(week, 6);
+    var allProj = root.Recommend.projectAll(week, teamId, opponents);
     var starters = myStarters(week, teamId, opponents);
     var t = root.Store.team(teamId);
     var startIds = {}, i;
@@ -361,12 +432,16 @@
         }
       }
     }
+    var repl = replacement(week), left = weeksLeft(week);
     return {
       week: week, season: season || (new Date()).getFullYear(),
       today: today || (new Date()).toISOString().slice(0, 10),
       starters: starters, bench: bench,
       needs: needs(week, teamId, opponents),
-      pool: g
+      pool: g,
+      injuries: myInjuries(week, allProj),
+      kdefNeed: kdefNeedFrom(allProj),
+      dropCandidates: dropCandidatesFrom(allProj, startIds, repl, left, 3)
     };
   }
 
@@ -376,6 +451,6 @@
                  byPos: byPos, byVor: byVor, POS: POS,
                  perGame: perGame, usage: usage, usageText: usageText,
                  valueOf: valueOf, trade: trade, weeksLeft: weeksLeft,
-                 rosteredSet: rosteredSet };
+                 rosteredSet: rosteredSet, myInjuries: myInjuries };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Value;
 })(typeof window !== 'undefined' ? window : this);
