@@ -765,3 +765,69 @@ touching the release pipeline again.
 - [ ] 4. Phone confirmation that the v5.7 Release link actually downloads —
       moved to "Waiting on Tj" in TASKS.md; everything server-side is
       verified, this is the one thing only his device can confirm.
+
+
+## 27. Five requests: current week, stale advice, preseason data, more
+      sources, injuries everywhere (2026-09-14, v5.8)
+
+> "A couple changes I want for this app. 1) automatically select the tabs
+> in all sections of the app to the current NFL week... 2) in the advice
+> tab, when I go to week 2, it still shows me cached numbers for week 1
+> projections... Make it so the advice loads and refreshes all data when I
+> pull down to refresh, and to get all information possible before trying
+> to access the Claude API in case I have no credit left. 3) the advice
+> section still pulls projections from preseason sources... Remove all
+> preseason consideration... 4) See if you can find more sources to blend
+> projections... Do this for all of the players on my roster and all of
+> the players on the roster for my opponent of the week... Include both
+> benches. 5) ...clearly show updated information on if any player is
+> injured or questionable... updated frequently..."
+
+Full design reasoning, what was tried and rejected for item 4, and the one
+known pre-existing limitation left un-fixed are written up in STATE.md
+under "Five requests in one pass" — read that before touching any of this
+again.
+
+- [x] 1. `Espn.currentWeek()` + `syncCurrentWeek()`/`applyCurrentWeek()` in
+      ui.js, wired into `boot()` only. Proven by `test_lifecycle.js`
+      (boot must not throw when the call has no async bridge available —
+      caught a real synchronous-throw bug on the first pass) plus manual
+      trace of the ESPN calendar boundary against tonight's MNF kickoff.
+- [x] 2a. `Projections.find`/`missing` now take `week` and refuse a
+      cross-week answer; `Recommend.render()` shows a blank/loading card
+      instead of any computed content until `Projections.meta().week`
+      matches the week being viewed. Proven by `test_engine.js` +
+      `test_integration.js` still green with the new gating in place.
+- [x] 2b. Pull-to-refresh on the Advice tab now calls `Recommend.syncAll`
+      instead of the box-score sync. Proven by `test_gestures.js`
+      (updated to match the intentionally extended `blocked()` guard).
+- [x] 2c. Confirmed by reading (not changed): `syncAll` already runs
+      schedule → injuries → every projection source → Claude LAST, so a
+      spent/missing key already leaves everything else populated.
+- [x] 3. `seed.projPG`/`projSrc` removed from `projectOne()`'s blend, the
+      `W` weight table, the file header, the on-screen explanation, and
+      the roster card's "· proj X/wk" display. Proven by
+      `test_engine.js`'s `testMultiSourceBlend` staying green (it never
+      asserted on the preseason source, only Sleeper) and `test_boot.js`
+      staying green (seed data itself is untouched — it just is not read
+      by advice anymore).
+- [x] 4. Researched NFL.com, FantasyPros, Yahoo and MyFantasyLeague as
+      candidate third sources; none clear this app's free/no-key/
+      confidently-rescorable bar (details in STATE.md). Built the
+      capability Tj actually asked for instead: the existing ESPN+Sleeper
+      blend, already re-scored under this league's rules, now also
+      renders for the FULL opponent roster (bench included) on the
+      Advice tab — nothing computed for any other team. Proven by
+      `test_integration.js` staying green with `projectAll` now called
+      for a second team per render.
+- [x] 5. `healthFlags()`/`appendHealthTags()` (ui.js) wired into
+      `teamRosterCard`, `lineupCard` (mine + this week's opponent), and
+      `lineupDetail` (both halves of the Live tab's matchup), reusing the
+      exact flags the Advice tab already computed. `liveTick()` now also
+      calls `Recommend.loadNews()` every tick (a real fetch roughly every
+      10 minutes, gated by its own freshness cache). Proven by
+      `check_es2018.js` (a real syntax error from this exact edit was
+      caught before commit) and `test_lifecycle.js`'s full-screen render
+      pass staying green for every tab.
+
+All 13 suites green throughout. Shipped as v5.8.
