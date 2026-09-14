@@ -406,8 +406,17 @@
             name: '<exact name>', pos: 'QB|RB|WR|TE|K|DEF', nfl: '<team abbr>',
             rank: 1,
             overStarter: '<name of the starter he beats, or an empty string>',
+            priority: 'season | week',
+            recentStat: '<his exact stat line from his most recent game, dated>',
+            dropCandidate: '<exact name from the matching position in DROP CANDIDATES, or an empty string>',
             confidence: 'high | medium | low',
             why: '<the news or role reason, dated, with the outlet named>'
+          }],
+          injuries: [{
+            name: '<exact name from My roster — injuries>',
+            extent: '<severity, body part, how it happened>',
+            timeline: '<expected return / rest-of-season outlook, dated and cited>',
+            replace: true
           }],
           needs: '<one sentence: where this roster is actually thin, and why>',
           summary: '<two sentences: what to do first>'
@@ -416,16 +425,23 @@
         '`rank` — 1 is the best add overall. Also rank within each position by listing that position\'s players in order.',
         'Return the best few at **each** position that has a credible option, not one global list. A list of nothing but quarterbacks is useless here even though quarterbacks score most.',
         '`overStarter` — fill it in **only** when you actually believe he beats that named starter this week under this scoring. Empty string otherwise. Do not guess.',
+        '`priority` — `"season"` when the opportunity should last (an injury/benching ahead of him that will keep him out multiple weeks, a permanent role change); `"week"` for a one-off (bye fill-in, single-week matchup). Rank season-priority adds ahead of week-only ones within the same position.',
+        '`recentStat` — his exact stat line from his most recent game, dated (e.g. "3 rec, 34 yds vs DAL (Wk 2)"). Empty string if you found no box score.',
+        '`dropCandidate` — **only** a name copied exactly from that position\'s entry in **Drop candidates** above, or an empty string if there is no fair swap (e.g. an open bench spot). Never a name at a different position, never one you invented — the app discards anything else.',
+        'Kickers and defenses — only include a K or DEF add when **Kicker / defense — do I actually need one?** above says NEEDED for that position. Otherwise leave K and DEF out of `adds` entirely.',
         'Prefer players from the AVAILABLE list. You may name at most **2** who are not in it, if the news is strong — mark those `"confidence": "low"`. The app flags them as unverified and will not offer an Add button, because it cannot confirm they are free in this league.',
         'If a position has no credible add, omit it rather than padding the list.',
+        '`injuries` — one entry per name in **My roster — injuries** that is not on a bye. If you found nothing beyond the app\'s own designation, say so plainly in `timeline` rather than inventing a timetable.',
         'Never invent news. If you found nothing on a player, do not rank him.'
       ],
       {
         name: 'Example Back', pos: 'RB', nfl: 'CHI', rank: 1,
-        overStarter: 'Example Starter', confidence: 'high',
-        why: 'The starter ahead of him left Sunday\'s game with a hamstring injury ' +
-             'and was placed on IR Tuesday (NFL.com, 2026-09-08). He took every ' +
-             'first-team rep Wednesday and is the early-down and goal-line back.'
+        overStarter: 'Example Starter', priority: 'season',
+        recentStat: '3 rec, 34 yds vs DAL (Wk 2)',
+        dropCandidate: 'Example Bench Back', confidence: 'high',
+        why: 'The new starter after Example Starter\'s hamstring injury Sunday and IR ' +
+             'placement Tuesday (NFL.com, 2026-09-08); took every first-team rep ' +
+             'Wednesday and is the early-down and goal-line back going forward.'
       }));
     lines.push('---');
     lines.push('');
