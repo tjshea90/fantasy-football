@@ -903,6 +903,50 @@
         holder.appendChild(bc);
       }
 
+      /* --- this week's opponent, the same treatment (v5.8) -----------------
+       * Tj, 2026-09-14: "do this for all of the players on my roster and all
+       * of the players on the roster for my opponent of the week... include
+       * both benches. Do not do this for any other roster, only mine and my
+       * opponent." Same blend (ESPN + Sleeper, each re-scored under this
+       * league's rules, plus his measured games and the injury feed), same
+       * code path (projectAll works for any team, not just mine) — just a
+       * second roster, so he can see what he is playing against without
+       * guessing. No Claude research is spent on them; that stays exactly
+       * where Tj asked for it, on his own roster only. */
+      var oppTeamId = null;
+      root.Store.getMatchups(week).forEach(function (pair) {
+        if (pair[0] === teamId) oppTeamId = pair[1];
+        else if (pair[1] === teamId) oppTeamId = pair[0];
+      });
+      if (oppTeamId) {
+        var oppTeam = root.Store.team(oppTeamId);
+        if (oppTeam) {
+          var oppAll = projectAll(week, oppTeamId, opp)
+            .sort(function (a, b) { return b.proj - a.proj; });
+          var oc = el('div', 'card');
+          oc.appendChild(el('h2', null, oppTeam.name + ' · blended projections'));
+          oc.appendChild(el('p', 'hint',
+            'The same multi-source blend and injury feed as your roster above, ' +
+            'just their players — their whole roster, bench included, so you can ' +
+            'see what you are up against this week.'));
+          oppAll.forEach(function (x) {
+            var r2 = el('div', 'row');
+            r2.appendChild(el('div', 'slot', x.p.pos));
+            var nm3 = el('div', 'nm');
+            nm3.appendChild(document.createTextNode(x.p.name));
+            nm3.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp ? ' vs ' + x.opp : '')));
+            x.flags.forEach(function (f) {
+              nm3.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
+                                 f.text.split(' — ')[0].split(':')[0]));
+            });
+            r2.appendChild(nm3);
+            r2.appendChild(el('div', 'pts' + (x.startable ? '' : ' bye'), fmt(x.proj)));
+            oc.appendChild(r2);
+          });
+          holder.appendChild(oc);
+        }
+      }
+
       /* --- everything flagged --- */
       var warn = el('div', 'card');
       warn.appendChild(el('h2', null, 'Flagged — will not be recommended'));
