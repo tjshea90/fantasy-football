@@ -1,12 +1,12 @@
-# CHECKPOINT 148 — read me first, then TASKS.md
+# CHECKPOINT 52 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:50:11Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T22:41:47Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-corrected the standing rule immediately on Tj's feedback: a fenced code block is copyable but NOT clickable, so it failed the actual goal (a link he can just tap). Switched both the Release link and the raw-file fallback to plain tappable text, never wrapped in backticks/code fences -- a bare URL is both tappable and still long-press-copyable on a phone, so nothing was lost
+wrote Tj's 5-part request (auto-select current NFL week everywhere, stop showing stale cached projections on the Advice tab, remove preseason sources from advice/recommendations, blend 2-3 more reputable rescored projection sources for my roster + this week's opponent roster, surface injury/questionable status on my players everywhere they're listed) into TASKS.md verbatim before writing any code
 
 ## Do this next
-none -- no active job. Resend the v5.7 link as an actual clickable link this time
+explore the codebase: find the week-selector logic used by each tab, the Advice tab's projection caching/loading, where preseason projection data enters recommend.js/ai.js, and the current injury-status plumbing -- then start on task 1 (auto-select current NFL week)
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  b59fff0 ckpt 148: corrected the standing rule immediately on Tj's feedback: a fenced code block 
   65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
   c20caaf ckpt 143: verified the Release pipeline end-to-end and closed the loop: triggered publis
   66dcf03 ckpt 137: redesigned the release trigger after discovering git tag-push 403s for this se
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   c9cd2dd ckpt 125: fixed the download link format itself: Tj's screenshot showed the GitHub mobil
   a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
   bacf3fa ckpt 119: recovered from the exact incident CLAUDE.md warns about by name: this whole se
-  a8e4db7 ckpt 116: added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj th
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
