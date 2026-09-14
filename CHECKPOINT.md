@@ -1,12 +1,12 @@
-# CHECKPOINT 127 — read me first, then TASKS.md
+# CHECKPOINT 129 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:34:59Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:36:39Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL shape: the link must go in its own fenced code block in the chat reply, not bold or plain text, because that's what actually renders a one-tap copy button in the client -- I had been sending it as bold text, which doesn't, even though CLAUDE.md's own example was already in a code block
+wrote Tj's request to style the ship-link message like a real GitHub Release (his Portfolio project example: .../releases/tag/v7.22) into TASKS.md before doing anything -- confirmed this repo has zero GitHub Releases published today (checked earlier this session), so this needs an actual new release-creation step via mcp__github__ tools after ship.sh, not just different link text, or it 404s exactly like the last two rounds
 
 ## Do this next
-none -- confirm the code-block format actually shows a copy button by sending Tj the v5.7 link that way
+find the right mcp__github__ tool for creating a release with an attached binary asset, then prove it on v5.7 before writing anything into the standing rule
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a853fb4 ckpt 127: made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL 
   c9cd2dd ckpt 125: fixed the download link format itself: Tj's screenshot showed the GitHub mobil
   a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
   bacf3fa ckpt 119: recovered from the exact incident CLAUDE.md warns about by name: this whole se
@@ -35,7 +36,6 @@ request in his own words and `git log` carries every step already taken.
   d4bc132 ckpt 102: removed a stray demo file (sample-waiver-handoff-v5.5.md) that autosave picked
   29aaed8 ship v5.6: fix stale injury feed on the Wire tab: freshness line + a no-API-key Sync but
   a14f9a3 ckpt 92: fixed the stale-injury-feed bug Tj reported with a screenshot: recommend.js exp
-  13a5233 ckpt 82: diagnosed Tj's stale-injury-data report: confirmed via code reading (not guessi
 ```
 
 (1 automatic checkpoint(s) since the last deliberate one — the
