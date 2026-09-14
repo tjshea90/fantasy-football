@@ -1359,6 +1359,7 @@
     var keys = Store.slotKeys();
     var L = Store.getLineup(week, t.id);
     var locks = Store.lockedSlots(week, t.id);
+    var flagsById = healthFlags(t.id, weekOpponents());
     var manualCount = 0, lockCount = 0;
     keys.forEach(function (k) {
       var isMan = Store.isManual(week, t.id, k.key);
@@ -1375,7 +1376,10 @@
          decision with a deadline, and every other slot can wait. */
       if (L[k.key]) {
         var lp = Store.playerById(L[k.key]);
-        if (lp) { var lb = gameBadge(lp.nfl); if (lb) lab.appendChild(lb); }
+        if (lp) {
+          var lb = gameBadge(lp.nfl); if (lb) lab.appendChild(lb);
+          appendHealthTags(lab, flagsById[L[k.key]]);
+        }
       }
       var sel = el('select');
       /* stable identity so the re-render can hand focus back to this exact
