@@ -127,7 +127,13 @@
          'full'   — every player every time, the pre-v2.4 behaviour
          'cheap'  — smart, on the cheap model */
       aiDepth: 'smart',
-      aiFreshDays: 3           /* a clear verdict stays good this long */
+      aiFreshDays: 3,          /* a clear verdict stays good this long */
+      /* ESPN's own current-week calendar (see Espn.currentWeek in espn.js
+         and syncCurrentWeek in ui.js) -- {week, seasonType, at}. Cached
+         rather than fetched on every boot so a cold start with no network
+         still opens on whatever week it last knew, and refetched at most a
+         few times a day once online. */
+      nflWeek: null
       /* individualReturnTD was here until v4.7. Tj settled the rules-sheet
          ambiguity ("a defense touchdown is only scored one time") and the
          setting is gone, not defaulted — see the note in scoring.js. An old
