@@ -673,9 +673,10 @@
         gd.appendChild(kv);
       });
       gd.appendChild(el('p', 'hint',
-        'These fall back to their preseason projection and their own scored ' +
-        'games, which still works — it is just one fewer source. If a starter ' +
-        'is here every week, check Data → Test the projection feed.'));
+        'These fall back to their own scored games this season (or a flat ' +
+        'positional average if he has none yet) — it is just one fewer ' +
+        'source, never a stale preseason number. If a starter is here every ' +
+        'week, check Data → Test the projection feed.'));
       st.appendChild(gd);
     }
     line('Injury feed', newsCache.at
