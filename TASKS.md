@@ -1,54 +1,59 @@
-# TASKS — the current job, in Tj's words
+# TASKS — the 2026-09-14b request, in Tj's words
 
-**There is no active job right now.** The 2026-09-14 waiver-wire upgrade is
-complete and archived at the end of `LADDER.md` (§23). Shipped as v5.5 via
-`ship.sh` — full release gate (13 suites, ES2018, dex-completeness, manifest)
-passed. See "Waiting on Tj" below for what needs a real phone to confirm.
+> "After refreshing the waiver wire section, it shows stale news about
+> preseason NFL. See the screenshot attached. This information is stale.
+> Diagnose this. And confirm that if I do a make the file for Claude app
+> prompt about the wire that it follows the new criteria that you updated
+> for v5.5"
 
-## When Tj asks for something new
+His screenshot: the new "Your roster — injuries" card on the Wire tab, week
+1, showing D'Andre Swift/Wan'Dale Robinson/Tyrone Tracy Jr. with QUESTIONABLE
+tags and notes that read like preseason camp-battle text, one of them cut off
+mid-word ("...Even still, Swift wil").
 
-Write it HERE FIRST, in his own words, as unticked boxes — before writing any
-code. Until it is on disk the job exists only in a chat window that no other
-Claude account can see, and a usage cap landing before the first checkpoint
-loses not just the work but the knowledge of what was asked.
+## Diagnosis (confirmed, before writing any fix)
 
-```
-# TASKS — the <date> request, in Tj's words
+The injury feed (`newsCache` in recommend.js) loads from a PERSISTED disk
+cache on every app boot (`ui.js` `boot()` calls `Recommend.loadCaches()`
+unconditionally, line ~512) — so the card is not broken, it is honestly
+showing what is actually cached. The problem: **nothing on the Wire tab ever
+refreshes that cache.** Only `Recommend.syncAll()` (the Advice tab's "Sync
+advice" button) calls `loadNews()` to fetch a live ESPN injury feed. Tj
+apparently has not pressed that recently, so the Wire tab is showing
+injury notes possibly a week or more old — old enough that the mid-word cut
+("...Swift wil") matches the exact 220-character-truncation bug fixed
+pre-v5.5 (see recommend.js's `trimNote` history): that string was very
+likely written to disk BEFORE that fix shipped and has sat there untouched
+ever since, because nothing has re-synced it.
 
-> "<paste what he actually said, verbatim>"
+Two real gaps, both mine from the v5.5 work:
+1. The new roster-injuries card shows NO freshness indicator at all (every
+   other cache-backed section in the app — the Advice tab's "Injury feed:
+   N records, Xh ago", the Claude wire-read's "Read Xh ago" — does), so
+   stale data is presented as if current.
+2. Neither the deterministic card nor "Ask Claude about the wire" can
+   refresh the injury feed themselves — you have to know to go to the
+   Advice tab first. Worse: a live Claude waiver call is currently reasoning
+   from whatever stale ESPN designations happen to be cached, which
+   undermines the v5.5 "freshness discipline" instruction — that only
+   covers what Claude searches for, not the facts the app hands it as
+   settled.
 
-- [ ] 1a. <first step>
-- [ ] 1b. <second step>
-```
+- [x] 1. Export a minimal freshness getter from recommend.js (same pattern as
+      the existing `aiCache` getter) so ui.js can read the injury feed's
+      age/count/error without reaching into a private variable.
+- [x] 2. "Your roster — injuries" card: show a freshness line, and add its
+      own "Sync injury feed" button (`Recommend.loadNews` with `force`) that
+      works with NO API key, since it is only the ESPN endpoint.
+- [x] 3. "Ask Claude about the wire": refresh the injury feed first (forced),
+      same as `syncAll` already does for the Advice tab, before building the
+      context Claude reasons over — a paid call must not reason from stale
+      "settled fact" ESPN designations.
+- [x] 4. Confirm the Claude-app handoff file (`Handoff.buildWaivers`, the
+      "no API key, no cost" button) carries every v5.5 addition — generate a
+      real sample and show him the new sections directly, not just point at
+      passing tests.
+- [x] 5. Test, full regression, build, ship.
 
-Ticking a box means: written, tested, committed, and the test that proves it is
-named in the box. **Never tick a box you have not verified** — the next account
-will not re-check it.
-
-When a job is finished, move it to `LADDER.md` and reset this file. This file
-is printed into every session briefing, so a finished job left here is re-read
-at cost on every cold start, forever.
-
-## Waiting on Tj
-
-- [ ] **Confirm the waiver-wire upgrade on the phone** (v5.5 — no Claude Code
-      session can run the Android WebView, so this was verified by reading
-      code and CSS, not by eye). On the Wire tab:
-      - a "Your roster — injuries" card appears above the free-agent board,
-        showing anyone hurt or on bye with no tap needed;
-      - "Ask Claude about the wire" (needs the API key on the Data tab) now
-        also researches those injuries' season outlook, and shows a
-        SEASON/1-WEEK tag plus a "Last game" stat line on each recommended
-        add when you tap "why ▾" — check that text is not cut off;
-      - a K or DEF only shows up in Claude's ranked list when your own is
-        actually on bye or out, and even then it's labelled low priority;
-      - where a pickup comes with a fair same-position drop, there's an
-        "Add + drop [name]" button next to the plain Add — tap it once on a
-        real case and confirm both the add and the drop actually happened.
-- [ ] Delete the 3 stale branches himself, if still not done — see LADDER.md
-      §22e for names and why (this session, like every prior one, did not
-      have branch-delete access — did not re-check, no reason to expect it
-      changed).
-- [ ] Verify v4.7-era item, if still relevant: **Data > Test the projection
-      feed** (a QB should land near 40-55 under this scoring; 15-25 means the
-      re-scoring is not running).
+Ticking a box means: written, tested, committed, and the test that proves it
+is named in the box. **Never tick a box you have not verified.**
