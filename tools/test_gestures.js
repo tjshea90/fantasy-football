@@ -236,8 +236,8 @@ function finish() {
   console.log('\n-- how ui.js wires it --');
   const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'assets', 'ui.js'), 'utf8');
   ok(/Gestures\.init\(/.test(ui), 'ui.js initialises the gesture layer');
-  ok(/blocked:\s*function\s*\(\)\s*\{\s*return modalOpen\(\) \|\| busy;/.test(ui),
-     'it blocks on an open modal AND on a sync already running');
+  ok(/blocked:\s*function\s*\(\)\s*\{\s*return modalOpen\(\) \|\| busy \|\| jobRunning\('advice'\);/.test(ui),
+     'it blocks on an open modal, a box-score sync, or an advice sync already running');
   ok(/go:\s*goTab/.test(ui), 'a swipe goes through the SAME tab change a tap does');
   ok(ui.indexOf('function tabList') >= 0 && ui.indexOf("querySelectorAll('#tabs .tab')") >= 0,
      'the swipe order is read from the tab bar, so the two cannot disagree');
