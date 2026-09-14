@@ -610,3 +610,65 @@ no real device) can be wrong about *why* something looks broken even when the
       `main` moved before starting; get finished work onto `main` before
       ending). Honest about the limit — which branch a NEW session lands on
       is a platform decision, not something a repo file can bind.
+
+
+## 23. The waiver-wire upgrade (archived from TASKS.md, 9/9 done)
+
+> "For this app's waiver wire section, give it an upgrade. Make the section
+> consider my current team roster as a whole, see if any of my players are
+> injured and explain the extent of the injury and status for the rest of
+> the season outlook, search web resources for current top waiver wire picks
+> (make sure it only uses up-to-date waiver wire resources and not
+> information from prior weeks), consider and let me know the recommended
+> waiver wire player's prior stats for this season and why he is recommended
+> [...]. Give more priority to entire season recommendations for roster
+> improvements over small weekly changes like a better kicker for this week.
+> Give low priority to defense and kickers on the waiver wire recommendations
+> unless one of mine is on a bye week and I need a replacement. Give specific
+> drop and pick up recommendations [...]. Make sure the recommendations make
+> sense, for example, don't recommend dropping a kicker and picking up a WR
+> [...]. All recommendations must keep this league's scoring system in mind
+> [...]. Each position in this section should show the best available
+> players at the top, sorted best to worst [...]. After implementing any
+> changes, make sure it works well, the code is optimized, and it didn't
+> break anything else in the app."
+
+Full design rationale, the two hard-guarantee filters (drop-position match,
+K/DEF gating), and the CSS trap fixed along the way are written up in
+STATE.md under "The waiver-wire upgrade (2026-09-14, v5.4 -> v5.5)" — read
+that before touching this feature again rather than re-deriving it.
+
+- [x] 1. `Value.myInjuries` (deterministic, reads `Recommend.projectAll` —
+      no second injury-tracking path) + `Ai` prompt/contract + a new "Your
+      roster — injuries" card on the Wire tab that shows the ESPN status
+      instantly and layers Claude's season-outlook research on top once
+      synced.
+- [x] 2. Waiver prompt states an explicit FRESHNESS rule (today's date is
+      the only date that matters; a stale-reading article must not anchor
+      judgement) rather than just "prefer the last 7 days".
+- [x] 3. `recentStat` field added to the adds contract (his exact last-game
+      stat line, dated); the `why` instructions/example now match Tj's
+      "player x had 3 receptions for 34 yards…" pattern, naming the injured
+      player and the date.
+- [x] 4. `priority`:`"season"|"week"` per add, with `normalizeWaivers`
+      sorting season-priority ahead of week-only within the same rank tier
+      — a real guarantee, not just a prompt request.
+- [x] 5. `Value.kdefNeedFrom` (true only when every K/every DEF on the
+      roster is on bye or OUT) gates K/DEF adds in `normalizeWaivers` —
+      a hard filter the app enforces itself, independent of the prompt.
+- [x] 6. `Value.dropCandidatesFrom` (bench first, weakest rest-of-season
+      value) + a `dropCandidate` field validated against that same
+      same-position list in `normalizeWaivers` — a mismatched or invented
+      name is cleared, never shown. UI offers a combined "Add + drop"
+      action (`addFreeAgentSwap`) next to the plain Add button.
+- [x] 7. `handoff.js` (`buildWaivers` + `importReply`) carries the identical
+      contract, so the no-API-key Claude-app round trip and the live API
+      path cannot drift — same normalisers, checked by `test_handoff.js` §8.
+- [x] 8. Extended `test_ai.js`, `test_integration.js`, `test_handoff.js` for
+      every new field and its edge cases (position mismatch, invented drop
+      name, K/DEF filter on/off/omitted, injury-name validation, season
+      sort). Full 13-suite regression + ES2018 gate green; `build.sh`
+      produces a clean 25-class APK.
+- [x] 9. Swept all touched files for bugs/dead code/UI issues before calling
+      it done (nothing found beyond what was already fixed inline — see
+      STATE.md); bumped VERSION 5.4 -> 5.5; shipped via `ship.sh`.
