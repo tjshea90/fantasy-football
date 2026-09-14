@@ -1003,6 +1003,7 @@
               /* shared with handoff.js so the offline round trip and the API
                  path can never disagree about what a reply means */
               normalizeAdvice: normalizeAdvice, normalizeWaivers: normalizeWaivers,
+              normalizeInjuries: normalizeInjuries, dropCandidateIndex: dropCandidateIndex,
               poolIndex: poolIndex, parseAnswer: jsonOf, rulesText: rulesText,
               _jsonOf: jsonOf, _textOf: textOf };
 })(typeof window !== 'undefined' ? window : this);
