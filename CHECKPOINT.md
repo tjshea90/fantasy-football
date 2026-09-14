@@ -1,12 +1,12 @@
-# CHECKPOINT 129 — read me first, then TASKS.md
+# CHECKPOINT 134 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:36:39Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:40:45Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-wrote Tj's request to style the ship-link message like a real GitHub Release (his Portfolio project example: .../releases/tag/v7.22) into TASKS.md before doing anything -- confirmed this repo has zero GitHub Releases published today (checked earlier this session), so this needs an actual new release-creation step via mcp__github__ tools after ship.sh, not just different link text, or it 404s exactly like the last two rounds
+built the real GitHub Release pipeline Tj asked for, after confirming this session's GitHub MCP tools have no create-release/upload-asset capability (checked, not assumed -- release tools are read-only: get_release_by_tag/get_latest_release/list_releases/get_tag/list_tags). Design: ship.sh now creates+pushes a vX.Y git tag (pure local git, no API needed) once main is confirmed current; new .github/workflows/publish-release.yml triggers on that tag push and uses the Actions runner's automatic GITHUB_TOKEN (gh release create) to publish a real Release with the already-committed, already-tested APK attached as an asset -- it does not rebuild or re-gate anything, ship.sh already did that. Release notes pull the matching line from BUILDLOG.md. Added the new workflow to MANIFEST.txt (bootstrap.sh confirms it agrees). ship.sh's final message now points at the Release tag URL but explicitly says to verify via mcp__github__get_release_by_tag first, since the workflow runs asynchronously
 
 ## Do this next
-find the right mcp__github__ tool for creating a release with an attached binary asset, then prove it on v5.7 before writing anything into the standing rule
+push a v5.7 tag now (that APK is already built/tested/committed) to validate the whole pipeline end-to-end against the real repo, then verify via mcp__github__actions_list and get_release_by_tag before telling Tj anything works
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  3c3ecc2 ckpt 129: wrote Tj's request to style the ship-link message like a real GitHub Release (
   a853fb4 ckpt 127: made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL 
   c9cd2dd ckpt 125: fixed the download link format itself: Tj's screenshot showed the GitHub mobil
   a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   b40f519 ckpt 104: diagnosed Tj's Data-tab screenshot: the 'limit only: FAILED' route is not the 
   d4bc132 ckpt 102: removed a stray demo file (sample-waiver-handoff-v5.5.md) that autosave picked
   29aaed8 ship v5.6: fix stale injury feed on the Wire tab: freshness line + a no-API-key Sync but
-  a14f9a3 ckpt 92: fixed the stale-injury-feed bug Tj reported with a screenshot: recommend.js exp
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(4 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
