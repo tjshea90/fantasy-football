@@ -783,20 +783,23 @@
 
   function askWaivers(ctx, onStep) {
     if (!configured()) return Promise.reject(new Error('no API key set'));
-    /* Searches are the bill. This one is sized to the POSITIONS OF NEED, not
-       to the size of the wire: two searches per thin position covers "who just
-       got hurt / who just took the job" at that position, which is the only
-       question the app cannot answer for itself. */
+    /* Searches are the bill. Sized to the POSITIONS OF NEED (two per thin
+       position covers "who just got hurt / who just took the job") plus one
+       per non-bye injury on my own roster, since that is real research too —
+       the app cannot look up an injury timeline itself, only Claude can. */
     var nNeed = Math.max(1, (ctx.needs || []).length);
-    var budget = Math.max(3, Math.min(10, nNeed * 2));
+    var nInj = (ctx.injuries || []).filter(function (x) { return !x.onBye; }).length;
+    var budget = Math.max(3, Math.min(10, nNeed * 2 + Math.min(3, nInj)));
     if (depth() === 'cheap') budget = Math.max(2, Math.min(5, nNeed));
     if (depth() === 'full') budget = 12;
     var mdl = depth() === 'cheap' ? cheapModel() : model();
     var body = {
       model: mdl,
       /* same reasoning as the advice call: a cap costs nothing unused, and
-         running out mid-answer is the failure that actually happens */
-      max_tokens: 8000,
+         running out mid-answer is the failure that actually happens. Bumped
+         over the flat 8000 because every add now carries three more fields
+         and there is a whole second "injuries" array on top. */
+      max_tokens: 8000 + Math.min(5, nInj) * 400,
       messages: [{ role: 'user', content: [
         /* the fixed half — scoring table, task, JSON shape — is identical every
            week, so it is re-read at a tenth of the price inside the window */
@@ -819,12 +822,16 @@
       /* Which names were actually in the block we sent? Anything else is a
          suggestion the app cannot verify is free in this league, and it is
          labelled that way rather than quietly presented as equivalent. */
-      var adds = normalizeWaivers(parsed, poolIndex(ctx.pool)).adds;
+      var adds = normalizeWaivers(parsed, poolIndex(ctx.pool),
+                                   dropCandidateIndex(ctx.dropCandidates),
+                                   ctx.kdefNeed).adds;
+      var injuries = normalizeInjuries(parsed, ctx.injuries);
       var spent = null;
       if (root.Usage) spent = root.Usage.record('waiver sync', mdl, j.usage);
       return {
         at: Date.now(), week: ctx.week, model: mdl, searchBudget: budget,
         adds: adds,
+        injuries: injuries,
         needs: String(parsed.needs || ''),
         summary: String(parsed.summary || ''),
         truncated: !!parsed._truncated,
@@ -837,19 +844,38 @@
      same reason. `known` is the canonical-name index of the pool the app
      actually sent; anything outside it is a name the app cannot confirm is
      free in this league, and that distinction is the whole safety property of
-     this screen — it must be computed in exactly one place. */
-  function normalizeWaivers(parsed, known) {
+     this screen — it must be computed in exactly one place.
+     `dropIdx` (optional) is the canonical-name index of the drop-candidate
+     list the app offered, keyed to a position — a `dropCandidate` is kept
+     ONLY when it names a real candidate AT THE SAME POSITION as the add, so
+     "drop the kicker, add a receiver" cannot happen even if a model ignores
+     the instruction; anything else is silently cleared rather than shown,
+     because a wrong pairing is worse than none.
+     `kdefNeed` (optional) is {K,DEF} — when supplied, a K or DEF add is kept
+     only when the app itself says that position is actually short this
+     week. Both are optional so older callers (tests, a handoff reply built
+     before this existed) are unaffected: no data, no filtering. */
+  function normalizeWaivers(parsed, known, dropIdx, kdefNeed) {
+    dropIdx = dropIdx || {};
     var adds = [], arr = (parsed && parsed.adds) || [], i;
     for (i = 0; i < arr.length; i++) {
       var a = arr[i];
       if (!a || !a.name) continue;
       var src = known[root.Names.canon(a.name)] || null;
+      var pos = String(a.pos || (src ? src.pos : '')).toUpperCase();
+      if ((pos === 'K' || pos === 'DEF') && kdefNeed && !kdefNeed[pos]) continue;
+      var dcName = String(a.dropCandidate || '').trim();
+      var dcRec = dcName ? dropIdx[root.Names.canon(dcName)] : null;
+      var dropCandidate = (dcRec && dcRec.pos === pos) ? dcRec.name : '';
       adds.push({
         name: String(a.name),
-        pos: String(a.pos || (src ? src.pos : '')).toUpperCase(),
+        pos: pos,
         nfl: String(a.nfl || (src ? src.nfl : '')),
         rank: (typeof a.rank === 'number' && isFinite(a.rank)) ? a.rank : 99,
         overStarter: String(a.overStarter || ''),
+        priority: (a.priority === 'season') ? 'season' : 'week',
+        recentStat: String(a.recentStat || ''),
+        dropCandidate: dropCandidate,
         confidence: String(a.confidence || 'low').toLowerCase(),
         why: String(a.why || ''),
         verified: !!src,                 /* was he in the block we sent? */
@@ -859,7 +885,15 @@
         onBye: src ? !!src.onBye : false
       });
     }
-    adds.sort(function (x, y) { return x.rank - y.rank; });
+    adds.sort(function (x, y) {
+      /* season-priority first, so "entire season over small weekly changes"
+         holds even where the model's own rank numbers do not fully reflect
+         it — this is also what puts season-priority adds ahead of week-only
+         ones once the UI groups the flat list back out by position. */
+      var pa = x.priority === 'season' ? 0 : 1, pb = y.priority === 'season' ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      return x.rank - y.rank;
+    });
     return { adds: adds };
   }
 
@@ -874,6 +908,43 @@
       }
     }
     return known;
+  }
+
+  /* Same idea, for Value.dropCandidates: {POS:[{name,pos,ros},...]} ->
+     canonical name -> {name, pos}. */
+  function dropCandidateIndex(dropCandidates) {
+    var idx = {}, k, i;
+    if (!dropCandidates) return idx;
+    for (k in dropCandidates) {
+      if (!Object.prototype.hasOwnProperty.call(dropCandidates, k)) continue;
+      var list = dropCandidates[k] || [];
+      for (i = 0; i < list.length; i++) {
+        idx[root.Names.canon(list[i].name)] = { name: list[i].name, pos: list[i].pos || k };
+      }
+    }
+    return idx;
+  }
+
+  /* Claude's season-outlook read on MY ROSTER — INJURIES, keyed against the
+     app's own list so an entry for a name that was never on it (invented, or
+     misspelled) cannot slip through — same safety property as `known` above,
+     applied to injuries instead of free agents. */
+  function normalizeInjuries(parsed, myInjuries) {
+    var known = {}, i;
+    for (i = 0; i < (myInjuries || []).length; i++) {
+      known[root.Names.canon(myInjuries[i].name)] = myInjuries[i];
+    }
+    var out = [], arr = (parsed && parsed.injuries) || [];
+    for (i = 0; i < arr.length; i++) {
+      var it = arr[i];
+      if (!it || !it.name) continue;
+      var base = known[root.Names.canon(it.name)];
+      if (!base) continue;
+      out.push({ name: base.name, pos: base.pos, status: base.status,
+                 extent: String(it.extent || ''), timeline: String(it.timeline || ''),
+                 replace: it.replace !== false });
+    }
+    return out;
   }
 
   /* A recap write-up. No web search, no tools, small output: this is the one
