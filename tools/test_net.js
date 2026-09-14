@@ -73,6 +73,16 @@ ok(/!newsCache\.error/.test(rcode),
 ok(/\(cache\.weekly \|\| 0\) > 0/.test(pcode),
    'and an empty projection set is never treated as a fresh cache');
 
+/* every ESPN filter shape "limit only" is the last of four tried in order,
+   and GOOD_ENOUGH stops the loop early only once one clears 300 week lines —
+   none of the first three currently do alone, so this one runs on EVERY
+   sync, not just as a rare last resort (Tj's screenshot, 2026-09-14: HTTP
+   400 "Filter: Limit request must be accompanied by a sort"). */
+var tinyBlock = pcode.slice(pcode.indexOf('var tiny ='), pcode.indexOf('var tiny =') + 200);
+ok(/limit:\s*500/.test(tinyBlock) && /sortPercOwned/.test(tinyBlock),
+   'the "limit only" fallback filter carries a sort field  <-- ESPN now rejects a bare ' +
+   'limit with none, the reported bug — without this it can never succeed, not just occasionally fail');
+
 /* ---- 2. the schedule rides along, it does not add traffic --------------- */
 console.log('\n-- the schedule costs no new requests --');
 var scode = code('schedule.js');
