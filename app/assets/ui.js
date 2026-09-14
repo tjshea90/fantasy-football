@@ -1511,6 +1511,7 @@
     var c = el('div', 'card');
     c.appendChild(el('h2', null, t.name + ' · ' + t.players.length + ' players'));
     var order = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DEF: 5 };
+    var flagsById = healthFlags(t.id, weekOpponents());
     t.players.slice().sort(function (a, b) {
       if (order[a.pos] !== order[b.pos]) return order[a.pos] - order[b.pos];
       return a.name.localeCompare(b.name);
@@ -1521,8 +1522,9 @@
       nm.appendChild(document.createTextNode(p.name));
       nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '')));
       /* after the team/bye text, matching every other player row in the app,
-         so a roster reads  Name   CHI · bye 7   Thu 8:20p */
+         so a roster reads  Name   CHI · bye 7   Thu 8:20p  QUESTIONABLE */
       var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
+      appendHealthTags(nm, flagsById[p.id]);
       r.appendChild(nm);
       var x = el('button', 'btn sm dan', 'Drop');
       x.addEventListener('click', function () {
