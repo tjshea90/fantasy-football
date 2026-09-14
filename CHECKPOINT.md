@@ -1,12 +1,12 @@
-# CHECKPOINT 74 — read me first, then TASKS.md
+# CHECKPOINT 82 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T18:46:56Z · **version:** 5.4 · **tests:** all 13 suites green
+**Written:** 2026-09-14T20:46:19Z · **version:** 5.5 · **tests:** all 13 suites green
 
 ## Just done
-waiver-wire upgrade: new tests written and green -- test_ai.js covers normalizeWaivers' new fields (priority/recentStat/dropCandidate) including the position-mismatch and invented-name rejection cases, kdefNeed hard filtering (and that it's optional/non-breaking when omitted), season-before-week sort, normalizeInjuries name-matching; test_integration.js covers waiverContext's new injuries/kdefNeed/dropCandidates fields end-to-end against a real roster incl. injecting a real injury into the Native cache and reading it back through Recommend->Value; test_handoff.js extends the offline round-trip and the no-drift check for the two new normalizers. Full suite (now 12 test files + ES2018 gate) green. bash build.sh launched in background to confirm the APK still builds clean
+diagnosed Tj's stale-injury-data report: confirmed via code reading (not guessing) that newsCache loads from a persisted disk cache at boot but nothing on the Wire tab ever refreshes it, and the new v5.5 injury card shows no freshness indicator unlike every other cache-backed section in the app -- wrote the diagnosis and fix plan into TASKS.md before touching code
 
 ## Do this next
-waiting on build.sh in background; once green, do the post-implementation sweep (task 9: re-read all touched files for bugs/dead code/UI polish per standing instruction), bump VERSION 5.4 -> 5.5, then ship.sh
+step 1: export a freshness getter from recommend.js (mirror the aiCache getter pattern), then wire a Sync button into the injury card and into the Ask Claude about the wire flow
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  d29d64f ship v5.5: waiver wire upgrade: roster injuries with season outlook, season-vs-week prio
+  96a2dd7 ckpt 74: waiver-wire upgrade: new tests written and green -- test_ai.js covers normalize
   6a69762 ckpt 67: waiver-wire upgrade UI layer done: ui.js gets a new deterministic 'Your roster 
   76d10d8 ckpt 63: waiver-wire upgrade steps 1-7 (data+prompt layer): value.js adds myInjuries/kde
   1613603 ckpt 52: wrote the 2026-09-14 waiver-wire upgrade request into TASKS.md, in Tj's own wor
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   3bf64b2 ckpt 160: task 4 done: bumped VERSION 5.3 -> 5.4, full 13-suite regression + ES2018 + a 
   124b688 ckpt 157: tasks 1-3 done: (1) added a one-time migration in Store.init() that heals a we
   8b5b35f ckpt 149: wrote Tj's follow-up bug report into TASKS.md before starting -- both v5.3 fix
-  8f4e9c1 ckpt 147: Data-tab bug fix + score-entry redesign job complete and archived: moved the 2
-  7e13f2d ckpt 142: task 2 done: rebuilt weeklyScoresCard per Tj's exact spec -- dropped the expla
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
