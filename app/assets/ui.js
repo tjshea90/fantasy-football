@@ -626,11 +626,20 @@
     if (!window.Espn || !Espn.currentWeek) return;
     var c = S.settings.nflWeek;
     if (c && c.at && (Date.now() - c.at) < NFL_WEEK_STALE_MS) { applyCurrentWeek(c); return; }
-    Espn.currentWeek().then(function (r) {
-      var v = { week: r.week, seasonType: r.seasonType, at: Date.now() };
-      S.settings.nflWeek = v; Store.save();
-      applyCurrentWeek(v);
-    }).catch(function () { /* offline: stay on whatever week was already showing */ });
+    /* try/catch around the CALL itself, not just a .catch() on what it
+       returns — a request with no async bridge available (the legacy path,
+       or a test stub) throws synchronously before any promise exists, same
+       as freshenSchedule() above guards Schedule.refresh(). */
+    try {
+      var p = Espn.currentWeek();
+      if (p && p.then) {
+        p.then(function (r) {
+          var v = { week: r.week, seasonType: r.seasonType, at: Date.now() };
+          S.settings.nflWeek = v; Store.save();
+          applyCurrentWeek(v);
+        })['catch'](function () { /* offline: stay on whatever week was already showing */ });
+      }
+    } catch (e) { /* never block startup for a week check */ }
   }
   function applyCurrentWeek(v) {
     if (!v || v.seasonType !== 2) return;   /* preseason or postseason: nothing this league plays */
