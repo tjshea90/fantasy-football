@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-14** · ladder 0-17 COMPLETE · **v5.8** · APK builds, signed, all 13 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-14** · ladder 0-17 COMPLETE · **v5.9** · APK builds, signed, all 13 test suites green · now on GitHub, worked across three Claude accounts
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
@@ -1731,7 +1731,7 @@ before telling Tj anything, then the Release link in a fenced code block,
 with the `/raw/` file link as an immediate no-wait fallback if the publish
 step is pending or fails.
 
-## Five requests in one pass: current week, stale advice, preseason data, more sources, injuries everywhere (2026-09-14, v5.8)
+## Five requests in one pass: current week, stale advice, preseason data, more sources, injuries everywhere (2026-09-14, v5.9)
 
 Tj asked for five things at once. Written to TASKS.md verbatim first, per
 the working agreement, then worked in order.

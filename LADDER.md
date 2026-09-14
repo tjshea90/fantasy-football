@@ -768,7 +768,7 @@ touching the release pipeline again.
 
 
 ## 27. Five requests: current week, stale advice, preseason data, more
-      sources, injuries everywhere (2026-09-14, v5.8)
+      sources, injuries everywhere (2026-09-14, v5.9)
 
 > "A couple changes I want for this app. 1) automatically select the tabs
 > in all sections of the app to the current NFL week... 2) in the advice
