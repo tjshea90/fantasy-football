@@ -1628,3 +1628,41 @@ subscription; the manual export/import step is the mechanism, not a
 workaround for one.
 
 13 suites + ES2018 gate green, `build.sh` clean. Shipped as v5.7 (versionCode 507).
+
+
+## The whole v5.5-v5.7 arc shipped to the wrong branch, undetected (2026-09-14)
+
+Tj asked for the CLAUDE.md rule to send him a GitHub link on every ship
+(above, and now that section itself). The link 404'd. The reason: this
+entire session — every checkpoint, every ship (v5.5, v5.6, v5.7) — had been
+running on `claude/waiver-wire-assistant-feo1ft`, the branch the calling
+platform assigned it, and `main` had not moved since 2026-09-12. This is the
+EXACT incident CLAUDE.md's "Branches" section already documents and warns
+about by name — and it still happened, in this session, because nothing
+actually checked.
+
+**Why the existing safeguard didn't catch it.** `resume.sh` already compares
+`HEAD` against `@{u}` to detect a stale or diverged checkout — but `@{u}` is
+the CURRENT branch's own upstream. A session stranded on a feature branch
+reads as perfectly "in sync" by that check, forever, because it IS in sync
+— with itself, not with main. The check was structurally blind to the one
+failure mode CLAUDE.md calls out as the worst one.
+
+**Recovery.** `origin/main` was confirmed a strict ancestor of this
+session's HEAD (`git merge-base --is-ancestor`) — no divergence, no
+judgment call, safe to fast-forward — and pushed directly
+(`git push origin HEAD:main`). Verified against the real remote with
+`git ls-remote`, not a locally cached ref.
+
+**The actual fix, so this cannot happen silently again:** `resume.sh` now
+checks the branch name itself at the top of every session, before any of
+the `@{u}`-based checks. Safe case (origin/main is an ancestor of HEAD) —
+fast-forward automatically, same posture as the existing "pull if behind
+and clean" logic just below it. Unsafe case (main has commits this branch
+lacks) — warn loudly and refuse to merge blind, per the existing "tell Tj
+before reconciling" rule. This runs on EVERY session start now, not just
+when someone happens to think to check — the exact gap that let three
+versions ship invisibly to nobody's phone.
+
+13 suites still green (a bash-script change, not app code — no suite
+covers `tools/resume.sh` directly, and none needed to for this fix).
