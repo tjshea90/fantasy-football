@@ -1518,3 +1518,71 @@ injury-name validation), ES2018 clean, `build.sh` produces a clean 25-class
 APK. Not yet confirmed on the phone — this session cannot run the Android
 WebView, so the "why the reasoning is now readable" and "Add + drop" button
 claims above are verified by code/CSS reading, not by eye.
+
+
+## v5.5b — the stale-injury-feed bug, and a real CSS bug caught by rendering
+   it (2026-09-14, same day)
+
+Tj sent a phone screenshot within minutes of installing v5.5: the new "Your
+roster — injuries" card showed a D'Andre Swift note reading like preseason
+camp news, cut off mid-word ("...Even still, Swift wil") right where the
+QUESTIONABLE tag started.
+
+**Root cause, confirmed by reading the code rather than guessing.**
+`ui.js` `boot()` already calls `Recommend.loadCaches()` unconditionally,
+which loads the ESPN injury feed from a PERSISTED DISK cache — so the card
+was not broken, it was honestly showing whatever was last written to disk.
+The gap: nothing on the Wire tab could ever REFRESH that. Only the Advice
+tab's "Sync advice" button calls `loadNews()`. If Tj had not pressed that in
+a while, the Wire tab would show injury notes however old the last real sync
+was — and the exact "...Swift wil" cutoff (no trailing ellipsis) matches the
+LITERAL pre-v2.4 `trimNote` bug (a hard 220-char slice, no sentence
+awareness) almost too well to be coincidence: that string was very likely
+written to disk before that fix ever shipped and has sat there, unrefreshed,
+ever since — the persisted cache does not self-heal, only a fresh sync
+rewrites it.
+
+Two real gaps, both introduced in the v5.5 work:
+1. Every other cache-backed section in the app says how old its data is
+   (Advice tab: "Injury feed: N records, Xh ago"; the Claude wire-read card:
+   "Read Xh ago"). The new injury card said nothing, so stale data read as
+   current. Fixed: `recommend.js` now exports `newsCache()` (a read-only
+   getter, identical pattern to the existing `aiCache()`), and the card
+   shows a freshness line plus its OWN "Sync injury feed" button —
+   `Recommend.loadNews(.., {force:true})`, which needs no API key at all
+   (it is the ESPN endpoint, not Claude). ui.js also picked up a small shared
+   `agoText()` helper so this and the wire-read card's "Read Xh ago" say the
+   same thing the same way, rather than two slightly different inline
+   calculations.
+2. `Ai.askWaivers` never refreshed the injury feed either — a PAID Claude
+   call was reasoning from whatever ESPN designations happened to be
+   cached, which quietly undermines the v5.5 "freshness discipline"
+   instruction (that only governs what Claude searches for; the app's own
+   "treat availability as settled fact" facts were never covered). The
+   "Ask Claude about the wire" click handler now force-refreshes the feed
+   FIRST, with the same swallow-and-continue resilience `syncAll()` already
+   uses for the Advice tab (one step failing must not cost the whole call).
+
+**A second, genuinely separate bug, found only by actually rendering it.**
+The mid-word cutoff's LAYOUT — wrapped across five lines with no ellipsis,
+matching Tj's screenshot exactly — did not fit `.row .nm`'s CSS
+(`white-space:nowrap;overflow:hidden;text-overflow:ellipsis`), which should
+have produced a single clipped line. Rather than keep theorising, this was
+checked empirically: Chromium is pre-installed in this environment
+(`/opt/pw-browsers/chromium-1194/chrome-linux/chrome --headless
+--no-sandbox --screenshot=...`) and rendering the ACTUAL app.css against the
+same markup reproduced Tj's exact broken layout — multi-line wrap, no
+ellipsis, tag on its own line. A long text run sharing one nowrap flex line
+with an inline-block `.tag` span does not reliably ellipsize in this
+WebView's engine; it wraps instead. The fix — the injury note moved out of
+the row's own `<small>` into a sibling `.kv` line, same pattern already used
+for the Claude wire-read card's "why" — was verified the same way, rendered
+before shipping it, not just asserted. Worth remembering: this session
+cannot run the Android app, but it CAN render real HTML+CSS in a real
+browser, and should reach for that before trusting a CSS read on anything
+this specific again.
+
+13 suites (new assertions in `test_boot.js`: the export exists, the card
+reads it, the refresh happens before context-building in source order and
+is forced, the note is no longer in the nowrap `<small>`) + ES2018 gate
+green, `build.sh` clean.
