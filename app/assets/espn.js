@@ -665,7 +665,7 @@
   }
 
   var API = { BASE: BASE, weekGames: weekGames, gameStats: gameStats,
-              pool: pool,
+              pool: pool, currentWeek: currentWeek,
               dstLine: dstLine, normName: normName, _httpGet: httpGet,
               _httpGetH: httpGetH, _httpPost: httpPost };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
