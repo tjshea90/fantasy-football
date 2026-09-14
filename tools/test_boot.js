@@ -453,6 +453,32 @@ var catches = (uiX.match(/\['catch'\]\(|\.catch\(/g) || []).length;
 ok(catches >= 8, 'the UI attaches catch handlers to its promise chains (' + catches +
    ' catches for ' + chains + ' thens)');
 
+/* ---- v5.5b: the injury feed can no longer be shown as if it were current
+ * when it is not -- Tj's screenshot, 2026-09-14, was a week-old ESPN note
+ * with nothing on screen admitting it, because nothing on the Wire tab could
+ * refresh the feed. Two things now fixed and pinned here: the card SAYS how
+ * old its data is, and "Ask Claude about the wire" refreshes it FIRST. */
+ok(/newsCache:\s*function \(\) \{ return newsCache; \}/.test(recX),
+   'recommend.js exposes the injury feed for freshness reporting, same pattern as aiCache');
+ok(/Recommend\.newsCache\(\)/.test(uiX), 'the roster-injuries card reads it');
+ok(/Sync injury feed/.test(uiX), 'and offers its own sync button, no API key required');
+var wsyncBlock = uiX.slice(uiX.indexOf("wsync.addEventListener('click'"));
+var loadNewsAt = wsyncBlock.indexOf('Recommend.loadNews(');
+var waiverCtxAt = wsyncBlock.indexOf('Value.waiverContext(');
+ok(loadNewsAt >= 0 && waiverCtxAt > loadNewsAt,
+   '"Ask Claude about the wire" refreshes the injury feed BEFORE building the ' +
+   'context Claude reasons over, not after  <-- a paid call must not reason from stale facts');
+ok(/force:\s*true/.test(wsyncBlock.slice(loadNewsAt, loadNewsAt + 120)),
+   'the refresh is forced -- it does not silently reuse a possibly days-old cache');
+/* the mixed text+tag-span nowrap layout that actually produced the garbled,
+   mid-word-cut screenshot must not still be there for the injury note */
+var injuryCardBlock = uiX.slice(uiX.indexOf('function rosterInjuryCard'),
+                                 uiX.indexOf('function freeAgentCard'));
+ok(!/x\.note \? ' — ' \+ x\.note/.test(injuryCardBlock),
+   'the injury note is no longer crammed into the row\'s own nowrap <small>  <-- the reported bug');
+ok(/nk\.appendChild\(el\('span', null, x\.note\)\)/.test(injuryCardBlock),
+   'it is a sibling .kv line instead, which wraps properly (verified by rendering it, not just asserted)');
+
 
 /* ---- v4.1: player identity ------------------------------------------------ */
 var idxH = fs.readFileSync('app/assets/index.html', 'utf8');
