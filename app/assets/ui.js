@@ -525,6 +525,7 @@
       wire(); render();
       startLive();
       freshenSchedule();
+      syncCurrentWeek();
     } catch (e) {
       fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
     }
