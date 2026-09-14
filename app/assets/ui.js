@@ -1590,7 +1590,61 @@
    * waiver list on the internet is computed in scoring where a completion is
    * worth nothing, and here it is worth a point. */
   function viewWire(root) {
+    addSafe(root, 'Your roster — injuries', rosterInjuryCard);
     addSafe(root, 'The free-agent board', freeAgentCard);
+  }
+  /* ---- your own roster's injuries, deterministic first (v5.5) -------------
+   * Needs no API key: the ESPN designation and its note are on screen the
+   * moment this tab opens, straight from the same feed the Advice tab uses
+   * (Value.myInjuries reads Recommend.projectAll — one source of truth, never
+   * a second copy of the injury logic). Once "Ask Claude about the wire" has
+   * been run for this week, its season-outlook research is layered on top of
+   * each matching row rather than replacing this baseline. */
+  function rosterInjuryCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Your roster — injuries · week ' + week));
+    var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+    var proj = Recommend.projectAll(week, S.league.me, opp);
+    var list = Value.myInjuries(week, proj);
+    if (!list.length) {
+      c.appendChild(el('p', 'muted',
+        'Nobody on your roster is hurt or on a bye this week.'));
+      return c;
+    }
+    var cached = Value.waiverLoad();
+    var outlook = {};
+    if (cached && cached.injuries && cached.week === week) {
+      cached.injuries.forEach(function (x) { outlook[Names.canon(x.name)] = x; });
+    }
+    list.forEach(function (x) {
+      var r = el('div', 'row');
+      r.appendChild(el('div', 'slot', x.pos));
+      var nm = el('div', 'nm');
+      nm.appendChild(document.createTextNode(x.name));
+      nm.appendChild(el('small', null, '  ' + x.nfl + (x.note ? ' — ' + x.note : '')));
+      nm.appendChild(el('span', (x.status === 'OUT' || x.status === 'BYE') ? 'tag out' : 'tag warn',
+                         x.status));
+      r.appendChild(nm);
+      c.appendChild(r);
+      var out = outlook[Names.canon(x.name)];
+      if (out && (out.extent || out.timeline)) {
+        var d = el('details');
+        d.appendChild(el('summary', null, "Claude's season outlook ▾"));
+        var kv = el('div', 'kv');
+        kv.appendChild(el('span', null,
+          (out.extent ? out.extent + '  ' : '') + out.timeline +
+          (out.replace === false ? '' : '  — worth watching the wire for a replacement.')));
+        d.appendChild(kv);
+        c.appendChild(d);
+      }
+    });
+    if (!(cached && cached.injuries && cached.week === week) && Ai.configured()) {
+      c.appendChild(el('p', 'hint',
+        '"Ask Claude about the wire" below also researches each of these for a ' +
+        'rest-of-season outlook — severity, timeline, and whether it is worth ' +
+        'chasing a replacement.'));
+    }
+    return c;
   }
   function freeAgentCard() {
     var c = el('div', 'card');
