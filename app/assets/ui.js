@@ -1690,7 +1690,9 @@
              the export must not come back marked verified */
           var wc = Value.waiverContext(week, S.league.me, o, S.league.season,
                                        new Date().toISOString().slice(0, 10));
-          return Handoff.importReply(txt, { week: week, pool: wc.pool });
+          return Handoff.importReply(txt, { week: week, pool: wc.pool,
+            dropCandidates: wc.dropCandidates, kdefNeed: wc.kdefNeed,
+            injuries: wc.injuries });
         },
         status: function () {
           var cch = Value.waiverLoad();
