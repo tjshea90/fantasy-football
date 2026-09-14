@@ -1,18 +1,29 @@
 name: Publish Release
 
-# Fires when ship.sh pushes a version tag (see ship.sh's "keep main current"
-# step — it creates and pushes vX.Y once STATE.md, the manifest, every test
-# suite, and dex-completeness have all already passed locally). This workflow
-# does not re-build or re-gate anything: ship.sh is the gate. Its one job is
-# to turn the APK ship.sh already committed into a real GitHub Release with
-# that file attached, so a link like .../releases/tag/vX.Y actually resolves
-# to a download instead of 404ing or, on the GitHub app's in-repo file
-# viewer, rendering raw binary as garbled text (both hit Tj's phone before
-# this existed — see STATE.md, 2026-09-14).
+# Two ways in, because this repo is worked by Claude Code sessions whose git
+# push credentials turned out NOT to include refs/tags/* (confirmed by a
+# clean push test, not assumed — see STATE.md, 2026-09-14: a lightweight tag
+# push 403'd while a branch push to the same remote worked fine). So the
+# primary path is workflow_dispatch, triggered via the GitHub API
+# (mcp__github__actions_run_trigger) rather than a git tag push — that tool
+# uses a different, properly-scoped credential. The tag-push trigger stays
+# as a fallback for any context that genuinely can push tags.
+#
+# Either way, this workflow does not re-build or re-gate anything: ship.sh
+# already did that (every test suite, ES2018, dex-completeness) before the
+# APK was committed. Its one job is turning that already-vetted file into a
+# real GitHub Release with the APK attached, so a link like
+# .../releases/tag/vX.Y actually resolves to a download.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 5.7 — must already exist as releases/FFTracker-v<version>.apk on main'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -21,20 +32,43 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the tag
+      - name: Check out
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'main' || github.ref }}
+          fetch-depth: 0
 
-      - name: Locate the APK ship.sh committed for this tag
+      - name: Resolve version, tag, and the APK path
         id: apk
         run: |
-          V="${GITHUB_REF_NAME#v}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            V="${{ inputs.version }}"
+          else
+            V="${GITHUB_REF_NAME#v}"
+          fi
           APK="releases/FFTracker-v${V}.apk"
           if [ ! -f "$APK" ]; then
-            echo "::error::$APK not found. ship.sh must commit the versioned APK BEFORE tagging -- this tag was pushed without it, or the version numbers disagree."
+            echo "::error::$APK not found. ship.sh must commit the versioned APK to main before this runs."
             exit 1
           fi
           echo "path=$APK" >> "$GITHUB_OUTPUT"
           echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v${V}" >> "$GITHUB_OUTPUT"
+
+      - name: Create the tag (workflow_dispatch runs only — a tag-push run already has one)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.apk.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists at this commit locally"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "release $TAG"
+          fi
+          git push origin "$TAG" || echo "::warning::could not push $TAG (it may already exist on the remote — gh release create below will still work either way)"
 
       - name: Build release notes from BUILDLOG.md
         run: |
@@ -52,7 +86,7 @@ jobs:
               echo "_(no matching BUILDLOG.md line found for v${V})_"
             fi
             echo
-            echo "Gated locally by \`ship.sh\` before this tag was pushed: every test"
+            echo "Gated locally by \`ship.sh\` before this was published: every test"
             echo "suite, the ES2018 compatibility check, and dex-completeness (every"
             echo "Java source has a class in the built APK) all had to pass."
           } > /tmp/release-notes.md
@@ -61,7 +95,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            "${{ steps.apk.outputs.path }}" \
-            --title "${{ github.ref_name }}" \
-            --notes-file /tmp/release-notes.md
+          TAG="${{ steps.apk.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — uploading the asset to it instead of creating a duplicate"
+            gh release upload "$TAG" "${{ steps.apk.outputs.path }}" --clobber
+          else
+            gh release create "$TAG" \
+              "${{ steps.apk.outputs.path }}" \
+              --title "$TAG" \
+              --notes-file /tmp/release-notes.md
+          fi
