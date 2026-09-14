@@ -190,6 +190,108 @@ ok(trim(inverting, 34).indexOf('will not') === -1 &&
    trim(inverting, 34).indexOf('will') === -1,
    'a cut never leaves a dangling "...he will" that reads as the opposite');
 
+/* ---- 6. the waiver normalizers (v5.5): the new fields and their guarantees */
+console.log('\n-- normalizeWaivers: priority, recentStat, dropCandidate, kdefNeed --');
+
+const known = {};
+known[Names.canon('Chris Olave')] = { pos: 'WR', nfl: 'NO', v: 12.3, vor: 3.1, bye: 11, onBye: false };
+const dropIdx = Ai.dropCandidateIndex({
+  WR: [{ name: 'Bench Guy', pos: 'WR' }],
+  K: [{ name: 'Old Kicker', pos: 'K' }]
+});
+ok(Object.keys(dropIdx).length === 2, 'dropCandidateIndex flattens every position\'s list');
+
+const base = { adds: [
+  { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1, priority: 'season',
+    recentStat: '7 rec, 88 yds vs ATL (Wk 2)', dropCandidate: 'Bench Guy',
+    confidence: 'high', why: 'Took over after the starter\'s injury.' }
+] };
+const n1 = Ai.normalizeWaivers(base, known, dropIdx, { K: false, DEF: false });
+ok(n1.adds.length === 1, 'a plain add with a valid same-position dropCandidate survives');
+ok(n1.adds[0].priority === 'season', 'priority is read through');
+ok(n1.adds[0].recentStat === '7 rec, 88 yds vs ATL (Wk 2)', 'recentStat is read through');
+ok(n1.adds[0].dropCandidate === 'Bench Guy',
+   'a dropCandidate at the SAME position as the add is kept');
+
+/* the whole safety property Tj asked for: a mismatched position must never survive */
+const mismatched = { adds: [
+  { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
+    dropCandidate: 'Old Kicker', /* a K, not a WR */
+    confidence: 'high', why: 'x' }
+] };
+const n2 = Ai.normalizeWaivers(mismatched, known, dropIdx, { K: false, DEF: false });
+ok(n2.adds[0].dropCandidate === '',
+   'a dropCandidate at a DIFFERENT position than the add is cleared, not shown  <-- ' +
+   '"don\'t drop a kicker to add a WR" is a guarantee, not a hope');
+
+const invented = { adds: [
+  { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
+    dropCandidate: 'Nobody On This Roster', confidence: 'high', why: 'x' }
+] };
+const n3 = Ai.normalizeWaivers(invented, known, dropIdx, { K: false, DEF: false });
+ok(n3.adds[0].dropCandidate === '',
+   'a dropCandidate the app never offered is cleared, not trusted blindly');
+
+ok(Ai.normalizeWaivers({ adds: [{ name: 'Chris Olave', pos: 'WR' }] }, known, {}, {})
+     .adds[0].priority === 'week',
+   'priority defaults to "week" when the model omits it — never overclaim season importance');
+
+/* K/DEF gating: a hard filter the app enforces itself, independent of the prompt */
+const kdefReply = { adds: [
+  { name: 'Some Kicker', pos: 'K', nfl: 'CHI', rank: 1, confidence: 'low', why: 'x' },
+  { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 2, confidence: 'high', why: 'y' }
+] };
+const n4 = Ai.normalizeWaivers(kdefReply, known, {}, { K: false, DEF: false });
+ok(n4.adds.length === 1 && n4.adds[0].pos === 'WR',
+   'a K add is dropped outright when kdefNeed.K is false — a guarantee, not a request');
+const n5 = Ai.normalizeWaivers(kdefReply, known, {}, { K: true, DEF: false });
+ok(n5.adds.length === 2, 'the same K add is kept once kdefNeed.K is true (mine is on bye/OUT)');
+const n6 = Ai.normalizeWaivers(kdefReply, known, {}, undefined);
+ok(n6.adds.length === 2,
+   'kdefNeed is optional — an older caller that does not supply it filters nothing');
+
+/* season-priority sorts ahead of week-priority within the same rank tier */
+const mixedPriority = { adds: [
+  { name: 'Week Guy', pos: 'RB', nfl: 'CHI', rank: 1, priority: 'week', confidence: 'low', why: 'x' },
+  { name: 'Season Guy', pos: 'RB', nfl: 'NYJ', rank: 2, priority: 'season', confidence: 'high', why: 'y' }
+] };
+const n7 = Ai.normalizeWaivers(mixedPriority, {}, {}, {});
+ok(n7.adds[0].name === 'Season Guy',
+   'a season-priority add is listed ahead of a better-ranked week-only one  <-- ' +
+   '"entire season over small weekly changes"');
+
+console.log('\n-- normalizeInjuries --');
+const myInjuries = [
+  { name: 'Breece Hall', pos: 'RB', status: 'QUESTIONABLE', note: 'ankle', onBye: false },
+  { name: 'Some Kicker', pos: 'K', status: 'BYE', note: 'on bye in week 3', onBye: true }
+];
+const injReply = { injuries: [
+  { name: 'Breece Hall', extent: 'high ankle sprain',
+    timeline: 'week-to-week (ESPN, 2026-09-10)', replace: false },
+  { name: 'Nobody I Asked About', extent: 'invented', timeline: 'invented', replace: true }
+] };
+const inj = Ai.normalizeInjuries(injReply, myInjuries);
+ok(inj.length === 1, 'only names the app actually listed as injured are kept');
+ok(inj[0].name === 'Breece Hall' && inj[0].extent === 'high ankle sprain',
+   'a matched injury keeps its research');
+ok(inj[0].replace === false, 'replace:false is read through, not coerced to true');
+ok(Ai.normalizeInjuries({}, myInjuries).length === 0, 'a reply with no injuries array is safe');
+ok(Ai.normalizeInjuries(injReply, []).length === 0, 'an empty roster-injury list matches nothing');
+
+/* ---- 7. the waiver prompt actually contains the new rules ---------------- */
+console.log('\n-- the waiver prompt states the new rules --');
+const wp = Ai._waiverPrefix();
+ok(/FRESHNESS/.test(wp) && /STALE/.test(wp),
+   'the freshness rule is stated, not just "prefer the last 7 days"');
+ok(/PRIORITY: SEASON OVER WEEK/.test(wp),
+   'season-over-week priority is stated as an explicit rule');
+ok(/K\/DEF: LOW PRIORITY/.test(wp) && /KDEF\s*NEED/.test(wp),
+   'the K/DEF gating rule references the KDEF NEED line the app supplies');
+ok(/dropCandidate/.test(wp) && /DROP CANDIDATES/.test(wp),
+   'the dropCandidate contract field is described');
+ok(/recentStat/.test(wp), 'the recentStat contract field is described');
+ok(/"injuries"/.test(wp), 'the injuries research task and contract field are described');
+
 console.log('\n' + (fail ? '  ' + fail + ' FAILED, ' : '  ') + pass + ' assertions pass');
 if (fail) process.exit(1);
 console.log('  ai + note checks pass');
