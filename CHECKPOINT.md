@@ -1,12 +1,12 @@
-# CHECKPOINT 122 — read me first, then TASKS.md
+# CHECKPOINT 125 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:16:53Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:21:12Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- ckpt.sh runs many times per session without the session ending, and ship.sh is the thing that actually tells Tj where to download from, so both had the identical gap that let v5.5-v5.7 ship invisibly to a stranded branch. Both now fast-forward main automatically when safe (origin/main a strict ancestor of HEAD) right after their own push, and ship.sh's final 'Tj installs it from' message is now branch-aware -- it says plainly when main did NOT get updated instead of printing a link that will 404
+fixed the download link format itself: Tj's screenshot showed the GitHub mobile app rendering the binary APK as garbled raw text at the /blob/ URL -- confirmed with curl -IL that /raw/main/... 302s to raw.githubusercontent.com with content-type: application/octet-stream, which forces an actual download in any client instead of an in-app render attempt. Updated the CLAUDE.md standing rule to specify /raw/ not /blob/ with the reasoning, and made ship.sh print the exact ready-to-paste URL itself (branch-aware) instead of a vague 'tap it, then Download' pointer that left the exact URL format for the session to guess at -- which is exactly how the wrong /blob/ format got used the first time
 
 ## Do this next
-none -- verify this ckpt itself lands on main via the new logic, then the branch-sync gap is closed at all three points (resume.sh at session start, ckpt.sh per step, ship.sh per release)
+none -- verify the corrected v5.7 link actually downloads (not renders) on Tj's phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
   bacf3fa ckpt 119: recovered from the exact incident CLAUDE.md warns about by name: this whole se
   a8e4db7 ckpt 116: added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj th
   ecabeb7 ship v5.7: fix the permanently-broken 'limit only' projection-feed fallback route (ESPN 
@@ -35,7 +36,6 @@ request in his own words and `git log` carries every step already taken.
   a14f9a3 ckpt 92: fixed the stale-injury-feed bug Tj reported with a screenshot: recommend.js exp
   13a5233 ckpt 82: diagnosed Tj's stale-injury-data report: confirmed via code reading (not guessi
   d29d64f ship v5.5: waiver wire upgrade: roster injuries with season outlook, season-vs-week prio
-  96a2dd7 ckpt 74: waiver-wire upgrade: new tests written and green -- test_ai.js covers normalize
 ```
 
 (2 automatic checkpoint(s) since the last deliberate one — the
