@@ -1599,10 +1599,41 @@
    * (Value.myInjuries reads Recommend.projectAll — one source of truth, never
    * a second copy of the injury logic). Once "Ask Claude about the wire" has
    * been run for this week, its season-outlook research is layered on top of
-   * each matching row rather than replacing this baseline. */
+   * each matching row rather than replacing this baseline.
+   *
+   * v5.5b (Tj's screenshot, 2026-09-14): this card reads whatever ESPN feed
+   * is already cached — which loadCaches() pulls from DISK at boot, and disk
+   * only ever holds what the LAST successful sync wrote. Nothing on the Wire
+   * tab used to be able to refresh that, so a phone that had not visited the
+   * Advice tab in a while showed a note that was genuinely days old (in Tj's
+   * case, old enough to predate the trimNote fix — the exact pre-fix
+   * "...Swift wil" cutoff, still sitting on disk, unrefreshed). Two fixes:
+   * this card now says HOW OLD the feed is instead of presenting it as
+   * current, and carries its own Sync button (no API key needed — it is
+   * only the ESPN endpoint). */
   function rosterInjuryCard() {
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Your roster — injuries · week ' + week));
+    var nc = Recommend.newsCache();
+    var st = el('div');
+    var line = el('div', 'kv');
+    line.appendChild(el('span', nc.error || !nc.at ? 'warnText' : null,
+      nc.at
+        ? (nc.error ? 'Injury feed failed to refresh — showing ' : 'Injury feed: ') +
+          (nc.count || 0) + ' ESPN record' + (nc.count === 1 ? '' : 's') + ', ' + agoText(nc.at)
+        : 'Injury feed: not synced yet this session'));
+    st.appendChild(line);
+    c.appendChild(st);
+    var syncBtn = el('button', 'btn sm', jobRunning('newsSync') ? 'Syncing…' : 'Sync injury feed');
+    syncBtn.disabled = jobRunning('newsSync');
+    syncBtn.addEventListener('click', function () {
+      jobStart('newsSync', 'Injury report…');
+      Recommend.loadNews(function (t, p) { jobStep(t, p); }, { force: true })
+        .then(function () { jobEnd(); render(); })
+        ['catch'](function () { jobEnd(); render(); });
+    });
+    c.appendChild(syncBtn);
+
     var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
     var proj = Recommend.projectAll(week, S.league.me, opp);
     var list = Value.myInjuries(week, proj);
@@ -1621,11 +1652,20 @@
       r.appendChild(el('div', 'slot', x.pos));
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(x.name));
-      nm.appendChild(el('small', null, '  ' + x.nfl + (x.note ? ' — ' + x.note : '')));
+      nm.appendChild(el('small', null, '  ' + x.nfl));
       nm.appendChild(el('span', (x.status === 'OUT' || x.status === 'BYE') ? 'tag out' : 'tag warn',
                          x.status));
       r.appendChild(nm);
       c.appendChild(r);
+      /* the note itself, ALWAYS visible (it is the reason this card exists) —
+         a sibling .kv line, not crammed into the row's own <small>: mixing a
+         long text run with inline-block tag spans on one nowrap flex line is
+         exactly what produced Tj's garbled, mid-word-cut screenshot */
+      if (x.note) {
+        var nk = el('div', 'kv');
+        nk.appendChild(el('span', null, x.note));
+        c.appendChild(nk);
+      }
       var out = outlook[Names.canon(x.name)];
       if (out && (out.extent || out.timeline)) {
         var d = el('details');
