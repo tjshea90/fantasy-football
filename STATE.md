@@ -1586,3 +1586,45 @@ this specific again.
 reads it, the refresh happens before context-building in source order and
 is forced, the note is no longer in the nowrap `<small>`) + ES2018 gate
 green, `build.sh` clean. Shipped as v5.6 (versionCode 506).
+
+
+## v5.7 — the "limit only" fallback route was permanently broken
+
+Tj sent a screenshot of "Data > Test the projection feed" asking whether an
+`HTTP 400` on one of the tried routes mattered. It did not cost him any
+data — coverage reached all 477 indexed players via `week filter + sleeper
+current`, and the QB numbers (Mahomes 40.7, Nix 43.7, Rodgers 38.2) confirm
+the re-scoring is running correctly — but reading `projections.js` turned up
+a real, structural bug worth fixing anyway.
+
+`filters()` tries four ESPN request shapes in order — week filter, full
+filter, lean filter, limit only — stopping early only once one clears 300
+week lines (`GOOD_ENOUGH`). None of the first three currently clears 300
+alone, so **all four run on every single sync**, not just as a rare
+fallback. The last one, `tiny = { players: { limit: 500 } }`, has no `sort`
+field, and ESPN's API now rejects a bare `limit` filter with none — the
+exact error in the screenshot. `lean filter`, immediately above it, sends
+the identical `limit: 500` plus `sortPercOwned: {...}` and works. This was
+never a transient failure: as written, "limit only" could never succeed
+against ESPN's current API, on any network, ever — which defeats the whole
+point of it being a resilience fallback. If the three routes ahead of it
+ever degraded on a bad day, this safety net would still fail right when it
+was needed.
+
+Fix: added the same `sortPercOwned` field `lean` already carries. One line.
+Pinned in `test_net.js` (a suite already about "what this app asks the
+internet for", born from an earlier screenshot-driven fix in the same
+file) — greps the `tiny` shape for both `limit: 500` and `sortPercOwned` so
+a future edit that drops the sort field again fails the suite immediately
+rather than waiting for the next screenshot.
+
+Same session also answered Tj's separate question about whether a Claude.ai
+Pro subscription can power the app's automated Claude calls instead of a
+paid API key: no — Pro (claude.ai) and the API (console.anthropic.com) are
+separate products with separate billing, and there is no consumer-login
+mechanism a third-party app can use in place of an API key. The existing
+offline `handoff.js` round trip already is the zero-cost path using his Pro
+subscription; the manual export/import step is the mechanism, not a
+workaround for one.
+
+13 suites + ES2018 gate green, `build.sh` clean.
