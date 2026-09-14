@@ -113,6 +113,24 @@ one more edit.
 APK on every push — see `.github/workflows/build-apk.yml` — so a green run
 there is an independent check that the build is not broken.
 
+## After every ship — send Tj the APK link
+
+**Every session, every account: the moment `ship.sh` succeeds, tell Tj the
+direct GitHub link to the new APK in your reply.** Not a description of
+where to look — the actual URL, ready to tap:
+
+```
+https://github.com/tjshea90/fantasy-football/blob/main/releases/FFTracker-v<VERSION>.apk
+```
+
+`<VERSION>` is whatever `ship.sh` just printed ("shipped v5.7" → `v5.7`).
+This is a standing instruction (Tj, 2026-09-14) — it does not go in
+`TASKS.md`, does not get ticked off, and does not get archived away when a
+job finishes. It applies to every future ship, on every account, without him
+asking again, no matter how small the change. A bare `bash build.sh` run
+does not qualify — that APK is local and untested, never committed, nothing
+to link to. Only a completed `ship.sh` produces something downloadable.
+
 ## This repo is public
 
 `tools/secretscan.sh` blocks the autosave hook from committing anything
