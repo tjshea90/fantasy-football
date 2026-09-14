@@ -86,3 +86,4 @@ tools/test_locks.js
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 releases/FFTracker-v5.5.apk
+releases/FFTracker-v5.6.apk
