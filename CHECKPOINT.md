@@ -1,12 +1,12 @@
-# CHECKPOINT 116 — read me first, then TASKS.md
+# CHECKPOINT 119 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:10:08Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:15:18Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj the direct GitHub link to the new APK in the chat reply -- his instruction, applies to every future session/account, not a one-off TASKS.md job since it's a process rule about the working agreement itself, not app code
+recovered from the exact incident CLAUDE.md warns about by name: this whole session (v5.5/5.6/5.7) shipped to claude/waiver-wire-assistant-feo1ft while main sat still since 2026-09-12 -- Tj's 404 on the APK link caught it. Fast-forwarded origin/main (confirmed a strict ancestor via merge-base, verified against the real remote via ls-remote, not a cached ref). Real fix so it can't recur silently: resume.sh now checks the branch name itself at session start (the existing @{u}-based checks are structurally blind to this because a stranded branch is always 'in sync' with its own upstream) -- auto-fast-forwards the safe case, warns loudly and refuses to merge blind on the unsafe case. Verified live: ran resume.sh, watched it detect and fix the exact situation it just found itself in
 
 ## Do this next
-none -- no active job, this was a durable instruction change only
+none -- no active job. main is now current and verified; give Tj the corrected working APK link
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a8e4db7 ckpt 116: added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj th
   ecabeb7 ship v5.7: fix the permanently-broken 'limit only' projection-feed fallback route (ESPN 
   b40f519 ckpt 104: diagnosed Tj's Data-tab screenshot: the 'limit only: FAILED' route is not the 
   d4bc132 ckpt 102: removed a stray demo file (sample-waiver-handoff-v5.5.md) that autosave picked
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   d29d64f ship v5.5: waiver wire upgrade: roster injuries with season outlook, season-vs-week prio
   96a2dd7 ckpt 74: waiver-wire upgrade: new tests written and green -- test_ai.js covers normalize
   6a69762 ckpt 67: waiver-wire upgrade UI layer done: ui.js gets a new deterministic 'Your roster 
-  76d10d8 ckpt 63: waiver-wire upgrade steps 1-7 (data+prompt layer): value.js adds myInjuries/kde
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
