@@ -9,6 +9,7 @@
 CLAUDE.md
 .claude/settings.json
 .github/workflows/build-apk.yml
+.github/workflows/publish-release.yml
 tools/autosave.sh
 tools/resume.sh
 tools/secretscan.sh
