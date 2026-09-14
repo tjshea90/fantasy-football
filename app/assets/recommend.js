@@ -926,5 +926,10 @@
                      loadCaches: loadCaches, PRIOR: PRIOR,
                      /* the offline Claude-app handoff writes through these */
                      mergeAi: mergeAi, aiCache: function () { return aiCache; },
+                     /* read-only, same pattern as aiCache above — lets the Wire
+                        tab say HOW OLD the injury designations it is showing
+                        actually are, instead of presenting a persisted cache
+                        (possibly days old) as if it were current (v5.5b) */
+                     newsCache: function () { return newsCache; },
                      rosterContext: rosterContext };
 })(typeof window !== 'undefined' ? window : this);
