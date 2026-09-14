@@ -381,5 +381,62 @@ var me = S.league.me;
      'and the map itself was rescued into .kickoffs rather than discarded');
 }());
 
+/* ---- 16. waiverContext carries the deterministic injury/dropCandidate/
+ * kdefNeed data, and it agrees with the real roster -------------------------
+ * value.js v5.5: these three fields feed the waiver prompt (ai.js) and the
+ * Wire tab's own injury card. Wrong here means wrong in both places at once. */
+(function () {
+  var t = W.Store.team(me);
+  var week = 6;
+  /* inject one ESPN-style injury designation into the SAME cache recommend.js
+     itself writes on a real sync, so myInjuries has something to find without
+     needing a live network call */
+  var nc = { at: Date.now(), byName: {}, count: 1 };
+  nc.byName[W.Espn.normName(t.players[0].name)] =
+    { status: 'QUESTIONABLE', note: 'test-injected ankle issue' };
+  W.Native.save('fftracker_news_v1', JSON.stringify(nc));
+  W.Recommend.loadCaches();
+
+  var ctx = W.Value.waiverContext(week, me, null, 2026, '2026-09-10');
+  ok(Array.isArray(ctx.injuries), 'waiverContext carries an injuries array');
+  var found = ctx.injuries.filter(function (x) { return x.name === t.players[0].name; });
+  ok(found.length === 1,
+     'the injected designation shows up in the deterministic injury list, unprompted');
+  ok(found.length && (found[0].status === 'QUESTIONABLE' || found[0].status === 'BYE'),
+     'status is one the app itself computed (BYE only if this player happens to be on ' +
+     'a bye in week ' + week + ')');
+
+  ok(ctx.kdefNeed && typeof ctx.kdefNeed.K === 'boolean' && typeof ctx.kdefNeed.DEF === 'boolean',
+     'kdefNeed is a {K,DEF} boolean pair');
+
+  ok(ctx.dropCandidates && typeof ctx.dropCandidates === 'object', 'dropCandidates is present');
+  var anyPos = Object.keys(ctx.dropCandidates).filter(function (k) {
+    return ctx.dropCandidates[k].length;
+  });
+  ok(anyPos.length > 0, 'at least one position has a real cut candidate on a full roster');
+  var oneList = ctx.dropCandidates[anyPos[0]];
+  ok(!!oneList[0].name && oneList[0].pos === anyPos[0] && typeof oneList[0].ros === 'number',
+     'each drop candidate carries a name, its own position, and a numeric ROS value');
+  if (oneList.length > 1) {
+    ok(oneList[0].ros <= oneList[1].ros,
+       'drop candidates are sorted weakest rest-of-season value first');
+  }
+}());
+
+/* ---- 17. the waiver prompt actually renders the deterministic context, not
+ * just the fixed scoring table ----------------------------------------------
+ * test_ai.js proves waiverPrefix() states the new rules; this proves
+ * buildWaiverPrompt renders them from a REAL context built off a real
+ * roster, not only from ai.js's own hard-coded example strings. */
+(function () {
+  var ctx2 = W.Value.waiverContext(6, me, null, 2026, '2026-09-10');
+  var prompt = W.Ai.buildWaiverPrompt(ctx2);
+  ok(prompt.indexOf('KDEF NEED') >= 0, 'the KDEF NEED line is rendered into the live prompt');
+  if (ctx2.injuries.length) {
+    ok(prompt.indexOf('MY ROSTER — INJURIES') >= 0,
+       'the injuries block is rendered when the roster actually has one');
+  }
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
