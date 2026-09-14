@@ -1730,3 +1730,141 @@ rewritten with the full verified process: trigger via
 before telling Tj anything, then the Release link in a fenced code block,
 with the `/raw/` file link as an immediate no-wait fallback if the publish
 step is pending or fails.
+
+## Five requests in one pass: current week, stale advice, preseason data, more sources, injuries everywhere (2026-09-14, v5.8)
+
+Tj asked for five things at once. Written to TASKS.md verbatim first, per
+the working agreement, then worked in order.
+
+**1. Auto-select the current NFL week.** There was no concept of "the
+current NFL week" anywhere — `S.settings.currentWeek` just persisted
+whatever was last selected, defaulting to 1 forever on a fresh install.
+Added `Espn.currentWeek()` (espn.js): the scoreboard endpoint asked with NO
+params hands back ESPN's own live calendar answer — `week.number` and
+`season.type` — which is the one thing this app must never compute by
+hand (a hand-rolled "week N ends on day X" calendar drifts the moment the
+NFL moves a game). Verified against the real calendar the day this shipped
+(2026-09-14): week 1's calendar boundary sits at 2026-09-16T06:59Z, safely
+after Monday Night Football ends, so "after tonight, default to week 2"
+resolves itself with zero clock math in this app.
+
+Wired into `boot()` only, deliberately not `appResume()`: Android usually
+kills the JS context when backgrounded, so appResume already doubles as a
+fresh boot most of the time (see that function's own comment); the rare
+case where the process survives is exactly a session already in progress,
+and must never be yanked to a different week out from under whatever Tj is
+looking at. Only ever moves the week FORWARD and only within 1-`LAST_WEEK`
+(17, not the NFL's 18). One `week` variable drives every tab already
+(confirmed by reading — there is no per-tab week state anywhere), so
+fixing it in one place fixed it everywhere.
+
+Caught by test_lifecycle.js immediately: the call has to be wrapped in
+try/catch around the CALL ITSELF, not just a `.catch()` on the returned
+promise — a request with no async bridge available (the test's stub, or a
+genuinely old shell) throws SYNCHRONOUSLY before any promise exists,
+exactly the same shape `freshenSchedule()` already guards against for
+`Schedule.refresh()`. Missed it on the first pass; the suite caught it
+before commit.
+
+**2. The Advice tab showed a different week's cached numbers.**
+`Projections.find()` answered from whatever was last fetched regardless of
+which week the caller meant — the cache carries one `.week` for the whole
+blob, and nothing checked it against the week actually being asked about.
+`find()` and `missing()` now take an explicit `week` argument and refuse
+to answer for a week the cache does not hold (both the weekly line AND the
+season pace, which travels with the same fetch). `Recommend.render()`
+goes further than "fall back to a thinner blend" — Tj asked for BLANK, not
+almost-right, so `build()` now shows a plain "projections have not loaded
+yet" card with a call to action instead of any computed lineup/bench/
+opponent content when `Projections.meta().week !== week`. Pull-to-refresh
+on the Advice tab specifically now runs `Recommend.syncAll` (schedule,
+injuries, every projection source, Claude LAST) instead of the box-score
+sync every other tab pulls — before this it silently ran the wrong sync
+and left Advice exactly as stale as it was. The Claude-last ordering
+inside `syncAll` already existed (a 2026-09 design, not new), which is
+what makes "everything else still loads if the API is out of credit"
+already true — confirmed by reading, not changed.
+
+**3. Preseason data removed from the blend entirely.** `seed.projPG` /
+`seed.projSrc` — a draft-time projection computed once before the season
+started and never updated — was one of four sources in `projectOne()`,
+weighted 1.5x early in the season fading to 0.5x. Gone: the `hasPre`
+block, the `preseasonEarly`/`preseasonLate` weights, the file header's
+description of the blend, the "how this is calculated" screen text, and
+the roster card's "· proj X/wk" display (ui.js) that surfaced the same
+number outside the blend. `seed.projPG` itself stays in seed.json/mkseed.py
+— it is draft-time data, not advice, and test_boot.js still pins its
+presence there — but nothing in the advice/recommendation path reads it
+anymore. What is left: ESPN's week line, Sleeper's week line, this
+player's own scored games, and ESPN's SEASON pace (an ongoing,
+continuously-refetched rest-of-season number — not a frozen preseason one,
+so it stays).
+
+**4. More projection sources, blended, for my roster + this week's
+opponent only.** Spent real effort looking: NFL.com's fantasy API
+(`api.fantasy.nfl.com/v3/players/stats?statType=weekProjectedStats`)
+answers with the right shape (a clean per-category stat schema, arguably
+nicer than ESPN's numeric ids) but every value comes back `null` for both
+an anonymous/unauthenticated caller and a `weekStats` (actual, already-
+played) request — looks gated behind the `appKey` the separate players-
+list endpoint openly demands. FantasyPros' projections API is a flat 403
+without a paid key. Yahoo's fantasy API is OAuth-only (401 with no token).
+MyFantasyLeague's `projectedScores` export needs a real hosted league ID,
+not a general-purpose one. None of them clear this app's own bar — free,
+no key, no signup, confidently re-scorable — the same bar ESPN and Sleeper
+already clear. Rather than bolt on something fragile or paid, what Tj
+actually gets: the EXISTING two-source blend (ESPN + Sleeper, each
+converted to this league's scoring before anything is averaged) is now
+also computed and shown for the FULL opponent roster, bench included — a
+capability that did not exist at all before (opponent players had no
+projections anywhere in the app, only live scores once a game started).
+`projectAll()` already worked for any team, not just Tj's; the new
+"[Opponent] · blended projections" card on the Advice tab just calls it a
+second time and renders the result the same way the bench card already
+does. No Claude research is spent on the opponent — that stays exactly
+where Tj asked for it, his own roster only.
+
+**5. Injury/questionable status everywhere a roster is listed.** The
+Advice tab already had this (`x.flags`, built in `projectOne()` from the
+ESPN injury feed). Rosters, Lineups, and Live did not. Added
+`healthFlags(teamId, opp)`/`appendHealthTags()` (ui.js) — one
+`Recommend.projectAll()` call per team per render, reusing the identical
+flags, so a player never reads healthy on one screen and hurt on another.
+Wired into `teamRosterCard`, `lineupCard` (both mine and this week's
+opponent — that screen already showed only those two), and `lineupDetail`
+(the Live tab's open-lineup rows, both halves of the matchup). Filtered
+the "ON BYE" flag out wherever a screen already has its own dedicated bye
+indicator (the Live tab's `tag out / bye` pill, the Rosters tab's inline
+"· bye N" text) so a bye player is never tagged twice for the same fact.
+
+"Updated frequently" — `liveTick()` (the poll that already runs on its own
+cadence: 45s during a live game, 5-10 minutes otherwise, stopped entirely
+once a week is fully scored) now also calls `Recommend.loadNews()`
+(unforced) on every tick. `loadNews` already has its own 10-minute
+freshness cache, so this is a real network fetch roughly every 10 minutes
+at most and a no-op the rest of the time — no second timer, no extra
+polling infrastructure, and a re-render fires only when a fetch actually
+landed (`!nc.reused`), never on the cache-hit no-op.
+
+**A source-text test (test_gestures.js) was updated, not just app code** —
+`blocked()` grew a third condition (`|| jobRunning('advice')`, so a pull
+cannot fire a second advice sync mid-flight) and the test's regex was
+extended to match. This is the correct response to a test asserting an
+implementation detail that intentionally changed, not a reason to avoid
+the change.
+
+All 13 suites green. Two real bugs caught by the suites before commit and
+fixed same-session: the synchronous-throw issue in `syncCurrentWeek()`
+above, and a genuine syntax error (a statement misplaced inside an
+if/else-if chain while wiring the Live tab's injury tags) caught by
+`check_es2018.js`'s parse check.
+
+**Known limitation, not fixed here (would be a bigger behavioral change
+than asked for):** `projectOne()`'s Claude-verdict lookup is keyed by
+player NAME only, with no team scoping and no staleness check at the point
+a flag is built — a verdict from a past week, or from when a player was on
+a different roster, can still surface as a flag today. Pre-existing, not
+introduced by this pass, and it affects every caller of `projectOne()`
+equally (autoFillWeek already ran this same lookup for all ten teams).
+Worth a real look, but changes the recommendation engine's behavior beyond
+what was asked — flagged for Tj rather than changed silently.
