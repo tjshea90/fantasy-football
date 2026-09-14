@@ -548,7 +548,9 @@
 
     /* waivers */
     var pool = opts.pool || {};
-    var res = root.Ai.normalizeWaivers(obj, root.Ai.poolIndex(pool));
+    var res = root.Ai.normalizeWaivers(obj, root.Ai.poolIndex(pool),
+                                        root.Ai.dropCandidateIndex(opts.dropCandidates),
+                                        opts.kdefNeed);
     if (!res.adds.length) {
       throw new Error('That reply has an "adds" list, but no entry in it had a ' +
         'name. Nothing was changed.');
@@ -558,6 +560,7 @@
     var saved = {
       at: Date.now(), week: useWeek, model: 'Claude app (handoff)',
       searchBudget: 0, adds: res.adds,
+      injuries: root.Ai.normalizeInjuries(obj, opts.injuries),
       needs: String(obj.needs || ''), summary: String(obj.summary || ''),
       usage: null, spent: null
     };
