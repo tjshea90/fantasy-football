@@ -49,7 +49,7 @@
    *   3. nothing — a positional floor, clearly labelled as a guess
    */
   function perGame(name, pos, week) {
-    var rec = root.Projections ? root.Projections.find({ name: name, pos: pos }) : null;
+    var rec = root.Projections ? root.Projections.find({ name: name, pos: pos }, week) : null;
     if (rec && typeof rec.week === 'number' && isFinite(rec.week) && rec.week > 0) {
       return { v: rec.week, src: 'ESPN week line, re-scored' };
     }
