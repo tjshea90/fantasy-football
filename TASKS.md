@@ -63,8 +63,8 @@ Two real gaps, both mine from the v5.5 work:
       language, and the full `priority`/`recentStat`/`dropCandidate`/
       `injuries` JSON contract with rules and a worked example are all
       present. Sent the file to Tj directly.
-- [x] 5. Full 13-suite regression + ES2018 gate green, `build.sh` clean,
-      shipped via `ship.sh`.
+- [ ] 5. Full 13-suite regression + ES2018 gate green (done). `build.sh` and
+      `ship.sh` still to run.
 
 Ticking a box means: written, tested, committed, and the test that proves it
 is named in the box. **Never tick a box you have not verified.**
