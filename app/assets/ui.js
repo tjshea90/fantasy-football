@@ -304,6 +304,45 @@
     return s;
   }
 
+  /* ---------- injury/questionable tags, everywhere a roster is listed (v5.8)
+   * Tj, 2026-09-14: "in the advice section, roster section, lineup section,
+   * and live section and anywhere else my players on my roster are listed,
+   * clearly show updated information on if any player is injured or
+   * questionable. Update this information smartly when needed. It must be
+   * updated frequently so I know which of my players is injured."
+   *
+   * The Advice tab already had this (recommend.js's own `x.flags`, built by
+   * Recommend.projectOne from the same ESPN injury feed) — this is that same
+   * flag list, reused rather than reinvented, so a player never reads as
+   * healthy on one screen and hurt on another. One projectAll() per team per
+   * render; defenseProfile() inside it is already memoised on (week, store
+   * generation), so calling this from a few more cards costs nothing extra.
+   *
+   * See liveTick() for how the underlying injury feed itself stays current —
+   * it rides the same poll that already runs every 45s-10min while the app
+   * is open, gated by loadNews's own 10-minute freshness cache so it is a
+   * real network fetch roughly every 10 minutes, not every tick. */
+  function healthFlags(teamId, opp) {
+    var byId = {};
+    if (!window.Recommend || !Recommend.projectAll) return byId;
+    try {
+      Recommend.projectAll(week, teamId, opp).forEach(function (x) {
+        if (x.flags && x.flags.length) byId[x.p.id] = x.flags;
+      });
+    } catch (e) { /* the advice engine failing must never blank a roster list */ }
+    return byId;
+  }
+  function appendHealthTags(host, flags) {
+    if (!flags) return;
+    flags.forEach(function (f) {
+      host.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
+                          f.text.split(' — ')[0].split(':')[0]));
+    });
+  }
+  function weekOpponents() {
+    return (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+  }
+
   /* The alert card. Shown at the top of Live, Lineups and Advice — the three
      screens he is actually on when he thinks about his lineup — and only when
      there is something to act on. It leads with the ACTIONABLE case (someone
