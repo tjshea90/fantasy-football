@@ -1,12 +1,12 @@
-# CHECKPOINT 75 — read me first, then TASKS.md
+# CHECKPOINT 82 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T23:00:26Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T23:02:34Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-tasks 1-4 done: (1) app now auto-advances to the current NFL week on cold boot via ESPN's own scoreboard calendar (Espn.currentWeek), never fighting a live session; (2) the Advice tab no longer shows a different week's cached projections -- Projections.find/missing are now week-gated and the tab shows a clear blank/loading state until this week's numbers actually load, and pull-to-refresh on Advice now runs the full syncAll (schedule+injuries+projections, Claude last) instead of the box-score sync; (3) the preseason/draft-time projection source (seed.projPG) is fully removed from the blend, weights and all explanatory text; (4) added a 'this week's opponent -- blended projections' card reusing the same ESPN+Sleeper rescoring pipeline for the opponent's full roster (both benches), scoped to only my team + this week's opponent per Tj's instruction. All 13 suites green (one test_gestures.js assertion updated to match the intentionally extended blocked() condition).
+task 5 done: injury/questionable tags (same flags the Advice tab already computed via Recommend.projectAll) now also show on the Rosters tab, the Lineups tab (both mine and this week's opponent), and the Live tab's open lineup rows -- reusing the exact same ESPN-injury-feed-derived flags everywhere so a player never reads healthy on one screen and hurt on another. The injury feed itself now auto-refreshes by riding the existing live-score poll (liveTick), gated by loadNews's own 10-minute freshness cache, so it updates roughly every 10 minutes (or faster during a live game's 45s cadence) without any manual sync tap. Fixed a syntax error from a misplaced statement inside an if/else-if chain during the Live tab edit -- caught by check_es2018.js/test_lifecycle.js before commit. All 13 suites green.
 
 ## Do this next
-task 5 next: show injury/questionable status inline everywhere a roster is listed (Rosters tab, Lineups tab, Live tab -- Advice tab already had it), and make the injury feed refresh automatically/frequently by piggybacking on the existing live-score poll (liveTick) rather than only on manual sync. Then re-test everything, do the post-update improvement sweep CLAUDE.md's standing instructions require, and ship.
+all 5 of Tj's requested changes are implemented. Next: do the standing post-update sweep CLAUDE.md requires (UI/efficiency/bug-fix pass across everything touched today), re-verify with all suites + a real build.sh, then ship.sh and publish the GitHub Release per the standing rule.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  e10158d ckpt 75: tasks 1-4 done: (1) app now auto-advances to the current NFL week on cold boot 
   41a9374 ckpt 52: wrote Tj's 5-part request (auto-select current NFL week everywhere, stop showin
   b59fff0 ckpt 148: corrected the standing rule immediately on Tj's feedback: a fenced code block 
   65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   3c3ecc2 ckpt 129: wrote Tj's request to style the ship-link message like a real GitHub Release (
   a853fb4 ckpt 127: made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL 
   c9cd2dd ckpt 125: fixed the download link format itself: Tj's screenshot showed the GitHub mobil
-  a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
 ```
 
-(22 automatic checkpoint(s) since the last deliberate one — the
+(6 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
