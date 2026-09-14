@@ -830,4 +830,4 @@ again.
       caught before commit) and `test_lifecycle.js`'s full-screen render
       pass staying green for every tab.
 
-All 13 suites green throughout. Shipped as v5.8.
+All 13 suites green throughout.
