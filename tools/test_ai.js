@@ -39,6 +39,7 @@ for (const f of ['version.js', 'seed.js', 'players.js', 'scoring.js', 'names.js'
   vm.runInContext(fs.readFileSync(path.join(A, f), 'utf8'), sandbox, { filename: f });
 }
 const Ai = sandbox.Ai;
+const Names = sandbox.Names;
 const jsonOf = Ai._jsonOf;
 ok(typeof jsonOf === 'function', 'Ai._jsonOf is exported for testing');
 
