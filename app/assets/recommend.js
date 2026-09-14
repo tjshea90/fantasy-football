@@ -44,17 +44,18 @@
   var MATCHUP_CAP = 0.22;
   var HEALTH = { OUT: 0, DOUBTFUL: 0.25, QUESTIONABLE: 0.82, PROBABLE: 0.97 };
 
-  /* Blend weights. Two OUTSIDE professional projections (ESPN and Sleeper),
-     his own scored games, and the preseason number. Sleeper is weighted a
-     little below ESPN because ESPN's weekly line is opponent-aware and
-     Sleeper's is thinner, not because it is less trustworthy — and the point
-     of carrying both is that where they disagree, the average is better than
-     either. EVERY one of these is in THIS league's points before it is
-     weighted: the outside sources contribute a STAT LINE which scoring.js
-     re-scores. Their own "projected points" are half-PPR standard and are
-     never used, anywhere, for anything. */
+  /* Blend weights. Two OUTSIDE professional projections (ESPN and Sleeper)
+     and his own scored games. Sleeper is weighted a little below ESPN
+     because ESPN's weekly line is opponent-aware and Sleeper's is thinner,
+     not because it is less trustworthy — and the point of carrying both is
+     that where they disagree, the average is better than either. EVERY one
+     of these is in THIS league's points before it is weighted: the outside
+     sources contribute a STAT LINE which scoring.js re-scores. Their own
+     "projected points" are half-PPR standard and are never used, anywhere,
+     for anything. No preseason number is in this list at all — see the file
+     header. */
   var W = { espnWeek: 3.0, sleeperWeek: 2.0, measuredPerGame: 1.0, measuredMax: 4.0,
-            preseasonEarly: 1.5, preseasonLate: 0.5, espnSeason: 1.0 };
+            espnSeason: 1.0 };
 
   var NEWSKEY = 'fftracker_news_v1';
   var AIKEY = 'fftracker_ai_v1';
