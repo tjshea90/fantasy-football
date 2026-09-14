@@ -736,3 +736,32 @@ permanently broken".
       exists for a third-party app to use in place of a key. The existing
       `handoff.js` offline round trip is already the zero-cost path using
       his Pro subscription — not a workaround, the actual mechanism.
+
+
+## 26. Real GitHub Releases for every ship (archived from TASKS.md, 3/4 done
+      — the 4th needs Tj's phone)
+
+> "Actually can you style it like the following, which came from another
+> Claude project? These links work: 'v7.22 is shipped. Run #22 went green,
+> the release is published, and it's recorded in BUILDLOG.md. Grab it here:
+> https://github.com/tjshea90/Portfolio/releases/tag/v7.22'"
+
+Full design, the tag-push permission wall it ran into, and how that was
+solved are written up in STATE.md under "Real GitHub Releases, and the
+tag-push permission wall (2026-09-14, same day)" — read that before
+touching the release pipeline again.
+
+- [x] 1. Confirmed no `mcp__github__` tool creates a release or uploads an
+      asset before building anything (checked, not assumed).
+- [x] 2. Built and verified `.github/workflows/publish-release.yml`
+      end-to-end on the already-shipped v5.7: triggered it live, watched it
+      succeed, confirmed the real Release + attached asset via the GitHub
+      API, confirmed the download URL sets `Content-Disposition: attachment`
+      with `curl`.
+- [x] 3. Rewrote the CLAUDE.md "After every ship" standing rule with the
+      full process (trigger → verify → send the link) and was honest that
+      his example's CI "Run #" language doesn't map onto this repo (no
+      remote CI gate here — `ship.sh` is the gate, run locally).
+- [ ] 4. Phone confirmation that the v5.7 Release link actually downloads —
+      moved to "Waiting on Tj" in TASKS.md; everything server-side is
+      verified, this is the one thing only his device can confirm.
