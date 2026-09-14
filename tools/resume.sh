@@ -32,6 +32,33 @@ BRIEF="$(
   if [ -d .git ]; then
     timeout 25 git fetch -q origin >/dev/null 2>&1 || echo "  NOTE  could not reach GitHub — working from the local checkout only."
 
+    # IS THIS SESSION EVEN ON main? Claude Code on the web forks a fresh
+    # branch per session (see CLAUDE.md "Branches") — the checks below this
+    # one compare HEAD against ITS OWN upstream (@{u}), which stays "in sync"
+    # forever on a stranded feature branch and cannot see this problem. It
+    # took a whole session shipping three versions before anyone noticed
+    # main never moved (2026-09-14) — this is that gap, closed. Safe case
+    # only: fast-forward automatically, same as the pull below. Diverged
+    # case: warn loudly and do NOT merge blind, per CLAUDE.md.
+    CURBRANCH="$(git symbolic-ref --short -q HEAD 2>/dev/null || echo '')"
+    if [ -n "$CURBRANCH" ] && [ "$CURBRANCH" != "main" ]; then
+      MAINREF="$(git rev-parse -q --verify origin/main 2>/dev/null || echo '')"
+      if [ -n "$MAINREF" ] && git merge-base --is-ancestor "$MAINREF" HEAD 2>/dev/null; then
+        if timeout 25 git push -q origin HEAD:main 2>/dev/null; then
+          echo "  OK    on branch '$CURBRANCH', not main — origin/main was a strict"
+          echo "        ancestor of HEAD, so it was fast-forwarded automatically."
+        else
+          echo "  WARN  on branch '$CURBRANCH', not main. origin/main looked safely"
+          echo "        fast-forwardable but the push failed. Fix by hand:"
+          echo "        git push origin HEAD:main"
+        fi
+      elif [ -n "$MAINREF" ]; then
+        echo "  !!    ON BRANCH '$CURBRANCH', NOT main — and main has commits this"
+        echo "        branch does not. Do NOT merge blind. Read CLAUDE.md 'Branches',"
+        echo "        work out what is on each side, and tell Tj before reconciling."
+      fi
+    fi
+
     DIRTY="$(git status --porcelain 2>/dev/null)"
     BEHIND="$(git rev-list --count HEAD..@{u} 2>/dev/null || echo 0)"
     AHEAD="$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
