@@ -666,15 +666,43 @@
    *
    *  - `blocked` covers a modal being open AND a sync already running. A swipe
    *    mid-sync would rebuild the screen under a job that is writing to it.
-   *  - `refresh` is deliberately the SAME path as the Sync week button rather
-   *    than a second one. "Refresh" meaning something different depending on
-   *    which tab you pulled on is how a gesture becomes untrustworthy. It also
+   *  - `refresh` is the SAME path as whichever sync button the tab you pulled
+   *    on already has — never a third, different notion of "refresh" per
+   *    screen, which is how a gesture becomes untrustworthy. It also
    *    freshens the schedule, which is nearly free (Schedule.refresh only goes
    *    to the network if the stored copy is over three hours old).
+   *  - ON THE ADVICE TAB specifically this means the FULL advice sync
+   *    (schedule + injuries + every projection source + Claude last), not
+   *    the box-score sync every other tab pulls. Tj, 2026-09-14: "make it so
+   *    the advice loads and refreshes all data when I pull down to refresh."
+   *    Before this, pulling down on Advice quietly ran the wrong sync — box
+   *    scores, which Advice does not even show — and left the projections,
+   *    injury feed and Claude read exactly as stale as they were.
    *  - `scrollTop` is the page's, because <main> does not scroll — the body
    *    does. Getting this wrong is what makes a pull-to-refresh fire halfway
    *    down an article.
    */
+  /* Advice's own pull-to-refresh. Same call the "Sync advice" button on that
+   * tab makes (see recommend.js render()), just triggered by the gesture
+   * instead of a tap — one implementation of "refresh the advice", not two
+   * that could drift apart. syncAll already does schedule -> injuries ->
+   * every projection source -> Claude LAST, so a spent or missing API key
+   * still leaves everything else freshly loaded (Tj, 2026-09-14: "get all
+   * information possible before trying to access the Claude API in case I
+   * have no credit left"). */
+  function adviceSyncQuiet() {
+    if (jobRunning('advice')) return Promise.resolve();
+    jobStart('advice', 'Advice: starting…');
+    var t0 = Date.now(), lastText = 'Advice: starting…';
+    var tick = root.setInterval(function () {
+      jobStep(lastText + '  (' + Math.round((Date.now() - t0) / 1000) + 's)');
+    }, 1000);
+    function stop() { root.clearInterval(tick); jobEnd(); }
+    return Recommend.syncAll(week, S.league.me, function (t, p) {
+      lastText = 'Advice: ' + t;
+      jobStep(lastText + '  (' + Math.round((Date.now() - t0) / 1000) + 's)', p);
+    }).then(function () { stop(); render(); }, function () { stop(); render(); });
+  }
   function wireGestures() {
     if (!window.Gestures) return;
     try {
@@ -684,10 +712,14 @@
         go: goTab,
         viewEl: function () { return $('view'); },
         scrollTop: curScroll,
-        blocked: function () { return modalOpen() || busy; },
-        refreshLabel: function () { return 'Refreshing week ' + week + '…'; },
+        blocked: function () { return modalOpen() || busy || jobRunning('advice'); },
+        refreshLabel: function () {
+          return view === 'advice' ? 'Refreshing week ' + week + ' advice…'
+                                    : 'Refreshing week ' + week + '…';
+        },
         refresh: function () {
           if (window.Schedule) { try { Schedule.refresh(week, true); } catch (e) { } }
+          if (view === 'advice') return adviceSyncQuiet();
           /* NOT quiet. A pull is a deliberate act, so it gets the same progress
              bar the Sync week button gets — "box score 3 of 8" is the
              difference between waiting and wondering whether it is stuck. */
