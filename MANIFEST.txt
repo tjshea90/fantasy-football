@@ -9,7 +9,6 @@
 CLAUDE.md
 .claude/settings.json
 .github/workflows/build-apk.yml
-releases/FFTracker-v4.7.apk
 tools/autosave.sh
 tools/resume.sh
 tools/secretscan.sh
@@ -87,3 +86,4 @@ android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 releases/FFTracker-v5.5.apk
 releases/FFTracker-v5.6.apk
+releases/FFTracker-v5.7.apk
