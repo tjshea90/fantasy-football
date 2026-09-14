@@ -291,7 +291,7 @@
       sum += pts * weight; wsum += weight;
     }
 
-    var pr = root.Projections ? root.Projections.find(p) : null;
+    var pr = root.Projections ? root.Projections.find(p, week) : null;
     var hasWeekly = !!(pr && pr.week !== undefined);
     if (hasWeekly) src('ESPN week ' + week + ' projection', pr.week, W.espnWeek,
                        'their projected stat line, re-scored under our rules');
