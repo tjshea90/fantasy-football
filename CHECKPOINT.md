@@ -1,12 +1,12 @@
-# CHECKPOINT 166 — read me first, then TASKS.md
+# CHECKPOINT 52 — read me first, then TASKS.md
 
-**Written:** 2026-09-12T20:08:32Z · **version:** 5.4 · **tests:** all 13 suites green
+**Written:** 2026-09-14T18:32:41Z · **version:** 5.4 · **tests:** all 13 suites green
 
 ## Just done
-job complete and archived: moved the 2026-09-12d request into LADDER.md section 22 (7/7 items, one -- deleting the 3 stale branches -- blocked on access and hand-off to Tj, not left as Claude-session work). Reset TASKS.md. main is fast-forwarded and current.
+wrote the 2026-09-14 waiver-wire upgrade request into TASKS.md, in Tj's own words, broken into 9 verifiable steps, before writing any code
 
 ## Do this next
-waiting on Tj: delete the 3 stale branches himself (this session's GitHub access cannot), confirm v5.4 on the phone, and clarify what 'stale inputs' meant if it was more than the branches
+start step 1: roster injuries + season outlook -- value.js deterministic injury list from Recommend.projectAll, then ai.js prompt + JSON field, then ui.js card
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  eba333e ckpt 166: job complete and archived: moved the 2026-09-12d request into LADDER.md sectio
   e30a21a ckpt 162: task 5 done partially: fast-forwarded origin/main from 3dbbef9 to this branch'
   3bf64b2 ckpt 160: task 4 done: bumped VERSION 5.3 -> 5.4, full 13-suite regression + ES2018 + a 
   124b688 ckpt 157: tasks 1-3 done: (1) added a one-time migration in Store.init() that heals a we
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   7bde31c ckpt 138: task 1 done: fixed the [object Object] bug by giving schedule.js's per-team ki
   3caae40 ckpt 129: wrote Tj's Data-tab bug report + score-entry redesign request into TASKS.md be
   4d42e58 ckpt 127: branch-reconciliation job complete and archived: moved the 2026-09-12b request
-  f58c1b8 ckpt 124: reconciliation task 8 done: bumped VERSION 5.1 -> 5.2, ran the full 13-suite r
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
