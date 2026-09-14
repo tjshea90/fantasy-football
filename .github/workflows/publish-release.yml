@@ -1,0 +1,67 @@
+name: Publish Release
+
+# Fires when ship.sh pushes a version tag (see ship.sh's "keep main current"
+# step — it creates and pushes vX.Y once STATE.md, the manifest, every test
+# suite, and dex-completeness have all already passed locally). This workflow
+# does not re-build or re-gate anything: ship.sh is the gate. Its one job is
+# to turn the APK ship.sh already committed into a real GitHub Release with
+# that file attached, so a link like .../releases/tag/vX.Y actually resolves
+# to a download instead of 404ing or, on the GitHub app's in-repo file
+# viewer, rendering raw binary as garbled text (both hit Tj's phone before
+# this existed — see STATE.md, 2026-09-14).
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+
+      - name: Locate the APK ship.sh committed for this tag
+        id: apk
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          APK="releases/FFTracker-v${V}.apk"
+          if [ ! -f "$APK" ]; then
+            echo "::error::$APK not found. ship.sh must commit the versioned APK BEFORE tagging -- this tag was pushed without it, or the version numbers disagree."
+            exit 1
+          fi
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Build release notes from BUILDLOG.md
+        run: |
+          V="${{ steps.apk.outputs.version }}"
+          LINE="$(grep -F "| v${V} |" BUILDLOG.md | tail -1 || true)"
+          {
+            echo "v${V} is shipped."
+            echo
+            if [ -n "$LINE" ]; then
+              echo "From BUILDLOG.md:"
+              echo '```'
+              echo "$LINE"
+              echo '```'
+            else
+              echo "_(no matching BUILDLOG.md line found for v${V})_"
+            fi
+            echo
+            echo "Gated locally by \`ship.sh\` before this tag was pushed: every test"
+            echo "suite, the ES2018 compatibility check, and dex-completeness (every"
+            echo "Java source has a class in the built APK) all had to pass."
+          } > /tmp/release-notes.md
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            "${{ steps.apk.outputs.path }}" \
+            --title "${{ github.ref_name }}" \
+            --notes-file /tmp/release-notes.md
