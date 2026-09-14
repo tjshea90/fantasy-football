@@ -1627,4 +1627,4 @@ offline `handoff.js` round trip already is the zero-cost path using his Pro
 subscription; the manual export/import step is the mechanism, not a
 workaround for one.
 
-13 suites + ES2018 gate green, `build.sh` clean.
+13 suites + ES2018 gate green, `build.sh` clean. Shipped as v5.7 (versionCode 507).
