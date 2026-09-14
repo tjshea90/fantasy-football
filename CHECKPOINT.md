@@ -1,12 +1,12 @@
-# CHECKPOINT 125 — read me first, then TASKS.md
+# CHECKPOINT 127 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:21:12Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:34:59Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-fixed the download link format itself: Tj's screenshot showed the GitHub mobile app rendering the binary APK as garbled raw text at the /blob/ URL -- confirmed with curl -IL that /raw/main/... 302s to raw.githubusercontent.com with content-type: application/octet-stream, which forces an actual download in any client instead of an in-app render attempt. Updated the CLAUDE.md standing rule to specify /raw/ not /blob/ with the reasoning, and made ship.sh print the exact ready-to-paste URL itself (branch-aware) instead of a vague 'tap it, then Download' pointer that left the exact URL format for the session to guess at -- which is exactly how the wrong /blob/ format got used the first time
+made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL shape: the link must go in its own fenced code block in the chat reply, not bold or plain text, because that's what actually renders a one-tap copy button in the client -- I had been sending it as bold text, which doesn't, even though CLAUDE.md's own example was already in a code block
 
 ## Do this next
-none -- verify the corrected v5.7 link actually downloads (not renders) on Tj's phone
+none -- confirm the code-block format actually shows a copy button by sending Tj the v5.7 link that way
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  c9cd2dd ckpt 125: fixed the download link format itself: Tj's screenshot showed the GitHub mobil
   a5aaee8 ckpt 122: extended the same main-sync fix to ckpt.sh and ship.sh, not just resume.sh -- 
   bacf3fa ckpt 119: recovered from the exact incident CLAUDE.md warns about by name: this whole se
   a8e4db7 ckpt 116: added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj th
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   29aaed8 ship v5.6: fix stale injury feed on the Wire tab: freshness line + a no-API-key Sync but
   a14f9a3 ckpt 92: fixed the stale-injury-feed bug Tj reported with a screenshot: recommend.js exp
   13a5233 ckpt 82: diagnosed Tj's stale-injury-data report: confirmed via code reading (not guessi
-  d29d64f ship v5.5: waiver wire upgrade: roster injuries with season outlook, season-vs-week prio
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
