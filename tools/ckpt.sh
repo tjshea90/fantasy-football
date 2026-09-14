@@ -149,4 +149,23 @@ else
   echo "        and containers do not survive the session. Retry by hand:"
   echo "          git push origin HEAD"
 fi
+
+# ---- keep main current too, not just this branch ----------------------------
+# resume.sh does this same check at session START, but a session can run many
+# checkpoints without ending — that gap is exactly how v5.5-v5.7 all shipped to
+# a stranded platform-assigned branch while main sat still for two days (see
+# STATE.md, 2026-09-14). Same safety rule: fast-forward ONLY when origin/main
+# is a strict ancestor of HEAD (provably lossless); never merge blind.
+CURBRANCH="$(git symbolic-ref --short -q HEAD 2>/dev/null || echo '')"
+if [ -n "$CURBRANCH" ] && [ "$CURBRANCH" != "main" ]; then
+  git fetch -q origin main >/dev/null 2>&1 || true
+  MAINREF="$(git rev-parse -q --verify origin/main 2>/dev/null || echo '')"
+  if [ -n "$MAINREF" ] && git merge-base --is-ancestor "$MAINREF" HEAD 2>/dev/null; then
+    git push -q origin HEAD:main >/dev/null 2>&1 && \
+      echo "  main fast-forwarded too (this session is on '$CURBRANCH')"
+  elif [ -n "$MAINREF" ]; then
+    echo "  WARN  on branch '$CURBRANCH', and main has commits this branch lacks —"
+    echo "        NOT merged automatically. See CLAUDE.md 'Branches'."
+  fi
+fi
 exit 0
