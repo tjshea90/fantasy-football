@@ -39,21 +39,21 @@ Two real gaps, both mine from the v5.5 work:
    covers what Claude searches for, not the facts the app hands it as
    settled.
 
-- [x] 1. Export a minimal freshness getter from recommend.js (same pattern as
+- [ ] 1. Export a minimal freshness getter from recommend.js (same pattern as
       the existing `aiCache` getter) so ui.js can read the injury feed's
       age/count/error without reaching into a private variable.
-- [x] 2. "Your roster — injuries" card: show a freshness line, and add its
+- [ ] 2. "Your roster — injuries" card: show a freshness line, and add its
       own "Sync injury feed" button (`Recommend.loadNews` with `force`) that
       works with NO API key, since it is only the ESPN endpoint.
-- [x] 3. "Ask Claude about the wire": refresh the injury feed first (forced),
+- [ ] 3. "Ask Claude about the wire": refresh the injury feed first (forced),
       same as `syncAll` already does for the Advice tab, before building the
       context Claude reasons over — a paid call must not reason from stale
       "settled fact" ESPN designations.
-- [x] 4. Confirm the Claude-app handoff file (`Handoff.buildWaivers`, the
+- [ ] 4. Confirm the Claude-app handoff file (`Handoff.buildWaivers`, the
       "no API key, no cost" button) carries every v5.5 addition — generate a
       real sample and show him the new sections directly, not just point at
       passing tests.
-- [x] 5. Test, full regression, build, ship.
+- [ ] 5. Test, full regression, build, ship.
 
 Ticking a box means: written, tested, committed, and the test that proves it
 is named in the box. **Never tick a box you have not verified.**
