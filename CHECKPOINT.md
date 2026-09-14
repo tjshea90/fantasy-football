@@ -1,12 +1,12 @@
-# CHECKPOINT 137 — read me first, then TASKS.md
+# CHECKPOINT 143 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:42:51Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:45:41Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-redesigned the release trigger after discovering git tag-push 403s for this session's credentials (confirmed with a clean test: branch push works, tag push does not -- same restriction class as the earlier branch-delete finding). ship.sh no longer attempts to push a tag (it always failed); publish-release.yml now primarily triggers via workflow_dispatch (an input version=X.Y), which the calling session fires via mcp__github__actions_run_trigger -- a properly-scoped API credential, not git. The workflow creates its own tag from inside the Actions runner (which has contents:write via the job's own GITHUB_TOKEN, a completely different auth path than this session's git remote). Kept the tag-push trigger too as a no-cost fallback. ship.sh's final message now gives the exact MCP tool call to make. Also: a stray diagnostic branch (test-branch-scope-check) got created while testing this and cannot be deleted for the same reason as the other 3 stale branches -- added to Tj's cleanup list
+verified the Release pipeline end-to-end and closed the loop: triggered publish-release.yml for v5.7 live, confirmed via mcp__github__get_release_by_tag it published a real, non-draft Release with the APK attached (227282 bytes, correct android package content-type), confirmed via curl -IL that the download sets Content-Disposition: attachment. Rewrote CLAUDE.md's 'After every ship' standing rule with the full verified process. Archived the job to LADDER.md section 26, moved the phone-confirmation to Waiting on Tj along with the new stray test-branch-scope-check branch (can't self-delete, same permission wall as the other 3)
 
 ## Do this next
-trigger publish-release.yml for v5.7 via mcp__github__actions_run_trigger, watch it run, and confirm a real Release + attached asset exist via mcp__github__get_release_by_tag before telling Tj anything works
+none -- no active job. Send Tj the confirmed-working v5.7 Release link
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  66dcf03 ckpt 137: redesigned the release trigger after discovering git tag-push 403s for this se
   7da2ea2 ckpt 134: built the real GitHub Release pipeline Tj asked for, after confirming this ses
   3c3ecc2 ckpt 129: wrote Tj's request to style the ship-link message like a real GitHub Release (
   a853fb4 ckpt 127: made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   a8e4db7 ckpt 116: added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj th
   ecabeb7 ship v5.7: fix the permanently-broken 'limit only' projection-feed fallback route (ESPN 
   b40f519 ckpt 104: diagnosed Tj's Data-tab screenshot: the 'limit only: FAILED' route is not the 
-  d4bc132 ckpt 102: removed a stray demo file (sample-waiver-handoff-v5.5.md) that autosave picked
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
