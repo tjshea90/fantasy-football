@@ -228,12 +228,44 @@ else
   exit 1
 fi
 
+# ---- keep main current too, not just this branch ----------------------------
+# A "shipped" release means nothing to Tj's phone if it lands on a
+# platform-assigned branch nobody looks at instead of main — exactly what
+# happened to v5.5-v5.7 (see STATE.md, 2026-09-14: the link 404'd because
+# main had not moved in two days). Same rule as ckpt.sh/resume.sh: fast-
+# forward ONLY when origin/main is a strict ancestor of HEAD.
+CURBRANCH="$(git symbolic-ref --short -q HEAD 2>/dev/null || echo '')"
+MAINOK=1
+if [ -n "$CURBRANCH" ] && [ "$CURBRANCH" != "main" ]; then
+  git fetch -q origin main >/dev/null 2>&1 || true
+  MAINREF="$(git rev-parse -q --verify origin/main 2>/dev/null || echo '')"
+  if [ -n "$MAINREF" ] && git merge-base --is-ancestor "$MAINREF" HEAD 2>/dev/null; then
+    if git push -q origin HEAD:main >/dev/null 2>&1; then
+      echo "  OK    main fast-forwarded too (this session shipped from '$CURBRANCH')"
+    else
+      MAINOK=0
+      echo "  WARN  could not fast-forward main — retry: git push origin HEAD:main"
+    fi
+  elif [ -n "$MAINREF" ]; then
+    MAINOK=0
+    echo "  WARN  on branch '$CURBRANCH', and main has commits this branch lacks —"
+    echo "        NOT merged automatically. See CLAUDE.md 'Branches' before"
+    echo "        reconciling; the link below will not resolve until then."
+  fi
+fi
+
 echo "  OK    ladder $DONE/$TOT complete"
 echo
 echo "== shipped v$V =="
 echo
 echo "  Tj installs it from:  github.com/tjshea90/fantasy-football"
-echo "                        -> $APK  (tap it, then Download)"
+if [ "$MAINOK" -eq 1 ]; then
+  echo "                        -> $APK  (tap it, then Download)"
+else
+  echo "                        -> $APK on branch '$CURBRANCH'  (main is NOT"
+  echo "                        current, so the usual main-branch link 404s"
+  echo "                        until that is reconciled)"
+fi
 echo
 echo "  To continue in a NEW session, on ANY of the three Claude accounts:"
 echo "  open the repo and say \"continue\". The SessionStart hook briefs it"
