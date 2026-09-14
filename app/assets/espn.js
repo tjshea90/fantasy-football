@@ -229,6 +229,27 @@
     });
   }
 
+  /* ---- what week is it, really? -------------------------------------
+   * Tj: "automatically select the tabs in all sections of the app to the
+   * current NFL week." The scoreboard endpoint, asked with NO date/week
+   * params, hands back ESPN's own idea of "this week" straight off their
+   * live calendar (`week.number`, plus `season.type`: 1 preseason, 2
+   * regular, 3 postseason) -- the one thing this app must never compute by
+   * hand, because a hand-rolled "week N ends on day X" calendar drifts the
+   * moment the NFL moves a game, which it does most seasons. Verified
+   * against the real calendar 2026-09-14: week 1 is live and its own
+   * boundary (leagues[0].calendar entries) sits comfortably after Monday
+   * Night Football ends, so trusting this number is also how "after
+   * tonight" resolves itself with no clock math in this app at all. */
+  function currentWeek() {
+    return httpGet(BASE + '/scoreboard').then(function (j) {
+      return {
+        week: (j.week && j.week.number) || 1,
+        seasonType: (j.season && j.season.type) || 2
+      };
+    });
+  }
+
   /* ---- field goals + safeties + 2PT from play-by-play --------------- */
   var FG_RE = /(\d{1,2})\s*(?:yd|yard)s?\s+field goal/i;
   function scanPlays(sum, res) {
