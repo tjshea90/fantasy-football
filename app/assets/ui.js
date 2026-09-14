@@ -1887,7 +1887,7 @@
         });
       });
       c.appendChild(el('p', 'hint',
-        'Read ' + (age < 1 ? 'just now' : age + 'h ago') + ' with ' + (cached.model || 'Claude') +
+        'Read ' + agoText(cached.at) + ' with ' + (cached.model || 'Claude') +
         ', ' + cached.searchBudget + ' searches allowed' +
         (cached.spent && typeof cached.spent.cost === 'number' ? ', about $' + cached.spent.cost.toFixed(3) : '') +
         '. Availability and the projections come from this app; the news and the ' +
