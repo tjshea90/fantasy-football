@@ -1765,14 +1765,21 @@
       c.appendChild(el('p', stale ? 'warnText' : 'muted',
         (stale ? 'FROM WEEK ' + cached.week + ' — re-sync for this week. ' : '') +
         (cached.needs || '') + (cached.summary ? '  ' + cached.summary : '')));
-      /* grouped by position, because that is the question being asked */
-      var seen = {}, order = [];
+      /* Grouped by position, in the SAME fixed order the free-agent board
+         below always uses (Value.POS: QB, RB, WR, TE, K, DEF) — not the
+         order Claude happened to rank them in. That is what keeps K/DEF
+         visually last regardless of how the model ranked them, matching
+         Tj's "low priority" rule with a guarantee rather than a hope. */
+      var seen = {};
       cached.adds.forEach(function (a) {
-        if (!seen[a.pos]) { seen[a.pos] = []; order.push(a.pos); }
+        if (!seen[a.pos]) seen[a.pos] = [];
         seen[a.pos].push(a);
       });
-      order.forEach(function (k) {
-        c.appendChild(el('div', 'subhd', k + ' — Claude'));
+      Value.POS.forEach(function (k) {
+        if (!seen[k] || !seen[k].length) return;
+        var lowPri = (k === 'K' || k === 'DEF');
+        c.appendChild(el('div', 'subhd', k + ' — Claude' +
+          (lowPri ? '  ·  low priority — ranked only because yours is unavailable' : '')));
         seen[k].forEach(function (a) {
           var r = el('div', 'row');
           r.appendChild(el('div', 'slot', '#' + a.rank));
@@ -1784,17 +1791,49 @@
           if (a.overStarter) bits.push('beats ' + a.overStarter);
           bits.push(a.confidence + ' confidence');
           nm.appendChild(el('small', null, '  ' + bits.join(' · ') +
-            (a.verified ? '' : '  ·  NOT IN THE APP\'S POOL — check he is actually free') +
-            (a.why ? '  —  ' + a.why : '')));
+            (a.verified ? '' : '  ·  NOT IN THE APP\'S POOL — check he is actually free')));
+          /* season vs. one-week-only — the priority Tj asked to see ranked
+             ahead of small weekly changes, made visible rather than implied */
+          nm.appendChild(el('span', a.priority === 'season' ? 'tag ok' : 'tag',
+                             a.priority === 'season' ? 'SEASON' : '1-WEEK'));
           r.appendChild(nm);
           if (a.verified) {
-            var ab = el('button', 'btn sm', 'Add');
-            ab.addEventListener('click', function () {
-              addFreeAgent({ name: a.name, pos: a.pos, nfl: a.nfl, bye: a.bye });
-            });
-            r.appendChild(ab);
+            if (a.dropCandidate) {
+              var swap = el('button', 'btn sm', 'Add + drop ' + a.dropCandidate);
+              swap.addEventListener('click', function () {
+                addFreeAgentSwap({ name: a.name, pos: a.pos, nfl: a.nfl, bye: a.bye },
+                                  a.dropCandidate);
+              });
+              r.appendChild(swap);
+            } else {
+              var ab = el('button', 'btn sm', 'Add');
+              ab.addEventListener('click', function () {
+                addFreeAgent({ name: a.name, pos: a.pos, nfl: a.nfl, bye: a.bye });
+              });
+              r.appendChild(ab);
+            }
           }
           c.appendChild(r);
+          /* recentStat and why used to be crammed into the row's own <small>,
+             which is nowrap/ellipsis — exactly the text Tj asked to actually
+             see (the stat line, the injury that opened the role) was being
+             cut off. A details block, the same pattern the Advice tab already
+             uses for its own "why", is not. */
+          if (a.recentStat || a.why) {
+            var d = el('details');
+            d.appendChild(el('summary', null, 'why ▾'));
+            if (a.recentStat) {
+              var rs = el('div', 'kv');
+              rs.appendChild(el('span', null, 'Last game: ' + a.recentStat));
+              d.appendChild(rs);
+            }
+            if (a.why) {
+              var wy = el('div', 'kv');
+              wy.appendChild(el('span', null, a.why));
+              d.appendChild(wy);
+            }
+            c.appendChild(d);
+          }
         });
       });
       c.appendChild(el('p', 'hint',
