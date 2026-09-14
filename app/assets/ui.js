@@ -1810,7 +1810,6 @@
     } catch (e) { /* never take the Wire tab down for this */ }
 
     if (cached && cached.adds && cached.adds.length) {
-      var age = Math.round((Date.now() - (cached.at || 0)) / 3600000);
       var stale = (cached.week !== week);
       c.appendChild(el('div', 'subhd', "Claude's read of the wire"));
       c.appendChild(el('p', stale ? 'warnText' : 'muted',
