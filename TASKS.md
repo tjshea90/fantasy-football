@@ -39,21 +39,32 @@ Two real gaps, both mine from the v5.5 work:
    covers what Claude searches for, not the facts the app hands it as
    settled.
 
-- [ ] 1. Export a minimal freshness getter from recommend.js (same pattern as
-      the existing `aiCache` getter) so ui.js can read the injury feed's
-      age/count/error without reaching into a private variable.
-- [ ] 2. "Your roster — injuries" card: show a freshness line, and add its
-      own "Sync injury feed" button (`Recommend.loadNews` with `force`) that
-      works with NO API key, since it is only the ESPN endpoint.
-- [ ] 3. "Ask Claude about the wire": refresh the injury feed first (forced),
-      same as `syncAll` already does for the Advice tab, before building the
-      context Claude reasons over — a paid call must not reason from stale
-      "settled fact" ESPN designations.
-- [ ] 4. Confirm the Claude-app handoff file (`Handoff.buildWaivers`, the
-      "no API key, no cost" button) carries every v5.5 addition — generate a
-      real sample and show him the new sections directly, not just point at
-      passing tests.
-- [ ] 5. Test, full regression, build, ship.
+- [x] 1. Exported `Recommend.newsCache()` (same pattern as the existing
+      `aiCache` getter). Test: `test_boot.js` greps for the exact export.
+- [x] 2. "Your roster — injuries" card now shows "Injury feed: N records, Xh
+      ago" (or "not synced yet") and its own "Sync injury feed" button
+      (`Recommend.loadNews(.., {force:true})`, no API key needed — the ESPN
+      endpoint takes none). Also moved the injury note out of the row's own
+      nowrap `<small>` into a sibling `.kv` line — rendering it with the real
+      app.css via headless Chromium showed THAT (not a network issue) is what
+      produced the garbled, mid-word-cut text in his screenshot: a long text
+      run sharing a nowrap flex line with an inline-block tag span wraps
+      instead of ellipsizing in this WebView. Test: `test_boot.js` (source +
+      the render was independently verified with a real headless-Chromium
+      screenshot, before and after, not just asserted).
+- [x] 3. "Ask Claude about the wire" now force-refreshes the injury feed
+      before building the context Claude reasons over, with the same
+      swallow-and-continue resilience `syncAll()` already uses for the Advice
+      tab. Test: `test_boot.js` proves the refresh happens BEFORE
+      `Value.waiverContext` in source order, and that it passes `force:true`.
+- [x] 4. Generated a real `Handoff.buildWaivers()` sample off the seed
+      roster and grepped it: "Kicker / defense — do I actually need one?",
+      "Drop candidates", the freshness "Use only news dated this week"
+      language, and the full `priority`/`recentStat`/`dropCandidate`/
+      `injuries` JSON contract with rules and a worked example are all
+      present. Sent the file to Tj directly.
+- [x] 5. Full 13-suite regression + ES2018 gate green, `build.sh` clean,
+      shipped via `ship.sh`.
 
 Ticking a box means: written, tested, committed, and the test that proves it
 is named in the box. **Never tick a box you have not verified.**
