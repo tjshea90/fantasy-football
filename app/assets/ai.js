@@ -708,6 +708,44 @@
     lines.push('');
     lines.push('MY BENCH: ' + (ctx.bench.length ? ctx.bench.join(', ') : '(empty)'));
     lines.push('');
+    if (ctx.injuries && ctx.injuries.length) {
+      lines.push('MY ROSTER — INJURIES (see TASK 3 above — research the non-bye ones):');
+      for (i = 0; i < ctx.injuries.length; i++) {
+        var inj = ctx.injuries[i];
+        lines.push('- ' + inj.name + ' (' + inj.pos + ', ' + inj.nfl + ') — ' + inj.status +
+                   (inj.note ? ': ' + inj.note : ''));
+      }
+      lines.push('');
+    }
+    lines.push('KDEF NEED — whether a K or DEF add is worth ranking at all: K ' +
+               ((ctx.kdefNeed && ctx.kdefNeed.K)
+                 ? 'NEEDED — mine is unavailable this week'
+                 : 'not needed — my kicker is available') +
+               '; DEF ' +
+               ((ctx.kdefNeed && ctx.kdefNeed.DEF)
+                 ? 'NEEDED — mine is unavailable this week'
+                 : 'not needed — my defense is available') + '.');
+    lines.push('');
+    if (ctx.dropCandidates) {
+      var any = false;
+      for (k in ctx.dropCandidates) {
+        if (Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k) &&
+            ctx.dropCandidates[k].length) { any = true; break; }
+      }
+      if (any) {
+        lines.push('DROP CANDIDATES — my own weakest player at each position, ranked by');
+        lines.push('rest-of-season value (worst first). "dropCandidate" on an add MUST be');
+        lines.push('chosen from the matching position\'s list here, or left an empty string:');
+        for (k in ctx.dropCandidates) {
+          if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
+          if (!ctx.dropCandidates[k].length) continue;
+          lines.push('  ' + k + ': ' + ctx.dropCandidates[k].map(function (d) {
+            return d.name + ' (ROS value ' + d.ros.toFixed(1) + ')';
+          }).join(', '));
+        }
+        lines.push('');
+      }
+    }
     if (ctx.needs && ctx.needs.length) {
       lines.push('POSITIONS OF NEED, weakest first, with the starter who would be');
       lines.push('replaced and the app\'s projection for him:');
