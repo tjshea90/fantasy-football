@@ -769,6 +769,32 @@
 
     function build() {
       holder.innerHTML = '';
+
+      /* Tj, 2026-09-14: "in the advice tab, when I go to week 2, it still
+       * shows me cached numbers for week 1 projections which doesn't make
+       * sense. Leave all weeks blank until the app loads the projections."
+       * `pm` (Projections.meta(), read at the top of render()) is the week
+       * the CACHE actually holds — projectOne now refuses cross-week data
+       * itself (see Projections.find), but that alone would just mean every
+       * number quietly falls back to measured-games/positional-average,
+       * which still LOOKS like a real answer. This is the blunter, more
+       * honest version he asked for: nothing computed is shown at all until
+       * a sync has actually run for the week in view. The sync card above
+       * (and the Claude-app handoff) stay visible either way — those are how
+       * he fixes it. */
+      if (pm.week !== week) {
+        var wait = el('div', 'card');
+        wait.appendChild(el('h2', null, 'Week ' + week + ' projections have not loaded yet'));
+        wait.appendChild(el('p', 'muted', pm.count
+          ? ('The numbers on hand right now are from week ' + pm.week + ', not week ' +
+             week + ' — so nothing below is calculated until this week loads. ' +
+             'Nothing stale is shown in the meantime.')
+          : 'Nothing has been synced yet. Tap "Sync advice" above, or pull down to ' +
+            'refresh this tab, to load week ' + week + '\'s numbers.'));
+        holder.appendChild(wait);
+        return;
+      }
+
       var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
       var all = projectAll(week, teamId, opp);
       var byId = {}; all.forEach(function (x) { byId[x.p.id] = x; });
