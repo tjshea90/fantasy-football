@@ -121,6 +121,17 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
+  /* Shared freshness text, so every cache-backed card says how old its data
+     is the same way. Cheap insurance against the exact gap that let a v5.5
+     card show week-old injury notes with nothing on screen admitting it. */
+  function agoText(t) {
+    if (!t) return 'never';
+    var m = Math.round((Date.now() - t) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    if (m < 60 * 36) return Math.round(m / 60) + ' h ago';
+    return Math.round(m / 1440) + ' d ago';
+  }
   /* alert() renders as 'The page at "file://" says', which looks broken.
      Everything user-facing goes through this instead. */
   /* ---- real dialogs (v3.7) ----------------------------------------------
