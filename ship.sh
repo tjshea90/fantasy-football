@@ -254,6 +254,33 @@ if [ -n "$CURBRANCH" ] && [ "$CURBRANCH" != "main" ]; then
   fi
 fi
 
+# ---- tag the release, so GitHub Actions can publish it ----------------------
+# publish-release.yml triggers on a vX.Y tag push and turns the APK just
+# committed above into a real GitHub Release with that file attached — the
+# only way Tj's phone gets a link that behaves like a normal download instead
+# of 404ing (main branch drift) or rendering raw bytes as text (a plain repo
+# file, on the GitHub app's own viewer). See STATE.md, 2026-09-14, for both.
+# Only tag when main is actually current: the workflow checks out the tagged
+# commit directly so it does not strictly need main, but tagging from an
+# unreconciled branch would compound exactly the state this file exists to
+# avoid, so it waits instead.
+if [ "$MAINOK" -eq 1 ]; then
+  if git rev-parse -q --verify "refs/tags/v$V" >/dev/null 2>&1 || \
+     git ls-remote --exit-code --tags origin "refs/tags/v$V" >/dev/null 2>&1; then
+    echo "  NOTE  tag v$V already exists — not re-tagging"
+  else
+    git tag -a "v$V" -m "ship v$V: $NOTE"
+    if git push -q origin "v$V" 2>/dev/null; then
+      echo "  OK    tag v$V pushed — GitHub Actions will publish the Release"
+    else
+      echo "  WARN  could not push tag v$V — retry by hand: git push origin v$V"
+    fi
+  fi
+else
+  echo "  NOTE  skipped tagging v$V — main was not reconciled above, and a"
+  echo "        Release should not be published from an inconsistent state"
+fi
+
 echo "  OK    ladder $DONE/$TOT complete"
 echo
 echo "== shipped v$V =="
