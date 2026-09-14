@@ -141,13 +141,24 @@ to release.
    returns an object with a non-empty `assets` array. Confirmed working
    end-to-end this way for v5.7 on 2026-09-14 — do not skip this step and
    assume it worked.
-3. **Send Tj the Release link, in its own fenced code block** (a code block
-   renders with a one-tap copy button in the chat client; bold or plain
-   inline text does not — Tj asked for this specifically):
+3. **Send Tj this exact message shape** (Tj, 2026-09-14 — styled after a
+   message from his Portfolio project: "v7.22 is shipped. Run #22 went
+   green, the release is published, and it's recorded in BUILDLOG.md. Grab
+   it here: <link>"). This repo has no remote CI gate to cite a run number
+   for — `ship.sh` is the gate, and it runs locally — so say what actually
+   went green here instead of copying "Run #" verbatim:
 
-```
-https://github.com/tjshea90/fantasy-football/releases/tag/v<VERSION>
-```
+   > v<VERSION> is shipped. Every test suite and the ES2018 gate went
+   > green, the release is published, and it's recorded in BUILDLOG.md.
+   > Grab it here:
+   >
+   > ```
+   > https://github.com/tjshea90/fantasy-football/releases/tag/v<VERSION>
+   > ```
+
+   The link stays in its own fenced code block regardless of the wording
+   around it — that is what renders a one-tap copy button in the chat
+   client; bold or plain inline text does not.
 
 4. **If step 1-2 fails or is still pending**, this always works immediately,
    no waiting, no publish step — put it in a code block the same way:
