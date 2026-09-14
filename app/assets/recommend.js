@@ -903,13 +903,15 @@
       var note = el('div', 'card');
       note.appendChild(el('h2', null, 'How this is calculated'));
       note.appendChild(el('p', 'muted',
-        'Up to five sources, EVERY one of them converted into this league\'s ' +
-        'points before anything is combined: ESPN\'s projected stat line for ' +
-        'this week re-scored under our rules, Sleeper\'s projected stat line ' +
-        're-scored the same way as an independent second opinion, this ' +
-        'player\'s own scored games in the app, his draft-time projection, and ' +
-        'ESPN\'s full-season projection per game. Weights shift ' +
-        'toward measured games as the season goes on. Then the opponent\'s ' +
+        'Up to four IN-SEASON sources, EVERY one of them converted into this ' +
+        'league\'s points before anything is combined: ESPN\'s projected stat ' +
+        'line for this week re-scored under our rules, Sleeper\'s projected ' +
+        'stat line re-scored the same way as an independent second opinion, ' +
+        'this player\'s own scored games in the app, and ESPN\'s full-season ' +
+        '(rest-of-season) projection per game. No preseason or draft-time ' +
+        'number is used anywhere in this — a stale number from before the ' +
+        'season started would only get in the way. Weights shift toward ' +
+        'measured games as the season goes on. Then the opponent\'s ' +
         'measured generosity to the position (half strength when ESPN\'s weekly ' +
         'number is present, because that already prices the matchup), then the ' +
         'injury feed, then Claude if a key is set. Byes, OUT designations, ' +
