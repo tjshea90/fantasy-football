@@ -269,18 +269,32 @@ console.log('\n-- the waiver loop --');
   var pk = Object.keys(wctx.pool).filter(function (k) { return wctx.pool[k].length; });
   ok(pk.length > 0, 'there is a pool to answer about');
   var real = wctx.pool[pk[0]][0];
-  var wreply = '```json\n' + JSON.stringify({
+  /* a real, position-matched drop candidate and a real roster injury, when
+     this seed roster happens to have one — proves the new fields survive the
+     OFFLINE round trip exactly as they do the live API one */
+  var dropList = wctx.dropCandidates[real.pos] || [];
+  var dropName = dropList.length ? dropList[0].name : '';
+  var injName = wctx.injuries.length ? wctx.injuries[0].name : '';
+
+  var replyObj = {
     kind: 'fftracker.waivers.reply', format: 1, week: WEEK, season: 2026,
     adds: [
       { name: real.name, pos: real.pos, nfl: real.nfl, rank: 1,
-        overStarter: '', confidence: 'high',
+        overStarter: '', priority: 'season', recentStat: '3 rec, 34 yds (Wk 2)',
+        dropCandidate: dropName, confidence: 'high',
         why: 'Took every first-team rep Wednesday (NFL.com, 2026-09-06).' },
       { name: 'Nobody Whoisnotreal', pos: 'RB', nfl: 'CHI', rank: 2,
         overStarter: '', confidence: 'low', why: 'A name the app has never heard of.' }
     ],
+    injuries: injName
+      ? [{ name: injName, extent: 'test extent', timeline: 'test timeline (2026-09-06)',
+           replace: true }]
+      : [],
     needs: 'Thin at running back.', summary: 'Claim the first one.'
-  }, null, 2) + '\n```';
-  var r = W.Handoff.importReply(wreply, { week: WEEK, pool: wctx.pool });
+  };
+  var wreply = '```json\n' + JSON.stringify(replyObj, null, 2) + '\n```';
+  var r = W.Handoff.importReply(wreply, { week: WEEK, pool: wctx.pool,
+    dropCandidates: wctx.dropCandidates, kdefNeed: wctx.kdefNeed, injuries: wctx.injuries });
   ok(r.kind === 'waivers', 'a waiver reply is recognised as waivers');
   ok(r.applied === 2, 'both adds were applied');
   ok(r.unverified === 1,
@@ -289,6 +303,17 @@ console.log('\n-- the waiver loop --');
      'and the flag is per-player, so the UI can withhold the Add button');
   ok(r.result.adds[0].proj !== null,
      'a verified add carries the app\'s own projection, not the model\'s guess');
+  ok(r.result.adds[0].priority === 'season', 'priority survives the offline round trip too');
+  ok(r.result.adds[0].recentStat === '3 rec, 34 yds (Wk 2)',
+     'recentStat survives the offline round trip too');
+  if (dropName) {
+    ok(r.result.adds[0].dropCandidate === dropName,
+       'a valid same-position dropCandidate survives the offline round trip too');
+  }
+  if (injName) {
+    ok(r.result.injuries.length === 1 && r.result.injuries[0].name === injName,
+       'Claude\'s season-outlook read on a real roster injury survives the offline round trip too');
+  }
   var back = W.Value.waiverLoad();
   ok(back && back.adds && back.adds.length === 2,
      'the wire result is in the app\'s own cache, where the Rosters tab reads it');
