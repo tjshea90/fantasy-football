@@ -1137,11 +1137,6 @@
         var gb0 = x.player ? gameBadge(x.player.nfl) : null;
         if (gb0) nm.appendChild(gb0);
         if (x.onBye) nm.appendChild(el('span', 'tag out', 'bye'));
-        /* the dedicated "bye" tag above already covers that flag; skip it
-           here so a bye player never shows it twice */
-        appendHealthTags(nm, (flagsById[x.pid] || []).filter(function (f) {
-          return f.text.indexOf('ON BYE') !== 0;
-        }));
         /* "TO PLAY" only when there is no kickoff badge. With one, the row read
            "Bo Nix QB DEN Sun 4:05p TO PLAY" — the badge already says the game
            has not happened, and says WHEN, which the tag never did. The cost was
@@ -1150,6 +1145,11 @@
            PLAYER'S NAME into the ellipsis. Kept when the schedule is unknown, so
            nothing is lost when there is no badge to replace it. */
         else if (!x.played && !gb0) nm.appendChild(el('span', 'tag', 'to play'));
+        /* the dedicated "bye" tag above already covers that flag; skip it
+           here so a bye player never shows it twice */
+        appendHealthTags(nm, (flagsById[x.pid] || []).filter(function (f) {
+          return f.text.indexOf('ON BYE') !== 0;
+        }));
       }
       r.appendChild(nm);
       var p = el('div', 'pts' + (x.onBye ? ' bye' : (x.played ? '' : ' pend')), x.onBye ? '0.0' : fmt(x.pts));
