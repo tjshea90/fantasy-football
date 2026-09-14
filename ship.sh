@@ -254,53 +254,32 @@ if [ -n "$CURBRANCH" ] && [ "$CURBRANCH" != "main" ]; then
   fi
 fi
 
-# ---- tag the release, so GitHub Actions can publish it ----------------------
-# publish-release.yml triggers on a vX.Y tag push and turns the APK just
-# committed above into a real GitHub Release with that file attached — the
-# only way Tj's phone gets a link that behaves like a normal download instead
-# of 404ing (main branch drift) or rendering raw bytes as text (a plain repo
-# file, on the GitHub app's own viewer). See STATE.md, 2026-09-14, for both.
-# Only tag when main is actually current: the workflow checks out the tagged
-# commit directly so it does not strictly need main, but tagging from an
-# unreconciled branch would compound exactly the state this file exists to
-# avoid, so it waits instead.
-if [ "$MAINOK" -eq 1 ]; then
-  if git rev-parse -q --verify "refs/tags/v$V" >/dev/null 2>&1 || \
-     git ls-remote --exit-code --tags origin "refs/tags/v$V" >/dev/null 2>&1; then
-    echo "  NOTE  tag v$V already exists — not re-tagging"
-  else
-    git tag -a "v$V" -m "ship v$V: $NOTE"
-    if git push -q origin "v$V" 2>/dev/null; then
-      echo "  OK    tag v$V pushed — GitHub Actions will publish the Release"
-    else
-      echo "  WARN  could not push tag v$V — retry by hand: git push origin v$V"
-    fi
-  fi
-else
-  echo "  NOTE  skipped tagging v$V — main was not reconciled above, and a"
-  echo "        Release should not be published from an inconsistent state"
-fi
-
 echo "  OK    ladder $DONE/$TOT complete"
 echo
 echo "== shipped v$V =="
 echo
 if [ "$MAINOK" -eq 1 ]; then
-  echo "  publish-release.yml is now publishing the Release from tag v$V —"
-  echo "  usually under a minute, but it runs asynchronously and it DOES call"
-  echo "  the GitHub API, so verify before telling Tj it's ready: poll"
-  echo "  mcp__github__get_release_by_tag (owner tjshea90, repo fantasy-football,"
-  echo "  tag v$V) until it returns, or check mcp__github__actions_list for the"
-  echo "  run's conclusion. Then send him:"
+  echo "  ONE STEP LEFT — this script cannot do it, only the calling Claude"
+  echo "  session can (it needs the GitHub MCP tools, not git):"
   echo
-  echo "    https://github.com/tjshea90/fantasy-football/releases/tag/v$V"
+  echo "  1. Trigger the Release: mcp__github__actions_run_trigger,"
+  echo "     method=run_workflow, workflow_id=publish-release.yml, ref=main,"
+  echo "     inputs={version: \"$V\"}."
+  echo "     (git tag push from this session 403s — confirmed, not a fluke —"
+  echo "     so the workflow creates its own tag when dispatched this way.)"
+  echo "  2. Verify before telling Tj it's ready — the run is asynchronous"
+  echo "     and does call the GitHub API, so it can fail: poll"
+  echo "     mcp__github__actions_list (list_workflow_runs) or"
+  echo "     mcp__github__get_release_by_tag until it confirms, THEN send:"
   echo
-  echo "  This works immediately, no waiting, if the Release publish is still"
-  echo "  pending or fails for any reason:"
+  echo "       https://github.com/tjshea90/fantasy-football/releases/tag/v$V"
+  echo
+  echo "  This works immediately, no waiting, if step 1-2 is still pending or"
+  echo "  fails for any reason:"
   echo "    https://github.com/tjshea90/fantasy-football/raw/main/$APK"
 else
-  echo "  main was NOT reconciled above, so no tag was pushed and no Release"
-  echo "  will be published. Send him this instead, once reconciled:"
+  echo "  main was NOT reconciled above, so no Release should be triggered"
+  echo "  from this state. Send him this instead, once reconciled:"
   echo
   echo "    https://github.com/tjshea90/fantasy-football/raw/$CURBRANCH/$APK"
   echo "    (main is NOT current — reconcile first; see CLAUDE.md 'Branches')"
