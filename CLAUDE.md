@@ -117,11 +117,21 @@ there is an independent check that the build is not broken.
 
 **Every session, every account: the moment `ship.sh` succeeds, tell Tj the
 direct GitHub link to the new APK in your reply.** Not a description of
-where to look — the actual URL, ready to tap:
+where to look — the actual URL, ready to tap. Use `/raw/`, never `/blob/`:
 
 ```
-https://github.com/tjshea90/fantasy-football/blob/main/releases/FFTracker-v<VERSION>.apk
+https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v<VERSION>.apk
 ```
+
+**Why `/raw/`, not `/blob/` (Tj's screenshot, 2026-09-14).** `/blob/` is
+GitHub's HTML file-preview page. On github.com in a normal browser that page
+detects a binary file and shows a Download button — but the GitHub mobile
+APP's own in-app viewer does not: it dumped 227 KB of raw APK bytes onto the
+screen as garbled text instead. `/raw/` redirects straight to
+`raw.githubusercontent.com` with `content-type: application/octet-stream`,
+which every client — browser or app — treats as "download this," not
+"display this." Confirmed with `curl -IL` before writing this down, not
+assumed.
 
 `<VERSION>` is whatever `ship.sh` just printed ("shipped v5.7" → `v5.7`).
 This is a standing instruction (Tj, 2026-09-14) — it does not go in
