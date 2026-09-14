@@ -598,6 +598,53 @@
   }
   var LAST_WEEK = 17;
 
+  /* ---------- NFL WEEK AUTO-ADVANCE ----------------------------------------
+   * Tj: "automatically select the tabs in all sections of the app to the
+   * current NFL week. After tonight, when NFL week one is finished, the
+   * entire app should default to week 2 in all sections."
+   *
+   * There is exactly one `week` for the whole app (every tab reads this same
+   * module variable, and commitWeek is the one place it is written), so
+   * fixing it here fixes it everywhere at once — nothing per-tab to repeat.
+   *
+   * BOOT ONLY, not every appResume. Android usually kills the JS context when
+   * the app is backgrounded for a while, so appResume() already doubles as a
+   * fresh boot most of the time (see that function's own comment on the
+   * subject). The rare case where the process survives backgrounding is
+   * exactly a session already in progress — possibly mid-review of an old
+   * week — and that must never be yanked to a different week out from under
+   * whatever Tj is actually looking at. A fresh cold start carries no such
+   * risk: there is nothing on screen yet to disrupt.
+   *
+   * Only ever moves the week FORWARD, and only within this league's 1-17
+   * (LAST_WEEK, not the NFL's 18) — a stale cache, a network hiccup, or an
+   * ESPN preseason/postseason week number must never send it backward or off
+   * the end of the season this league actually plays. */
+  var NFL_WEEK_STALE_MS = 3 * 3600 * 1000;   /* same reasoning as Schedule.STALE_MS */
+  function syncCurrentWeek() {
+    if (!window.Espn || !Espn.currentWeek) return;
+    var c = S.settings.nflWeek;
+    if (c && c.at && (Date.now() - c.at) < NFL_WEEK_STALE_MS) { applyCurrentWeek(c); return; }
+    Espn.currentWeek().then(function (r) {
+      var v = { week: r.week, seasonType: r.seasonType, at: Date.now() };
+      S.settings.nflWeek = v; Store.save();
+      applyCurrentWeek(v);
+    }).catch(function () { /* offline: stay on whatever week was already showing */ });
+  }
+  function applyCurrentWeek(v) {
+    if (!v || v.seasonType !== 2) return;   /* preseason or postseason: nothing this league plays */
+    var clamped = Math.max(1, Math.min(LAST_WEEK, v.week));
+    if (clamped <= week) return;            /* never move backward, never re-announce */
+    week = clamped;
+    S.settings.currentWeek = week; Store.save();
+    if (window.Sim) Sim.invalidate();
+    autoFillWeek(week);
+    startLive();
+    freshenSchedule();
+    render();
+    toast('The NFL season moved on — now showing week ' + week);
+  }
+
   /* ---------- SWIPE BETWEEN TABS, PULL DOWN TO REFRESH (v4.7) -------------
    * Tj: "make it so I can gesture swipe left and right to the different tabs
    *      in addition to the bottom tab buttons. and also a gesture to pull
