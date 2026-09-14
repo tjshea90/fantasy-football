@@ -693,11 +693,15 @@
   function adviceSyncQuiet() {
     if (jobRunning('advice')) return Promise.resolve();
     jobStart('advice', 'Advice: starting…');
+    /* bare setInterval/clearInterval, NOT root.* — ui.js is a bare
+       `(function () {...})()`, unlike every other module here, so `root`
+       does not mean `window` in this file (see the __appPause/__appResume
+       note above). Using root.setInterval would be a ReferenceError. */
     var t0 = Date.now(), lastText = 'Advice: starting…';
-    var tick = root.setInterval(function () {
+    var tick = setInterval(function () {
       jobStep(lastText + '  (' + Math.round((Date.now() - t0) / 1000) + 's)');
     }, 1000);
-    function stop() { root.clearInterval(tick); jobEnd(); }
+    function stop() { clearInterval(tick); jobEnd(); }
     return Recommend.syncAll(week, S.league.me, function (t, p) {
       lastText = 'Advice: ' + t;
       jobStep(lastText + '  (' + Math.round((Date.now() - t0) / 1000) + 's)', p);
