@@ -161,11 +161,10 @@ to release.
    gain nothing. Do not wrap it in backticks, bold, or a code fence.
 
 4. **If step 1-2 fails or is still pending**, this always works immediately,
-   no waiting, no publish step — put it in a code block the same way:
+   no waiting, no publish step — plain tappable text, same rule as above,
+   never in a code block:
 
-```
-https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v<VERSION>.apk
-```
+   https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v<VERSION>.apk
 
 **Why a Release, not a raw-file link (the two failures this replaced,
 2026-09-14).** First, `/blob/` — GitHub's HTML file-preview page — renders
