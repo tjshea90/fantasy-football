@@ -310,12 +310,6 @@
           tot / log.length, Math.min(W.measuredMax, log.length * W.measuredPerGame),
           'his own scored games in this app');
     }
-    var hasPre = p.projPG !== undefined && p.projPG !== null;
-    if (hasPre) {
-      src('preseason projection', p.projPG,
-          log.length < 4 ? W.preseasonEarly : W.preseasonLate,
-          p.projSrc ? String(p.projSrc) : 'draft-time projection');
-    }
     if (!srcs.length) {
       src('positional average', PRIOR[p.pos] || 10, 1, 'no projection on file for him');
     }
