@@ -1429,3 +1429,92 @@ automatically. Tj types "continue" and nothing else.
 5. `ship.sh` gated on `Last updated: <today>` in this file, which fails at
    midnight regardless of whether anything is actually stale. It now compares
    commit timestamps: this file versus the last change to app/ or android/.
+
+
+## The waiver-wire upgrade (2026-09-14, v5.4 -> v5.5)
+
+Tj's request was long and specific, and the app already had a real Claude-
+backed waiver assistant (v3.4: `ai.js` `askWaivers`/`waiverPrefix`/
+`waiverBlock`, the free-agent board in `value.js`/`ui.js`). What it did not
+do: look at his OWN roster's injuries, distinguish a season-long roster
+upgrade from a one-week streamer, keep kickers/defenses out of the way unless
+one of his was actually unavailable, or pair a recommended add with a sane
+drop. This round added all four, on top of the existing division of labour
+(the app prices players in league points and knows the roster; Claude
+supplies the news arithmetic cannot).
+
+**The one design decision that matters more than the others: never trust the
+model for a hard constraint it can undermine by getting creative.** Tj's own
+example was "don't recommend dropping a kicker to add a WR" — so that is not
+a sentence in the prompt asking nicely, it is enforced in code twice:
+- `value.js` `dropCandidatesFrom` computes MY OWN weakest bench player AT
+  EACH POSITION (worst rest-of-season value first) and hands Claude only
+  that list to choose from.
+- `ai.js` `normalizeWaivers` then checks the model's `dropCandidate` against
+  that same list AND requires the position to match the add's own position;
+  anything else — an invented name, a real name at the wrong position — is
+  silently cleared rather than shown. A wrong pairing is worse than none.
+
+Same pattern for K/DEF: `value.js` `kdefNeedFrom` computes whether every K
+(or every DEF) on the roster is on bye or ruled OUT this week — the ONE
+exception Tj named — and `normalizeWaivers` drops any K/DEF add outright when
+that flag is false, independent of whether the prompt asked for it. The
+prompt also asks, but the filter is the guarantee.
+
+**Rest-of-season value, not this week's number, drives both the drop
+candidates and the season/week priority sort.** `dropCandidatesFrom` reuses
+the exact `(base - replacement) * weeksLeft` arithmetic `trade()` already
+uses — a player who barely helps this week but has two more months of value
+must not be offered as the cut ahead of one who is dead weight all season.
+Claude separately tags each ADD `"priority":"season"|"week"` (a role/injury
+change expected to last, versus a bye fill-in), and `normalizeWaivers` sorts
+season-priority ahead of week-only within the same rank tier — so "entire
+season over small weekly changes" holds even on a call where the model's own
+`rank` numbers do not fully reflect it.
+
+**Roster injuries got a deterministic baseline plus an optional AI layer,
+not an AI-only feature.** `Value.myInjuries` reads `Recommend.projectAll` —
+the same computation the Advice tab already trusts — so the new "Your roster
+— injuries" card on the Wire tab shows the ESPN designation and note the
+instant the tab opens, with no API key and no network call. Only the SEASON
+OUTLOOK layered on top (severity, timeline, whether it is worth chasing a
+replacement) needs Claude, and it rides the SAME waiver sync rather than a
+second paid call — an injury is exactly the kind of roster need the waiver
+assistant already exists to fill. `Ai.normalizeInjuries` validates the
+model's answer against the app's own injury list by name, same safety
+property as the free-agent pool check.
+
+**A UI trap worth recording so it is not reintroduced.** `.row .nm` is
+`white-space:nowrap;overflow:hidden;text-overflow:ellipsis` (app.css) — it
+truncates to one line by design, which the pre-existing waiver card ignored:
+`a.why` (up to two sentences) was being appended into that same nowrap
+`<small>`, silently cut off on a real phone. The exact text Tj asked to see
+("player x had 3 receptions for 34 yards…") would have landed there and
+disappeared. `recentStat` and `why` now go in a `<details>` block instead —
+the same pattern `recommend.js`'s Advice tab already uses for its own "why"
+— whose `.kv span` rule is `white-space:pre-wrap`, so it actually wraps.
+
+**Both round trips, one contract.** `handoff.js` `buildWaivers` (the offline
+Claude-app briefing) and `importReply` carry the identical new sections and
+fields as the live API path — MY ROSTER — INJURIES, the K/DEF need lines,
+DROP CANDIDATES, `priority`/`recentStat`/`dropCandidate`/`injuries` in the
+JSON contract — because `Ai.normalizeWaivers`/`normalizeInjuries` is the one
+place either path's answer gets turned into app records. `test_handoff.js`
+§8 greps `handoff.js` for both normalisers by name specifically so a future
+session cannot quietly reimplement one and let the two paths drift.
+
+Old cached waiver results (written before this shipped) are read with the
+new fields simply absent — `a.priority`, `a.dropCandidate` etc. are all
+`undefined`-safe with sane fallbacks (plain "Add" button, no season/week
+badge claimed) — no migration code, because the cache is ephemeral and
+self-heals on the next sync, the same as the existing "FROM WEEK N —
+re-sync" staleness banner already assumes.
+
+13 suites green (test_ai.js/test_integration.js/test_handoff.js all
+extended, not just re-passed — see their v5.5 sections for what specifically
+is pinned: the position-mismatch drop rejection, the K/DEF hard filter and
+that it is optional for old callers, the season-before-week sort, and the
+injury-name validation), ES2018 clean, `build.sh` produces a clean 25-class
+APK. Not yet confirmed on the phone — this session cannot run the Android
+WebView, so the "why the reasoning is now readable" and "Add + drop" button
+claims above are verified by code/CSS reading, not by eye.
