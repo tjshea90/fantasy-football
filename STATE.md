@@ -1585,4 +1585,4 @@ this specific again.
 13 suites (new assertions in `test_boot.js`: the export exists, the card
 reads it, the refresh happens before context-building in source order and
 is forced, the note is no longer in the nowrap `<small>`) + ES2018 gate
-green, `build.sh` clean.
+green, `build.sh` clean. Shipped as v5.6 (versionCode 506).
