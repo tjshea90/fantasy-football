@@ -1890,6 +1890,30 @@
       'This adds him to YOUR roster in this app (' + t.players.length + ' players now). ' +
       'It does not touch your league site — do the waiver claim there as well.', go);
   }
+  /* Add + drop in one tap, for a Claude add that came with a validated
+   * dropCandidate (see ai.js normalizeWaivers — that name is guaranteed to be
+   * a real player on this roster at the SAME position as the add, never a
+   * kicker-for-a-receiver mismatch). If the roster has changed since the
+   * context was built and the named player is no longer on it, this falls
+   * back to a plain add rather than failing outright. */
+  function addFreeAgentSwap(f, dropName) {
+    var t = Store.team(S.league.me);
+    if (!t) return;
+    var dropRec = null, i;
+    for (i = 0; i < t.players.length; i++) {
+      if (t.players[i].name === dropName) { dropRec = t.players[i]; break; }
+    }
+    confirmModal('Add ' + f.name + ', drop ' + dropName + '?',
+      'Adds ' + f.name + ' to your roster and removes ' + dropName + ' from it — in ' +
+      'this app only. It does not touch your league site; do both moves there too.',
+      'Add + drop', function () {
+        if (dropRec) Store.removePlayer(S.league.me, dropRec.id);
+        Store.addPlayer(S.league.me, { name: f.name, pos: f.pos, nfl: f.nfl, bye: f.bye });
+        if (window.Sim) Sim.invalidate();
+        render();
+        toast(dropRec ? 'Added ' + f.name + ', dropped ' + dropName : 'Added ' + f.name);
+      }, true);
+  }
 
   function table(head, rows) {
     var t = el('table'), thead = el('thead'), tr = el('tr');
