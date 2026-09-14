@@ -1,18 +1,29 @@
 /* recommend.js — weekly lineup advice. ES2018 only (no ?. no ?? no .at()).
  *
- * HOW A PROJECTION IS BUILT (v1.8)
- * Four independent sources, all expressed in THIS league's points before they
- * are combined — never in whatever scoring the source shipped with:
+ * HOW A PROJECTION IS BUILT (v5.8 — preseason data removed, Tj 2026-09-14)
+ * Independent IN-SEASON sources, all expressed in THIS league's points before
+ * they are combined — never in whatever scoring the source shipped with:
  *
  *   1. ESPN's projected stat line for this exact week, re-scored by
  *      scoring.js  (projections.js does the conversion)
- *   2. what the player has actually scored in this app's synced weeks
- *   3. his 2026 preseason projection, converted at draft time (seed.projPG)
- *   4. ESPN's full-season projection, per game
+ *   2. Sleeper's projected stat line for this exact week, re-scored the same
+ *      way — an independent second opinion, never taken at face value either
+ *   3. what the player has actually scored in this app's synced weeks
+ *   4. ESPN's full-season (rest-of-season) projection, per game — this
+ *      updates through the season, unlike a number frozen at draft time
+ *
+ * Tj, 2026-09-14: "the advice section still pulls projections from preseason
+ * sources. I don't like this because this information is stale. Remove all
+ * preseason consideration from any recommendations or advice from the entire
+ * app." The one source that was computed once, before the season started,
+ * and never moved again — the seed-time draft projection (seed.projPG) — is
+ * gone from this blend entirely, not down-weighted. Every source left is
+ * either fetched fresh for the week in question or is this player's own
+ * actual, in-season play.
  *
  * They are weighted, not averaged: the weekly line is the best single number
- * when it exists, measured games take over as the sample grows, and the
- * preseason prior fades out. Then three multipliers, in this order:
+ * when it exists, and measured games take over as the sample grows. Then
+ * three multipliers, in this order:
  *
  *   x matchup   how generous this opponent has been to the position, measured
  *               from synced weeks. Applied at HALF strength when source 1 is
