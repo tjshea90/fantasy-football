@@ -1,48 +1,64 @@
-# TASKS — the current job, in Tj's words
+# TASKS — the 2026-09-14c request, in Tj's words
 
-**There is no active job right now.** The 2026-09-14b stale-injury-feed bug
-report is complete and archived at the end of `LADDER.md` (§24). Shipped as
-v5.6 via `ship.sh`. See "Waiting on Tj" below for what needs a real phone.
+> "Tell me if the attached screenshot error is a big deal. If it is, fix it.
+> Also I no longer have a Claude api key. Is there a way to automate using
+> Claude reasoning in the fantasy app without doing the export and import to
+> the Claude chat? For example, is there an api key for my regular Claude pro
+> subscription that I already have that is separate from buying a dedicated
+> key? Is there any other way I can use Claude inside the app without api
+> key"
 
-## When Tj asks for something new
+His screenshot: Data tab, "Test the projection feed" output, showing
+`limit only: FAILED — HTTP 400 {"messages":["Filter: Limit request must be
+accompanied by a sort"]...}` among the routes tried, but "best route: week
+filter + sleeper current (209 gaps filled, 177 second opinions)" with all
+477 indexed players getting a week-1 line, and healthy QB numbers
+(Mahomes 40.7, Nix 43.7, Rodgers 38.2 — squarely in the 40-55 range that
+means the re-scoring is actually running, per the v4.7-era verification item
+already sitting in "Waiting on Tj").
 
-Write it HERE FIRST, in his own words, as unticked boxes — before writing any
-code. Until it is on disk the job exists only in a chat window that no other
-Claude account can see, and a usage cap landing before the first checkpoint
-loses not just the work but the knowledge of what was asked.
+## Part 1 — the screenshot error
 
-```
-# TASKS — the <date> request, in Tj's words
+**Verdict: not a big deal for his data** (full coverage was reached anyway,
+QB numbers are healthy) **but a real, permanently-broken fallback route**
+worth a one-line fix, confirmed by reading `projections.js` rather than
+guessing:
 
-> "<paste what he actually said, verbatim>"
+- `filters()` tries four ESPN request shapes in order (week filter, full
+  filter, lean filter, limit only), stopping early only once one clears 300
+  week lines (`GOOD_ENOUGH`). None of the first three currently clears that
+  alone, so **all four run on every single sync** — this is not a one-off.
+- `limit only`'s shape (`{ players: { limit: 500 } }`) has no `sort` field.
+  ESPN's API now rejects a bare `limit` filter with no `sort` (HTTP 400) —
+  the exact error in the screenshot. `lean filter`, one line above it, uses
+  the identical `limit:500` plus `sortPercOwned:{...}` and works fine.
+- Net effect: a fallback route that exists specifically for resilience is
+  currently dead weight — it can never succeed as written, wastes one
+  network round trip on every sync, and prints a scary-looking 400 in the
+  diagnostic for something harmless. If the three routes ahead of it ever
+  degrade on a bad day, this safety net would still fail right when it's
+  needed.
 
-- [ ] 1a. <first step>
-- [ ] 1b. <second step>
-```
+- [ ] 1a. Add the same `sortPercOwned` sort field `lean` already uses to the
+      `tiny`/"limit only" filter shape in `projections.js`, restoring it as a
+      genuine working fallback. Test: a new assertion (source or a live
+      shape check) that `tiny` carries a sort field, plus the existing
+      `test_schedule.js`/`test_net.js`-style coverage that already exercises
+      `projections.js` stays green.
+- [ ] 1b. Full regression + build + ship.
 
-Ticking a box means: written, tested, committed, and the test that proves it is
-named in the box. **Never tick a box you have not verified** — the next account
-will not re-check it.
+## Part 2 — Claude Pro subscription vs. API key
 
-When a job is finished, move it to `LADDER.md` and reset this file. This file
-is printed into every session briefing, so a finished job left here is re-read
-at cost on every cold start, forever.
+Answered directly in chat (no code change): a claude.ai Pro subscription and
+an Anthropic API key (console.anthropic.com) are separate products with
+separate billing — Pro does not include API access, and there is no
+consumer-login flow the app could use instead of a key. The existing
+"Or use the Claude app — no API key, no cost" handoff (`handoff.js`) is
+already the zero-cost path that uses his Pro subscription; the manual
+export/import round trip is the actual mechanism, not a workaround for one —
+there is no way to remove that round trip without either (a) a real,
+separately-billed API key, or (b) Anthropic shipping a different mechanism
+this app doesn't have access to today.
 
-## Waiting on Tj
-
-- [ ] **Confirm v5.6 on the phone.** On the Wire tab, "Your roster —
-      injuries" should now show a freshness line ("Injury feed: N records,
-      Xh ago") with its own "Sync injury feed" button above the list —
-      tap it once and confirm the notes come back current and readable
-      (wrapped normally, no mid-word cutoffs). Then confirm "Ask Claude
-      about the wire" still works and its notes are current too.
-- [ ] **Confirm the v5.5 waiver-wire upgrade itself** (still open from
-      §23/LADDER.md — the injury-freshness bug was found before this got
-      checked): the SEASON/1-WEEK tags, the "Last game" stat line under
-      "why ▾", K/DEF only appearing when actually needed, and the "Add +
-      drop" combined action on a real pickup.
-- [ ] Delete the 3 stale branches himself, if still not done — see LADDER.md
-      §22e for names and why (no session yet has had branch-delete access).
-- [ ] Verify v4.7-era item, if still relevant: **Data > Test the projection
-      feed** (a QB should land near 40-55 under this scoring; 15-25 means the
-      re-scoring is not running).
+Ticking a box means: written, tested, committed, and the test that proves it
+is named in the box. **Never tick a box you have not verified.**
