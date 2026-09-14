@@ -863,8 +863,28 @@
     live.next = Date.now() + ms;
     live.timer = setTimeout(liveTick, ms);
   }
+  /* Injury designations move on their own clock — a practice report in the
+     afternoon, a Friday-afternoon status change — independent of whether a
+     game is actually live, so this rides the SAME poll rather than needing a
+     second timer of its own (Tj, 2026-09-14: "it must be updated frequently
+     so I know which of my players is injured"). loadNews has its own
+     10-minute freshness cache (recommend.js), so this costs nothing on the
+     ~98% of ticks where the last fetch is still fresh — it becomes a real
+     network request roughly every 10 minutes at most, whether that lands
+     during a 45s live-game cadence or a slow Tuesday 10-minute one. Only
+     re-renders when a fetch actually landed (`!nc.reused`), never on the
+     cache-hit no-op. */
+  function freshenInjuries() {
+    if (!window.Recommend || !Recommend.loadNews) return;
+    try {
+      Recommend.loadNews(null).then(function (nc) {
+        if (nc && !nc.reused) render();
+      });
+    } catch (e) { /* never let an injury refresh break the score poll */ }
+  }
   function liveTick() {
     if (busy) { scheduleLive(15000); return; }
+    freshenInjuries();
     Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2).then(function (games) {
       /* FREE: this response already carries every kickoff time, and before
          v4.5 they were thrown away. The schedule badges and the pre-Sunday
