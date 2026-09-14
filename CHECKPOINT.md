@@ -1,12 +1,12 @@
-# CHECKPOINT 63 — read me first, then TASKS.md
+# CHECKPOINT 67 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T18:39:41Z · **version:** 5.4 · **tests:** all 13 suites green
+**Written:** 2026-09-14T18:42:52Z · **version:** 5.4 · **tests:** all 13 suites green
 
 ## Just done
-waiver-wire upgrade steps 1-7 (data+prompt layer): value.js adds myInjuries/kdefNeedFrom/dropCandidatesFrom into waiverContext (deterministic, no AI); ai.js waiverPrefix/waiverBlock rewritten for freshness discipline, season-vs-week priority, K/DEF gating, recentStat + validated dropCandidate fields, MY ROSTER INJURIES research task; normalizeWaivers now validates dropCandidate against app-supplied same-position candidates and filters K/DEF via kdefNeed; new normalizeInjuries/dropCandidateIndex; handoff.js offline briefing + importReply carry the identical contract so the two paths cannot drift. All 12 existing suites + ES2018 gate still green -- no new tests written yet, no UI rendering yet
+waiver-wire upgrade UI layer done: ui.js gets a new deterministic 'Your roster -- injuries' card (Value.myInjuries, no API key needed) that layers in Claude's season-outlook once synced; Claude's-read-of-the-wire section now groups by the fixed QB/RB/WR/TE/K/DEF order (not Claude's own rank order, so K/DEF stay visually last), shows a SEASON/1-WEEK priority tag per add, moves recentStat+why out of the truncating nowrap <small> into a details block so the actual reasoning is readable, and offers a combined 'Add + drop' action (addFreeAgentSwap, reuses confirmModal like the Rosters tab's Drop button) when a validated dropCandidate is present. All 13 suites + ES2018 gate still green. Steps 1-7 of TASKS.md done
 
 ## Do this next
-step 8: add ui.js rendering -- roster-injuries card, recentStat/priority/dropCandidate display on each Claude add, fixed QB..DEF position-group order, combined add+drop action button -- then write new tests for the new normalizers/fields and run full regression + build.sh
+step 8: write new tests covering the new normalizers (normalizeInjuries, dropCandidate position-validation, kdefNeed filtering) and the new Value.waiverContext fields, then run full regression + bash build.sh
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  76d10d8 ckpt 63: waiver-wire upgrade steps 1-7 (data+prompt layer): value.js adds myInjuries/kde
   1613603 ckpt 52: wrote the 2026-09-14 waiver-wire upgrade request into TASKS.md, in Tj's own wor
   eba333e ckpt 166: job complete and archived: moved the 2026-09-12d request into LADDER.md sectio
   e30a21a ckpt 162: task 5 done partially: fast-forwarded origin/main from 3dbbef9 to this branch'
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   8f4e9c1 ckpt 147: Data-tab bug fix + score-entry redesign job complete and archived: moved the 2
   7e13f2d ckpt 142: task 2 done: rebuilt weeklyScoresCard per Tj's exact spec -- dropped the expla
   7bde31c ckpt 138: task 1 done: fixed the [object Object] bug by giving schedule.js's per-team ki
-  3caae40 ckpt 129: wrote Tj's Data-tab bug report + score-entry redesign request into TASKS.md be
 ```
 
-(10 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
