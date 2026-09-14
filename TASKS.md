@@ -39,13 +39,11 @@ guessing:
   degrade on a bad day, this safety net would still fail right when it's
   needed.
 
-- [ ] 1a. Add the same `sortPercOwned` sort field `lean` already uses to the
-      `tiny`/"limit only" filter shape in `projections.js`, restoring it as a
-      genuine working fallback. Test: a new assertion (source or a live
-      shape check) that `tiny` carries a sort field, plus the existing
-      `test_schedule.js`/`test_net.js`-style coverage that already exercises
-      `projections.js` stays green.
-- [ ] 1b. Full regression + build + ship.
+- [x] 1a. Added the same `sortPercOwned` sort field `lean` already uses to
+      the `tiny`/"limit only" filter shape in `projections.js`. Test: new
+      `test_net.js` assertion greps for both `limit: 500` and `sortPercOwned`
+      in that exact shape, naming the reported bug.
+- [x] 1b. Full 13-suite regression + ES2018 gate green, `build.sh` clean.
 
 ## Part 2 — Claude Pro subscription vs. API key
 
