@@ -263,12 +263,23 @@
     lines.push(head({ title: 'week ' + week + ' waiver wire' }));
     lines.push('## What to do');
     lines.push('');
-    lines.push('1. Read this week\'s waiver-wire and injury news for the players in the');
-    lines.push('   **AVAILABLE** list below.');
+    lines.push('1. Read **this week\'s** waiver-wire and injury news for the players in');
+    lines.push('   the **AVAILABLE** list below. Use only news dated this week — an article');
+    lines.push('   or ranking that reads like it describes an earlier week (a designation');
+    lines.push('   that would already have resolved, a page published before this week\'s');
+    lines.push('   injury news broke) is stale; search again rather than rely on it.');
     lines.push('2. Re-rank them **for this specific roster** and this specific scoring.');
+    lines.push('   Weight a season-long role change (the starter ahead of him is out for');
+    lines.push('   multiple weeks, a permanent depth-chart move) above a one-week-only edge');
+    lines.push('   (a bye fill-in, a single good matchup) — see **priority** below.');
     lines.push('3. Say plainly which of them, if any, beats a player currently being');
-    lines.push('   started — naming the starter.');
-    lines.push('4. Write the answer as the JSON file described at the end.');
+    lines.push('   started — naming the starter — and, where it makes sense, which of MY');
+    lines.push('   OWN players at that position I should drop to make room (see **DROP');
+    lines.push('   CANDIDATES** below; never suggest a swap across positions).');
+    lines.push('4. For each player in **MY ROSTER — INJURIES** below who is not on a bye,');
+    lines.push('   research his rest-of-season outlook and report it in the `injuries`');
+    lines.push('   list, even if you conclude he does not need replacing.');
+    lines.push('5. Write the answer as the JSON file described at the end.');
     lines.push('');
     lines.push('Today is **' + ctx.today + '**. This is **NFL week ' + week +
                ' of the ' + ctx.season + ' season**.');
