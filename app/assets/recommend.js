@@ -655,7 +655,7 @@
       r.appendChild(el('span', bad ? 'warnText' : null, label + ': ' + text));
       st.appendChild(r);
     }
-    var gaps = (root.Projections && pm.count) ? root.Projections.missing(team.players) : [];
+    var gaps = (root.Projections && pm.count) ? root.Projections.missing(team.players, week) : [];
     line('Projections', pm.count
       ? (pm.weekly + ' week-' + pm.week + ' lines, ' + ago(pm.at) +
          (gaps.length ? ' · ' + gaps.length + ' of your ' + team.players.length +
