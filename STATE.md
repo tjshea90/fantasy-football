@@ -1868,3 +1868,11 @@ introduced by this pass, and it affects every caller of `projectOne()`
 equally (autoFillWeek already ran this same lookup for all ten teams).
 Worth a real look, but changes the recommendation engine's behavior beyond
 what was asked — flagged for Tj rather than changed silently.
+
+**Build confirmed, not just the test suites.** `bash build.sh` run for real
+on this container (first run, so it downloaded the Android SDK): every one
+of the 25 Java source files produced a class, `d8`/apksigner reported a
+clean signature, and the resulting `build/app-release.apk` is 230K —
+in line with prior versions, not a bloated or truncated package. `ship.sh`
+then verified the dex against every `android/src/**/*.java` file by name
+before it would let this version out, per its own standing gate.
