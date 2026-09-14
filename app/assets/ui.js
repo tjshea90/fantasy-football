@@ -1435,8 +1435,7 @@
       r.appendChild(el('div', 'slot', p.pos));
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(p.name));
-      nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '') +
-        (p.projPG ? ' · proj ' + fmt(p.projPG) + '/wk' : '')));
+      nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '')));
       /* after the team/bye text, matching every other player row in the app,
          so a roster reads  Name   CHI · bye 7   Thu 8:20p */
       var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
