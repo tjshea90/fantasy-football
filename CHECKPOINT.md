@@ -1,12 +1,12 @@
-# CHECKPOINT 104 — read me first, then TASKS.md
+# CHECKPOINT 116 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T21:00:24Z · **version:** 5.6 · **tests:** all 13 suites green
+**Written:** 2026-09-14T21:10:08Z · **version:** 5.7 · **tests:** all 13 suites green
 
 ## Just done
-diagnosed Tj's Data-tab screenshot: the 'limit only: FAILED' route is not the problem (full week-1 coverage was reached via week filter + sleeper, QB numbers healthy) but IS a real, permanently-broken fallback -- ESPN now rejects a bare 'limit' filter with no sort field, and this shape runs on every single sync since none of the other three routes alone clear the 300-line early-stop threshold. Wrote the fix plan + the API-key/Pro-subscription question into TASKS.md before touching code
+added a standing rule to CLAUDE.md: after every successful ship.sh, tell Tj the direct GitHub link to the new APK in the chat reply -- his instruction, applies to every future session/account, not a one-off TASKS.md job since it's a process rule about the working agreement itself, not app code
 
 ## Do this next
-add the missing sortPercOwned field to the tiny/limit-only filter shape in projections.js, mirroring lean's working sort field; test; ship
+none -- no active job, this was a durable instruction change only
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  ecabeb7 ship v5.7: fix the permanently-broken 'limit only' projection-feed fallback route (ESPN 
+  b40f519 ckpt 104: diagnosed Tj's Data-tab screenshot: the 'limit only: FAILED' route is not the 
   d4bc132 ckpt 102: removed a stray demo file (sample-waiver-handoff-v5.5.md) that autosave picked
   29aaed8 ship v5.6: fix stale injury feed on the Wire tab: freshness line + a no-API-key Sync but
   a14f9a3 ckpt 92: fixed the stale-injury-feed bug Tj reported with a screenshot: recommend.js exp
@@ -34,8 +36,6 @@ request in his own words and `git log` carries every step already taken.
   96a2dd7 ckpt 74: waiver-wire upgrade: new tests written and green -- test_ai.js covers normalize
   6a69762 ckpt 67: waiver-wire upgrade UI layer done: ui.js gets a new deterministic 'Your roster 
   76d10d8 ckpt 63: waiver-wire upgrade steps 1-7 (data+prompt layer): value.js adds myInjuries/kde
-  1613603 ckpt 52: wrote the 2026-09-14 waiver-wire upgrade request into TASKS.md, in Tj's own wor
-  eba333e ckpt 166: job complete and archived: moved the 2026-09-12d request into LADDER.md sectio
 ```
 
 (1 automatic checkpoint(s) since the last deliberate one — the
