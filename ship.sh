@@ -258,13 +258,16 @@ echo "  OK    ladder $DONE/$TOT complete"
 echo
 echo "== shipped v$V =="
 echo
-echo "  Tj installs it from:  github.com/tjshea90/fantasy-football"
+echo "  Tj installs it from — send him this exact link, /raw/ not /blob/"
+echo "  (the GitHub app's own preview cannot render a binary; /raw/ forces a"
+echo "  real download instead):"
+echo
 if [ "$MAINOK" -eq 1 ]; then
-  echo "                        -> $APK  (tap it, then Download)"
+  echo "    https://github.com/tjshea90/fantasy-football/raw/main/$APK"
 else
-  echo "                        -> $APK on branch '$CURBRANCH'  (main is NOT"
-  echo "                        current, so the usual main-branch link 404s"
-  echo "                        until that is reconciled)"
+  echo "    https://github.com/tjshea90/fantasy-football/raw/$CURBRANCH/$APK"
+  echo "    (main is NOT current — the main-branch link would 404 until that"
+  echo "    branch is reconciled onto main; see CLAUDE.md 'Branches')"
 fi
 echo
 echo "  To continue in a NEW session, on ANY of the three Claude accounts:"
