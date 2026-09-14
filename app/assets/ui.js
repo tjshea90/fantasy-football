@@ -1743,17 +1743,23 @@
         'quarterbacks here by roughly a factor of two.';
     }
     wsync.addEventListener('click', function () {
-      var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
-      var ctx;
-      try {
-        ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season, new Date().toISOString().slice(0, 10));
-      } catch (e) {
-        wnote.textContent = 'Could not build the roster context: ' + (e && e.message ? e.message : e);
-        return;
-      }
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
-      jobStart('waivers', 'Claude is reading the waiver wire…');
-      Ai.askWaivers(ctx, function (msg, pct) { jobStep(msg, pct); })
+      jobStart('waivers', 'Refreshing the injury feed…');
+      /* The injury feed is refreshed FIRST, forced — a paid Claude call must
+         not reason from whatever ESPN designations happen to already be
+         cached (possibly days old; see rosterInjuryCard's history above).
+         Its own failure is swallowed and the chain carries on with whatever
+         is already cached, same resilience pattern syncAll() already uses
+         for the Advice tab: one step failing must not cost the whole sync. */
+      Recommend.loadNews(function (msg, pct) { jobStep(msg, pct); }, { force: true })
+        ['catch'](function () { return null; })
+        .then(function () {
+          var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+          var ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season,
+                                        new Date().toISOString().slice(0, 10));
+          jobStep('Claude is reading the waiver wire…', 60);
+          return Ai.askWaivers(ctx, function (msg, pct) { jobStep(msg, pct); });
+        })
         .then(function (res) {
           Value.waiverSave(res);
           jobEnd();
