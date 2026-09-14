@@ -1554,7 +1554,11 @@
       /* after the team/bye text, matching every other player row in the app,
          so a roster reads  Name   CHI · bye 7   Thu 8:20p  QUESTIONABLE */
       var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
-      appendHealthTags(nm, flagsById[p.id]);
+      /* the "· bye N" text just above already says so; skip the flag that
+         would say it again as a second, identical-meaning tag */
+      appendHealthTags(nm, (flagsById[p.id] || []).filter(function (f) {
+        return f.text.indexOf('ON BYE') !== 0;
+      }));
       r.appendChild(nm);
       var x = el('button', 'btn sm dan', 'Drop');
       x.addEventListener('click', function () {
