@@ -150,15 +150,15 @@ to release.
 
    > v<VERSION> is shipped. Every test suite and the ES2018 gate went
    > green, the release is published, and it's recorded in BUILDLOG.md.
-   > Grab it here:
-   >
-   > ```
-   > https://github.com/tjshea90/fantasy-football/releases/tag/v<VERSION>
-   > ```
+   > Grab it here: https://github.com/tjshea90/fantasy-football/releases/tag/v<VERSION>
 
-   The link stays in its own fenced code block regardless of the wording
-   around it — that is what renders a one-tap copy button in the chat
-   client; bold or plain inline text does not.
+   **The link is plain text on its own, tappable — never inside a fenced
+   code block.** A code block was tried first (Tj asked for a copy button)
+   but it is NOT a clickable link, only copyable text — Tj corrected this
+   immediately (2026-09-14): "You didn't send the link. You sent a copy and
+   paste box." A bare URL in plain text is both tappable AND
+   long-press-copyable on a phone, which is what a code block gave up to
+   gain nothing. Do not wrap it in backticks, bold, or a code fence.
 
 4. **If step 1-2 fails or is still pending**, this always works immediately,
    no waiting, no publish step — put it in a code block the same way:
