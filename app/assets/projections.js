@@ -171,7 +171,16 @@
         sortPercOwned: { sortAsc: false, sortPriority: 1 }
       }
     };
-    var tiny = { players: { limit: 500 } };
+    /* ESPN now rejects a bare `limit` filter with no `sort` — HTTP 400
+       "Filter: Limit request must be accompanied by a sort" (Tj's screenshot,
+       2026-09-14). This is otherwise the narrowest shape on purpose (no
+       filterSlotIds, unlike `lean`), so it keeps that; it only needed the
+       same sort field `lean` already carries to stop being permanently
+       broken. Without this, "limit only" could never succeed — not a
+       transient failure, and it ran on every single sync since none of the
+       three routes ahead of it alone clears GOOD_ENOUGH. */
+    var tiny = { players: { limit: 500,
+                             sortPercOwned: { sortAsc: false, sortPriority: 1 } } };
     return [
       { name: 'week filter', f: wk },
       { name: 'full filter', f: full },
