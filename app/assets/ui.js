@@ -872,6 +872,7 @@
     lpTimer = setTimeout(function () {
       lpTimer = null;
       lpSuppressClickUntil = Date.now() + 400;   /* the touchend's synthetic click never opens the row's own tap action too */
+      lpSuppressRow = row;
       openPlayerStatsMenu(parsePlayerAttr(row.getAttribute('data-player')));
     }, LONGPRESS_MS);
   }
