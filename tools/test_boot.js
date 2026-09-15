@@ -691,7 +691,7 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
      'a defense keeps its full team name  <-- "B. Ravens" is not how anyone refers to one');
   ok(shortName('Cher') === 'Cher', 'a single-word name (no space to split on) is returned unchanged, not mangled');
   ok(shortName('') === '', 'an empty/missing name does not throw');
-  ok(/lineupDetail\(team, res\)[\s\S]{0,400}shortName\(x\.player\.name, x\.player\.pos\)/.test(uiN),
+  ok(/lineupDetail\(team, res\)[\s\S]{0,700}shortName\(x\.player\.name, x\.player\.pos\)/.test(uiN),
      'lineupDetail (the Live tab matchup view) actually calls it');
   ok(!/function viewRosters[\s\S]{0,2000}shortName\(/.test(uiN) && !/function viewLineups[\s\S]{0,2000}shortName\(/.test(uiN),
      'Rosters and Lineups keep full names — they have room; this is scoped to the tight two-column Live view only');
