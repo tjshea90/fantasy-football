@@ -645,6 +645,7 @@
     $('wkNext').addEventListener('click', function () { if (week < LAST_WEEK) { week++; commitWeek(); } });
     $('syncBtn').addEventListener('click', syncWeek);
     wireGestures();
+    wireLongPress();
   }
   var LAST_WEEK = 17;
 
