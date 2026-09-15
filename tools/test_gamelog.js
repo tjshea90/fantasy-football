@@ -42,7 +42,9 @@ var GAMES = {
   10: [{ id: 'g10', date: '2026-11-10T17:00:00Z', week: 10, state: 'in', detail: '',
          teams: [{ abbr: 'NE', score: 7, homeAway: 'home' }, { abbr: 'MIA', score: 3, homeAway: 'away' }] }],
   20: [{ id: 'gFail', date: '2026-12-20T17:00:00Z', week: 20, state: 'post', detail: '',
-         teams: [{ abbr: 'XX', score: 0, homeAway: 'home' }, { abbr: 'YY', score: 0, homeAway: 'away' }] }]
+         teams: [{ abbr: 'XX', score: 0, homeAway: 'home' }, { abbr: 'YY', score: 0, homeAway: 'away' }] }],
+  6: [{ id: 'g6', date: '2026-10-13T17:00:00Z', week: 6, state: 'post', detail: '',
+        teams: [{ abbr: 'DAL', score: 27, homeAway: 'home' }, { abbr: 'GB', score: 21, homeAway: 'away' }] }]
 };
 var BOX = {
   g1: {
