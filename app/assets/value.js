@@ -207,13 +207,21 @@
     return out;
   }
 
-  /* ---- what my own team looks like, in the same units -------------------- */
+  /* ---- what my own team looks like, in the same units --------------------
+   * `pos` is the SLOT's position label — 'FLEX' for the flex slot, whoever
+   * is actually in it — because upgrades() below deliberately buckets by
+   * slot type (a FLEX bucket, compared against every flex-eligible free
+   * agent, separate from the fixed RB/WR/TE slots). `realPos` is the
+   * PLAYER's own position, added in the 2026-09-15e sweep: needs() (below)
+   * was using the slot label as if it were a position and hardcoding FLEX
+   * to RB's replacement level regardless of who was actually starting
+   * there — wrong for the common case of a WR or TE in flex. */
   function myStarters(week, teamId, opponents) {
     var picks = root.Recommend.bestLineup(week, teamId, opponents);
     var out = [];
     picks.forEach(function (k) {
       if (!k || !k.pick) return;
-      out.push({ slot: k.key || k.slot, pos: k.pos, id: k.pick.p.id,
+      out.push({ slot: k.key || k.slot, pos: k.pos, realPos: k.pick.p.pos, id: k.pick.p.id,
                  name: k.pick.p.name, proj: k.pick.proj, base: k.pick.base });
     });
     return out;
