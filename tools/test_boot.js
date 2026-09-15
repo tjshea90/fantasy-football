@@ -759,8 +759,18 @@ ok(/function doRefresh\(onProgress\)/.test(pdH) && (pdH.match(/doRefresh\(onProg
 ok(/function ensureFresh/.test(pdH) && /function stale\(\)/.test(pdH),
    'PlayerDB exposes the staleness gate the background refresh needs');
 ok(/function refreshPlayerDBIfStale/.test(uiN), 'ui.js has one quiet background-refresh helper, not several ad-hoc calls');
-ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,40}syncCurrentWeek/.test(uiN),
+ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,220}syncCurrentWeek/.test(uiN),
    'boot() refreshes the player database quietly on cold start');
+/* 2026-09-15h: localAutoAdvance() (network-free — trusts only weekMeta.
+   allFinal, which this app already computed from real box scores) now
+   runs right before syncCurrentWeek() (the ESPN-metadata-based check) at
+   both trigger points, so a wrong ESPN answer or a stale 3-hour cache
+   entry is never the ONLY thing standing between a finished week and
+   showing the next one. */
+ok(/localAutoAdvance\(\);\s*syncCurrentWeek\(\);/.test(uiN),
+   'localAutoAdvance() runs immediately before syncCurrentWeek() at every trigger point, boot and resume alike');
+ok((uiN.match(/localAutoAdvance\(\);/g) || []).length === 2,
+   'localAutoAdvance() is called from exactly two places — boot() and appResume(), no fewer, no duplicates');
 ok(/freshenSchedule\(\);\s*refreshPlayerDBIfStale\(\);\s*\/\* A week that is finished/.test(uiN),
    'appResume() refreshes it again on every resume, so a phone that is never rebooted still gets it');
 ok(/function viewWire\(root\) \{[\s\S]{0,400}refreshPlayerDBIfStale\(\);/.test(uiN),
