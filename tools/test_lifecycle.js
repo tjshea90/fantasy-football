@@ -121,6 +121,20 @@ W.document = {
   removeEventListener: function () { }
 };
 var TAB_NAMES = ['live', 'lineups', 'rosters', 'wire', 'stats', 'advice', 'data'];
+/* Same drift check as the module load order below: this stub's tab list is
+   maintained by hand, so it can silently stop matching the real nav bar the
+   moment a tab is added or removed there — exactly what happened to the
+   module load order when gamelog.js/stats.js were added (see below). Real
+   parity, not an assumption. */
+(function () {
+  var html = fs.readFileSync(path.join(__dirname, '..', 'app/assets/index.html'), 'utf8');
+  var found = [], re = /data-v="([^"]+)"/g, m;
+  while ((m = re.exec(html))) found.push(m[1]);
+  ok(found.join(',') === TAB_NAMES.join(','),
+     'TAB_NAMES matches the real nav bar, in the same order' +
+     (found.join(',') === TAB_NAMES.join(',') ? '' : '\n         html: ' + found.join(',') +
+      '\n         here: ' + TAB_NAMES.join(',')));
+}());
 var tabEls = TAB_NAMES.map(function (n) {
   var e = makeEl('button'); e.setAttribute('data-v', n); return e;
 });
