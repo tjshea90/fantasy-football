@@ -65,6 +65,24 @@ ok(/private boolean looksLikeJson\(String s\)/.test(nb) && /new org\.json\.JSONT
 ok(nb.indexOf('httpChunk') >= 0 && nb.indexOf('CHUNK_LIMIT') >= 0,
    'large HTTP bodies cross the bridge in chunks (ARI was too big in one piece)');
 ok(nb.indexOf('ERRMARK') >= 0, 'network failures return a reason, not a silent null');
+/* 2026-09-15e sweep: every FileOutputStream/InputStream opened by hand in
+ * this file leaked its file descriptor on any exception mid-write (disk
+ * full, I/O error) — save() runs on effectively every app-state write, so
+ * under a sustained low-storage condition this was a real accumulating
+ * leak, not a theoretical one. Try-with-resources guarantees close() even
+ * when write()/sync() throws. Six sites total, two of them (export,
+ * writeToDownloads) with a MediaStore branch and a legacy-file branch each. */
+ok(/try \(InputStream in = new java\.io\.FileInputStream\(f\);\s*BufferedReader r = new BufferedReader/.test(nb),
+   "readFile()'s stream and reader are both closed via try-with-resources");
+ok((nb.match(/try \(FileOutputStream o = new FileOutputStream\(tmp\)\)/g) || []).length >= 2,
+   'save() and backupAuto() both open their FileOutputStream via try-with-resources');
+ok((nb.match(/try \(OutputStream oo = o\) \{ oo\.write\(data\.getBytes\("UTF-8"\)\); \}/g) || []).length === 2,
+   "export()'s and writeToDownloads()'s MediaStore branches both close via try-with-resources");
+ok((nb.match(/try \(FileOutputStream o = new FileOutputStream\(d\)\)/g) || []).length === 2,
+   "export()'s and writeToDownloads()'s legacy-file branches both close via try-with-resources");
+var alertsJ = fs.readFileSync('android/src/com/tj/fftracker/Alerts.java', 'utf8');
+ok(/try \(BufferedReader r = new BufferedReader\(new InputStreamReader\(new FileInputStream\(f\), "UTF-8"\), 16384\)\)/.test(alertsJ),
+   "Alerts.java's own independent readFile() duplicate got the same try-with-resources fix");
 var esp = fs.readFileSync('app/assets/espn.js', 'utf8');
 ok(esp.indexOf('httpChunk') >= 0, 'the page reassembles chunked bodies');
 ok(esp.indexOf('truncated') >= 0, 'a short read is an error, not silent corruption');
