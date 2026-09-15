@@ -30,11 +30,11 @@ claimed fixed once (v6.5).
       made deliberately impossible (throws synchronously) — week still
       advances, synchronously, before any promise even settles. All 14
       suites + ES2018 gate green, `bash build.sh` clean.
-- [ ] 4. Ship, verify the Release, tell Tj plainly: if this STILL doesn't
-      advance after installing and relaunching, that means
-      `weekMeta['1'].allFinal` itself is not true in his own local data
-      (week 1 never fully synced on his phone) — a different, diagnostic
-      fact worth knowing, not a repeat of the same bug.
+- [x] 4. Shipped as v6.6, Release published and verified (non-empty
+      assets, `FFTracker-v6.6.apk`, 264345 bytes, correct content type).
+      Told Tj plainly: independent of ESPN's own week metadata now; if it
+      still doesn't advance, that points to `weekMeta['1'].allFinal` not
+      actually being true in his local data rather than a repeat.
 
 ## 2026-09-15g: wire up the weekly recap feature, and sub-navigation for the Data tab
 
