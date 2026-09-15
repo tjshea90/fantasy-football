@@ -486,6 +486,7 @@ var nmH = fs.readFileSync('app/assets/names.js', 'utf8');
 var vlH = fs.readFileSync('app/assets/value.js', 'utf8');
 var uiN = fs.readFileSync('app/assets/ui.js', 'utf8');
 var pdH = fs.readFileSync('app/assets/playerdb.js', 'utf8');
+var stH = fs.readFileSync('app/assets/stats.js', 'utf8');
 ok(idxH.indexOf('names.js') > idxH.indexOf('espn.js') &&
    idxH.indexOf('names.js') < idxH.indexOf('store.js'),
    'names.js loads after espn.js and before everything that matches identities');
