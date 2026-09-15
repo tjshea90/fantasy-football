@@ -943,6 +943,7 @@
         bc.appendChild(el('h2', null, 'Bench, ranked'));
         bench.forEach(function (x) {
           var r = el('div', 'row');
+          if (ctx.markPlayer) ctx.markPlayer(r, x.p.name, x.p.pos, x.p.nfl);
           r.appendChild(el('div', 'slot', x.p.pos));
           var nm2 = el('div', 'nm');
           nm2.appendChild(document.createTextNode(x.p.name));
