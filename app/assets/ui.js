@@ -1060,11 +1060,13 @@
     live.next = 0;
     /* A stray touch during teardown must not switch a tab or start a fetch. */
     if (window.Gestures) { try { Gestures.enable(false); } catch (e) { } }
+    lpEnabled = false; lpCancel();
   }
   function appResume() {
     if (!asleep) return;
     asleep = false;
     if (window.Gestures) { try { Gestures.enable(true); } catch (e) { } }
+    lpEnabled = true;
     if (!S) return;             /* not booted yet; boot() starts the poll itself */
     /* Coming back after a while is exactly when a flex-scheduling change would
        have landed, and it is cheap: refresh() only fetches if the stored copy
