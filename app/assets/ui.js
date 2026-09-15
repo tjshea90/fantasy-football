@@ -786,6 +786,86 @@
     } catch (e) { /* a phone with no touch, or a stubbed DOM: buttons still work */ }
   }
 
+  /* ---------- LONG-PRESS "VIEW STATS" (v6.0) -------------------------------
+   * Tj: "Everywhere else in the app, make it so I can long press on a player
+   * and press view stats, and it will show the stats for this player just
+   * like in the stats tab."
+   *
+   * A second, SEPARATE delegated touch listener from Gestures — gestures.js
+   * is deliberately app-blind (see its own header comment: "nothing here
+   * reads Store, Schedule or the view state directly"), and this needs
+   * Stats/Store, so it lives here instead of growing that seam a new
+   * responsibility. Any element carrying data-player="name|pos|nfl" (see
+   * markPlayer above) is a target.
+   *
+   * "Just like in the stats tab" is true by construction, not by keeping two
+   * renderers in sync by hand: openPlayerStatsMenu below calls the exact
+   * same Stats.openPlayerModal every search result on the Stats tab uses. */
+  var LONGPRESS_MS = 500, LONGPRESS_SLOP = 10;
+  var lpTimer = null, lpStart = null, lpSuppressClickUntil = 0;
+  function findPlayerRow(node) {
+    var n = node, depth = 0;
+    while (n && n.nodeType === 1 && depth++ < 8) {
+      if (n.getAttribute && n.getAttribute('data-player') !== null) return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+  function parsePlayerAttr(v) {
+    var p = String(v || '').split('|');
+    return { name: p[0] || '', pos: p[1] || '', nfl: p[2] || '' };
+  }
+  function openPlayerStatsMenu(player) {
+    if (!player.name) return;
+    dialog(player.name, null, function (box, row, close) {
+      var cancel = el('button', 'btn', 'Cancel');
+      cancel.addEventListener('click', close);
+      var view = el('button', 'btn pri', 'View stats');
+      view.addEventListener('click', function () { close(); Stats.openPlayerModal(statsCtx(), player); });
+      row.appendChild(cancel); row.appendChild(view);
+    });
+  }
+  function lpCancel() { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } lpStart = null; }
+  function longPressStart(e) {
+    lpCancel();
+    if (!e.touches || e.touches.length !== 1) return;
+    var row = findPlayerRow(e.target);
+    if (!row) return;
+    var t = e.touches[0];
+    lpStart = { x: t.clientX, y: t.clientY };
+    lpTimer = setTimeout(function () {
+      lpTimer = null;
+      lpSuppressClickUntil = Date.now() + 400;   /* the touchend's synthetic click never opens the row's own tap action too */
+      openPlayerStatsMenu(parsePlayerAttr(row.getAttribute('data-player')));
+    }, LONGPRESS_MS);
+  }
+  function longPressMove(e) {
+    if (!lpTimer || !lpStart || !e.touches || !e.touches.length) return;
+    var t = e.touches[0];
+    if (Math.abs(t.clientX - lpStart.x) > LONGPRESS_SLOP || Math.abs(t.clientY - lpStart.y) > LONGPRESS_SLOP) lpCancel();
+  }
+  function wireLongPress() {
+    var d = document;
+    if (!d || !d.addEventListener) return;
+    d.addEventListener('touchstart', longPressStart, { passive: true });
+    d.addEventListener('touchmove', longPressMove, { passive: true });
+    d.addEventListener('touchend', lpCancel, { passive: true });
+    d.addEventListener('touchcancel', lpCancel, { passive: true });
+    /* capturing phase, so this runs and can stop the click BEFORE it ever
+       reaches a row's own tap handler (e.g. showPlayer, or "Add" on a
+       free-agent row) */
+    d.addEventListener('click', function (e) {
+      if (Date.now() < lpSuppressClickUntil) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+    /* desktop/browser testing: right-click reaches the same menu */
+    d.addEventListener('contextmenu', function (e) {
+      var row = findPlayerRow(e.target);
+      if (!row) return;
+      e.preventDefault();
+      openPlayerStatsMenu(parsePlayerAttr(row.getAttribute('data-player')));
+    });
+  }
+
   /* ---------- THE ANDROID BACK BUTTON (v4.7, revised) ---------------------
    * MainActivity used to defer to WebView.canGoBack(), which in a page that
    * never pushes a history entry is always false — so back quit the app from
