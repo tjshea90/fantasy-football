@@ -1,12 +1,12 @@
-# CHECKPOINT 64 — read me first, then TASKS.md
+# CHECKPOINT 71 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T01:59:37Z · **version:** 5.9 · **tests:** all 13 suites green
+**Written:** 2026-09-15T02:06:24Z · **version:** 5.9 · **tests:** 1 RED: test_lifecycle (13 green)
 
 ## Just done
-root-caused the resume-system failure Tj reported: a session ran a long research phase on the new stats/game-log feature request and was cut off by a usage cap before ever writing it to TASKS.md, and the PostToolUse autosave hook (Edit|Write|NotebookEdit|Bash only) never fired during pure-research reading either -- so nothing reached disk and the next session opened cold with no way to know the request existed. Confirmed against real history (origin/main's ckpt-51 commit was a sibling session resuming correctly from what WAS on disk, proving the mechanics work when there is something to find). Fixed in two parts: (1) immediately wrote Tj's verbatim stats/game-log request into TASKS.md as the actual current job with an architecture-notes section so the research already done is not lost either; (2) closed the systemic gap with a new UserPromptSubmit hook (tools/capture_inbox.sh) that appends every message Tj sends to a new INBOX.md, verbatim, and commits+pushes it the instant it arrives -- before any tool call, independent of a session's judgment about when to save. resume.sh now prints the INBOX.md tail unconditionally on every boot. CLAUDE.md documents this as a new level 0 under Saving work. MANIFEST.txt updated for the two new files; bootstrap.sh confirmed clean. Tested by hand: fed capture_inbox.sh a sample JSON payload with quotes and a newline on stdin, confirmed it appended correctly and committed+pushed; verified resume.sh's tail-extraction sed against a synthetic multi-entry sample.
+step 1 of the stats-tab job done: gamelog.js -- a self-contained (own Native.save/load key, not part of Store's save cycle, like playerdb.js) full box-score cache keyed by NFL team + week, independent of roster. One Espn.gameStats call caches BOTH teams in a game (verified by call-count assertions, not just output shape); a state:'post' week is cached forever and never re-fetches unless opts.force is passed (wired later to pull-to-refresh); an 'in' (live) week always re-fetches since the score can still move; a 'pre' week resolves to null with zero network calls rather than guessing. Exposes teamWeek, playedWeeks (bye-aware, no per-week fetch needed since the regular season has no gaps besides the bye), playerLog (full-season game log for any PlayerDB row incl. a DEF unit, bounded 3-wide parallel fetch via the existing Espn.pool), teamRoster (every player who played for a team in a week, sorted QB/RB/WR/TE/K then DEF, plus the DEF line), and weekPositionTops (top 10 by league points per position incl. DEF for one week, fetched by GAME not by team so a full week is <=16 gameStats calls not 32). Position resolution reuses Names.variants the same way doSync's own byName index does, so a nickname mismatch between ESPN's displayName and PlayerDB's spelling still resolves. tools/test_gamelog.js: 27 assertions, all green, including the two that matter most (one fetch covers both teams; a final week never re-fetches). Wired into index.html after playerdb.js/before projections.js, added to MANIFEST.txt, ES2018 gate passes, all 14 suites green.
 
 ## Do this next
-start building the Stats tab feature itself per the now-recorded TASKS.md breakdown: gamelog.js first (per-team-per-week full box score cache), then the Stats tab UI, then long-press wiring, then Top Players, then the full 8-point testing pass Tj asked for, then ship + release.
+step 2: build the Stats tab UI itself (stats.js exposing Stats.render(root, ctx), mirroring the Recommend.render(root, ctx) / viewAdvice delegation pattern already used for Advice) -- player search reusing PlayerDB.search, click a result to see the full-season game log via Gamelog.playerLog, and a 'browse by team' mode via Gamelog.teamRoster with a week dropdown for older games. Wire a new viewStats into ui.js and a Stats tab button into index.html's nav.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  9563bc3 ckpt 64: root-caused the resume-system failure Tj reported: a session ran a long researc
   730d4e5 ckpt 51: resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.
   a8e2c3f ship v5.9: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
   6ff1bcd ship v5.8: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
@@ -37,5 +38,5 @@ request in his own words and `git log` carries every step already taken.
   65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
 ```
 
-(12 automatic checkpoint(s) since the last deliberate one — the
+(6 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
