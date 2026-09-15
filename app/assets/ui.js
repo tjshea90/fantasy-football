@@ -568,6 +568,20 @@
       }
       S = Store.init(seed);
       week = S.settings.currentWeek || 1;
+      /* Tj: "if I switch apps then go back to the fantasy app it
+       * automatically goes back to what I was already looking at last.
+       * Right now it always jumps back to the live tab if I switch apps
+       * then go back to it." Android does not reliably keep this Activity
+       * alive in the background — under normal memory pressure the OS can
+       * kill the process outright, and the next "resume" Tj sees is
+       * actually this boot() running again from scratch (onPause/onResume
+       * alone, when the process DOES survive, touch none of this — view
+       * is still whatever it was, in memory). So the one thing that can
+       * make a real cold relaunch look like a resume is restoring from
+       * disk what tab was open last, the same way `week` just did above. */
+      if (S.settings.lastTab && tabList().indexOf(S.settings.lastTab) >= 0) {
+        view = S.settings.lastTab;
+      }
       applyAdjust();
       if (window.Recommend && Recommend.loadCaches) Recommend.loadCaches();
       autoFillWeek(week);
