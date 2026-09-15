@@ -1,12 +1,12 @@
-# CHECKPOINT 71 — read me first, then TASKS.md
+# CHECKPOINT 73 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T02:06:24Z · **version:** 5.9 · **tests:** 1 RED: test_lifecycle (13 green)
+**Written:** 2026-09-15T02:07:11Z · **version:** 5.9 · **tests:** all 14 suites green
 
 ## Just done
-step 1 of the stats-tab job done: gamelog.js -- a self-contained (own Native.save/load key, not part of Store's save cycle, like playerdb.js) full box-score cache keyed by NFL team + week, independent of roster. One Espn.gameStats call caches BOTH teams in a game (verified by call-count assertions, not just output shape); a state:'post' week is cached forever and never re-fetches unless opts.force is passed (wired later to pull-to-refresh); an 'in' (live) week always re-fetches since the score can still move; a 'pre' week resolves to null with zero network calls rather than guessing. Exposes teamWeek, playedWeeks (bye-aware, no per-week fetch needed since the regular season has no gaps besides the bye), playerLog (full-season game log for any PlayerDB row incl. a DEF unit, bounded 3-wide parallel fetch via the existing Espn.pool), teamRoster (every player who played for a team in a week, sorted QB/RB/WR/TE/K then DEF, plus the DEF line), and weekPositionTops (top 10 by league points per position incl. DEF for one week, fetched by GAME not by team so a full week is <=16 gameStats calls not 32). Position resolution reuses Names.variants the same way doSync's own byName index does, so a nickname mismatch between ESPN's displayName and PlayerDB's spelling still resolves. tools/test_gamelog.js: 27 assertions, all green, including the two that matter most (one fetch covers both teams; a final week never re-fetches). Wired into index.html after playerdb.js/before projections.js, added to MANIFEST.txt, ES2018 gate passes, all 14 suites green.
+fixed the red left over from the last checkpoint: test_lifecycle.js keeps its own copy of the module load order specifically to assert it matches index.html's actual <script> tags byte-for-byte (a real safety net -- it is how this suite proves it is testing what the phone actually runs, not a stale subset). Adding gamelog.js to index.html without updating that list was exactly the drift it exists to catch. Added 'gamelog.js' in the same position in test_lifecycle.js's order array. All 14 suites green now, confirmed with a full explicit re-run of every test_*.js plus the ES2018 gate, not just ckpt.sh's summary line.
 
 ## Do this next
-step 2: build the Stats tab UI itself (stats.js exposing Stats.render(root, ctx), mirroring the Recommend.render(root, ctx) / viewAdvice delegation pattern already used for Advice) -- player search reusing PlayerDB.search, click a result to see the full-season game log via Gamelog.playerLog, and a 'browse by team' mode via Gamelog.teamRoster with a week dropdown for older games. Wire a new viewStats into ui.js and a Stats tab button into index.html's nav.
+step 2: build the Stats tab UI -- stats.js exposing Stats.render(root, ctx) (mirrors the Recommend.render(root, ctx) / viewAdvice delegation pattern), player search reusing PlayerDB.search + Gamelog.playerLog for the full-season game log, 'browse by team' via Gamelog.teamRoster with a week dropdown, wired into a new viewStats in ui.js and a Stats tab button in index.html's nav (and gestures.js's tabList(), which reads the nav directly, so swipe order picks it up for free).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  581837a ckpt 71: step 1 of the stats-tab job done: gamelog.js -- a self-contained (own Native.sa
   9563bc3 ckpt 64: root-caused the resume-system failure Tj reported: a session ran a long researc
   730d4e5 ckpt 51: resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.
   a8e2c3f ship v5.9: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   e10158d ckpt 75: tasks 1-4 done: (1) app now auto-advances to the current NFL week on cold boot 
   41a9374 ckpt 52: wrote Tj's 5-part request (auto-select current NFL week everywhere, stop showin
   b59fff0 ckpt 148: corrected the standing rule immediately on Tj's feedback: a fenced code block 
-  65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
