@@ -2195,6 +2195,20 @@
      index.html loads recommend.js unconditionally, so it was unreachable, and
      render()'s own try/catch already turns a real failure into a named error
      card rather than a blank tab. */
+  /* ---------- STATS (v6.0) ----------
+   * "search for any current NFL player... see the game logs stats line for
+   * the player for all games so far this season... calculate the fantasy
+   * points... using only the rules for this league. Also include
+   * defenses... view game logs by team... sorted by player position...
+   * top players... top 10 highest fantasy points scored by position." */
+  function statsCtx() {
+    return { el: el, table: table, fmt: fmt, modal: modal, toast: toast,
+             rerender: render, week: week };
+  }
+  function viewStats(root) {
+    Stats.render(root, statsCtx());
+  }
+
   function viewAdvice(root) {
     Recommend.render(root, { week: week, teamId: S.league.me, el: el, table: table,
       fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
