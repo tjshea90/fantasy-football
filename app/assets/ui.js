@@ -599,6 +599,9 @@
       startLive();
       freshenSchedule();
       refreshPlayerDBIfStale();
+      /* local first: no network, cannot fail, cannot be blocked by a stale
+         cache — see the NFL WEEK AUTO-ADVANCE comment above */
+      localAutoAdvance();
       syncCurrentWeek();
     } catch (e) {
       fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
