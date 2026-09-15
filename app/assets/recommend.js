@@ -641,9 +641,23 @@
    * and prompt this exact press would send — Ai.adviceSearchBudget is the
    * same function ask() itself calls, so this can never claim a cheaper (or
    * pricier) call than the real one. Wrapped: an estimate must never be
-   * able to break the tab it sits on. */
+   * able to break the tab it sits on.
+   *
+   * Memoised (found in review, 2026-09-15): render() calls this on every
+   * re-render of the Advice tab's header, and rosterContext() runs a full
+   * projectOne() pass over the whole roster to build the triage — largely
+   * the SAME per-player pass build()'s own projectAll() below does moments
+   * later in this same render, and usageCard() on the Data tab calls this
+   * again on every keystroke in a price-rate field. Same key shape as
+   * value.js's _faMemo: roster generation covers adds/drops/trades, rates
+   * are in the key because editing a price field must still update the
+   * number immediately. */
+  var _adviceEstMemo = null;
   function claudeAdviceEstimate(week, teamId) {
     try {
+      var gen = (root.Store && root.Store.generation) ? root.Store.generation() : 0;
+      var k = week + '|' + teamId + '|' + gen + '|' + JSON.stringify(root.Usage.rates());
+      if (_adviceEstMemo && _adviceEstMemo.k === k) return _adviceEstMemo.v;
       var opp = (root.Store.get().weekMeta[String(week)] &&
                  root.Store.get().weekMeta[String(week)].opponents) || null;
       var ctx = rosterContext(week, teamId, opp);
@@ -653,7 +667,9 @@
       /* Same reasoning as the wire estimate: output is the fuzzier half,
          search cost dominates the bill either way. */
       var outputTokens = 150 + n * 90 + budget * 60;
-      return root.Usage.money(root.Usage.estimate(promptChars, budget, outputTokens));
+      var v = root.Usage.money(root.Usage.estimate(promptChars, budget, outputTokens));
+      _adviceEstMemo = { k: k, v: v };
+      return v;
     } catch (e) { return null; }
   }
 
