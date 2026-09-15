@@ -371,7 +371,26 @@
    * thing again. Everything that changes every time — the week, the date, the
    * roster — is a separate block after it. Anything volatile in the first block
    * would invalidate the cache on every call and the split would be pointless.
-   */
+   *
+   * 2026-09-15e sweep — measured, not just assumed: this block is ~900 tokens
+   * (~3.6K chars / 4). Anthropic will not write a cache breakpoint at all
+   * below a per-model floor (Sonnet 5: 1024 tokens; Opus 5: 512; Haiku 4.5:
+   * 4096 — verified this session), so at the default (non-'cheap') depth,
+   * which sends this to Sonnet 5, this block sits BELOW that floor and the
+   * breakpoint above silently never engages — every call pays full price for
+   * these tokens, the exact thing this comment claims does not happen.
+   * askWaivers()'s own static block (waiverPrefix(), ~1.8K tokens) clears
+   * Sonnet's floor fine; this one alone falls short by roughly 130 tokens.
+   * Deliberately NOT padded to clear it: the only honest way to add ~130
+   * tokens here is more real task guidance, which changes what Claude is
+   * actually told on every future sync — a live prompt-behavior change this
+   * sweep has no way to verify against the real API (no key configured in
+   * this environment) and is exactly the kind of change this sweep's own
+   * "no major changes unless approved" boundary is for. It is also a small
+   * saving even fixed: Tj syncs advice a few times a week at most, and the
+   * cache TTL here is the 5-minute default, so back-to-back calls close
+   * enough to ever hit a warm cache are the exception, not the rule. Left as
+   * a known, measured, low-priority gap rather than a silent one. */
   function staticPrefix() {
     var lines = [];
     lines.push('You are helping set a fantasy football lineup. A roster follows in the');
