@@ -94,69 +94,94 @@ at cost on every cold start, forever.
       four as genuinely unused. Not doing either without your steer, since
       "add a feature" and "remove working code" are both squarely
       "major" under the standing rule.
-- [ ] **Confirm v6.5 on the phone — PRIORITY, two things need a real
+- [ ] **Confirm v6.7 on the phone — PRIORITY, three things need a real
       device**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.7
+      ```
+      (1) **The week auto-advance fix, take two (2026-09-15h, the newest).**
+      v6.5 fixed the resume-only gap; Tj then reported it STILL failing
+      after a full force-stop and relaunch — a true cold boot, which
+      already ran the check unconditionally even before v6.5. Root cause:
+      the check depended entirely on one network call to ESPN's own
+      "current week" field, cached for 3 hours, failures silently
+      swallowed. v6.6 added `localAutoAdvance()` — a second, independent,
+      network-free signal that trusts only the app's own `weekMeta.
+      allFinal` (data it already has from real syncs) — full detail in
+      STATE.md's 2026-09-15h entry. **Still does NOT retroactively fix an
+      already-running session** — background and reopen (or force-quit
+      and relaunch) after installing for it to catch the transition. If
+      every tab is not on the current NFL week within a few seconds of
+      that, say exactly what you saw — and specifically, if it's STILL
+      stuck, that would now point to week 1 not actually being marked
+      final in the app's own local data, not a repeat of the same bug.
+      (2) **New: the weekly recap feature and Data tab sub-navigation
+      (2026-09-15g)** — Data tab now has 4 buttons at the top (League,
+      Claude, Sync & data, App) instead of one long scroll; League has a
+      new small "Weekly recap" card that opens a dialog with real
+      high/low-score, closest-game, best-player facts once a week is
+      fully scored, with Share/Copy and (if an API key is configured) a
+      "Write it up with Claude" option. Check the sub-nav groups all look
+      right and nothing you used to reach on Data feels missing.
+      (3) **The back-button fix, still needs its first real-device
+      confirmation.** v6.2 already claimed this was fixed, proven by every
+      test that existed at the time — and it still closed the app on Tj's
+      real phone. Root cause: v6.2 only registered the classic
+      `onKeyDown(KEYCODE_BACK)` handler, but a real Android 13+ phone's
+      gesture-based back SWIPE (the default nav style on most modern
+      phones) never generates that event at all once predictive back is
+      active — it never reached the app's own logic. v6.3 (carried forward
+      unchanged through v6.7) registers the platform's
+      `OnBackInvokedCallback` (API 33+) alongside the old handler, which is
+      the correct fix for gesture nav specifically. There is no
+      `adb`/emulator in this environment, so **this genuinely could only be
+      tested by compiling and reasoning about it, not by reproducing the
+      failure** — if the back button still closes the app, say so exactly
+      the way you did last time (which tab you were on, whether you used a
+      swipe or a physical/on-screen back button) rather than assuming it's
+      the same already-reported issue.
+      Also still worth checking while there (from v6.2, unrelated to the
+      three above, not yet confirmed): (1) switch to another app and back
+      — should reopen on whatever tab was open, not jump to Live; (2) same
+      switch-away-and-back — no flash of the app logo before the screen you
+      were on reappears; (3) Advice tab → "Bench, ranked" card → each bench
+      player has its own "why not ▾"; (4) Rosters tab → your team roster
+      above the trade evaluator; (5) Data tab → Sync & data → "Player
+      database" card mentions it also refreshes itself automatically. This
+      supersedes v6.6, v6.5, v6.4, v6.3, v6.2 and v6.1 below.
+- [ ] **Confirm v6.6 on the phone** (superseded by v6.7 above; v6.6 itself
+      was the week-advance fix alone, no UI changes — no reason to test it
+      separately):
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.6
+      ```
+- [ ] **Confirm v6.5 on the phone** (superseded by v6.7 above; the resume-
+      only week-advance fix it shipped is superseded by v6.6's more
+      thorough one — no reason to test it separately):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.5
       ```
-      (1) **The week auto-advance fix (the newest thing, 2026-09-15f).**
-      Tj reported week 1 finishing and the app staying stuck on it. Fixed
-      by also running the current-NFL-week check on app resume, not just
-      a true cold start — full detail in STATE.md's 2026-09-15f entry.
-      **This does NOT retroactively fix an already-running session** — you
-      need to background the app and reopen it (switching to another app
-      and back is enough; a full force-quit/relaunch also works) after
-      installing v6.5 for it to catch the transition. If every tab is not
-      on the current NFL week within a few seconds of that, say exactly
-      what you saw (which tab, what week it showed) rather than assuming
-      it is fixed. (2) **The back-button fix, still needs its first
-      real-device confirmation.** v6.2 already claimed this was fixed,
-      proven by every test that existed at the time — and it still closed
-      the app on Tj's real phone. Root cause: v6.2 only registered the
-      classic `onKeyDown(KEYCODE_BACK)` handler, but a real Android 13+
-      phone's gesture-based back SWIPE (the default nav style on most
-      modern phones) never generates that event at all once predictive
-      back is active — it never reached the app's own logic. v6.3
-      (carried forward unchanged into v6.4 and v6.5) registers the
-      platform's `OnBackInvokedCallback` (API 33+) alongside the old
-      handler, which is the correct fix for gesture nav specifically.
-      There is no `adb`/emulator in this environment, so **this genuinely
-      could only be tested by compiling and reasoning about it, not by
-      reproducing the failure** — if the back button still closes the app,
-      say so exactly the way you did last time (which tab you were on,
-      whether you used a swipe or a physical/on-screen back button) rather
-      than assuming it's the same already-reported issue.
-      Also still worth checking while there (from v6.2, unrelated to
-      either fix above, not yet confirmed): (1) switch to another app and
-      back — should reopen on whatever tab was open, not jump to Live; (2)
-      same switch-away-and-back — no flash of the app logo before the
-      screen you were on reappears; (3) Data tab → "Claude costs" card —
-      live dollar estimates next to "Sync advice" and "Ask Claude about the
-      wire", never a "$X left" meter; (4) Advice tab → "Bench, ranked" card
-      → each bench player has its own "why not ▾"; (5) Rosters tab → your
-      team roster above the trade evaluator; (6) Data tab → "Player
-      database" card mentions it also refreshes itself automatically. This
-      supersedes v6.4, v6.3, v6.2 and v6.1 below.
-- [ ] **Confirm v6.4 on the phone** (superseded by v6.5 above; v6.4 itself
+- [ ] **Confirm v6.4 on the phone** (superseded by v6.7 above; v6.4 itself
       was mostly under-the-hood — see STATE.md's 2026-09-15e entry — no
       reason to test it separately):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.4
       ```
-- [ ] **Confirm v6.3 on the phone** (superseded by v6.5 above, which
+- [ ] **Confirm v6.3 on the phone** (superseded by v6.7 above, which
       carries the identical back-button fix forward unchanged — no reason
       to test this build separately):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.3
       ```
-- [ ] **Confirm v6.2 on the phone** (superseded by v6.5 above — the back
+- [ ] **Confirm v6.2 on the phone** (superseded by v6.7 above — the back
       button specifically is now known-broken on v6.2, so there is no
       reason to test that build further):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.2
       ```
-- [ ] **Confirm v6.1 on the phone** (superseded by v6.2/v6.3/v6.4/v6.5
-      above; only worth a separate look if those checks turn up something
+- [ ] **Confirm v6.1 on the phone** (superseded by v6.2/v6.3/v6.4/v6.5/
+      v6.6/v6.7 above; only worth a separate look if those checks turn up
+      something
       the v6.1 fixes might be involved in):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.1
