@@ -44,6 +44,16 @@ ok(mj.indexOf('setOnApplyWindowInsetsListener') >= 0, 'window insets are read fr
 ok(mj.indexOf('__setInsets') >= 0, 'insets are pushed into CSS, not padded onto the WebView');
 ok(mj.indexOf('v.setPadding(0, 0, 0, 0)') >= 0, 'the WebView itself is never padded (v1.2 clipped because it was)');
 ok(mj.indexOf('onPageFinished') >= 0, 'insets are re-sent once the page exists');
+/* 2026-09-15e sweep: NativeBridge's 3-thread pool is plain (non-daemon)
+ * threads that would keep the process alive past the Activity, and every
+ * queued/in-flight Runnable holds a reference to `web`, which onDestroy()
+ * tears down and nulls — so the bridge must be shut down before that happens,
+ * not left to the process teardown to sort out. */
+ok(/private NativeBridge bridge;/.test(mj), 'the bridge is kept as a field so onDestroy can reach it');
+ok(/bridge = new NativeBridge\(this\);/.test(mj) && !/NativeBridge bridge = new NativeBridge/.test(mj),
+   'onCreate assigns the field instead of shadowing it with a local');
+ok(/if \(bridge != null\) \{\s*try \{ bridge\.shutdown\(\); \}/.test(mj),
+   'onDestroy shuts the pool down before the WebView (and its bridge reference) is torn down');
 var css = fs.readFileSync('app/assets/app.css', 'utf8');
 ok(css.indexOf('--ins-top') >= 0 && css.indexOf('--adj-top') >= 0, 'CSS has inset and manual-adjust variables');
 ok(html.indexOf('__setInsets') >= 0 && html.indexOf('__setAdjust') >= 0, 'page exposes both inset hooks');
