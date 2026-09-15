@@ -76,14 +76,31 @@ again:
 ## When Tj asks for something new
 
 **Write the request into `TASKS.md` in his own words, as unticked `[ ]`
-boxes, and checkpoint it before writing any code.** Until it is on disk the
-job exists only in a chat window that no other account can ever see. If usage
-runs out before the first checkpoint, the next account inherits the work but
-not the knowledge of what was asked — and it cannot ask him, because from his
-side he already explained it.
+boxes, and checkpoint it before writing any code.** Until it is written into
+`TASKS.md` as real steps, nobody has actually planned the work — a message
+sitting in a chat window is not a task list.
 
-Tick a box only when it is written, tested and committed, and name the test
-that proves it. The next account will not re-verify a ticked box.
+**You do not have to race a usage cap to get the raw request itself onto
+disk any more (learned the hard way, 2026-09-15).** A `UserPromptSubmit`
+hook (`tools/capture_inbox.sh`) already writes every message Tj sends to
+`INBOX.md`, verbatim, and commits+pushes it the instant it arrives — before
+you have read a single file. That used to be the failure: a session spent
+its whole budget reading the codebase for a new feature, was cut off before
+ever writing the request to `TASKS.md`, and the `PostToolUse` autosave hook
+(which only fires on `Edit|Write|NotebookEdit|Bash`) never fired either,
+because a pure research stretch trips none of those. Nothing reached disk,
+anywhere, and the next session opened cold with no way to know the request
+had ever been made — confirmed against this repo's own history.
+
+This does not lower the bar on writing `TASKS.md` promptly — a raw inbox
+entry is not a plan, and a long research stretch before turning it into one
+is still worth avoiding. It means a forgotten or interrupted `TASKS.md` write
+is now a recoverable gap instead of a total loss: the exact words are always
+on `INBOX.md`, and `resume.sh` prints its tail every session specifically so
+this is never missed twice.
+
+Tick a `TASKS.md` box only when it is written, tested and committed, and name
+the test that proves it. The next account will not re-verify a ticked box.
 
 ## Saving work — three levels, and you are responsible for the middle one
 
