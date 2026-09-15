@@ -105,6 +105,41 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
+- [ ] **Decide: the Data tab is a 13-card wall with no sub-navigation.**
+      Found during the 2026-09-15e sweep (flagged, not touched — a UI
+      review agent's finding, and this crosses into "major redesign"
+      territory the standing "no major changes unless approved" rule is
+      for). One long vertical scroll of: Weekly scores, Standings, Week N
+      matchups (+ add/generate season), Stats feed, Scoring, AI/Claude
+      settings, Claude costs, Lineup alerts, Live, Screen fit, Player
+      database, Backup, About — 13 cards, sometimes 14 (a "Duplicate
+      players merged" card appears conditionally inside Player database).
+      Nothing is broken; it is just a lot of scrolling to reach, say,
+      Backup or About. If you want this addressed, options worth
+      discussing rather than picking one unasked: (a) group into
+      collapsible sections (League / App settings / Diagnostics, say);
+      (b) sub-tabs within Data; (c) leave it — it works, it is just long.
+      Not implementing any of this without your steer.
+- [ ] **Decide: recap.js's write-up feature is fully wired up but never
+      reachable from any button.** Found and traced precisely during the
+      2026-09-15e sweep (an earlier note in this file called all of
+      recap.js dead — that was imprecise; `Recap.generateSchedule` is very
+      much alive, it is the Data tab's "Generate the whole season" button).
+      What IS dead, confirmed by grepping every JS/Java call site: `Recap.
+      build`/`Recap.text` (recap.js), `Ai.recap()` (ai.js — a
+      Claude-written short weekly recap for the league chat, cheap-model
+      only, no web search), and `NativeBridge.share()`/`copy()` (the
+      Android methods that would put such text on the share sheet or the
+      clipboard). All four exist, are exported, compile/pass their own
+      tests, and have ZERO callers anywhere in the shipped app — no button,
+      no card, nothing invokes them. Looks like a feature that was built
+      and never given a UI trigger, not something that broke. Your call:
+      wire it up (a button somewhere — Data tab or a new one on Live/
+      Wire — that calls `Ai.recap()` with the week's settled facts and
+      offers `Native.share`/`Native.copy` on the result), or remove all
+      four as genuinely unused. Not doing either without your steer, since
+      "add a feature" and "remove working code" are both squarely
+      "major" under the standing rule.
 - [ ] **Confirm v6.3 on the phone — PRIORITY, this is a second attempt at
       the same bug**:
       ```
