@@ -23,7 +23,8 @@
       android:dataExtractionRules="@xml/data_extraction_rules"
       android:supportsRtl="true"
       android:usesCleartextTraffic="false"
-      android:hardwareAccelerated="true">
+      android:hardwareAccelerated="true"
+      android:enableOnBackInvokedCallback="true"
     <activity
         android:name=".MainActivity"
         android:exported="true"
