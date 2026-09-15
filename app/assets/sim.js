@@ -245,7 +245,7 @@
       var vals = [], w;
       for (w = 1; w <= throughWeek; w++) {
         if (!root.Store.weekIsScored(w)) continue;
-        var p = root.Store.teamWeekPoints(w, t.id).total;
+        var p = root.Store.teamWeekScore(w, t.id).total;
         if (p > 0) vals.push(p);
       }
       var m = 0, i;
