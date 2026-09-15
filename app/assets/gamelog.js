@@ -84,6 +84,40 @@
 
   /* ---- filling the cache -------------------------------------------------
    * One box score, both teams, in one Espn.gameStats call. */
+  /* Pulled out from ensureEvent (2026-09-15e sweep) so a box score fetched
+   * elsewhere — ui.js's doSync() calls Espn.gameStats(g.id) for the exact
+   * same games, every regular sync — can feed this cache directly instead
+   * of this module fetching the same game a second time. Same pattern
+   * already established for the schedule (see ui.js's liveTick comment:
+   * "FREE: this response already carries every kickoff time"), applied here
+   * to box scores instead. */
+  function ingestEvent(week, game, r) {
+    var bucket = weekBucket(week);
+    var abbrs = (game.teams || []).map(function (t) { return t.abbr; });
+    var i, abbr, k;
+    for (i = 0; i < abbrs.length; i++) {
+      abbr = abbrs[i];
+      var opp = abbrs[1 - i] || '';
+      var teamG = game.teams[i] || {}, oppG = game.teams[1 - i] || {};
+      var players = {};
+      for (k in r.players) {
+        if (!Object.prototype.hasOwnProperty.call(r.players, k)) continue;
+        if (r.players[k].abbr !== abbr) continue;
+        players[k] = { name: r.players[k].name, espnId: r.players[k].espnId, line: r.players[k].line };
+      }
+      var agg = r.teamAgg[abbr];
+      bucket[abbr] = {
+        opp: opp, home: teamG.homeAway === 'home', state: game.state,
+        teamScore: r.teamScore[abbr] !== undefined ? r.teamScore[abbr] : teamG.score,
+        oppScore: r.teamScore[opp] !== undefined ? r.teamScore[opp] : oppG.score,
+        eventId: game.id, at: new Date().toISOString(),
+        players: players,
+        dst: agg ? root.Espn.dstLine(agg) : null
+      };
+    }
+    persist();
+    return bucket;
+  }
   function ensureEvent(week, game, force) {
     var bucket = weekBucket(week);
     var abbrs = (game.teams || []).map(function (t) { return t.abbr; });
@@ -94,31 +128,7 @@
       }
       if (have) return Promise.resolve(bucket);
     }
-    return root.Espn.gameStats(game.id).then(function (r) {
-      var i, abbr, k;
-      for (i = 0; i < abbrs.length; i++) {
-        abbr = abbrs[i];
-        var opp = abbrs[1 - i] || '';
-        var teamG = game.teams[i] || {}, oppG = game.teams[1 - i] || {};
-        var players = {};
-        for (k in r.players) {
-          if (!Object.prototype.hasOwnProperty.call(r.players, k)) continue;
-          if (r.players[k].abbr !== abbr) continue;
-          players[k] = { name: r.players[k].name, espnId: r.players[k].espnId, line: r.players[k].line };
-        }
-        var agg = r.teamAgg[abbr];
-        bucket[abbr] = {
-          opp: opp, home: teamG.homeAway === 'home', state: game.state,
-          teamScore: r.teamScore[abbr] !== undefined ? r.teamScore[abbr] : teamG.score,
-          oppScore: r.teamScore[opp] !== undefined ? r.teamScore[opp] : oppG.score,
-          eventId: game.id, at: new Date().toISOString(),
-          players: players,
-          dst: agg ? root.Espn.dstLine(agg) : null
-        };
-      }
-      persist();
-      return bucket;
-    });
+    return root.Espn.gameStats(game.id).then(function (r) { return ingestEvent(week, game, r); });
   }
 
   /* ---- reading it ---------------------------------------------------------
