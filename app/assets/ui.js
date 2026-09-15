@@ -121,6 +121,14 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
+  /* data-player="name|pos|nfl" — the long-press "View stats" target (v6.0).
+     Every place a real NFL player's name/position/team is shown carries
+     this, so the one globally-wired long-press handler can identify him
+     without each call site wiring its own listener. */
+  function markPlayer(node, name, pos, nfl) {
+    if (node && name) node.setAttribute('data-player', String(name) + '|' + String(pos || '') + '|' + String(nfl || ''));
+    return node;
+  }
   /* Shared freshness text, so every cache-backed card says how old its data
      is the same way. Cheap insurance against the exact gap that let a v5.5
      card show week-old injury notes with nothing on screen admitting it. */
