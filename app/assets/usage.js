@@ -164,7 +164,11 @@
    * text length and search budget the call would actually send, computed by
    * the same functions the real call uses (Ai.adviceSearchBudget /
    * Ai.waiverSearchBudget) — never a number invented separately from what
-   * the app would really do. ~4 characters per token is the standard rough
+   * the app would really do. `model` should be the SAME depth()-resolved
+   * model ai.js's own ask()/askWaivers() would send (cheapModel() at 'cheap'
+   * depth, model() otherwise) — passing the wrong one breaks the one promise
+   * this function makes, the same way omitting it entirely used to. ~4
+   * characters per token is the standard rough
    * approximation for English prose and JSON, which is what every prompt
    * here is; outputTokens is necessarily rougher (there is no formula for
    * it the way there is for search count), but per ai.js's own comment
