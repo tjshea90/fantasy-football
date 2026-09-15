@@ -88,6 +88,7 @@ tools/test_lifecycle.js
 app/assets/gestures.js
 tools/test_gestures.js
 tools/test_locks.js
+tools/test_recap.js
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 android/res/drawable/splash_empty.xml
