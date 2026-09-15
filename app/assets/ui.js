@@ -2989,49 +2989,59 @@
     return c;
   }
 
-  /* ---------- Data: what the key has cost ----------
-   * There is no endpoint a normal API key can call to ask how much credit is
-   * left — Anthropic's Usage and Cost API needs an ADMIN key, which can read
-   * the whole organisation's spend and manage keys, and does not belong typed
-   * into a phone. So this counts what the app spent itself, from the usage each
-   * response reports about itself, and says plainly that it is doing that. */
+  /* ---------- Data: what Claude would cost ----------
+   * Tj, 2026-09-15: "get rid of anywhere it says how much Claude api usage I
+   * have left, because I no longer have the API key. Instead, put an
+   * estimate of what each request would cost." There is no endpoint a
+   * normal key can call to ask how much credit is left either way —
+   * Anthropic's Usage and Cost API needs an ADMIN key, organisation-scoped,
+   * and does not belong typed into a phone — so a "remaining balance" was
+   * always this app's own running guess, not a real one, and now that
+   * there is no key to spend it is not even that. What IS answerable
+   * without a key: what a call would cost, from its real inputs, computed
+   * live below. */
   function usageCard() {
     Usage.load();
     var t = Usage.totals();
     var c = el('div', 'card');
-    c.appendChild(el('h2', null, 'Claude spend'));
+    c.appendChild(el('h2', null, 'Claude costs'));
 
-    if (!t.calls) {
-      c.appendChild(el('p', 'muted',
-        'Nothing spent yet. Every Claude call reports its own token and search ' +
-        'counts, so once you run Sync advice this becomes an exact running ' +
-        'total of what the tracker has cost.'));
+    var adviceEst = (window.Recommend && window.Recommend.claudeAdviceEstimate)
+      ? Recommend.claudeAdviceEstimate(week, S.league.me) : null;
+    var wireEst = claudeWireEstimate();
+    if (adviceEst || wireEst) {
+      c.appendChild(el('p', 'muted', 'Estimated cost of the next call, at today\'s roster and prices:'));
+      if (adviceEst) {
+        var e1 = el('div', 'kv');
+        e1.appendChild(el('span', null, 'Sync advice (Advice tab)'));
+        e1.appendChild(el('b', null, adviceEst));
+        c.appendChild(e1);
+      }
+      if (wireEst) {
+        var e2 = el('div', 'kv');
+        e2.appendChild(el('span', null, 'Ask Claude about the wire'));
+        e2.appendChild(el('b', null, wireEst));
+        c.appendChild(e2);
+      }
+      c.appendChild(el('p', 'hint',
+        'Both are also shown right next to their own buttons. Based on how ' +
+        'many players actually need research right now (an injury designation, ' +
+        'a stale or unclear verdict) and the real prompt this exact press would ' +
+        'send — searches are almost all of the bill, so this is close even ' +
+        'though the exact output length can vary a little.'));
     } else {
+      c.appendChild(el('p', 'muted',
+        'Could not estimate right now — this needs a roster and a current week loaded.'));
+    }
+
+    if (t.calls) {
       var big = el('div', 'bigfig', Usage.money(t.spend));
+      big.style.marginTop = '12px';
       c.appendChild(big);
       c.appendChild(el('p', 'muted',
-        t.calls + ' call' + (t.calls === 1 ? '' : 's') + ' · ' + t.syncs + ' advice sync' +
-        (t.syncs === 1 ? '' : 's') + ' · ' + t.searches + ' web searches · since ' +
-        new Date(t.since).toISOString().slice(0, 10)));
-
-      if (t.budget) {
-        var bar = el('div', 'bar'); bar.style.height = '10px'; bar.style.marginTop = '10px';
-        var fill = el('i');
-        fill.style.width = Math.max(1, t.pct) + '%';
-        fill.style.background = t.pct > 90 ? 'var(--bad)' : (t.pct > 70 ? 'var(--accent)' : 'var(--good)');
-        bar.appendChild(fill);
-        c.appendChild(bar);
-        var kv = el('div', 'kv'); kv.style.marginTop = '6px';
-        kv.appendChild(el('span', null, Usage.money(t.remaining) + ' left of ' +
-          Usage.money(t.budget)));
-        kv.appendChild(el('b', null, Math.round(t.pct) + '% used'));
-        c.appendChild(kv);
-        if (t.syncsLeft !== null) {
-          c.appendChild(el('p', 'muted', 'At ' + Usage.money(t.perSync) +
-            ' per sync, that is about ' + t.syncsLeft + ' more advice syncs — ' +
-            'roughly ' + Math.floor(t.syncsLeft / 1) + ' weeks at one a week.'));
-        }
-      }
+        t.calls + ' call' + (t.calls === 1 ? '' : 's') + ' actually made · ' + t.syncs +
+        ' advice sync' + (t.syncs === 1 ? '' : 's') + ' · ' + t.searches +
+        ' web searches · since ' + new Date(t.since).toISOString().slice(0, 10)));
 
       if (t.last) {
         c.appendChild(el('p', 'muted', 'Last call: ' + t.last.what + ' · ' +
@@ -3050,14 +3060,6 @@
       });
       c.appendChild(h);
     }
-
-    var lab = el('label', 'f', 'Credit you loaded onto the key (US$, 0 to hide the meter)');
-    var inp = el('input'); inp.type = 'number'; inp.step = '1'; inp.min = '0';
-    inp.value = String(S.settings.aiBudget || 0);
-    inp.addEventListener('change', function () {
-      S.settings.aiBudget = Number(this.value) || 0; Store.save(); render();
-    });
-    c.appendChild(lab); c.appendChild(inp);
 
     var rd = el('details');
     rd.appendChild(el('summary', null, 'prices used for this estimate ▾'));
