@@ -93,6 +93,18 @@ ok((nb.match(/try \(FileOutputStream o = new FileOutputStream\(d\)\)/g) || []).l
 var alertsJ = fs.readFileSync('android/src/com/tj/fftracker/Alerts.java', 'utf8');
 ok(/try \(BufferedReader r = new BufferedReader\(new InputStreamReader\(new FileInputStream\(f\), "UTF-8"\), 16384\)\)/.test(alertsJ),
    "Alerts.java's own independent readFile() duplicate got the same try-with-resources fix");
+ok(/void shutdown\(\) \{\s*try \{ pool\.shutdownNow\(\); \}/.test(nb),
+   'NativeBridge exposes a shutdown() that stops its pool (wired to onDestroy in MainActivity)');
+/* the old catch-block comment here claimed "onKeyDown is still there" as a
+ * fallback if callback registration ever throws — false per Android's own
+ * predictive-back docs once enableOnBackInvokedCallback=true is set
+ * (unconditional in this manifest): KEYCODE_BACK interception is simply not
+ * supported any more in that mode, registration success or not. Pinned so a
+ * future edit does not quietly reintroduce the same false reassurance. */
+ok(!/an OEM shell missing the platform API: onKeyDown is still there/.test(mj),
+   'the misleading "onKeyDown is still there" fallback claim is gone');
+ok(/registerOnBackInvokedCallback failed/.test(mj),
+   'a registration failure is now logged instead of silently swallowed');
 var esp = fs.readFileSync('app/assets/espn.js', 'utf8');
 ok(esp.indexOf('httpChunk') >= 0, 'the page reassembles chunked bodies');
 ok(esp.indexOf('truncated') >= 0, 'a short read is an error, not silent corruption');
