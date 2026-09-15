@@ -182,7 +182,16 @@ ok(fs.readFileSync('app/assets/index.html','utf8').indexOf('projections.js') >= 
 ok(fs.readFileSync('app/assets/index.html','utf8').indexOf('ai.js') >= 0,
    'ai.js is loaded by the page');
 var aiRaw = fs.readFileSync('app/assets/ai.js', 'utf8');
+/* 2026-09-15e sweep: both real tool calls now pick their web_search version
+ * per model via searchToolType() rather than a single hardcoded string — see
+ * tools/test_integration.js §23 for the actual classification behaviour.
+ * web_search_20250305 must still appear as searchToolType's safe fallback
+ * (Haiku 4.5, and anything unrecognised), so "Claude is given web search"
+ * still holds either way. */
 ok(aiRaw.indexOf('web_search_20250305') >= 0, 'Claude is given web search');
+ok(/function searchToolType\(mdl\)/.test(aiRaw) &&
+   (aiRaw.match(/tools: \[\{ type: searchToolType\(mdl\)/g) || []).length === 2,
+   'both real calls (advice, waivers) pick their web_search tool version per model, not a hardcoded one');
 ok(aiRaw.indexOf('Scoring.describe()') >= 0,
    "the prompt carries this league's real scoring table");
 ok(aiRaw.indexOf('anthropic-version') >= 0, 'the API version header is sent');
