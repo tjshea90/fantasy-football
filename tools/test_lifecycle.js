@@ -62,6 +62,25 @@ function makeEl(tag) {
     setSelectionRange: function () { },
     getBoundingClientRect: function () { return { top: 0, left: 0, width: 0, height: 0 }; }
   };
+  /* 2026-09-15g: a real accessor, not the plain property this used to be.
+     render() does `root.innerHTML = ''` to clear the view before every
+     rebuild — a plain property left `children` untouched, so every
+     render() this whole suite ever made silently ACCUMULATED into the
+     same node instead of replacing it. Nothing caught this before because
+     every existing check either asserts immediately after a single action
+     (no earlier render's leftovers to collide with) or checks for
+     PRESENCE of something real, which a superset tree still satisfies —
+     it surfaced only once a Data-tab test needed to tell "is this button
+     from THIS render" apart from an identically-named one three renders
+     ago. Setting innerHTML to any string (not just '') clears children
+     the same way a real browser replaces its whole subtree — this stub
+     does not parse HTML into new nodes, so a rich `.innerHTML = '<span>…'`
+     assignment elsewhere in ui.js still clears here and stores the raw
+     string, which is enough for every test that exists today. */
+  Object.defineProperty(e, 'innerHTML', {
+    get: function () { return this._innerHTML || ''; },
+    set: function (v) { this._innerHTML = v; this.children = []; }
+  });
   return e;
 }
 
