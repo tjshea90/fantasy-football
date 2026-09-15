@@ -37,6 +37,13 @@ public class MainActivity extends Activity {
     web = new WebView(this);
     web.setLayoutParams(new ViewGroup.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    // A WebView paints WHITE by default until its own content has something
+    // to draw, regardless of the Activity's windowBackground — a well-known
+    // WebView quirk, and exactly the kind of flash Tj is describing ("I want
+    // no delays" / no logo splash). Matching @color/bg here means the very
+    // first frame this WebView ever draws is already the app's own
+    // background, not a flash of white before it.
+    web.setBackgroundColor(0xFF0E1116);
     WebSettings s = web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
