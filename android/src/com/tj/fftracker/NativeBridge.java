@@ -556,10 +556,10 @@ public class NativeBridge {
       String fn = "auto-" + System.currentTimeMillis() + ".json";
       File tmp = new File(dir, fn + ".tmp");
       File dst = new File(dir, fn);
-      FileOutputStream o = new FileOutputStream(tmp);
-      o.write(data.getBytes("UTF-8"));
-      o.getFD().sync();
-      o.close();
+      try (FileOutputStream o = new FileOutputStream(tmp)) {
+        o.write(data.getBytes("UTF-8"));
+        o.getFD().sync();
+      }
       if (!tmp.renameTo(dst)) return false;
       pruneBackups(dir);
       return true;
