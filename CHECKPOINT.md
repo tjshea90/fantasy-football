@@ -1,12 +1,12 @@
-# CHECKPOINT 90 — read me first, then TASKS.md
+# CHECKPOINT 51 — read me first, then TASKS.md
 
-**Written:** 2026-09-14T23:08:01Z · **version:** 5.7 · **tests:** all 13 suites green
+**Written:** 2026-09-15T01:46:37Z · **version:** 5.9 · **tests:** all 13 suites green
 
 ## Just done
-wrote up the full 2026-09-14e job (5 requests) in STATE.md under its own dated section -- design reasoning, the four rejected third-party projection sources and why (NFL.com anonymous access returns null data, FantasyPros 403s without a paid key, Yahoo needs OAuth, MyFantasyLeague needs a real hosted league ID), the two bugs the test suites caught before commit, and the one known pre-existing limitation left intentionally un-fixed (unscoped/stale Claude-verdict lookup in projectOne, affects every team equally, not introduced today). Moved the finished job from TASKS.md to LADDER.md section 27 with each box named against the test that proves it, and reset TASKS.md to no-active-job plus an updated 'waiting on Tj' phone-confirmation list for today's changes.
+resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.8->v5.9 doc edits were already complete and consistent at HEAD, verified all 13 suites + ES2018 gate green on the current tree, and confirmed the v5.9 GitHub Release the previous session already triggered was fully published (non-empty assets, FFTracker-v5.9.apk uploaded with correct content type) -- the previous session had finished ship+publish but was cut off before confirming it and telling Tj
 
 ## Do this next
-run ship.sh -- first real build.sh run on this container will download the Android SDK (~600MB), so it may take a few minutes. Verify the dex contains every class, all 13 suites gate green, then trigger publish-release.yml, verify the Release actually published (assets non-empty), and send Tj the plain tappable Release link per the CLAUDE.md standing rule -- not a code block.
+send Tj the v5.9 release link now (standing rule, was never sent); after that, nothing active -- next session should just check TASKS.md 'Waiting on Tj' for anything he's answered
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,17 +26,15 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a8e2c3f ship v5.9: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
+  6ff1bcd ship v5.8: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
+  a6e7847 ckpt 90: wrote up the full 2026-09-14e job (5 requests) in STATE.md under its own dated 
   4cd42ce ckpt 82: task 5 done: injury/questionable tags (same flags the Advice tab already comput
   e10158d ckpt 75: tasks 1-4 done: (1) app now auto-advances to the current NFL week on cold boot 
   41a9374 ckpt 52: wrote Tj's 5-part request (auto-select current NFL week everywhere, stop showin
   b59fff0 ckpt 148: corrected the standing rule immediately on Tj's feedback: a fenced code block 
   65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
-  c20caaf ckpt 143: verified the Release pipeline end-to-end and closed the loop: triggered publis
-  66dcf03 ckpt 137: redesigned the release trigger after discovering git tag-push 403s for this se
-  7da2ea2 ckpt 134: built the real GitHub Release pipeline Tj asked for, after confirming this ses
-  3c3ecc2 ckpt 129: wrote Tj's request to style the ship-link message like a real GitHub Release (
-  a853fb4 ckpt 127: made the CLAUDE.md APK-link standing rule explicit about FORMAT, not just URL 
 ```
 
-(7 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
