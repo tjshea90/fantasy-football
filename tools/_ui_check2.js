@@ -26,8 +26,6 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const row = rows[0];
   const box = await row.boundingBox();
   console.log('long-pressing row at', box);
-  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-  // touchscreen.tap is instantaneous; need a manual dispatch for a true long-press
   const touchPoint = { identifier: 1, clientX: box.x + 5, clientY: box.y + 5, pageX: box.x + 5, pageY: box.y + 5 };
   await row.dispatchEvent('touchstart', { touches: [touchPoint], changedTouches: [touchPoint], targetTouches: [touchPoint] });
   await page.waitForTimeout(650); // > LONGPRESS_MS (500)
