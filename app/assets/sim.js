@@ -353,9 +353,9 @@
              picks: picks, misses: misses };
   }
 
-  root.Sim = { matchup: matchup, season: season, power: power, allPlay: allPlay,
+  root.Sim = { season: season, power: power, allPlay: allPlay,
                regret: regret, positionCV: positionCV, teamProfile: teamProfile,
-               invalidate: invalidate, lineupMeans: lineupMeans,
+               invalidate: invalidate,
                SIMS: SIMS, PLAYOFF_TEAMS: PLAYOFF_TEAMS, _rng: rng, _draw: draw };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Sim;
 })(typeof window !== 'undefined' ? window : this);
