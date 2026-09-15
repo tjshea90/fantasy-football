@@ -52,7 +52,8 @@ step, the way every job in this repo already does.
       costs" section with the corrected copy and no errors.
 - [x] 5. All 14 suites + the ES2018 gate green throughout, `bash build.sh`
       run clean repeatedly (28 classes, signature OK) after every round.
-      Shipped as v6.4 — see the Release link Tj was sent.
+      Shipped — see the Release link Tj was sent, and STATE.md's entry for
+      the version number.
 
 **There is no OTHER active job right now.** The most recent one (2026-09-15d: the
 back button still closing the app on a real device, even after 2026-09-15c
