@@ -1,6 +1,60 @@
 # TASKS — the current job, in Tj's words
 
-## 2026-09-15: stats tab + game logs + long-press player stats + top players
+**There is no active job right now.** Both of today's (2026-09-15) requests
+— the resume-system fix and the Stats tab — are complete, shipped as v6.0,
+and archived at the end of `LADDER.md` (§28, §29).
+
+## When Tj asks for something new
+
+Write it HERE FIRST, in his own words, as unticked boxes — before writing any
+code. Until it is written into `TASKS.md` as real steps, nobody has actually
+planned the work — a message sitting in a chat window is not a task list.
+
+**You do not have to race a usage cap to get the raw request itself onto
+disk any more.** A `UserPromptSubmit` hook (`tools/capture_inbox.sh`) already
+writes every message Tj sends to `INBOX.md`, verbatim, before you do
+anything else — see `INBOX.md`'s own header and CLAUDE.md's "Saving work".
+This does not lower the bar on writing `TASKS.md` promptly; it means a
+forgotten or interrupted `TASKS.md` write is now recoverable instead of a
+total loss.
+
+```
+# TASKS — the <date> request, in Tj's words
+
+> "<paste what he actually said, verbatim>"
+
+- [ ] 1a. <first step>
+- [ ] 1b. <second step>
+```
+
+Ticking a box means: written, tested, committed, and the test that proves it is
+named in the box. **Never tick a box you have not verified** — the next account
+will not re-check it.
+
+When a job is finished, move it to `LADDER.md` and reset this file. This file
+is printed into every session briefing, so a finished job left here is re-read
+at cost on every cold start, forever.
+
+## Waiting on Tj
+
+- [ ] **Confirm v6.0 on the phone**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.0
+      ```
+      Fully verified server-side (real Release, asset uploaded, correct
+      content type) and the new Stats tab was verified live against real
+      ESPN data in a real browser before shipping — but neither of those is
+      a real device. Specifically worth checking: the new Stats tab (search
+      a player, browse by team, top players) and long-press "View stats" on
+      a player row anywhere else in the app (Live, Lineups, Rosters, Wire) —
+      hold, don't tap. This also supersedes the older v5.7/2026-09-14e
+      confirmation asks below, which v6.0 carries forward unchanged.
+- [ ] **Confirm the v5.7 GitHub Release link downloads cleanly** (superseded
+      by the v6.0 confirmation above — only worth a separate look if v6.0
+      itself has a problem and it's useful to know whether it predates v5.7):
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v5.7
+      ```
 
 > "Make a new tab and section in this app called stats. In the stats section
 > i can search for any current NFL player using the search feature already in
