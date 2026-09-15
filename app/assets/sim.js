@@ -194,7 +194,7 @@
       if (!root.Store.weekIsScored(w)) continue;
       var pts = [];
       S.teams.forEach(function (t) {
-        pts.push({ id: t.id, p: root.Store.teamWeekPoints(w, t.id).total });
+        pts.push({ id: t.id, p: root.Store.teamWeekScore(w, t.id).total });
       });
       for (i = 0; i < pts.length; i++) {
         if (pts[i].p <= 0) continue;          /* an empty roster is not a loss */
