@@ -490,8 +490,17 @@ ok(!/res\.twoPts\.push/.test(espnX), 'the write-only twoPts collector is gone');
 ok(/function bookNames/.test(storeX), 'bookNames() is KEPT — the test suite is its caller');
 ok(/NOT dead code/.test(storeX), 'and it is commented so it is not deleted again');
 ok(!/ladder step 8/.test(uiX), 'the "not built yet" advice placeholder is gone');
-ok(/function priceOf\(u\)/.test(usX) && /var r = rates\(\);/.test(usX),
-   'priceOf drops the parameter nobody passed and declares its rates locally');
+/* 2026-09-15e sweep: priceOf grew a real second parameter (model) so it can
+ * price a call at the tier it actually ran on, superseding the older pin
+ * that asserted no second parameter at all — that pin was about a dead,
+ * never-passed `r` argument (v3.10), not a promise the signature would never
+ * grow a meaningful one. */
+ok(/function priceOf\(u, model\)/.test(usX) && /var r = rates\(model\);/.test(usX),
+   'priceOf prices a call using the rate tier of the model that actually ran it');
+ok(/var RATE_TIERS = \{/.test(usX) && /opus:\s*\{ inPerM: 5\.00/.test(usX) &&
+   /haiku:\s*\{ inPerM: 1\.00/.test(usX),
+   'usage.js prices Opus/Sonnet/Haiku calls at their own published rates, not one flat table');
+ok(/function tierFor\(model\)/.test(usX), 'the tier is chosen from the model string, not assumed');
 
 ok(/opponentsForWeek\(week\)\['catch'\]/.test(recX),
    'a failed schedule no longer abandons the injury feed, projections and Claude');
