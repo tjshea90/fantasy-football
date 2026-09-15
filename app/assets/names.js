@@ -111,8 +111,19 @@
     ['hollywood brown', 'marquise brown'],   /* goes by Hollywood on most boards */
     ['bam knight', 'zonovan knight'],        /* ESPN and Sleeper disagree on this one */
     ['chig okonkwo', 'chigoziem okonkwo'],
-    ['gabe davis', 'gabriel davis'],
     ['deebo samuel', 'tyshun samuel']
+    /* 'gabe davis' / 'gabriel davis' used to be here too (2026-09-15e sweep:
+       removed) — it did not belong. This list's own rule is "no rule could
+       derive it", but NICK above already has gabriel: ['gabe'], and canon()'s
+       first-token TOFORMAL fold plus variants()'s NICK expansion derive both
+       directions of this exact pair on their own — traced by hand: canon()
+       folds "gabe davis" -> "gabriel davis" regardless of ALIAS, and
+       variants("Gabriel Davis") already generates "gabe davis" via the
+       generic w[0] in NICK check, with zero dependence on this list. Every
+       remaining entry above is a real curated alias no generic rule
+       produces (a stage name, a spelling disagreement between feeds, a
+       given name not in NICK at all) — this was the one that duplicated
+       what the nickname table already did for free. */
   ];
   var ALIAS = {};
   /* normalised spelling -> EVERY spelling in its group. canon() only needs one
