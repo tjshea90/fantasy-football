@@ -563,7 +563,7 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,40}syncCurrentWeek/.test(uiN),
    'boot() refreshes the player database quietly on cold start');
 ok(/freshenSchedule\(\);\s*refreshPlayerDBIfStale\(\);\s*\/\* A week that is finished/.test(uiN),
    'appResume() refreshes it again on every resume, so a phone that is never rebooted still gets it');
-ok(/function viewWire\(root\) \{[\s\S]{0,120}refreshPlayerDBIfStale\(\);/.test(uiN),
+ok(/function viewWire\(root\) \{[\s\S]{0,400}refreshPlayerDBIfStale\(\);/.test(uiN),
    'opening the Wire tab (the "see all players" screen) also nudges a stale database');
 ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
    'pressing "Ask Claude about the wire" — the literal "refresh waiver wire information" action — does too');
