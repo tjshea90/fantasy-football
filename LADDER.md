@@ -975,6 +975,7 @@ and everything the item-8 sweep found and fixed, are in STATE.md's
       hit) and `tools/test_integration.js` (the memoised estimate proven to
       change immediately when a price rate changes).
 
-Shipped as v6.2. Release published and verified (`mcp__github__get_
-release_by_tag`, non-empty assets, correct content type) before telling
-Tj. All 13 suites green throughout, `bash build.sh` run clean twice.
+Shipped as v6.2. Release published and verified
+(`mcp__github__get_release_by_tag`, non-empty assets, correct content
+type) before telling Tj. All 13 suites green throughout, `bash build.sh`
+run clean twice.
