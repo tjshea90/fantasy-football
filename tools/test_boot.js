@@ -49,6 +49,19 @@ ok(css.indexOf('--ins-top') >= 0 && css.indexOf('--adj-top') >= 0, 'CSS has inse
 ok(html.indexOf('__setInsets') >= 0 && html.indexOf('__setAdjust') >= 0, 'page exposes both inset hooks');
 var nb = fs.readFileSync('android/src/com/tj/fftracker/NativeBridge.java', 'utf8');
 ok(nb.indexOf('.bak') >= 0, 'saves keep a .bak fallback');
+/* v6.4 (2026-09-15e sweep): load() used to fall back to .bak only on a
+ * missing/empty main file (`s == null || s.length() < 2`) — a READABLE but
+ * CORRUPTED file (truncated write, bit-rot) was returned as-is, and
+ * store.js's own JSON.parse failure then silently reset a whole season to
+ * the bundled seed instead of using the intact .bak right next to it. No
+ * JUnit exists in this hand-rolled build (confirmed: no *.java test file
+ * anywhere in the repo), so this is pinned as source text the same way the
+ * rest of this file does for Java, backed by `bash build.sh`'s real
+ * compile as the correctness check a unit test would otherwise be. */
+ok(!/if \(s == null \|\| s\.length\(\) < 2\) s = readFile/.test(nb),
+   'load() no longer uses the length-only check that skipped .bak for a readable-but-corrupted file');
+ok(/private boolean looksLikeJson\(String s\)/.test(nb) && /new org\.json\.JSONTokener\(s\)\.nextValue\(\)/.test(nb),
+   'load() now validates the main file is actually parseable JSON before accepting it over .bak');
 ok(nb.indexOf('httpChunk') >= 0 && nb.indexOf('CHUNK_LIMIT') >= 0,
    'large HTTP bodies cross the bridge in chunks (ARI was too big in one piece)');
 ok(nb.indexOf('ERRMARK') >= 0, 'network failures return a reason, not a silent null');
