@@ -13,10 +13,16 @@ in full in `BRIEF.md`. They are not repeated here. Do not violate them.
 ## Starting a session
 
 A `SessionStart` hook has already run `tools/resume.sh`, which pulled the
-latest from GitHub and printed `CHECKPOINT.md`, `TASKS.md` and the rules into
-your context. **Do not re-run bootstrap, do not re-plan, do not re-read
-finished work.** Continue from **Do this next** in `CHECKPOINT.md`, or the
-first unticked `[ ]` in `TASKS.md`.
+latest from GitHub and printed `CHECKPOINT.md`, `TASKS.md`, the tail of
+`INBOX.md` and the rules into your context. **Do not re-run bootstrap, do not
+re-plan, do not re-read finished work.** Continue from **Do this next** in
+`CHECKPOINT.md`, or the first unticked `[ ]` in `TASKS.md`.
+
+**Check the `INBOX.md` tail against `TASKS.md` before assuming you know the
+whole job.** `INBOX.md` is a raw, guaranteed-captured log of every message Tj
+sends (see "When Tj asks for something new" below) — if it names something
+`TASKS.md` does not yet cover, that is a request a previous session never
+got around to writing down, not a stale duplicate.
 
 **If you did not see that briefing, run `bash tools/resume.sh` before doing
 anything else, and tell Tj it did not fire** — it means the hook is not
