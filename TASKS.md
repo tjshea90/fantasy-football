@@ -39,19 +39,22 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
-- [ ] **Confirm v6.0 on the phone**:
+- [ ] **Confirm v6.1 on the phone**:
       ```
-      https://github.com/tjshea90/fantasy-football/releases/tag/v6.0
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.1
       ```
-      Fully verified server-side (real Release, asset uploaded, correct
-      content type) and the new Stats tab was verified live against real
-      ESPN data in a real browser before shipping — but neither of those is
-      a real device. Specifically worth checking: the new Stats tab (search
-      a player, browse by team, top players) and long-press "View stats" on
-      a player row anywhere else in the app (Live, Lineups, Rosters, Wire) —
-      hold, don't tap. This carries forward and supersedes every older
-      confirmation ask below (v5.5 through v5.9) — if v6.0 looks right,
-      those do not need a separate look.
+      v6.0 shipped with two real bugs Tj found on his own phone within
+      minutes (Top Players stuck on a stale week; team roster rows missing
+      player names) — both fixed same-day in v6.1, verified live in a
+      browser reproducing his exact steps, but not yet confirmed on a real
+      device. Specifically worth checking: Stats tab → Top players → switch
+      weeks with the header arrows and back (should always match the header,
+      never get stuck) → Stats tab → By team → any team (rows should show
+      player names). Long-press "View stats" (hold, don't tap) on a player
+      row anywhere else in the app (Live, Lineups, Rosters, Wire) is also
+      still unconfirmed on a real device. This carries forward and
+      supersedes every older confirmation ask below (v5.5 through v5.9) —
+      if v6.1 looks right, those do not need a separate look.
 - [ ] **Confirm the v5.7 GitHub Release link downloads cleanly**:
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v5.7
