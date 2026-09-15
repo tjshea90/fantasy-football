@@ -347,10 +347,16 @@
     var rep = replacement(week), out = [], i;
     for (i = 0; i < starters.length; i++) {
       var s = starters[i];
-      var pos = (s.pos === 'FLEX') ? 'RB' : s.pos;
+      /* the PLAYER's real position, not the slot label — a FLEX slot is
+       * not itself a position to measure a replacement level for or to
+       * hand Claude as something to go find on the wire (fixed in the
+       * 2026-09-15e sweep; this used to hardcode every FLEX starter
+       * against RB's replacement level regardless of who was actually
+       * starting there, wrong for the common WR/TE-in-flex case). */
+      var pos = s.realPos || s.pos;
       var r = rep[pos] || 0;
       var gap = (s.proj || 0) - r;
-      out.push({ pos: s.pos, slot: s.slot, name: s.name, proj: s.proj || 0, gap: gap,
+      out.push({ pos: pos, slot: s.slot, name: s.name, proj: s.proj || 0, gap: gap,
                  note: gap <= 0
                    ? 'the wire already has someone better at this position'
                    : (gap < 2 ? 'barely above what is freely available' : '') });
