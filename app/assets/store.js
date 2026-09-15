@@ -464,9 +464,22 @@
   }
 
   /* --- stats -------------------------------------------------------- */
+  /* NOT markArchive() here (found in the 2026-09-15e sweep) — getStats is
+   * reached from plain READS (lineFor -> playerPoints -> teamWeekPoints ->
+   * standings/seasonTotals, and the Live tab's matchup card), not just from
+   * writers, and this file's own header above states the archive split's
+   * whole contract: "Every path that changes a scored week... calls
+   * markArchive()." Lazily allocating an EMPTY bucket for a week nobody has
+   * synced yet is not a change. Before this fix, simply opening the Live tab
+   * for an unsynced week (the common case right after boot, before any sync
+   * has run) silently dirtied the archive, so the NEXT unrelated save (one
+   * lineup dropdown) paid the full ~1.9MB archive write the split exists to
+   * avoid, instead of the ~25KB main-file-only write. Real writers
+   * (setLine, setBook below) already call markArchive() themselves — this
+   * never depended on the lazy-init doing it too. */
   function getStats(week) {
     var w = String(week);
-    if (!S.stats[w]) { S.stats[w] = {}; markArchive(); }
+    if (!S.stats[w]) { S.stats[w] = {}; }
     return S.stats[w];
   }
   function setLine(week, pid, line) { getStats(week)[pid] = line; markArchive(); }
