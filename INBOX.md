@@ -87,3 +87,18 @@ After all these are finished, run tests that everything works and everything is 
   - The four `ensureFresh()` call sites (boot, appResume, viewWire, wire-sync click) correctly dedupe against *each other* via `inFlight` — e.g. a cold boot landing on the Wire tab calls `refreshPlayerDBIfStale()` twice in a row (once from `viewWire()`, once from `boot()` itself) and this is harmless, since both go through `ensureFresh()`. The race is specifically between those call sites and the one that bypasses the guard (finding #1).
 </agent-message>
 ```
+
+## 2026-09-15T04:14:37Z
+```
+<task-notification>
+<task-id>a2be1d45209e70835</task-id>
+<tool-use-id>toolu_01UiXKpMP4x2QfhawPb188Qo</tool-use-id>
+<output-file>/tmp/claude-0/-home-user-fantasy-football/08618078-1adc-56c2-b2c1-f59bd1c8cc23/tasks/a2be1d45209e70835.output</output-file>
+<status>completed</status>
+<summary>Agent "Code-quality review of item 1-7 diff" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>This agent's report was delivered to you as a message from "a2be1d45209e70835" (its SubagentHandback call). Read it there; it is not repeated here.
+</result>
+<usage><subagent_tokens>153460</subagent_tokens><tool_uses>46</tool_uses><duration_ms>507616</duration_ms></usage>
+</task-notification>
+```
