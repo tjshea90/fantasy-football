@@ -2085,6 +2085,10 @@
     west.textContent = westText ? ('Estimated cost: ' + westText + ' on the Claude API, at current prices (Data → Claude costs).') : '';
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
+      /* This IS "refreshing waiver wire information" — fired in the
+       * background alongside the injury/Claude chain below, never awaited,
+       * so it adds no latency to a call that already costs money. */
+      refreshPlayerDBIfStale();
       jobStart('waivers', 'Refreshing the injury feed…');
       /* The injury feed is refreshed FIRST, forced — a paid Claude call must
          not reason from whatever ESPN designations happen to already be
