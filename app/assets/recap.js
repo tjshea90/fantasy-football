@@ -15,7 +15,7 @@
     var S = root.Store.get(), teams = S.teams, i;
     var scores = [];
     teams.forEach(function (t) {
-      scores.push({ id: t.id, name: t.name, pts: root.Store.teamWeekPoints(week, t.id).total });
+      scores.push({ id: t.id, name: t.name, pts: root.Store.teamWeekScore(week, t.id).total });
     });
     scores.sort(function (a, b) { return b.pts - a.pts; });
     var high = scores[0], low = scores[scores.length - 1];
@@ -24,8 +24,8 @@
     var mus = root.Store.getMatchups(week), games = [];
     for (i = 0; i < mus.length; i++) {
       var a = mus[i][0], b = mus[i][1];
-      var pa = root.Store.teamWeekPoints(week, a).total;
-      var pb = root.Store.teamWeekPoints(week, b).total;
+      var pa = root.Store.teamWeekScore(week, a).total;
+      var pb = root.Store.teamWeekScore(week, b).total;
       games.push({ a: a, b: b, pa: pa, pb: pb, margin: Math.abs(pa - pb),
                    winner: pa >= pb ? a : b, loser: pa >= pb ? b : a,
                    winPts: Math.max(pa, pb), losePts: Math.min(pa, pb) });
