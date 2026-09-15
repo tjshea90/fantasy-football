@@ -1,6 +1,40 @@
 # TASKS — the current job, in Tj's words
 
-**There is no active job right now.** The most recent one (2026-09-15f: the
+## 2026-09-15g: wire up the weekly recap feature, and sub-navigation for the Data tab
+
+> "Build The 'weekly recap' Claude write-up feature you told me about. Make
+> the button where it is most appropriate but it shouldn't push away any
+> major feature because I probably won't use it much. Then organize the
+> data tab with sub navigation that is smart and easy to understand. When
+> you are done, test that it all works and didn't break anything else in
+> the app"
+
+Tj's answer to both items flagged (not implemented) at the end of the
+2026-09-15e sweep — see TASKS.md's prior "Waiting on Tj" entries and
+STATE.md's 2026-09-15e entry for the precise trace of what is dead
+(`Recap.build`/`Recap.text`, `Ai.recap()`, `NativeBridge.share()`/`copy()`)
+vs. alive (`Recap.generateSchedule`, unrelated, left untouched) in
+recap.js, and the exact 13-14-card list on the Data tab. Both are now
+explicitly authorized — this is no longer "major, ask first," it is the
+job.
+
+- [ ] 1. Recap feature: re-verify the existing recap.js/ai.js/
+      NativeBridge.java pieces still do what the trace found, design the
+      button placement (low-prominence, does not compete with anything he
+      actually uses weekly — his own words: "probably won't use it much"),
+      wire it to `Ai.recap()` with the week's settled facts and
+      `Native.share`/`Native.copy` on the result, real tests.
+- [ ] 2. Data tab: design sub-navigation for the 13-14 cards that is
+      "smart and easy to understand" — group by what they're for, not an
+      arbitrary split — implement, real tests, a live-browser check that
+      every card is still reachable and nothing behind the split silently
+      became unreachable.
+- [ ] 3. Full test suite + ES2018 gate + `bash build.sh` green. Live-browser
+      pass confirming both features actually work and nothing else in the
+      app regressed (Tj's own explicit ask: "test that it all works and
+      didn't break anything else"). Ship if ship-worthy.
+
+**There is no OTHER active job right now.** The most recent one (2026-09-15f: the
 app never advanced past a finished NFL week unless truly cold-booted) is
 complete, shipped as v6.5, and archived at LADDER.md §33 — full
 root-cause writeup in STATE.md's 2026-09-15f entry. **Tell Tj plainly that
