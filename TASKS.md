@@ -50,29 +50,47 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
-- [ ] **Confirm v6.2 on the phone**:
+- [ ] **Confirm v6.3 on the phone — PRIORITY, this is a second attempt at
+      the same bug**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.3
+      ```
+      v6.2 already claimed the back button was fixed, proven by every test
+      that existed at the time — and it still closed the app on Tj's real
+      phone. Root cause: v6.2 only registered the classic
+      `onKeyDown(KEYCODE_BACK)` handler, but a real Android 13+ phone's
+      gesture-based back SWIPE (the default nav style on most modern
+      phones) never generates that event at all once predictive back is
+      active — it never reached the app's own logic. v6.3 registers the
+      platform's `OnBackInvokedCallback` (API 33+) alongside the old
+      handler, which is the correct fix for gesture nav specifically. There
+      is no `adb`/emulator in this environment, so **this genuinely could
+      only be tested by compiling and reasoning about it, not by
+      reproducing the failure** — if the back button still closes the app
+      after this one, say so exactly the way you did this time (which tab
+      you were on, whether you used a swipe or a physical/on-screen back
+      button) rather than assuming it's the same already-reported issue —
+      the next session needs to know if v6.3's specific fix (predictive
+      back) didn't hold, which points somewhere new entirely.
+      Also still worth checking while there (all from v6.2, unrelated to
+      the back-button fix, not yet confirmed): (1) switch to another app
+      and back — should reopen on whatever tab was open, not jump to Live;
+      (2) same switch-away-and-back — no flash of the app logo before the
+      screen you were on reappears; (3) Data tab → "Claude costs" card —
+      live dollar estimates next to "Sync advice" and "Ask Claude about the
+      wire", never a "$X left" meter; (4) Advice tab → "Bench, ranked" card
+      → each bench player has its own "why not ▾"; (5) Rosters tab → your
+      team roster above the trade evaluator; (6) Data tab → "Player
+      database" card mentions it also refreshes itself automatically. This
+      supersedes both v6.2 and v6.1 below.
+- [ ] **Confirm v6.2 on the phone** (superseded by v6.3 above — the back
+      button specifically is now known-broken on v6.2, so there is no
+      reason to test that build further):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.2
       ```
-      This is the one that most needs a real device — several of its 8
-      items are exactly the kind of thing a browser harness cannot prove
-      (real backgrounding, a real process kill, a real Android 12+ splash
-      screen). Specifically worth checking: (1) press the Android back
-      button from a non-Live tab — should unwind to wherever you came from,
-      never straight to the home screen; (2) switch to another app and back
-      — should reopen on whatever tab was open, not jump to Live; (3) same
-      switch-away-and-back — no flash of the app logo before the screen you
-      were on reappears; (4) Data tab → "Claude costs" card — should show
-      live dollar estimates next to "Sync advice" and "Ask Claude about the
-      wire", never a "$X left" meter or a percentage; (5) Advice tab →
-      "Bench, ranked" card → each bench player should have its own "why not
-      ▾" explanation, same as starters' "why ▾"; (6) Rosters tab → your team
-      roster should render above the trade evaluator, not below; (7) Data
-      tab → "Player database" card should mention it also refreshes itself
-      automatically. This carries forward and supersedes the v6.1 ask below
-      — if v6.2 looks right, that one does not need a separate look.
-- [ ] **Confirm v6.1 on the phone** (superseded by v6.2 above; only worth a
-      separate look if v6.2's own check above turns up something the v6.1
+- [ ] **Confirm v6.1 on the phone** (superseded by v6.2/v6.3 above; only
+      worth a separate look if those checks turn up something the v6.1
       fixes might be involved in):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.1
