@@ -492,15 +492,17 @@ public class Alerts {
     if (s == null || s.length() < 2) s = readFile(new File(ctx.getFilesDir(), STATE_FILE + ".bak"));
     return s;
   }
+  /* try-with-resources (2026-09-15e sweep) — an independent copy of
+   * NativeBridge.java's own readFile() with the identical fix; see that
+   * file's comment for why an unclosed stream on exception is a real,
+   * accumulating leak, not a theoretical one. */
   private static String readFile(File f) {
-    try {
-      if (!f.exists()) return null;
-      BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"), 16384);
+    if (!f.exists()) return null;
+    try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"), 16384)) {
       StringBuilder sb = new StringBuilder();
       char[] buf = new char[16384];
       int k;
       while ((k = r.read(buf)) > 0) sb.append(buf, 0, k);
-      r.close();
       return sb.toString();
     } catch (Exception e) { return null; }
   }
