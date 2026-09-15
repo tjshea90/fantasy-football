@@ -2737,7 +2737,12 @@
   function viewData(root) {
     var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
     root.appendChild(dataSubNav());
-    if (dataSubView !== 'league') return viewDataRest(root);
+    if (dataSubView === 'league') viewDataLeague(root);
+    else if (dataSubView === 'claude') viewDataClaude(root);
+    else if (dataSubView === 'sync') viewDataSync(root);
+    else viewDataApp(root);
+  }
+  function viewDataLeague(root) {
     addSafe(root, 'Weekly scores', weeklyScoresCard);
     addSafe(root, 'Standings', standingsCard);
     /* matchups */
