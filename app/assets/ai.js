@@ -1029,6 +1029,7 @@
               cheapModel: cheapModel, listModels: listModels, cachedModels: cachedModels,
               askWaivers: askWaivers, buildWaiverPrompt: buildWaiverPrompt,
               adviceSearchBudget: adviceSearchBudget, waiverSearchBudget: waiverSearchBudget,
+              searchToolType: searchToolType,
               _waiverPrefix: waiverPrefix, _waiverBlock: waiverBlock,
               FALLBACK_MODELS: FALLBACK,
               _staticPrefix: staticPrefix, _rosterBlock: rosterBlock, _parseSse: parseSse, configured: configured, model: model,
