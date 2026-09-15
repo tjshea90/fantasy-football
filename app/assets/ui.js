@@ -2071,7 +2071,7 @@
         });
     });
     var wrow = el('div', 'dbrow'); wrow.appendChild(wsync);
-    wcard.appendChild(wrow); wcard.appendChild(wnote);
+    wcard.appendChild(wrow); wcard.appendChild(wnote); wcard.appendChild(west);
     c.appendChild(wcard);
 
     /* The same round trip as the Advice tab, on the same card component, for
