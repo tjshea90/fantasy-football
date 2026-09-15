@@ -250,7 +250,16 @@
       var b = ctx.el('button', 'fchip' + (on ? ' on' : ''), ab);
       b.addEventListener('click', function () {
         selTeamAbbr = ab; selTeamWeek = null;
-        var through = root.Store.get().settings.currentWeek;
+        /* ctx.week — the header's globally-shared selected week, NOT
+         * S.settings.currentWeek (the app's separate notion of "the real
+         * current NFL week"). Found in the 2026-09-15e sweep: this used to
+         * read the latter, so browsing a team while the header was set to
+         * an earlier week (reviewing an old week's Advice tab, say) would
+         * silently default to the CURRENT week's games instead of
+         * respecting what the header actually has selected — the same
+         * shape of bug topCard's own comment above already documents and
+         * was fixed for once (Top Players stuck on the wrong week). */
+        var through = ctx.week;
         var weeks = root.Gamelog.playedWeeks(ab, through);
         var target = weeks.length ? weeks[0] : through;
         loadTeamRoster(ctx, ab, target);
