@@ -151,10 +151,10 @@ function run() {
     var callsBefore = gameStatsCalls;
     return W.Gamelog.teamWeek('NE', 10).then(function () {
       ok(gameStatsCalls === callsBefore + 1, 'a cached \'in\' entry still re-fetches on the next plain read (live scores move)');
+      /* ---- a real network failure must never read as "no games yet" ----- */
+      W.Store.get().byes.XX = 0;
+      return W.Gamelog.playerLog({ n: 'Nobody Real', p: 'QB', t: 'XX' }, 20);
     });
-    /* ---- a real network failure must never read as "no games yet" ------- */
-    W.Store.get().byes.XX = 0;
-    return W.Gamelog.playerLog({ n: 'Nobody Real', p: 'QB', t: 'XX' }, 20);
   }).then(function () {
     ok(false, 'playerLog should have rejected when every week failed to fetch, not resolved quietly');
   }, function (e) {
