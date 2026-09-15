@@ -173,8 +173,9 @@
   /* Refresh from ESPN: 32 team rosters, sequential so a phone on cellular does
    * not open 32 sockets at once. Each team gets one retry — a single dropped
    * request should not cost a whole team's roster.
-   * onProgress(done, total, teamAbbr). */
-  function refresh(onProgress) {
+   * onProgress(done, total, teamAbbr). Private: always call refresh() below,
+   * never this directly — see the single-flight guard there. */
+  function doRefresh(onProgress) {
     var d = get();
     var byKey = {}, i;
     for (i = 0; i < d.players.length; i++) byKey[norm(d.players[i].n)] = d.players[i];
