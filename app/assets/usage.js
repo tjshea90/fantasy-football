@@ -124,7 +124,7 @@
   /* Record one call. `what` is a short label ('advice sync', 'key test'). */
   function record(what, model, usage) {
     if (!led.since) load();
-    var p = priceOf(usage);
+    var p = priceOf(usage, model);
     var entry = { at: Date.now(), what: what, model: model || '',
                   cost: p.cost, tokensIn: p.tokensIn, tokensOut: p.tokensOut,
                   searches: p.searches };
