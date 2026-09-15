@@ -897,5 +897,25 @@ ok(/settings\.currentWeek : 1/.test(stH),
      'usageSwing passes the raw name to bookTrend, not norm(p.name) — the exact mismatch bookTrend now resolves itself');
 }());
 
+/* 2026-09-15f: syncCurrentWeek() (the auto-advance-to-the-real-NFL-week
+ * check) used to be called ONLY from boot() — a true cold start. This app
+ * deliberately keeps its process alive across a background/foreground
+ * cycle (moveTaskToBack, not finish(), on back press), so anyone who does
+ * not force-quit the app could go days without a real re-check. Now also
+ * called from appResume(), proven end-to-end with a real Espn.currentWeek
+ * stub in tools/test_lifecycle.js; this just pins that the call site
+ * exists and sits before the "week already final" early return, which is
+ * exactly the state where the check matters most. */
+(function () {
+  var uiSrc2 = fs.readFileSync('app/assets/ui.js', 'utf8');
+  var arIdx = uiSrc2.indexOf('function appResume()');
+  var arBody = uiSrc2.slice(arIdx, uiSrc2.indexOf('function ', arIdx + 20));
+  ok(/syncCurrentWeek\(\);/.test(arBody), 'appResume() calls syncCurrentWeek(), not just boot()');
+  var syncCallIdx = arBody.indexOf('syncCurrentWeek();');
+  var earlyReturnIdx = arBody.indexOf('m.synced && m.allFinal');
+  ok(syncCallIdx >= 0 && earlyReturnIdx >= 0 && syncCallIdx < earlyReturnIdx,
+     'and it runs BEFORE the "week already final" early return, not after (or it would never get a chance to run once a week looks done)');
+}());
+
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
