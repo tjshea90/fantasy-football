@@ -979,3 +979,42 @@ Shipped as v6.2. Release published and verified
 (`mcp__github__get_release_by_tag`, non-empty assets, correct content
 type) before telling Tj. All 13 suites green throughout, `bash build.sh`
 run clean twice.
+
+## 31. Back button STILL closed the app on a real device — v6.2's fix was real but incomplete (Tj, 2026-09-15, v6.3)
+
+> "The back button still closes the app to my home screen"
+
+The identical symptom §30 item 2 had just claimed was fixed. Full
+root-cause writeup is in STATE.md's 2026-09-15d entry — not repeated here,
+but the one-line version: `onKeyDown(KEYCODE_BACK)` is the classic
+back-dispatch path, and on a real Android 13+ phone with predictive back
+active (this app's targetSdk 36 default), a gesture-based back SWIPE
+never synthesizes that `KeyEvent` at all — the platform calls a
+completely separate `OnBackInvokedCallback` dispatch instead, which
+nothing in this app had ever registered. `onKeyDown` silently never fired
+on Tj's phone; `ui.js`'s own `__onBack()` trail-walking logic (proven
+correct by `test_lifecycle.js`) was never the bug.
+
+- [x] 1. Root-caused: the missing `OnBackInvokedCallback` registration, not
+      anything in the JS trail-walking logic.
+- [x] 2. Fixed: registered `android.window.OnBackInvokedCallback` (the
+      platform SDK this app already compiles against at API 36 — no
+      AndroidX, no new dependency) on `Build.VERSION.SDK_INT >= 33`,
+      sharing one `askPageToHandleBack()` method with the existing
+      `onKeyDown` (kept, unchanged, as the sole path below API 33).
+      Required `android:enableOnBackInvokedCallback="true"` in the
+      manifest.
+- [x] 3. Verified as far as this environment allows: `bash build.sh`
+      compiles clean against the real platform API; new source-text
+      regression tests in `tools/test_gestures.js` pin the import, the
+      registration, the manifest flag, and that both dispatch paths share
+      the one method. **Explicitly could not be verified beyond that** —
+      no `adb`/emulator here, and the bug only reproduces via a real
+      gesture-navigation swipe on a real device, which is exactly why the
+      first fix (proven correct by every test that existed) still missed
+      it. Said so plainly rather than declaring victory on a green suite
+      that structurally cannot see the actual failure mode — see
+      "Waiting on Tj" in TASKS.md, which flags this one as a SECOND
+      attempt at the same symptom, not a routine confirmation.
+
+Shipped as v6.3. All 13 suites + the ES2018 gate green.
