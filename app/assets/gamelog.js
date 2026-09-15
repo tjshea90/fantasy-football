@@ -71,7 +71,7 @@
     var i, j, variants, p;
     for (i = 0; i < d.players.length; i++) {
       p = d.players[i];
-      if (p.p === 'DEF') { _posIdx['DEF:' + p.t] = p; continue; }
+      if (p.p === 'DEF') continue;   /* DEF lines come from entry.dst, never this index */
       variants = root.Names ? root.Names.variants(p.n) : [root.PlayerDB.norm(p.n)];
       for (j = 0; j < variants.length; j++) {
         if (!_posIdx[variants[j]]) _posIdx[variants[j]] = p;
