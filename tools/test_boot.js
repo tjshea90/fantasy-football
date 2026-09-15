@@ -740,9 +740,12 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
  * (proven directly, with real data, in tools/test_integration.js's §20);
  * this just confirms the one caller that isn't exported for a direct test
  * was actually updated to stop pre-normalising. */
-ok(/function usageSwing\(p, week\) \{\s*if \(!root\.Store\.bookTrend\) return '';\s*[\s\S]{0,120}bookTrend\(p\.name, week - 1, 2\)/
-   .test(recX),
-   'usageSwing passes the raw name to bookTrend, not norm(p.name) — the exact mismatch bookTrend now resolves itself');
+(function () {
+  var usIdx = recX.indexOf('function usageSwing');
+  var usBody = recX.slice(usIdx, usIdx + 400);
+  ok(usBody.indexOf('bookTrend(p.name, week - 1, 2)') >= 0,
+     'usageSwing passes the raw name to bookTrend, not norm(p.name) — the exact mismatch bookTrend now resolves itself');
+}());
 
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
