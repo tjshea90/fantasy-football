@@ -479,9 +479,10 @@ console.log('\n-- the weekly recap dialog (2026-09-15g) --');
 
   /* undo this test's own fixture — marking week 1 allFinal here would
      otherwise leak into the week-advance tests below via localAutoAdvance,
-     which (correctly) runs on every later appResume() in this same suite */
+     which (correctly) runs on every later appResume() in this same suite.
+     This test never itself calls appResume()/boot(), so the internal
+     `week` variable was never touched — only weekMeta needs undoing. */
   delete S2.weekMeta['1'];
-  S2.settings.currentWeek = 1; W.Store.get().settings.currentWeek = 1;
 }());
 
 console.log('\n-- the back button --');
