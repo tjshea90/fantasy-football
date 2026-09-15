@@ -114,10 +114,13 @@
     return entry;
   }
 
+  /* v6.2: dropped the budget/remaining/pct/syncsLeft fields this used to
+   * return — "how much is left" stopped being answerable the day Tj removed
+   * his key (see estimate() below, and CLAUDE.md's Claude-usage note). No
+   * caller reads them any more; kept the historical totals, which are a
+   * factual record rather than a claim about what is left. */
   function totals() {
     if (!led.since) load();
-    var budget = settings().aiBudget;
-    var hasBudget = typeof budget === 'number' && isFinite(budget) && budget > 0;
     var last = led.calls.length ? led.calls[0] : null;
     /* average over real syncs only — a two-token key test is not a sync */
     var syncs = 0, syncCost = 0, i;
@@ -129,12 +132,6 @@
       tokensIn: n(led.tokensIn), tokensOut: n(led.tokensOut),
       searches: n(led.searches), last: last,
       syncs: syncs, perSync: syncs ? syncCost / syncs : 0,
-      budget: hasBudget ? budget : 0,
-      remaining: hasBudget ? Math.max(0, budget - n(led.spend)) : 0,
-      pct: hasBudget ? Math.min(100, (n(led.spend) / budget) * 100) : 0,
-      /* how many more syncs the remaining budget buys, at the observed rate */
-      syncsLeft: (hasBudget && syncs && syncCost > 0)
-        ? Math.floor(Math.max(0, budget - n(led.spend)) / (syncCost / syncs)) : null,
       rates: rates(), usingDefaults: JSON.stringify(rates()) === JSON.stringify(DEFAULT_RATES)
     };
   }
