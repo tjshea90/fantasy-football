@@ -2188,3 +2188,232 @@ fixed on the strength of a green test suite that structurally cannot
 observe the actual failure mode.
 
 Shipped as v6.3. All 13 suites + the ES2018 gate green.
+
+## 2026-09-15e: comprehensive app-wide sweep (code, function, UI)
+
+> "Do a comprehensive app wide scan for improvements in code and function
+> and ui. Take as long as you need and use as much usage as you need. Do a
+> thorough job. Improve the app as much as you can and I'll check back
+> much later."
+
+Open-ended, all three axes, no specific bug reported. Six parallel
+background review agents were dispatched, one per logical area (data/
+scoring core, value/recommend engine, UI part 1, UI part 2, the Android/
+Java shell, ai/usage/handoff), each explicitly read-only and reporting
+ranked findings independently rather than pre-approved patches. Every
+finding was personally re-verified against real source before anything
+was touched — a discipline that paid off twice: the legacy `httpGet`/
+`httpGetH`/`httpPost` Java methods, flagged as dead code, turned out to be
+neither dead nor safe to remove (`tools/test_engine.js` deliberately
+exercises that exact synchronous fallback path, and `tools/test_boot.js`
+already pinned their existence by name as intentional legacy-shell
+compatibility); and value.js's `_faMemo` cache, flagged as "incidental"
+invalidation, turned out to be a deliberate, already-correct, and more
+robust design than the alternative (see Round 5-adjacent write-up below).
+Both were investigated and left alone rather than "fixed" on the strength
+of a review agent's first-pass read.
+
+### Round 1 — data integrity
+- **`NativeBridge.load()`'s `.bak` fallback gap.** It only fell back to
+  the backup file on a missing/empty main save (`s == null || s.length()
+  < 2`) — a READABLE but CORRUPTED file (a truncated write, bit-rot) was
+  handed to `store.js` as-is, whose `JSON.parse` failure then silently
+  reset a whole season to the bundled seed instead of using the intact
+  `.bak` sitting right next to it. Fixed with a real JSON-parseability
+  check (`looksLikeJson`, backed by `org.json.JSONTokener`) before
+  accepting the main file over the backup.
+- **`store.js`'s `getStats()` was dirtying the archive on a plain read.**
+  Lazily creating an empty stats bucket for an unsynced week called
+  `markArchive()` — reached from ordinary reads (`lineFor` →
+  `playerPoints` → `teamWeekPoints` → standings, and the Live tab's own
+  matchup card), not just writers. The archive split's whole point
+  (store.js's own header) is that a lineup edit writes ~25KB, not the
+  ~1.9MB book+stats archive — simply viewing the Live tab for an unsynced
+  week (the common case right after boot) was silently defeating that.
+  Fixed by dropping the stray `markArchive()` call from the lazy-bucket
+  path.
+
+### Round 2 — value.js correctness
+- **`Store.bookTrend()`'s exact-key-only lookup silently lost real
+  production data on any spelling mismatch.** The league book is keyed by
+  `Espn.normName(displayName)` AS ESPN SPELLED IT, which can differ from
+  roster/DB spelling ("Kenneth Gainwell" on the roster vs. "Kenny" from
+  ESPN). Three real call sites (`value.js`'s `perGame`/`usage`,
+  `recommend.js`'s `usageSwing`) fed a pre-normalized name into an
+  exact-match lookup, silently falling back to a guessed number instead of
+  the real one whenever spellings disagreed. Fixed by routing through
+  `Names.hit`, this codebase's established tolerant name-lookup helper.
+- **`needs()` hardcoded FLEX to a replacement-level RB regardless of who
+  was actually starting there.** If a WR or TE was the real flex starter,
+  the waiver-priority data sent to Claude claimed an RB gap that did not
+  exist. Fixed by threading the flex slot's REAL position (`realPos`,
+  added to `myStarters()`'s output) through instead of the slot label.
+
+### Round 3 — UI/feature correctness
+- **`claudeAdviceEstimate` showed a non-zero cost for a free sync.**
+  `syncAll()` skips the Claude call entirely — no request, no charge —
+  once every roster player is "carried forward" (checked recently, came
+  back clear). The estimate never special-cased `n === 0`, and
+  `adviceSearchBudget`'s hard floor of 2 searches produced a few cents
+  regardless, directly contradicting the estimate's own documented promise
+  ("never claim a cheaper or pricier call than the real one"). Fixed with
+  an explicit `n === 0` early return.
+- **The Advice tab had zero long-press "View stats" support**, despite
+  Tj's original request being explicit that it work "everywhere in the
+  app." Fixed by threading `markPlayer` through `viewAdvice`'s ctx and
+  marking all three row sets `recommend.js` builds (starters, bench,
+  opponent roster).
+- **`showPlayer()`'s stat modal showed a stale total after a Save
+  adjustment.** The toast and the page behind the modal updated correctly;
+  the modal's own visible point breakdown did not, because it was built
+  once by the generic `modal()` wrapper with no way to rewrite it in
+  place. Fixed by building the `<pre>` directly so the save handler can
+  update it in place — verified live in a real browser (19.0 → 24.0 points
+  shown correctly after a +5 adjustment, no reload/close needed).
+- **`stats.js`'s team browser used the real current NFL week as its
+  ceiling instead of the header's selected week** — the exact bug class
+  Top Players had already been fixed for once. Fixed `teamPickerCard`/
+  `teamRosterCard` to use `ctx.week`; deliberately left player-search's own
+  `currentWeek` read alone, since that mode has a genuinely different
+  "show everything played so far" semantic.
+
+### Round 4 — Android hardening
+- **`alertsTest()` froze the page for up to 13 seconds.** It made a
+  SYNCHRONOUS network call (`Alerts.check` → `injuries()` → a blocking
+  `HttpURLConnection`) directly on the `@JavascriptInterface` thread — the
+  one failure this app's entire async-bridge architecture exists to
+  prevent, reintroduced in a different method. Converted to the
+  established async pattern: the real check now runs on the existing
+  3-thread pool, and the page is woken via `evaluateJavascript` + a
+  `window.__alertsTestDone` callback, same as every other bridge call.
+- **Six file-descriptor leaks** across `NativeBridge.java` (`readFile`,
+  `save`, `backupAuto`, `export` ×2 branches, `writeToDownloads` ×2
+  branches) and `Alerts.java`'s own independent `readFile` duplicate — any
+  exception mid-write (disk full, an I/O error) left the stream open.
+  `save()` runs on effectively every app-state write, so under a
+  sustained low-storage condition this was a real accumulating leak, not
+  theoretical. Fixed via try-with-resources everywhere.
+- **`NativeBridge`'s 3-thread pool was never shut down**, and the bridge
+  instance was a local variable `MainActivity.onCreate` threw away rather
+  than a field — the pool's plain (non-daemon) threads, each holding a
+  reference to the `WebView`, could outlive the Activity. Fixed: the
+  bridge is now a field, `NativeBridge.shutdown()` calls `pool.
+  shutdownNow()`, and `MainActivity.onDestroy()` calls it before tearing
+  the `WebView` down.
+- **The back-button `OnBackInvokedCallback` registration-failure fallback
+  comment was wrong.** It claimed "`onKeyDown` is still there" if
+  registration ever throws — checked against Android's own predictive-back
+  documentation (fetched live this session) and that is false: once
+  `enableOnBackInvokedCallback="true"` is set (unconditional in this
+  manifest), the platform stops supporting `KEYCODE_BACK` interception
+  entirely, registration success or not. Corrected the comment and added
+  `Log.e` so a real-device failure would be diagnosable instead of
+  silently swallowed — nothing is known to actually throw here (a plain
+  in-memory registration, no documented failure mode), so this is
+  defensive hardening against a hypothetical OEM bug, not a reproduced
+  fix.
+- **Investigated, not fixed:** the legacy `httpGet`/`httpGetH`/`httpPost`
+  Java methods, flagged as dead by the review agent, turned out to be
+  tested-and-relied-upon legacy-shell compatibility scaffolding (see
+  above) — left alone.
+
+### Round 5 — cost/model accuracy
+- **`usage.js`'s cost tracking was model-blind.** One flat, Sonnet-5-
+  shaped rate table priced every call regardless of which model actually
+  ran it — but `ai.js` picks the model per call (`depth()==='cheap'` sends
+  Haiku 4.5; `'weekly recap'` ALWAYS uses the cheap model), so every recap
+  was overstated roughly 2x and any Opus call would have been understated
+  roughly 5x. Fixed: `priceOf`/`record`/`estimate`/`totals`/`rates` all
+  take an optional model and look up its real published tier (`opus`/
+  `sonnet`/`haiku`, classified by substring so a future dot-release needs
+  no code change); a manual settings override still wins per field, same
+  as before. Threaded the correct depth()-resolved model into both
+  on-screen estimates and the settings price-editor panel, which used to
+  silently show Sonnet numbers even at 'cheap' depth — its hint text used
+  to tell Tj to manually update rates when he switches models; that is no
+  longer his job.
+- **Outdated `web_search` tool type.** Both real tool-use calls
+  (`ask`/`askWaivers`) were pinned to `web_search_20250305`, the basic
+  (non-dynamic-filtering) version. Added `searchToolType(model)`, an
+  ALLOWLIST (Sonnet 5 and Opus 5 confirmed supporting the current
+  `web_search_20260209`; everything else, Haiku 4.5 included since
+  `depth()==='cheap'` sends real calls there, stays on the safe old type
+  rather than gambling on unconfirmed support).
+- **Investigated, not fixed:** prompt caching never engaging on the
+  advice-sync call. Measured (not assumed): `staticPrefix()` is ~900
+  tokens, `waiverPrefix()` ~1834. Against this session's verified cache
+  floors (Sonnet 5: 1024, Opus 5: 512, Haiku 4.5: 4096), the waiver prefix
+  already clears Sonnet's floor and gets real caching; the advice prefix
+  falls short by ~130 tokens and silently never caches at the default
+  depth. Deliberately not padded — the only honest way to close a ~130
+  token gap is more real prompt content, which changes what Claude is
+  told on every future sync, unverifiable against the real API in this
+  environment (no key configured here) and squarely the kind of
+  product-behavior change the "no major changes unless approved" boundary
+  exists for — especially against a small, rarely-realized saving
+  (infrequent syncs, a 5-minute cache TTL). Documented in place instead of
+  silently left as a mystery for the next session to rediscover.
+
+### The small-fixes batch (13 items)
+Long-press click-suppression scoped to the row that triggered it instead
+of swallowing any click anywhere on the page for 400ms (was silently
+eating taps on the dialog's own Cancel/View buttons); pull-to-refresh's
+default branch no longer double-renders the page (`doSync()` already
+renders on both its success and catch path); `freshenInjuries` now
+catches a failed news fetch instead of leaving an unhandled rejection;
+`earlyGameCard`'s comment corrected (Lineups + Advice, never Live — the
+old comment claimed all three); `openPlayerStatsMenu`'s local `view`
+button variable renamed to `viewBtn` before it could shadow the file-level
+`view` (current tab) the way a sibling bug already had elsewhere;
+`Alerts.java`'s dead `schedule(dayOfWeek,...)` method removed (confirmed
+zero callers — `rearm()`, the only real caller of any scheduling method,
+only ever uses `scheduleDaily`); `Alerts.check()` now bails out on an
+empty `league.me` instead of letting a malformed team object with its own
+blank id incorrectly match as "mine"; `NativeBridge.safe()` hardened to
+reject a bare `.`/`..` outright rather than relying on slash-stripping and
+`readFile`'s own directory-open failure as the only thing stopping a
+`backupLoad("..")`; `handoff.js`'s `detect()` tightened from a loose
+prefix match to an exact match on the two real literal `kind` values (the
+old prefix check would have silently accepted a model typo or
+hallucinated variant as a fully valid reply, contradicting its own "must
+never be half-applied" comment); the Advice and Wire tabs' cost-estimate
+lines now share identical closing wording; `gamelog.js` and `doSync`'s
+`gcache` no longer duplicate an `Espn.gameStats` fetch for the same game
+(a new `Gamelog.ingestEvent`, factored out of `ensureEvent`, lets `doSync`
+feed its own already-fetched box score straight into gamelog's persistent
+cache); `recommend.js`'s `opponentsForWeek` matched the `week>18?3:2`
+seasontype pattern every other `weekGames` call site already uses
+(currently inert — `LAST_WEEK` is 17 — but a latent trap if that cap is
+ever raised); `value.js`'s `rosteredSet()` no longer writes the same key
+twice (`variants()` already includes `canon()` as its own first element);
+`projections.js`'s Sleeper-merge fallback no longer reads a `.fullName`
+field `ingestSleeper`'s own records never carry (traced by hand — it was
+always `undefined`, so the `||` fallback fired unconditionally); and the
+curated `['gabe davis','gabriel davis']` alias pair was removed from
+`names.js` as genuinely redundant with the generic `gabriel: ['gabe']`
+nickname fold, which already derives both directions on its own (traced
+`canon()` and `variants()` by hand, then pinned with a real regression
+test) — unlike every remaining entry in that list, which is a real
+curated alias no generic rule produces.
+
+### Flagged for Tj, not implemented
+Two items crossed into "major" under the standing rule and were written
+up rather than acted on — see TASKS.md's "Waiting on Tj": the Data tab's
+13-14-card wall with no sub-navigation (a UI review-agent finding, real
+but a genuine redesign call), and the fully-wired-but-never-triggered
+`recap.js`/`Ai.recap()`/`NativeBridge.share+copy` write-up feature
+(confirmed by grepping every call site — needs Tj's decision: wire it up
+or remove it).
+
+### Verification
+Every fix above has a real test: functional regression tests where a
+harness could exercise the actual behavior (`tools/test_integration.js`,
+`tools/test_gamelog.js`, `tools/test_handoff.js`, `tools/test_names.js`),
+source-text pins in this repo's established idiom elsewhere (no JUnit
+exists for the Java side). A live-browser pass (a local static server +
+Playwright/chromium) confirmed a clean boot and, specifically, that the
+long-press click-suppression fix works on a real touch-event sequence —
+the dialog's own Cancel button, tapped inside the 400ms window the old
+code used to swallow entirely, now actually dismisses it. All 14 suites +
+the ES2018 gate green throughout every round; `bash build.sh` run clean
+repeatedly.
