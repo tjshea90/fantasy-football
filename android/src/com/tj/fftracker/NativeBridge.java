@@ -721,15 +721,14 @@ public class NativeBridge {
       if (uri == null) return null;
       OutputStream o = ctx.getContentResolver().openOutputStream(uri);
       if (o == null) return null;
-      o.write(data.getBytes("UTF-8"));
-      o.close();
+      try (OutputStream oo = o) { oo.write(data.getBytes("UTF-8")); }
       return uri;
     }
     File d = new File(Environment.getExternalStoragePublicDirectory(
         Environment.DIRECTORY_DOWNLOADS), fn);
-    FileOutputStream o = new FileOutputStream(d);
-    o.write(data.getBytes("UTF-8"));
-    o.close();
+    try (FileOutputStream o = new FileOutputStream(d)) {
+      o.write(data.getBytes("UTF-8"));
+    }
     return Uri.fromFile(d);
   }
 
