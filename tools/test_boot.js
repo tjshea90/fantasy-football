@@ -128,8 +128,11 @@ ok(/lpSuppressRow = row;/.test(ui) &&
 ok(/Recommend\.loadNews\(null\)\.then\(function \(nc\) \{[\s\S]{0,80}\}\)\['catch'\]\(function \(\)/.test(ui),
    'freshenInjuries now catches a failed news fetch instead of leaving it unhandled');
 /* the Advice and Wire tabs' cost-estimate lines used to end differently for
-   no reason — matched wording. */
-ok(/on the Claude API, at current prices \(see Data → Claude costs\)\.'/.test(rec) &&
+   no reason — matched wording. (recommend.js's own source is loaded fresh
+   here, not via the file-scoped `rec` — that is assigned further down this
+   file, after this point runs.) */
+ok(/on the Claude API, at current prices \(see Data → Claude costs\)\.'/
+     .test(fs.readFileSync('app/assets/recommend.js', 'utf8')) &&
    /on the Claude API, at current prices \(see Data → Claude costs\)\.'/.test(ui),
    'the Advice and Wire cost-estimate lines share the same closing wording now');
 /* the old catch-block comment here claimed "onKeyDown is still there" as a
