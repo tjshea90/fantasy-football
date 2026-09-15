@@ -2,6 +2,13 @@
 (function () {
   'use strict';
   var S, seed, view = 'live', week = 1, busy = false;
+  /* Which group of Data-tab cards is showing (2026-09-15g: Tj: "organize
+     the data tab with sub navigation that is smart and easy to
+     understand" — the tab had grown to 13-14 cards in one long scroll).
+     In-memory only, like `view` itself: it survives switching to another
+     tab and back within this session, but resets to 'league' on a fresh
+     boot, the same as every other view function's own scroll position. */
+  var dataSubView = 'league';
   /* live polling: a handle plus the last result, so every screen can say how
      fresh the numbers are without each one owning a timer */
   var live = { timer: null, at: 0, inProgress: 0, err: '', next: 0, fails: 0 };
