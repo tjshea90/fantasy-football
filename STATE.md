@@ -1878,3 +1878,118 @@ then verified the dex against every `android/src/**/*.java` file by name
 before it would let this version out, per its own standing gate.
 
 ## 2026-09-15: the resume-system fix, plus the Stats tab (game logs, long-press, top players)
+
+**Part 1: a real handoff failure, and a mechanical fix for it.** Tj sent the
+Stats-tab request below; the session that received it spent its whole budget
+reading the codebase and was cut off by a usage cap before ever writing the
+request to `TASKS.md`. The `PostToolUse` autosave hook only fires on
+`Edit|Write|NotebookEdit|Bash` — a pure research stretch trips it zero times
+— so nothing reached disk anywhere, and the next session (on `main`,
+`730d4e5`) opened cold and resumed correctly from what WAS there, which
+proved nothing about what wasn't. Tj: "This is a major failure in the resume
+function... It is very important that Claude can resume all tasks after
+usage interruptions without me re-explaining everything."
+
+Fix: a new `UserPromptSubmit` hook, `tools/capture_inbox.sh`, appends every
+message Tj sends to a new `INBOX.md`, verbatim, and commits+pushes it the
+instant it arrives — before any tool call, before any judgment about whether
+it is "worth" saving yet. `tools/resume.sh` now prints `INBOX.md`'s tail
+unconditionally on every session start. This does not replace writing
+`TASKS.md` promptly — it is the backstop underneath it, documented in
+`CLAUDE.md` as a new "level 0" ahead of the existing autosave hook. Verified
+by hand (fed the hook a sample payload with quotes and a newline, confirmed
+it committed cleanly) and confirmed live in production during this very
+session — the next message that arrived ("Continue building the stats tab
+feature") landed in `INBOX.md` exactly as designed, no session action
+required.
+
+**Part 2: the Stats tab itself.** Tj's request, in full, is preserved
+verbatim in `TASKS.md`'s history and in `git log` — not repeated here.
+
+Architecture: a new self-contained `gamelog.js` (own `Native.save/load` key,
+like `playerdb.js` — never part of the per-edit Store save) caches FULL box
+scores per NFL team per week, independent of roster. `S.stats[week][pid]`
+only covers the ~170 rostered players and `S.book[week][name]` is
+points-only; neither is enough for "search any current NFL player" or "every
+player on a team." One `Espn.gameStats` call already returns both teams in a
+game, so `gamelog.js` splits and caches both sides from a single fetch —
+browsing one team's log is never a second fetch for its opponent, and a
+full week's "top players" sweep is one fetch per GAME (<=16), not per team
+(32). A `state:'post'` entry is cached forever, matching `doSync`'s existing
+reuse-if-final rule; only `opts.force` (wired to pull-to-refresh) bypasses
+it. Position lookups reuse `Names.variants`, the same nickname-tolerant
+matching `doSync`'s own `byName` index already relies on.
+
+`stats.js` follows the `Recommend.render(root, ctx)` / `viewAdvice`
+delegation pattern already established for Advice: three modes (search,
+browse-by-team, top players) behind the same `fchips` UI language used
+elsewhere. Game logs render as one row per game, most recent first,
+position-specific stat columns (a QB's columns are not a kicker's) plus a
+Pts column, computed via `Scoring.score` — this league's rules, nothing
+else. A new `.twrap` CSS class (horizontally-scrollable table wrapper) was
+needed because a full stat line does not fit six columns wide on a phone;
+verified live that it actually reaches the off-screen column rather than
+just clipping it.
+
+Long-press "View stats" is a new delegated touch listener in `ui.js`
+(deliberately separate from `gestures.js`, which is app-blind by design —
+see its own header comment) keyed off a new `data-player="name|pos|nfl"`
+attribute now present on every real player row across Live, Lineups,
+Rosters and Wire. A capturing-phase `click` interceptor suppresses the
+row's own tap action for 400ms after a long-press fires, so a single hold
+cannot trigger both a long-press menu and the row's normal tap behaviour
+(e.g. `showPlayer`, or "Add" on a free-agent row). The long-press timer is
+cancelled in `appPause` and re-armed in `appResume`, the same discipline
+`Gestures.enable` already uses, so it cannot fire while the app is asleep.
+
+**Testing, against Tj's own 8 numbered requirements**, used real Chromium
+(pre-installed in this environment) driven via Playwright — not only the
+unit-test harness pattern the rest of this suite uses. The app was served
+over plain HTTP with a `window.Native` stub implementing the exact async
+bridge contract the real APK uses (`httpAsync`/`__httpDone`/`httpTake`),
+fed REAL ESPN data (week 1, 2026 season) fetched once via `curl`, because
+`curl` honours this sandbox's `HTTPS_PROXY` and a browser's own `fetch()`
+cannot reach ESPN cross-origin at all (confirmed that CORS block directly —
+it is exactly why the shipped app never takes the `fetch()` dev-fallback
+path in espn.js). Confirmed working end-to-end against real data: Mahomes'
+live week-1 line (10/127/1TD/1INT passing, 27/1TD rushing) scores 29.1 under
+this league's rules both from his own game log AND independently from the
+"top players" QB board — the same number reached two different ways, a real
+cross-check of the scoring path. Confirmed the touch long-press mechanics
+specifically (dispatched real `TouchEvent` sequences, not just a desktop
+right-click fallback): a 100ms tap does nothing, a 700ms hold opens the
+menu. Confirmed pull-to-refresh actually calls `Stats.refresh()` by driving
+`Gestures`' own `_onStart/_onMove/_onEnd` test seams against the live app.
+
+Two real bugs found and fixed along the way, neither of which a synthetic
+unit test would have surfaced:
+- **Pre-existing, unrelated to this feature**: `Store.playerById` returns
+  `{team, player}`, not the player itself. The Lineups tab's per-slot
+  kickoff badge called `gameBadge(lp.nfl)` — always `undefined` — so that
+  badge has never shown, since whenever this code was written. Found while
+  adding the long-press `data-player` attribute to that same row. Fixed to
+  `lp.player.nfl`.
+- **Introduced by this feature, caught before ship**: `Espn.pool`
+  deliberately turns one item's fetch failure into a clean `null` (so one
+  dead game can't lose an entire sync) — but that meant a TOTAL network
+  failure inside `playerLog`/`weekPositionTops` read identically to "he
+  genuinely has no games yet." Both now check pool's own `results['err'+i]`
+  markers and throw an honest error instead. Confirmed live via a real touch
+  long-press on a player the browser-test fixtures don't cover.
+
+Also caught, twice, the exact class of drift `CLAUDE.md`'s own "Branches"
+section already warned about for a different reason: `tools/test_lifecycle.js`
+keeps hand-maintained mirrors of both the module load order AND the nav
+tab list specifically to prove it is testing what the phone actually runs.
+Adding `gamelog.js`/`stats.js` to `index.html` without updating those two
+lists tripped both drift checks in turn — each one caught immediately by
+the suite going red, not silently. The tab-list check had no real
+cross-check against `index.html` before this (only the script-order one
+did); it now does, the same way, so this class of gap cannot recur a
+third time unnoticed.
+
+All 14 suites (test_gamelog.js is new, 29 assertions) + the ES2018 gate
+green throughout. Scope note, stated plainly rather than implied: this was
+a thorough test of the new feature and everything it touches, not a
+line-by-line re-audit of the entire pre-existing app — thousands of lines
+outside this feature's path were not independently re-verified here.
