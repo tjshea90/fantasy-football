@@ -1,6 +1,35 @@
 # TASKS — the current job, in Tj's words
 
-**There is no active job right now.** The 2026-09-15c request (Rosters
+## 2026-09-15d: back button still closes the app on a real device (v6.2)
+
+> "The back button still closes the app to my home screen"
+
+Reported on a real device running v6.2. This is the SAME symptom item 2 of
+2026-09-15c claimed was already fixed (and was proven by
+`tools/test_lifecycle.js`) — so either that test is checking something
+that does not reflect what actually happens on a real phone, or the
+Java-side wiring to `__onBack` is broken/bypassed in a way no unit test
+can see (this repo's own tests do not run on a real device or a real
+WebView). Treat as a real regression, not a duplicate — do not just
+re-point Tj at the same "already fixed" evidence.
+
+- [ ] 1. Read `MainActivity.java`'s actual back-press handling (the
+      `onBackPressed()` override or, if targetSdk 33+, the newer
+      `OnBackInvokedCallback`/predictive-back API — targetSdk is 36 per
+      `build.sh`'s own output, so check whether the old override still
+      fires at all under Android's predictive-back system) and confirm it
+      really calls into the WebView's `__onBack()` and respects what it
+      returns, rather than falling through to the default (finish the
+      Activity) in some case the JS-side unit tests cannot exercise.
+- [ ] 2. Find the actual root cause — do not guess and patch symptoms.
+- [ ] 3. Fix it, and find a way to verify beyond "the JS trail-walking
+      logic is correct in a stub" (which was already true and evidently
+      insufficient) — at minimum, trace the real call path end to end and
+      identify exactly why the previous fix did not reach a real device.
+- [ ] 4. Ship as a new version once fixed and verified, same release
+      process as before.
+
+**There is no OTHER active job right now.** The 2026-09-15c request (Rosters
 reorder, back button, app-resume state, no splash flash, Claude cost
 estimates, bench "why not", PlayerDB auto-refresh, and a full bug sweep) is
 complete, shipped as v6.2, and archived at the end of `LADDER.md` (§30).
