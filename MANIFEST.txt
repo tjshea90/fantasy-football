@@ -57,6 +57,8 @@ tools/test_boot.js
 app/assets/players.js
 app/assets/playerdb.js
 tools/mkplayers.py
+app/assets/gamelog.js
+tools/test_gamelog.js
 VERSION
 tools/version.sh
 app/assets/version.js
