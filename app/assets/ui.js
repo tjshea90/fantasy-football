@@ -2084,8 +2084,14 @@
          below, which is why this line vanished entirely until caught in the
          same sweep that added it — same class of mistake this file already
          has one standing warning about, now a second. */
+      /* Same model a real askWaivers() call would use for this exact press —
+       * ai.js's own depth()==='cheap' ? cheapModel() : model(). Found in the
+       * 2026-09-15e sweep: this used to estimate at a flat rate table that
+       * assumed the main model always, overstating the cost whenever
+       * 'cheap' depth would really send the call to Haiku. */
+      var mdl = Ai.depth() === 'cheap' ? Ai.cheapModel() : Ai.model();
       var gen = (window.Store && Store.generation) ? Store.generation() : 0;
-      var k = week + '|' + S.league.me + '|' + gen + '|' + JSON.stringify(Usage.rates());
+      var k = week + '|' + S.league.me + '|' + gen + '|' + mdl + '|' + JSON.stringify(Usage.rates(mdl));
       if (_wireEstMemo && _wireEstMemo.k === k) return _wireEstMemo.v;
       var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
       var ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season,
@@ -2099,7 +2105,7 @@
          being a bit off here costs the estimate little. */
       var nNeed = Math.max(1, (ctx.needs || []).length);
       var outputTokens = 300 + nNeed * 220 + budget * 60;
-      var v = Usage.money(Usage.estimate(promptChars, budget, outputTokens));
+      var v = Usage.money(Usage.estimate(promptChars, budget, outputTokens, mdl));
       _wireEstMemo = { k: k, v: v };
       return v;
     } catch (e) { return null; }
