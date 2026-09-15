@@ -829,7 +829,7 @@
   function lpCancel() { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } lpStart = null; }
   function longPressStart(e) {
     lpCancel();
-    if (!e.touches || e.touches.length !== 1) return;
+    if (!lpEnabled || !e.touches || e.touches.length !== 1) return;
     var row = findPlayerRow(e.target);
     if (!row) return;
     var t = e.touches[0];
