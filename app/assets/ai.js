@@ -461,16 +461,24 @@
     return (d === 'full' || d === 'cheap') ? d : 'smart';
   }
 
+  /* SEARCHES ARE THE BILL, not the tokens. One web search costs about what
+     ten thousand input tokens cost, so the number of searches is sized to the
+     number of players actually being researched rather than fixed at 8.
+     Two per player is what a designation check needs; the ceiling stays 8.
+     Pulled out to its own function (v6.2) so the on-screen cost estimate
+     (usageCard, the Advice/Wire tab buttons) computes the SAME number the
+     real call actually sends — two implementations of this would drift, and
+     the whole point of an estimate is that it not lie. */
+  function adviceSearchBudget(n) {
+    var budget = Math.max(2, Math.min(8, Math.ceil(n * 1.2)));
+    if (depth() === 'full') budget = 8;
+    return budget;
+  }
   function ask(ctx, onStep) {
     if (!configured()) return Promise.reject(new Error('no API key set'));
     var mdl = depth() === 'cheap' ? cheapModel() : model();
-    /* SEARCHES ARE THE BILL, not the tokens. One web search costs about what
-       ten thousand input tokens cost, so the number of searches is sized to the
-       number of players actually being researched rather than fixed at 8.
-       Two per player is what a designation check needs; the ceiling stays 8. */
     var n = ctx.players.length;
-    var budget = Math.max(2, Math.min(8, Math.ceil(n * 1.2)));
-    if (depth() === 'full') budget = 8;
+    var budget = adviceSearchBudget(n);
     var body = {
       model: mdl,
       /* max_tokens IS A CAP, NOT AN ALLOCATION — an unused ceiling costs
