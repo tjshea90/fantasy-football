@@ -453,8 +453,11 @@ var me = S.league.me;
   var S2 = W.Store.get();
   S2.settings.rate_inPerM = 2.00; S2.settings.rate_outPerM = 10.00;
   S2.settings.rate_searchPer1000 = 10.00; W.Store.save();
+  /* claudeWireEstimate (ui.js) uses the identical memo shape but is not
+     testable here — this file's own header explains why ui.js is never
+     loaded in this harness: it expects a real DOM. Proving the pattern
+     correct once, against the real function that owns it, is the point. */
   var advice1 = W.Recommend.claudeAdviceEstimate(1, me);
-  var wire1 = W.Value ? null : null;   /* claudeWireEstimate lives in ui.js, not loaded here — see below */
   ok(typeof advice1 === 'string' && advice1.length > 0, 'claudeAdviceEstimate returns a real estimate string');
 
   /* same week, same team, same rates, same roster: calling it again must
