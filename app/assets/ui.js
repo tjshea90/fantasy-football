@@ -2022,6 +2022,7 @@
           (lowPri ? '  ·  low priority — ranked only because yours is unavailable' : '')));
         seen[k].forEach(function (a) {
           var r = el('div', 'row');
+          markPlayer(r, a.name, a.pos, a.nfl);
           r.appendChild(el('div', 'slot', '#' + a.rank));
           var nm = el('div', 'nm');
           nm.appendChild(document.createTextNode(a.name));
