@@ -21,6 +21,7 @@ import android.window.OnBackInvokedDispatcher;
  *  without touching Java. No native libraries: one APK for every ABI. */
 public class MainActivity extends Activity {
   private WebView web;
+  private NativeBridge bridge;
   private int insetTop, insetBottom, insetLeft, insetRight;
   private boolean pageReady = false;
 
