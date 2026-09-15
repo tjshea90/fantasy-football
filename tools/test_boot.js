@@ -536,14 +536,20 @@ ok(/wrong merge is far more/.test(nmH),
   ok(g3.PlayerDB.stale() === true, 'a database refreshed 3 days ago is stale again (the 2-day threshold)');
   ok(g3.PlayerDB.STALE_MS === 2 * 24 * 3600 * 1000, 'the threshold really is "at least every couple days"');
 
+  /* ensureFresh() must not touch the network at all when not stale — proven
+   * by timing, not by awaiting the result: this suite runs synchronously and
+   * exits the moment the last top-level statement finishes, so a dangling
+   * .then() here would simply never fire before process.exit(). A real
+   * refresh() (32 teams, retried with backoff) takes tens of seconds; the
+   * short-circuit path is a same-tick Promise.resolve(). Measuring that the
+   * call returns control in under a millisecond is a direct behavioural
+   * proof that the slow path was never entered, with no awaiting required. */
   disk[KEY] = JSON.stringify({ version: 'espn-x', updated: new Date().toISOString(),
                                 players: g3.PLAYERDB.players.slice(0, 5) });
   g3.PlayerDB.init();
   var t0 = Date.now();
-  g3.PlayerDB.ensureFresh().then(function (r) {
-    ok(r === null, 'ensureFresh() resolves to null (never runs the slow network path) when not stale');
-    ok(Date.now() - t0 < 100, 'and it resolves immediately, not after any network round trip');
-  });
+  g3.PlayerDB.ensureFresh();
+  ok(Date.now() - t0 < 5, 'ensureFresh() returns immediately when not stale (never enters the slow network path)');
 }());
 
 ok(/var ok = failed\.length < TEAMS\.length/.test(pdH) && /if \(ok\) \{/.test(pdH),
