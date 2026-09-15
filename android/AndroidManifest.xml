@@ -24,7 +24,7 @@
       android:supportsRtl="true"
       android:usesCleartextTraffic="false"
       android:hardwareAccelerated="true"
-      android:enableOnBackInvokedCallback="true"
+      android:enableOnBackInvokedCallback="true">
     <activity
         android:name=".MainActivity"
         android:exported="true"
