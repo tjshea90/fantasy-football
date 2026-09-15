@@ -7,70 +7,11 @@ complete, shipped as v6.2, and archived at the end of `LADDER.md` (§30).
 Full design notes and the item-8 sweep's writeup (including the two real
 concurrency bugs an independent review found and this session fixed) are in
 STATE.md's 2026-09-15c entry.
-      data-layer check: every bench player in the seeded roster carries a
-      non-empty `why[]`, identical field and shape to what starters show.
-- [x] 7. PlayerDB (the 785-player database, Data tab's manual refresh
-      button): keep the manual button, add automatic refresh at least every
-      ~2 days, and also trigger a refresh whenever waiver-wire/free-agent
-      data (or anything else that needs the full player pool current) is
-      refreshed. Done — `PlayerDB.ensureFresh()` (2-day `STALE_MS` gate,
-      de-duped in-flight) called quietly from `boot()`, `appResume()`,
-      opening the Wire tab, and pressing "Ask Claude about the wire"; manual
-      button unchanged, now with an explanatory hint. Along the way, fixed a
-      real bug: `refresh()` used to stamp "updated" to now even when every
-      team failed (e.g. fully offline), which would have hidden a failed
-      auto-refresh from ever retrying. Proven by new `tools/test_boot.js`
-      coverage (`stale()` behavior at several ages, the bug-fix guard, and
-      all four call sites, as source-text pins where full execution is too
-      slow — a real `refresh()` walks 32 ESPN rosters with retry backoff).
-- [x] 8. Full bug/UI/functionality sweep across the app (Tj's own ask, not
-      scoped to the 7 items above) plus a final comprehensive test pass —
-      everything still works, well coded, efficient. Mirror the rigor of
-      the 2026-09-15 Stats-tab testing pass (real browser, real data, not
-      just the unit suite) where it applies. Done, in two rounds. First,
-      a live-browser walkthrough of all 7 tabs plus the long-press "View
-      stats" flow: zero real bugs beyond intentional/documented behavior
-      (the two things that looked suspicious at first glance both checked
-      out — the JSON-parse error text is a test-harness artifact, not
-      reachable in production, since `NativeBridge.java` guarantees every
-      real response is either valid JSON or its `ERRMARK`-prefixed error;
-      the repeated "positional floor" values on the wire board are the
-      documented no-data fallback, correctly labelled as a guess). Second,
-      an independent code-quality review of the full diff, which found two
-      real bugs and both are now fixed: (a) the manual "Refresh from ESPN"
-      button bypassed item 7's single-flight guard, so a tap during a
-      background auto-refresh could start a second concurrent 32-team
-      fetch and push duplicate database entries — fixed by giving
-      `refresh()` itself the shared guard, so the manual button and the
-      background path always attach to the same in-flight attempt; (b) a
-      phone offline on the Wire tab with a stale database would retry a
-      full 32-team fetch on every single render, forever, with no backoff
-      — fixed with a 15-minute retry cooldown on the background path only
-      (the manual button still always forces it). Also memoised the two
-      Claude cost-estimate functions (they were recomputing a full roster
-      projection / free-agent scan on every render just to refresh a
-      dollar string), fixed a real `root.Store` bug the memoisation edit
-      introduced (`ui.js` is the one module in this app where `root` does
-      not mean `window` — caught by re-running the live browser check
-      after the fix, since no unit suite loads `ui.js` against a real DOM
-      to exercise this), and cleaned up three minor consistency findings.
-      Proven by new `tools/test_boot.js` coverage (a real, fast, executable
-      concurrency test — every ESPN candidate resolves immediately with one
-      fake player, so it proves `refresh()`/`ensureFresh()` share an
-      identical in-flight promise without hitting the slow retry-backoff
-      path at all — plus source-text pins for the cooldown) and new
-      `tools/test_integration.js` coverage (the memoised advice estimate
-      is proven to change immediately when a price rate changes, against
-      the real Store/Usage/Recommend wiring — the one part of the
-      memoisation fix that was a real correctness risk). All 13 suites +
-      the ES2018 gate green;
-      `bash build.sh` succeeds.
 
-**There is no OTHER active job right now.** The 2026-09-15 / 2026-09-15b
-requests — the resume-system fix and the Stats tab (plus its same-day v6.1
-bugfix) — are complete, shipped, and archived at the end of `LADDER.md`
-(§28, §29). Full design notes and the testing-pass writeup are in STATE.md's
-2026-09-15 entries.
+The 2026-09-15 / 2026-09-15b requests before it — the resume-system fix and
+the Stats tab (plus its same-day v6.1 bugfix) — are archived at the end of
+`LADDER.md` too (§28, §29). Full design notes and the testing-pass writeup
+are in STATE.md's 2026-09-15 entries.
 
 ## When Tj asks for something new
 
