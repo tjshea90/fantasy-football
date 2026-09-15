@@ -1,12 +1,12 @@
-# CHECKPOINT 230 — read me first, then TASKS.md
+# CHECKPOINT 236 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T07:49:05Z · **version:** 6.3 · **tests:** all 14 suites green
+**Written:** 2026-09-15T07:52:45Z · **version:** 6.3 · **tests:** all 14 suites green
 
 ## Just done
-UI sweep finding #1 (Live tab): player names were truncating mid-word in the two-column matchup view ('Jaylen Warr...', 'Baltimore ...') -- confirmed with a live browser screenshot. Fixed with the standard fantasy-app shorthand (shortName(): 'M. Stafford'), scoped to lineupDetail() (the Live tab's halfbox view only, where DEF names are left full). Verified with a real extracted-and-executed unit test (not just source pins) plus a fresh screenshot showing every name fully readable. All 13 suites + ES2018 gate green.
+UI sweep finding #2 (Stats tab): the Pts column was the LAST column in the game-log/roster table, pushed off-screen behind 6+ stat columns on a 390px phone -- the one number the whole Stats tab exists to show was reachable only via an undiscoverable horizontal swipe. Fixed by moving Pts right after the row-identifying column(s) in statTable(). Verified live in browser (PTS now shows immediately: 'WK OPP PTS CMP YDS TD INT RUYD' -> '1 vs DEN(live) 29.1 10 127 1 1 27') and with new source-text regression tests. All 13 suites + ES2018 gate green.
 
 ## Do this next
-6 background review agents are still running across the whole codebase (data/scoring core, network/sync, AI integration, UI part 1, UI part 2, Android/Java shell). Continue the live-browser UI walkthrough myself in the meantime; triage and apply their findings as each reports back.
+First of 6 background code-review agents reported back (AI/Claude integration layer): found a real bug (usage.js's cost tracking/estimates are model-blind -- always prices against one flat rate table even though the app dispatches calls to two different real models, main vs cheap, so the displayed cost can be off by 2.5x-5x depending on settings) plus a caching-floor finding (the cheap-model path's prompt caching likely never engages since both prefixes are under Haiku 4.5's 4096-token minimum) and a minor handoff.js detect() prefix-matching looseness. Need to verify each independently before fixing -- continue triaging as the other 5 agents report back.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  24a73a3 ckpt 230: UI sweep finding #1 (Live tab): player names were truncating mid-word in the t
   1827e5c ckpt 226: Wrote Tj's comprehensive app-wide improvement request to TASKS.md (2026-09-15e
   882ace6 ckpt 223: Shipped v6.3, triggered and verified the GitHub Release (non-empty asset, corr
   f21a19e ship v6.3: Real back-button fix: registered the platform OnBackInvokedCallback (API 33+)
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   82284ab ship v6.2: Rosters reorder, Android back-button/app-resume/splash-flash fixes, live Clau
   d30a945 ckpt 198: Item 8 (full sweep) complete: live-browser walkthrough of all 7 tabs found no 
   bfaec3e ckpt 178: Item 7 done: PlayerDB.ensureFresh() auto-refreshes the player database quietly
-  e85f9ca ckpt 164: Verified item 6 (bench 'why not' explanations): all 13 test suites + ES2018 ga
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
