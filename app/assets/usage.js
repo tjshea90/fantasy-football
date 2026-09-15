@@ -143,7 +143,12 @@
    * his key (see estimate() below, and CLAUDE.md's Claude-usage note). No
    * caller reads them any more; kept the historical totals, which are a
    * factual record rather than a claim about what is left. */
-  function totals() {
+  /* `model` (optional) says which tier to show/edit in the returned `rates`
+   * — pass the same depth()-resolved model the on-screen estimate next to it
+   * is using, so the "prices used for this estimate" panel actually matches
+   * the estimate it sits under instead of always showing the sonnet tier
+   * regardless of which model a 'cheap'-depth call would really use. */
+  function totals(model) {
     if (!led.since) load();
     var last = led.calls.length ? led.calls[0] : null;
     /* average over real syncs only — a two-token key test is not a sync */
@@ -151,13 +156,21 @@
     for (i = 0; i < led.calls.length; i++) {
       if (led.calls[i].what === 'advice sync') { syncs++; syncCost += led.calls[i].cost; }
     }
+    var r = rates(model);
     return {
       spend: n(led.spend), calls: led.calls.length, since: led.since,
       tokensIn: n(led.tokensIn), tokensOut: n(led.tokensOut),
       searches: n(led.searches), last: last,
       syncs: syncs, perSync: syncs ? syncCost / syncs : 0,
-      rates: rates(), usingDefaults: JSON.stringify(rates()) === JSON.stringify(DEFAULT_RATES)
+      rates: r, usingDefaults: JSON.stringify(r) === JSON.stringify(tierForDefault(model))
     };
+  }
+  function tierForDefault(model) {
+    var t = tierFor(model), d = {};
+    d.inPerM = t.inPerM; d.outPerM = t.outPerM;
+    d.cacheReadPerM = t.cacheReadPerM; d.cacheWritePerM = t.cacheWritePerM;
+    d.searchPer1000 = DEFAULT_RATES.searchPer1000;
+    return d;
   }
 
   /* Estimate what a call would cost from its REAL inputs — the exact prompt
