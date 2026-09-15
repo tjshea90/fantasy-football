@@ -921,6 +921,25 @@
           r.appendChild(nm2);
           r.appendChild(el('div', 'pts' + (x.startable ? '' : ' bye'), fmt(x.proj)));
           bc.appendChild(r);
+
+          /* Tj, 2026-09-15: "for the bench players, let me see a Claude
+             explanation for each player why not to start them that week,
+             just as it explains for why to start the starting players it
+             recommends." The data already exists — projectOne() builds this
+             same why[] (his projection basis, the matchup, the injury feed,
+             and Claude's own reasoning when he was researched) for EVERY
+             roster player, starters and bench alike; only the starters'
+             card was ever showing it. Same details/'why ▾' pattern as the
+             starter rows above, worded "why not" since that is the
+             question a bench row answers. */
+          if (x.why && x.why.length) {
+            var bd = el('details');
+            bd.appendChild(el('summary', null, 'why not ▾'));
+            x.why.forEach(function (w) {
+              var kv2 = el('div', 'kv'); kv2.appendChild(el('span', null, w)); bd.appendChild(kv2);
+            });
+            bc.appendChild(bd);
+          }
         });
         holder.appendChild(bc);
       }
