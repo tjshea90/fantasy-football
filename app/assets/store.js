@@ -133,7 +133,13 @@
          rather than fetched on every boot so a cold start with no network
          still opens on whatever week it last knew, and refetched at most a
          few times a day once online. */
-      nflWeek: null
+      nflWeek: null,
+      /* the tab open when boot() last ran, so a resume/cold-relaunch can
+         reopen on it instead of always landing on Live — see boot()/goTab()
+         in ui.js. null on a fresh install; boot() already treats a missing
+         or no-longer-valid tab name as "no preference", so this default is
+         only here for defaults() to stay a complete list of settings. */
+      lastTab: null
       /* individualReturnTD was here until v4.7. Tj settled the rules-sheet
          ambiguity ("a defense touchdown is only scored one time") and the
          setting is gone, not defaulted — see the note in scoring.js. An old
