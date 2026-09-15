@@ -135,6 +135,15 @@ ok(/on the Claude API, at current prices \(see Data → Claude costs\)\.'/
      .test(fs.readFileSync('app/assets/recommend.js', 'utf8')) &&
    /on the Claude API, at current prices \(see Data → Claude costs\)\.'/.test(ui),
    'the Advice and Wire cost-estimate lines share the same closing wording now');
+/* doSync (ui.js) feeds gamelog.js's persistent any-player cache from its own
+   already-fetched box score, so a later game-log browse for a team synced
+   this session is never a second Espn.gameStats call — see
+   tools/test_gamelog.js for the functional proof (ingestEvent). */
+ok(/if \(window\.Gamelog\) \{ try \{ Gamelog\.ingestEvent\(week, g, r\); \} catch \(e\) \{ \} \}/.test(ui),
+   'doSync feeds each fetched box score into gamelog.js\'s cache too, not just its own gcache');
+var glX = fs.readFileSync('app/assets/gamelog.js', 'utf8');
+ok(/function ingestEvent\(week, game, r\)/.test(glX) && /ingestEvent: ingestEvent/.test(glX),
+   'gamelog.js exports ingestEvent as the shared write path ensureEvent uses internally too');
 /* the old catch-block comment here claimed "onKeyDown is still there" as a
  * fallback if callback registration ever throws — false per Android's own
  * predictive-back docs once enableOnBackInvokedCallback=true is set
