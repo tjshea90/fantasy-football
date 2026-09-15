@@ -368,7 +368,7 @@
     if (!_ctx) return Promise.resolve();
     if (mode === 'search' && selPlayer) return loadPlayerLog(_ctx, selPlayer, true);
     if (mode === 'team' && selTeamAbbr) return loadTeamRoster(_ctx, selTeamAbbr, selTeamWeek, true);
-    if (mode === 'top') return loadTop(_ctx, topWeek === null ? _ctx.week : topWeek, true);
+    if (mode === 'top') return loadTop(_ctx, _ctx.week, true);
     return Promise.resolve();
   }
 
