@@ -2698,6 +2698,13 @@
     rb.addEventListener('click', function () {
       rb.disabled = true; rb.textContent = 'Refreshing…';
       jobStart('db', 'Player database: starting…');
+      /* PlayerDB.refresh() shares its single in-flight attempt with the
+         quiet background path (boot/resume/wire) — if one happens to
+         already be running, this attaches to it instead of starting a
+         second, so the progress text below just sits on "starting…" until
+         it resolves rather than showing per-team updates. Rare (a
+         background refresh finishes in well under a minute) and harmless:
+         the completion toast/modal below is unaffected either way. */
       PlayerDB.refresh(function (done, total, ab) {
         jobStep(done >= total ? 'Player database: saving…'
                               : ('Player database: ' + ab + '  ' + done + '/' + total),
