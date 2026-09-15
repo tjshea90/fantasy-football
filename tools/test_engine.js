@@ -107,9 +107,14 @@ var Sc = root.Scoring, Espn = root.Espn, Proj = root.Projections;
   var t = U.totals();
   ok(Math.abs(t.spend - 0.222) < 0.001, 'spend accumulates across calls');
   ok(t.syncs === 2 && Math.abs(t.perSync - 0.111) < 0.001, 'per-sync average is right');
-  ok(Math.abs(t.remaining - 19.778) < 0.001, 'remaining is budget minus spend');
-  ok(t.syncsLeft > 150 && t.syncsLeft < 200,
-     'it says how many more syncs the credit buys (got ' + t.syncsLeft + ')');
+  ok(t.budget === undefined && t.remaining === undefined && t.syncsLeft === undefined,
+     'v6.2: no budget/remaining/syncsLeft any more -- there is no key to meter (Tj, 2026-09-15)');
+
+  /* the replacement: estimate cost from REAL inputs, no ledger needed at all */
+  var est1 = U.estimate(11000 * 4 /* ~11k tokens back out of chars */, 8, 900);
+  ok(Math.abs(est1 - 0.111) < 0.0005,
+     'estimate() from real prompt chars/searches/output matches priceOf on the same real call (got ' + est1.toFixed(4) + ')');
+  ok(U.estimate(0, 0, 0) === 0, 'a zero-input estimate is exactly zero, not NaN or a stray fee');
 
   /* a key test is not a sync and must not drag the average down */
   U.record('key test', 'claude-sonnet-5', { input_tokens: 12, output_tokens: 4 });
