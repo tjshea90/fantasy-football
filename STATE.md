@@ -2023,3 +2023,113 @@ Both verified live in a real browser (same Playwright + real-ESPN-fixture
 harness as the v6.0 testing pass), reproducing Tj's exact steps
 programmatically — not just re-reading the code and assuming it was right.
 Shipped as v6.1. All 14 suites green throughout.
+
+## 2026-09-15c: rosters reorder, back button, app-resume state, no splash flash, Claude cost estimates, bench "why not", PlayerDB auto-refresh, full sweep
+
+Tj's 8-item request, in full: reorder the Rosters tab (roster cards above
+the trade evaluator, not below); fix the Android back button so it unwinds
+in-app history instead of exiting to the home screen; restore whatever tab
+was open last on app resume instead of always landing on Live; kill the
+splash-logo flash on resume as far as the platform allows; remove every
+"Claude usage remaining" display (he no longer has an API key) and replace
+it with a live, accurate per-call cost estimate; give bench players on the
+Advice tab the same Claude "why not to start him" explanation starters
+already get; make the 785-player database refresh itself automatically
+(at least every 2 days, and whenever waiver-wire data refreshes) on top of
+the existing manual button; then a full sweep and comprehensive test pass.
+
+All 8 done. Items 1-6 were mechanical or already-proven-correct reuse of
+existing data (the bench "why not" block, for instance, needed no new
+Claude integration — `projectAll()` already built the full `why[]` for
+every roster player, starters and bench alike; only the UI was missing).
+Item 5's cost estimates are built from the SAME functions the real Claude
+calls use (`Ai.adviceSearchBudget`/`waiverSearchBudget`, extracted to
+named exports for exactly this reason) so the number on screen can never
+disagree with what a press would actually send.
+
+Item 7 (PlayerDB auto-refresh) surfaced a real pre-existing bug along the
+way: `refresh()` used to stamp `updated` to now even when every one of the
+32 ESPN team fetches failed (e.g. fully offline), which would have masked
+a failed refresh from ever being retried. Fixed to only stamp `updated`
+on at least partial success.
+
+Item 8 (the sweep) ran in two rounds. A live-browser walkthrough of all 7
+tabs plus the long-press "View stats" flow found nothing real — the two
+things that looked suspicious at first glance turned out to be a
+test-harness artifact (a raw JSON-parse error from a stub that doesn't
+honour the real ERRMARK sentinel `NativeBridge.java` always uses) and
+documented, correctly-labelled behaviour (the wire board's "positional
+floor" fallback for players with no individual projection).
+
+Then an independent code-quality review of the full diff (spawned as a
+background agent, given the exact diff range and feature descriptions)
+found two real bugs in the PlayerDB auto-refresh feature just added:
+
+1. The manual "Refresh from ESPN" button called the 32-team fetch
+   directly, bypassing `ensureFresh()`'s single-flight guard — a tap
+   landing while a background auto-refresh was already in flight started
+   a SECOND concurrent fetch against the same shared `DB.players` array,
+   each with its own stale dedupe snapshot, so a player added by one call
+   after the other's snapshot landed as a duplicate that would sit in
+   search/free-agent results until the next cold boot's `dedupe()`.
+   Fixed by moving the single-flight guard into `refresh()` itself (the
+   actual fetch became the private `doRefresh()`), so the manual button
+   and the background path always share one in-flight attempt.
+2. `viewWire()` calls the background refresh path on every render, and a
+   fully-failed attempt never clears staleness (by the item-7 fix above,
+   correctly) — so a phone offline on the Wire tab would retry a full
+   32-team fetch on every single render, forever, no backoff. Fixed with
+   a 15-minute retry cooldown on the BACKGROUND path only; the manual
+   button still always forces it, since that is a deliberate act.
+
+Fixing this properly turned up a bonus: testing the concurrency fix
+directly (not just as a source-text pin, which is normally the only
+practical option for a function that walks 32 ESPN rosters with retry
+backoff) became possible by stubbing every candidate URL to resolve
+immediately with one fake player instead of rejecting — nothing ever
+falls into the slow retry path, so the whole 32-team chain resolves in
+well under a second and the single-flight sharing can be proven by real
+object-identity, not just by reading the code.
+
+The same review flagged two Claude cost-estimate functions
+(`claudeAdviceEstimate`/`claudeWireEstimate`) recomputing a full roster
+projection or free-agent scan on every render just to refresh a dollar
+string — e.g. tapping a position-filter chip on the wire board re-ran a
+whole-league valuation pass for no reason. Memoised both, same `_faMemo`
+shape `value.js` already uses, with the price rates included in the key
+so editing a rate on the Data tab still updates the number immediately
+rather than serving a stale cached one — proven against the real
+Store/Usage/Recommend wiring in `test_integration.js`, since a wrong key
+here is a real, user-visible correctness risk, not just a performance one.
+
+That same memoisation edit introduced its own bug, caught by re-running
+the live-browser sweep after making the change (not by any unit suite,
+since none of them load `ui.js` against a real DOM): `ui.js` is the one
+module in this app that is a bare `(function () {...})()` rather than
+`(function (root) {...})(window)`, so `root` does not mean `window`
+there — writing `root.Store.generation()` was a `ReferenceError` on every
+call, silently swallowed by the function's own `try/catch`, which is
+exactly why "Ask Claude about the wire"'s estimate vanished from the Data
+tab entirely until the browser check caught it. Fixed to the file's own
+established pattern (`window.Store && Store.generation`, as the existing
+search-owner-index cache already does a few hundred lines above).
+
+Also fixed along the way: a hardcoded "couple of days" in the Data tab's
+hint text now derives from `PlayerDB.STALE_MS` so it cannot drift from
+the real constant, and `store.js`'s `defaults()` now lists the `lastTab`
+setting item 3 added, keeping that function's own claim to be a complete
+list of settings true.
+
+All 13 suites + the ES2018 gate green throughout both rounds; `bash
+build.sh` run twice (once after the original 7 items, once after the
+review-driven fixes) to confirm the new Android splash resources
+(`values-v31/styles.xml`, `splash_empty.xml`) actually compile — dex
+class-per-source check passed both times.
+
+Two items are code-reviewed and cannot be confirmed further from this
+environment: the back-button fix (already shipped before this diff,
+proven by `test_lifecycle.js`) and the splash-flash fix and app-resume
+tab-restore (both are Android-behaviour-under-real-OS-conditions changes
+with no way to trigger a real backgrounding/process-kill from a
+Playwright browser harness) — carried forward to "Waiting on Tj" in
+TASKS.md.
