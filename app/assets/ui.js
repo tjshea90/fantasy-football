@@ -2710,8 +2710,34 @@
   }
 
   /* ---------- DATA ---------- */
+  /* Tj, 2026-09-15g: "organize the data tab with sub navigation that is
+   * smart and easy to understand." Grouped by WHAT a card is for, not an
+   * arbitrary split: League (the season's own data — scores, standings,
+   * matchups, scoring rules, the new recap), Claude (the two AI-related
+   * cards), Sync & data (where the numbers come from and its health),
+   * App (device/app behaviour and maintenance). Every card that existed
+   * before this landed in exactly one of the four, in its original order
+   * within that group — nothing was cut, only regrouped. */
+  var DATA_SUBTABS = [['league', 'League'], ['claude', 'Claude'],
+                       ['sync', 'Sync & data'], ['app', 'App']];
+  function dataSubNav() {
+    var nav = el('div');
+    nav.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px';
+    DATA_SUBTABS.forEach(function (t) {
+      var on = dataSubView === t[0];
+      var b = el('button', 'btn sm' + (on ? ' pri' : ''), t[1]);
+      b.addEventListener('click', function () {
+        if (dataSubView === t[0]) return;
+        dataSubView = t[0]; render();
+      });
+      nav.appendChild(b);
+    });
+    return nav;
+  }
   function viewData(root) {
     var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
+    root.appendChild(dataSubNav());
+    if (dataSubView !== 'league') { viewDataBody(root); return; }
     addSafe(root, 'Weekly scores', weeklyScoresCard);
     addSafe(root, 'Standings', standingsCard);
     /* matchups */
