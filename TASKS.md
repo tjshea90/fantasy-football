@@ -197,7 +197,30 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
-- [ ] **Confirm v6.1 on the phone**:
+- [ ] **Confirm v6.2 on the phone**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.2
+      ```
+      This is the one that most needs a real device — several of its 8
+      items are exactly the kind of thing a browser harness cannot prove
+      (real backgrounding, a real process kill, a real Android 12+ splash
+      screen). Specifically worth checking: (1) press the Android back
+      button from a non-Live tab — should unwind to wherever you came from,
+      never straight to the home screen; (2) switch to another app and back
+      — should reopen on whatever tab was open, not jump to Live; (3) same
+      switch-away-and-back — no flash of the app logo before the screen you
+      were on reappears; (4) Data tab → "Claude costs" card — should show
+      live dollar estimates next to "Sync advice" and "Ask Claude about the
+      wire", never a "$X left" meter or a percentage; (5) Advice tab →
+      "Bench, ranked" card → each bench player should have its own "why not
+      ▾" explanation, same as starters' "why ▾"; (6) Rosters tab → your team
+      roster should render above the trade evaluator, not below; (7) Data
+      tab → "Player database" card should mention it also refreshes itself
+      automatically. This carries forward and supersedes the v6.1 ask below
+      — if v6.2 looks right, that one does not need a separate look.
+- [ ] **Confirm v6.1 on the phone** (superseded by v6.2 above; only worth a
+      separate look if v6.2's own check above turns up something the v6.1
+      fixes might be involved in):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.1
       ```
