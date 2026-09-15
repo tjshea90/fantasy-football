@@ -33,7 +33,7 @@ function makeEl(tag) {
   var e = {
     tagName: String(tag || 'div').toUpperCase(),
     children: [], style: {}, dataset: {}, attributes: {},
-    className: '', textContent: '', innerHTML: '', value: '', hidden: false,
+    className: '', textContent: '', value: '', hidden: false,
     disabled: false, selectedIndex: 0, options: [],
     classList: {
       _s: {},
