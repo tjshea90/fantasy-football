@@ -118,6 +118,14 @@ th{color:var(--dim);font-size:11px;font-weight:600;text-transform:uppercase;lett
 th:first-child,td:first-child{text-align:left}
 td.num{font-variant-numeric:tabular-nums}
 tr.me td{background:rgba(240,169,43,.09)}
+/* A game log or a full team roster carries more stat columns than a phone is
+   wide — scroll the table sideways instead of squeezing every number
+   unreadably small. The table inside keeps its own natural width. */
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px}
+.twrap table{width:auto;min-width:100%}
+.twrap th,.twrap td{white-space:nowrap}
+tr.pts td{font-weight:700}
+td.hi{color:var(--accent)}
 #tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--panel);
   border-top:1px solid var(--line);
   padding-bottom:calc(var(--ins-bot) + var(--adj-bot));
