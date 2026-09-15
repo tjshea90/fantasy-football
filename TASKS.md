@@ -1,5 +1,19 @@
 # TASKS — the current job, in Tj's words
 
+**There is no active job right now.** The most recent one (2026-09-15g:
+the weekly recap feature, and Data tab sub-navigation) is complete,
+shipped as v6.7, and archived at LADDER.md §35 — full write-up in
+STATE.md's 2026-09-15g entry. The job right before it (2026-09-15h: the
+week-advance fix still failed on a true cold boot — a network-free
+`localAutoAdvance()` backstop fixed it for real) is complete, shipped as
+v6.6, archived at LADDER.md §34, STATE.md's 2026-09-15h entry. **Tell Tj
+plainly if he reports the week still not advancing after v6.6/v6.7**:
+that would point to `weekMeta['1'].allFinal` not actually being true in
+his own local data (week 1 never fully synced as final on his phone),
+a different, diagnostic fact — not a repeat of the same bug.
+
+OLD:
+
 ## 2026-09-15h: the week-advance fix STILL didn't work — a true cold boot too
 
 > "I forced stopped the app and opened it again. Every tab in the app is
