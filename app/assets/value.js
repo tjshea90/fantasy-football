@@ -71,7 +71,7 @@
 
   /* opportunity, not points: what actually predicts next week */
   function usage(name, week, n) {
-    var t = root.Store.bookTrend ? root.Store.bookTrend(norm(name), week - 1, n || 3) : [];
+    var t = root.Store.bookTrend ? root.Store.bookTrend(name, week - 1, n || 3) : [];
     var rows = [], i;
     for (i = 0; i < t.length; i++) {
       if (!t[i].row) { rows.push({ week: t[i].week, played: false }); continue; }
