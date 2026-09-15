@@ -1396,12 +1396,46 @@
       row.appendChild(btn);
     });
     form.appendChild(row);
+    /* opportunity over the last three weeks, above the points. Touches are what
+       predict next week; points are what happened last week. Fixed part of
+       the body — unaffected by the adjustment below, computed once. */
+    var trend = window.Value ? Value.usageText(rec.player.name, week + 1) : '';
+    function bodyTextFor(scObj) {
+      return fmt(scObj.total) + ' points\n\n' +
+        (scObj.parts.length
+          ? scObj.parts.map(function (p) { return '  ' + p.label + '   ' + (p.pts > 0 ? '+' : '') + fmt(p.pts); }).join('\n')
+          : '  no scoring plays') +
+        (trend ? '\n\nOpportunity\n  ' + trend.split('   ·   ').join('\n  ') : '');
+    }
+    /* NOT modal() here (found in the 2026-09-15e sweep): modal()/dialog()
+     * write the <pre> body ONCE at open time with no way back into it, so
+     * "Save adjustment" updated the toast and the page underneath but left
+     * the modal showing the OLD total and breakdown frozen on screen right
+     * above the button that just changed them — the one action this dialog
+     * exists to offer, visibly not reflected by it. dialog() is called
+     * directly instead, building the <pre> here (same markup/styling
+     * dialog() itself would have used) so the save handler can rewrite its
+     * text in place. */
+    var preEl;
+    dialog(rec.player.name + ' · week ' + week, null, function (box, row, close) {
+      preEl = el('pre');
+      preEl.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
+        'font-family:inherit;line-height:1.5';
+      preEl.textContent = bodyTextFor(sc);
+      box.appendChild(preEl);
+      box.appendChild(wrap);
+      var ok = el('button', 'btn pri', 'Close');
+      ok.addEventListener('click', close);
+      row.appendChild(ok);
+    });
     var save = el('button', 'btn pri', 'Save adjustment');
     save.style.marginTop = '8px';
     save.addEventListener('click', function () {
       line.manualAdj = Number(inp.value) || 0;
       Store.save(); render();
-      toast(rec.player.name + ' adjusted to ' + fmt(Scoring.score(line).total));
+      var freshSc = Scoring.score(line);
+      if (preEl) preEl.textContent = bodyTextFor(freshSc);
+      toast(rec.player.name + ' adjusted to ' + fmt(freshSc.total));
     });
     form.appendChild(save);
     adjBtn.addEventListener('click', function () {
@@ -1411,17 +1445,6 @@
     });
     wrap.appendChild(adjBtn);
     wrap.appendChild(form);
-
-    /* opportunity over the last three weeks, above the points. Touches are what
-       predict next week; points are what happened last week. */
-    var trend = window.Value ? Value.usageText(rec.player.name, week + 1) : '';
-    modal(rec.player.name + ' · week ' + week,
-      fmt(sc.total) + ' points\n\n' +
-      (sc.parts.length
-        ? sc.parts.map(function (p) { return '  ' + p.label + '   ' + (p.pts > 0 ? '+' : '') + fmt(p.pts); }).join('\n')
-        : '  no scoring plays') +
-      (trend ? '\n\nOpportunity\n  ' + trend.split('   ·   ').join('\n  ') : ''),
-      wrap);
   }
 
   /* ---------- LINEUPS ----------
