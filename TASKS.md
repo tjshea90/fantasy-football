@@ -13,21 +13,52 @@ can see (this repo's own tests do not run on a real device or a real
 WebView). Treat as a real regression, not a duplicate — do not just
 re-point Tj at the same "already fixed" evidence.
 
-- [ ] 1. Read `MainActivity.java`'s actual back-press handling (the
+- [x] 1. Read `MainActivity.java`'s actual back-press handling (the
       `onBackPressed()` override or, if targetSdk 33+, the newer
       `OnBackInvokedCallback`/predictive-back API — targetSdk is 36 per
       `build.sh`'s own output, so check whether the old override still
       fires at all under Android's predictive-back system) and confirm it
       really calls into the WebView's `__onBack()` and respects what it
       returns, rather than falling through to the default (finish the
-      Activity) in some case the JS-side unit tests cannot exercise.
-- [ ] 2. Find the actual root cause — do not guess and patch symptoms.
-- [ ] 3. Fix it, and find a way to verify beyond "the JS trail-walking
+      Activity) in some case the JS-side unit tests cannot exercise. Done —
+      the app only had `onKeyDown(KeyEvent.KEYCODE_BACK)`, nothing else.
+- [x] 2. Find the actual root cause — do not guess and patch symptoms.
+      Found: `onKeyDown(KEYCODE_BACK)` is the CLASSIC back dispatch path.
+      On a real Android 13+ phone (this app's targetSdk 36 makes predictive
+      back the effective default), a gesture-based back SWIPE does not
+      synthesize a `KEYCODE_BACK` `KeyEvent` at all once predictive back is
+      active — it goes through a completely separate dispatch
+      (`OnBackInvokedCallback`), which nothing in this app registered.
+      `onKeyDown` was silently never invoked on Tj's phone. This is
+      structurally invisible to `test_lifecycle.js`'s proof that `__onBack`'s
+      OWN trail-walking logic is correct (still true, and still not the bug)
+      and to any source-grep of `MainActivity.java` that only checks WHAT
+      the method does, never whether the platform actually calls it.
+- [x] 3. Fix it, and find a way to verify beyond "the JS trail-walking
       logic is correct in a stub" (which was already true and evidently
       insufficient) — at minimum, trace the real call path end to end and
       identify exactly why the previous fix did not reach a real device.
-- [ ] 4. Ship as a new version once fixed and verified, same release
-      process as before.
+      Fixed — registered `android.window.OnBackInvokedCallback` (part of the
+      API 36 platform SDK this app already compiles against; no AndroidX,
+      no new dependency) on `Build.VERSION.SDK_INT >= 33`, routed to the
+      SAME shared `askPageToHandleBack()` method `onKeyDown` now also calls
+      (one implementation, not two that could quietly stop agreeing — which
+      is exactly the shape of bug this was). Required
+      `android:enableOnBackInvokedCallback="true"` in the manifest —
+      registering the callback in code has no effect without it.
+      `onKeyDown` is kept, unchanged in behavior, as the sole path below API
+      33 (minSdk 29), where predictive back does not exist. Verified:
+      `bash build.sh` compiles clean against the real platform API (26
+      classes, dex check passed); new source-text regression tests in
+      `tools/test_gestures.js` pin the import, the registration, the
+      manifest flag, and that both dispatch paths call the one shared
+      method. **Cannot be verified beyond that from this environment** — no
+      `adb`/emulator here, and the bug only reproduces via a real
+      gesture-navigation swipe on a real Android 13+ device, which is
+      exactly why the first attempt (proven correct by every test that
+      existed) still missed it. Genuinely needs Tj's phone.
+- [x] 4. Ship as a new version once fixed and verified, same release
+      process as before. Shipped as v6.3.
 
 **There is no OTHER active job right now.** The 2026-09-15c request (Rosters
 reorder, back button, app-resume state, no splash flash, Claude cost
