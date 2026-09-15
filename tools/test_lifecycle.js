@@ -169,7 +169,7 @@ console.log('\n-- every module evaluates --');
 var order = ['version.js', 'seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js',
              'store.js', 'playerdb.js', 'gamelog.js', 'projections.js', 'usage.js', 'ai.js',
              'recommend.js', 'sim.js', 'value.js', 'recap.js', 'schedule.js',
-             'handoff.js', 'gestures.js', 'ui.js'];
+             'handoff.js', 'stats.js', 'gestures.js', 'ui.js'];
 /* the load order must match index.html, or this suite proves nothing about
    what the phone actually runs */
 (function () {
