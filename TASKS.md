@@ -1,103 +1,12 @@
 # TASKS — the current job, in Tj's words
 
-## 2026-09-15c: bug/UI sweep, Rosters reorder, back button, app-resume state, Claude cost estimates, bench "why not", PlayerDB auto-refresh
-
-> "Do an overall sweep for bugs and ways to improve ui and functionality. In
-> the rosters tab, move the trade evaluator to the very bottom, I want to
-> see team rosters at the top. Make sure if I press the android back arrow
-> it goes to the last thing in the app, because right now when I press
-> back it goes to my android home screen. Make it so if I switch apps then
-> go back to the fantasy app it automatically goes back to what I was
-> already looking at last. Right now it always jumps back to the live tab
-> if I switch apps then go back to it. If it is possible, when I switch
-> back to the fantasy app from another app, immediately show the thing I
-> was last looking at without the logo of the app splashing. Right now
-> when I switch back to the app, it splashes the app logo first. I want no
-> delays. Get rid of anywhere in the app where it says how much Claude api
-> usage I have left, because I no longer have the API key. Instead, put an
-> estimate of what each request would cost on a Claude api. For example,
-> under "ask Claude" put "estimated 8 cents". Try to make the price
-> estimate accurate, or if it is better, ask Claude itself to estimate the
-> cost via the API. In the advice section, for the bench players, let me
-> see a Claude explanation for each player why not to start them that
-> week, just as it explains for why to start the starting players it
-> recommends. In the data section, there is an option to refresh the total
-> player database for all teams. Keep this there but also make the app
-> itself automatically refresh this data at least every couple days and
-> each time I refresh waiver wire information or anything else that it is
-> important to see all players.
->
-> After all these are finished, run tests that everything works and
-> everything is well coded and efficient"
-
-Note on item 5: "ask Claude itself to estimate the cost via the API" is not
-reachable as literally written — Tj no longer has an API key (that is the
-premise of item 5 itself), and this session has no key of its own either. A
-computed estimate (Anthropic's published per-model price × a measured/typical
-token count for that exact call) is the accurate path available; investigate
-whether `Usage.money`/the existing per-sync cost tracking (usage.js) already
-has real historical token counts to base this on before inventing new math.
-
-- [x] 1. Rosters tab: move the trade-evaluator card to the bottom, team
-      roster card(s) to the top. Done — `viewRosters()` renders the roster
-      card before `tradeCard()`. Verified live in a browser: card order on
-      the Rosters tab is "My team · 17 players" then "Trade evaluator".
-- [x] 2. Android back button: currently exits straight to the home screen
-      instead of unwinding in-app history — investigate why (this exact
-      behavior was supposedly built in v4.7 per LADDER.md; either it
-      regressed or Tj is describing a case that behavior doesn't cover) and
-      fix it so back always goes to "the last thing in the app" first.
-      Done earlier this same job (unchanged since, confirmed by diffing
-      b98c220..HEAD). Proven by `tools/test_lifecycle.js`: "from a non-Live
-      tab, back unwinds the visit history", "it walks back through the
-      whole trail, one tab at a time", "draining the trail lands back on
-      Live", "once the trail is empty it declines — the Activity
-      backgrounds instead of closing".
-- [x] 3. App resume (switching away and back) must restore exactly the
-      screen/tab Tj was last looking at, not jump to Live — investigate
-      MainActivity's onResume/state handling; this is a DIFFERENT bug from
-      #2 even though both are about "coming back to the app." Done —
-      `S.settings.lastTab` is persisted on every real tab change (`goTab()`)
-      and restored in `boot()` if still a valid tab. Covers the common real
-      case (Android killing the background process, so the next "resume" is
-      actually a fresh `boot()`); code-reviewed, cannot be confirmed against
-      a real device from this environment — carried to "Waiting on Tj" below.
-- [x] 4. No splash flash on resume — investigate whether this is fixable
-      from the WebView/Activity side (likely an Android launch-theme /
-      window-background question, not JS) and do what's actually possible;
-      report honestly if something is a hard OS-level limit rather than
-      silently skipping it. Done, as far as the platform allows: below API
-      31 there was never an OS splash, only WebView's own white flash before
-      content, fixed via `MainActivity.java`'s `web.setBackgroundColor` (now
-      matches `@color/bg` exactly, confirmed against both `colors.xml` and
-      `app.css`'s `--bg`). API 31+ shows its own unavoidable splash — no
-      manifest flag turns it off entirely — so `values-v31/styles.xml`
-      overrides its background and icon to be invisible instead
-      (`splash_empty.xml`, a 1dp fully-transparent vector). Verified the APK
-      actually builds clean with both new resources (`bash build.sh`, dex
-      class check passed); the visual result cannot be confirmed against a
-      real device from this environment — carried to "Waiting on Tj" below.
-- [x] 5. Remove every "Claude usage remaining / spend so far" display
-      (usage.js-backed UI, since there is no key to meter); replace with a
-      per-request estimated-cost label (e.g. "estimated 8 cents") next to
-      every "Ask Claude" / Claude-sync action, computed from Anthropic's
-      published pricing and a real token-count basis, not a guess. Done —
-      `Usage.estimate()` prices the exact prompt/search-budget the next real
-      call would send (`Ai.adviceSearchBudget`/`waiverSearchBudget`, shared
-      with the real call so they can never disagree); shown live next to
-      both the "Sync advice" and "Ask Claude about the wire" buttons and
-      together on the Data tab's "Claude costs" card. All "budget/remaining/
-      % used/syncs left" fields and UI removed. Verified live in a browser
-      (Claude costs card shows "$0.104"/"$0.042" estimates, zero mentions of
-      "left" or a budget meter) and by `tools/test_engine.js`.
-- [x] 6. Advice tab: for each BENCHED player, show a Claude-generated "why
-      not to start him" explanation, the same way the recommended starters
-      already get a "why" explanation — same data/sync path, not a second
-      Claude integration. Done — reuses `x.why` (already computed by
-      `projectAll()`/`projectOne()` for every roster player, starters and
-      bench alike, Claude's own reasoning included when he was researched);
-      added the same "why ▾" `<details>` pattern the starter rows already
-      use, worded "why not ▾", to each bench row. Verified with a
+**There is no active job right now.** The 2026-09-15c request (Rosters
+reorder, back button, app-resume state, no splash flash, Claude cost
+estimates, bench "why not", PlayerDB auto-refresh, and a full bug sweep) is
+complete, shipped as v6.2, and archived at the end of `LADDER.md` (§30).
+Full design notes and the item-8 sweep's writeup (including the two real
+concurrency bugs an independent review found and this session fixed) are in
+STATE.md's 2026-09-15c entry.
       data-layer check: every bench player in the seeded roster carries a
       non-empty `why[]`, identical field and shape to what starters show.
 - [x] 7. PlayerDB (the 785-player database, Data tab's manual refresh
