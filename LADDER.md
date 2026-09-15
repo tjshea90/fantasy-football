@@ -1161,3 +1161,41 @@ for this environment to verify the live API's real behavior.
       build.sh` clean.
 
 Shipped as v6.6. All 14 suites + the ES2018 gate green.
+
+## 35. The weekly recap feature, and Data tab sub-navigation (Tj, 2026-09-15, v6.7)
+
+> "Build The 'weekly recap' Claude write-up feature you told me about.
+> Make the button where it is most appropriate but it shouldn't push away
+> any major feature because I probably won't use it much. Then organize
+> the data tab with sub navigation that is smart and easy to understand.
+> When you are done, test that it all works and didn't break anything
+> else in the app."
+
+Full write-up in STATE.md's 2026-09-15g entry. Tj's go-ahead on both
+items the 2026-09-15e sweep had flagged but deliberately not
+implemented.
+
+- [x] 1. Recap feature wired up: `weeklyRecapCard()`/`openRecapDialog()`
+      (ui.js) call the already-complete `Recap.build`/`text` (real,
+      no-network facts) and `Ai.recap()` (optional Claude rewrite, only
+      when a key is configured) and offer the result via `Native.share`/
+      `copy`. One small card in the Data tab's League group, after the
+      cards Tj actually uses weekly, per his own "probably won't use it
+      much."
+- [x] 2. Data tab reorganized into 4 sub-nav groups by purpose — League,
+      Claude, Sync & data, App — `viewData()` split into 4 named
+      functions, every pre-existing card relocated with its own logic
+      unchanged, none dropped.
+- [x] 3. Proven end-to-end in `tools/test_lifecycle.js` (real DOM
+      execution, not source text): all 4 groups clicked through like a
+      real thumb, each group's cards confirmed present; the recap dialog
+      opened against a real scored week, its text confirmed to come from
+      the real fact sheet, the Claude button confirmed correctly gated.
+      Found and fixed a real bug in the test harness itself along the way
+      — the DOM stub's `innerHTML` never actually cleared old children,
+      so every render in the suite was silently accumulating into one
+      tree; fixed with a real accessor, making every test in the file
+      more accurate. All 14 suites + ES2018 gate green, `bash build.sh`
+      clean.
+
+Shipped as v6.7. All 14 suites + the ES2018 gate green.
