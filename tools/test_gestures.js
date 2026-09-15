@@ -253,6 +253,32 @@ function finish() {
        mj.slice(0, mj.indexOf('__onBack'))),
      'canGoBack is no longer the FIRST thing consulted (it is always false here)');
 
+  /* ---- v6.2 real-device regression: onKeyDown alone is not enough --------
+   * Tj found this on his own phone after v6.2 shipped with only onKeyDown
+   * (KeyEvent.KEYCODE_BACK): a gesture-based back swipe on a real Android
+   * 13+ phone with predictive back active never synthesizes that KeyEvent
+   * at all, so onKeyDown silently never fires and the system's default
+   * (finish the Activity) takes over. This cannot be caught by running the
+   * app anywhere this suite can reach — it only reproduces on a real
+   * device's real gesture dispatch — so it is pinned as source text the
+   * same way the rest of this block already is, plus one check that would
+   * have caught the FIRST version of this fix attempt: two independent
+   * back-handling methods that happen to agree today but are free to drift
+   * apart tomorrow. */
+  ok(/android\.window\.OnBackInvokedCallback/.test(mj) && /android\.window\.OnBackInvokedDispatcher/.test(mj),
+     'MainActivity imports the platform (not AndroidX) predictive-back API — this app has no Gradle/AndroidX dependency to add one');
+  ok(/registerOnBackInvokedCallback/.test(mj) && /Build\.VERSION\.SDK_INT >= 33/.test(mj),
+     'and registers it on API 33+, where a gesture back swipe stops generating a KEYCODE_BACK KeyEvent at all');
+  const manifestXml = fs.readFileSync(path.join(__dirname, '..', 'android', 'AndroidManifest.xml'), 'utf8');
+  ok(/android:enableOnBackInvokedCallback="true"/.test(manifestXml),
+     'the manifest opts in — registering the callback in code has no effect without this flag');
+  ok(/private void askPageToHandleBack\(\)/.test(mj),
+     'one shared implementation the callback AND onKeyDown both call — not two that could quietly stop agreeing, ' +
+     'which is exactly how the pre-fix version only handled one of the two real dispatch paths');
+  const onKeyDownBody = mj.slice(mj.indexOf('boolean onKeyDown'), mj.indexOf('boolean onKeyDown') + 300);
+  ok(/askPageToHandleBack\(\);/.test(onKeyDownBody),
+     'onKeyDown (the API < 33 path) calls the shared method, not its own copy of the logic');
+
   const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'assets', 'app.css'), 'utf8');
   ok(/overscroll-behavior-y:\s*contain/.test(css),
      "the browser's own overscroll does not fight the app's pull-to-refresh");
