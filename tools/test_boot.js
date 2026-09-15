@@ -108,6 +108,25 @@ ok(!/Shown at the top of Live, Lineups and Advice/.test(ui),
 ok(/var viewBtn = el\('button', 'btn pri', 'View stats'\);/.test(ui) &&
    !/var view = el\('button', 'btn pri', 'View stats'\);/.test(ui),
    'openPlayerStatsMenu no longer shadows the file-level `view` (current tab) with a local button variable');
+/* doSync() already render()s on both its success and catch path (see its
+   own end) — the pull-to-refresh default branch used to wrap it in a
+   SECOND .then(render)/.catch(render), rendering the whole page twice on
+   every pull on every tab but Advice and Stats. */
+ok(/return doSync\(\{ quiet: false \}\);/.test(ui) &&
+   !/p\.then\(function \(\) \{ render\(\); \}, function \(\) \{ render\(\); \}\)/.test(ui),
+   'pull-to-refresh no longer renders the page a second time on top of doSync\'s own render');
+/* the long-press click-suppression window used to swallow ANY click
+   anywhere in the document for 400ms, including taps on the Cancel/View
+   buttons of the dialog it had just opened (a different DOM subtree, not
+   the long-pressed row) — scoped to clicks on the same row instead. */
+ok(/lpSuppressRow = row;/.test(ui) &&
+   /findPlayerRow\(e\.target\) === lpSuppressRow/.test(ui),
+   'long-press click suppression is scoped to the row that triggered it, not every click on the page');
+/* freshenInjuries had no .catch — an async rejection (offline, a bad feed)
+   from Recommend.loadNews went unhandled every failed tick, unlike every
+   other network call on the same live-poll chain right below it. */
+ok(/Recommend\.loadNews\(null\)\.then\(function \(nc\) \{[\s\S]{0,80}\}\)\['catch'\]\(function \(\)/.test(ui),
+   'freshenInjuries now catches a failed news fetch instead of leaving it unhandled');
 /* the old catch-block comment here claimed "onKeyDown is still there" as a
  * fallback if callback registration ever throws — false per Android's own
  * predictive-back docs once enableOnBackInvokedCallback=true is set
