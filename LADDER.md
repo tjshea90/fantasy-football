@@ -912,4 +912,14 @@ writeup are in `TASKS.md`'s history and STATE.md ("the Stats tab itself" /
       (`mcp__github__get_release_by_tag`, non-empty assets, correct
       content type) before telling Tj.
 
+**Same-day follow-up (v6.1):** Tj tested v6.0 within minutes and found two
+real bugs neither the suite nor the browser pass had caught, both from real
+screenshots — full writeup in STATE.md's 2026-09-15b entry. Top Players got
+stuck showing a stale week (`stats.js` kept its own week state instead of
+following the app's one global week like every other tab); the team roster
+view showed a full stat table with no player names (a table helper built
+for one row-shape was reused unchanged for a different one). Both fixed and
+re-verified live in the same browser harness, reproducing Tj's exact steps
+programmatically. Shipped as v6.1 same session.
+
 All 13 suites green throughout.
