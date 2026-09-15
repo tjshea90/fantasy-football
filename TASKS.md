@@ -9,14 +9,13 @@ to background/reopen or relaunch the app once v6.5 installs for the fix
 to take effect.
 
 The 2026-09-15e request before it (a comprehensive app-wide sweep — 5
-comprehensive app-wide sweep — 5 rounds of verified fixes across data
-integrity, value.js correctness, UI/feature correctness, Android hardening
-and cost/model accuracy, plus 13 smaller fixes) is complete, shipped as
-v6.4, and archived at the end of `LADDER.md` (§32) — full root-cause
-writeup for every fix in STATE.md's 2026-09-15e entry. Two items came out
-of that sweep that need Tj's decision rather than being done unasked — see
-"Waiting on Tj" below (the Data tab card wall, the dead recap.js write-up
-feature).
+rounds of verified fixes across data integrity, value.js correctness,
+UI/feature correctness, Android hardening and cost/model accuracy, plus
+13 smaller fixes) is complete, shipped as v6.4, and archived at the end of
+`LADDER.md` (§32) — full root-cause writeup for every fix in STATE.md's
+2026-09-15e entry. Two items came out of that sweep that need Tj's
+decision rather than being done unasked — see "Waiting on Tj" below (the
+Data tab card wall, the dead recap.js write-up feature).
 
 The 2026-09-15d request before it (the back button still closing the app
 on a real device, a second attempt at the same symptom) is archived at
