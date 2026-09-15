@@ -153,15 +153,15 @@ at cost on every cold start, forever.
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.3
       ```
-- [ ] **Confirm v6.2 on the phone** (superseded by v6.4 above — the back
+- [ ] **Confirm v6.2 on the phone** (superseded by v6.5 above — the back
       button specifically is now known-broken on v6.2, so there is no
       reason to test that build further):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.2
       ```
-- [ ] **Confirm v6.1 on the phone** (superseded by v6.2/v6.3/v6.4 above;
-      only worth a separate look if those checks turn up something the
-      v6.1 fixes might be involved in):
+- [ ] **Confirm v6.1 on the phone** (superseded by v6.2/v6.3/v6.4/v6.5
+      above; only worth a separate look if those checks turn up something
+      the v6.1 fixes might be involved in):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.1
       ```
