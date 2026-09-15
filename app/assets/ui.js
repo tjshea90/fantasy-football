@@ -1986,6 +1986,28 @@
     }
     return c;
   }
+  /* What "Ask Claude about the wire" would actually cost right now, from the
+   * REAL prompt this exact press would send — Ai.waiverSearchBudget is the
+   * same function askWaivers() itself calls, so this can never claim a
+   * cheaper (or pricier) call than the real one. Wrapped: an estimate must
+   * never be able to break the wire board it sits under. */
+  function claudeWireEstimate() {
+    try {
+      var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season,
+                                    new Date().toISOString().slice(0, 10));
+      var budget = Ai.waiverSearchBudget(ctx.needs, ctx.injuries);
+      var promptChars = Ai.buildWaiverPrompt(ctx).length;
+      /* Output is the fuzzier half of this (no formula the way search count
+         has one) — a rough per-position-of-need allowance plus a little per
+         search for the model's own narration between them. Search cost
+         dominates the bill regardless (see Usage.estimate's own note), so
+         being a bit off here costs the estimate little. */
+      var nNeed = Math.max(1, (ctx.needs || []).length);
+      var outputTokens = 300 + nNeed * 220 + budget * 60;
+      return Usage.money(Usage.estimate(promptChars, budget, outputTokens));
+    } catch (e) { return null; }
+  }
   function freeAgentCard() {
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Free agents · week ' + week));
