@@ -1416,7 +1416,11 @@
       if (L[k.key]) {
         var lp = Store.playerById(L[k.key]);
         if (lp) {
-          var lb = gameBadge(lp.nfl); if (lb) lab.appendChild(lb);
+          /* BUG (pre-existing, found 2026-09-15): Store.playerById returns
+             {team, player}, not the player itself — lp.nfl was always
+             undefined, so this badge never showed on the Lineups tab. */
+          markPlayer(lab, lp.player.name, lp.player.pos, lp.player.nfl);
+          var lb = gameBadge(lp.player.nfl); if (lb) lab.appendChild(lb);
           appendHealthTags(lab, flagsById[L[k.key]]);
         }
       }
