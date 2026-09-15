@@ -1,75 +1,26 @@
 # TASKS — the current job, in Tj's words
 
-## 2026-09-15e: comprehensive app-wide scan for improvements (code, function, UI)
+**There is no active job right now.** The most recent one (2026-09-15e: a
+comprehensive app-wide sweep — 5 rounds of verified fixes across data
+integrity, value.js correctness, UI/feature correctness, Android hardening
+and cost/model accuracy, plus 13 smaller fixes) is complete, shipped as
+v6.4, and archived at the end of `LADDER.md` (§32) — full root-cause
+writeup for every fix in STATE.md's 2026-09-15e entry. Two items came out
+of that sweep that need Tj's decision rather than being done unasked — see
+"Waiting on Tj" below (the Data tab card wall, the dead recap.js write-up
+feature).
 
-> "Do a comprehensive app wide scan for improvements in code and function
-> and ui. Take as long as you need and use as much usage as you need. Do a
-> thorough job. Improve the app as much as you can and I'll check back much
-> later"
-
-Open-ended, not scoped to a specific bug or feature — the whole app, all
-three axes (code quality, functional correctness, UI/UX). Per his standing
-preference (see the top of this session's system context): after major
-updates do a full sweep, take as much time as needed, don't introduce new
-bugs, keep everything resumable, and — the one hard boundary — "do not make
-any major changes unless I approve." So: real bugs get fixed outright;
-small/moderate code-quality and UI improvements get made outright; anything
-that would be a major redesign, a new feature, or a significant behavior
-change gets flagged/asked about rather than just done. He said he'll check
-back much later, so this runs autonomously — checkpoint after every real
-step, the way every job in this repo already does.
-
-- [x] 1. Planned and dispatched: 6 parallel background review agents, each
-      scoped to a logical area (data/scoring core, value/recommend engine,
-      UI part 1, UI part 2, Android/Java shell, ai/usage/handoff), each
-      explicitly read-only, reporting ranked findings independently. Every
-      finding was personally re-verified against real source before acting
-      — this caught two review-agent claims that did NOT hold up (the
-      legacy httpGet/httpGetH/httpPost methods are tested-and-used by
-      design, not dead code; value.js's _faMemo generation-keyed
-      invalidation is a deliberate, robust, already-correct pattern used
-      consistently across value.js/recommend.js/ui.js, not an "incidental"
-      gap) — both left alone rather than "fixed."
-- [x] 2. Triaged into 5 rounds by risk/area (data integrity; value.js
-      correctness; UI/feature correctness; Android hardening; cost/model
-      accuracy) plus a batch of 13 smaller verified fixes; 2 items flagged
-      for Tj below rather than done unasked (the Data tab card wall, the
-      dead recap.js/Ai.recap/NativeBridge share+copy write-up chain).
-- [x] 3. All 5 rounds plus the small-fixes batch applied and checkpointed
-      individually via `tools/ckpt.sh` (10 checkpoints across this job,
-      ckpt 281 through 361) — see STATE.md's 2026-09-15e entry for the
-      full list of real bugs fixed, with root cause and proof for each.
-- [x] 4. Live-browser pass done via a local static server + Playwright
-      (chromium): confirmed a clean boot with no real console errors (the
-      only console noise was ERR_CERT_AUTHORITY_INVALID from this sandbox's
-      own network proxy blocking live ESPN/Anthropic calls, and a harmless
-      favicon.ico 404 — neither is a real app defect); confirmed the
-      long-press "View stats" dialog opens on a real touch-event sequence
-      and, critically, that tapping its own Cancel button WITHIN the 400ms
-      suppression window now actually dismisses it (the exact
-      click-suppression-scoping fix from this sweep, proven live, not just
-      by source-text pin); confirmed the Data tab renders its "Claude
-      costs" section with the corrected copy and no errors.
-- [x] 5. All 14 suites + the ES2018 gate green throughout, `bash build.sh`
-      run clean repeatedly (28 classes, signature OK) after every round.
-      Shipped — see the Release link Tj was sent, and STATE.md's entry for
-      the version number.
-
-**There is no OTHER active job right now.** The most recent one (2026-09-15d: the
-back button still closing the app on a real device, even after 2026-09-15c
-had already claimed to fix it) is complete, shipped as v6.3, and archived at
-the end of `LADDER.md` (§31) — full root-cause writeup in STATE.md's
-2026-09-15d entry. **This one specifically needs a real check, not a
-formality** — see "Waiting on Tj" below, which flags it as a second attempt
-at the same symptom, the first having looked correct by every test that
-existed at the time.
-
-The 2026-09-15c request before it (Rosters reorder, back button,
-app-resume state, no splash flash, Claude cost estimates, bench "why not",
-PlayerDB auto-refresh, and a full bug sweep) is archived at LADDER.md §30;
-the 2026-09-15 / 2026-09-15b requests before that (the resume-system fix
-and the Stats tab, plus its same-day v6.1 bugfix) at §28/§29. Full design
-notes for all of them are in STATE.md's 2026-09-15 entries.
+The 2026-09-15d request before it (the back button still closing the app
+on a real device, a second attempt at the same symptom) is archived at
+LADDER.md §31 — that fix (v6.3) still needs a real-device confirmation,
+also flagged below since it is a second attempt, not a routine
+confirmation. The 2026-09-15c request before that (Rosters reorder, back
+button, app-resume state, no splash flash, Claude cost estimates, bench
+"why not", PlayerDB auto-refresh, and a full bug sweep) is archived at
+LADDER.md §30; the 2026-09-15 / 2026-09-15b requests before that (the
+resume-system fix and the Stats tab, plus its same-day v6.1 bugfix) at
+§28/§29. Full design notes for all of them are in STATE.md's 2026-09-15
+entries.
 
 ## When Tj asks for something new
 
