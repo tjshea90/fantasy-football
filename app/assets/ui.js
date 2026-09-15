@@ -1251,6 +1251,27 @@
     d.open = true;
     return d;
   }
+  /* "Matthew Stafford" -> "M. Stafford": the standard fantasy-app shorthand
+   * (ESPN, Yahoo and everyone else do this in a tight space), used ONLY in
+   * the Live tab's side-by-side matchup below — half a 390px phone screen,
+   * split further by a slot column and a points column, leaves the name
+   * itself maybe 15-18 characters at the halfbox's reduced font-size before
+   * .row .nm's ellipsis (app.css) cuts it off mid-word. A kickoff badge or
+   * health tag sharing that same nowrap flex box (see the comment on the
+   * "to play" tag below) makes it worse. Full names elsewhere in the app
+   * have room and stay full — this is scoped to lineupDetail() alone,
+   * which nothing but the Live tab's two-column view calls. Left alone for
+   * a defense (a two-word team name reads wrong as an initial — "S.
+   * Seahawks" is not how anyone refers to one) and for anything that is
+   * not "first last" shaped, rather than risk mangling a name this cannot
+   * parse correctly. */
+  function shortName(name, pos) {
+    var s = String(name || '');
+    if (pos === 'DEF') return s;
+    var parts = s.split(' ');
+    if (parts.length < 2 || !parts[0]) return s;
+    return parts[0].charAt(0) + '. ' + parts.slice(1).join(' ');
+  }
   function lineupDetail(team, res) {
     var d = el('details');
     var s = el('summary', null, team.name + ' lineup ▾');
@@ -1263,7 +1284,8 @@
       if (!x.pid) { nm.appendChild(el('span', 'muted', '— empty —')); }
       else {
         if (x.player) markPlayer(r, x.player.name, x.player.pos, x.player.nfl);
-        nm.appendChild(document.createTextNode(x.player ? x.player.name : '?'));
+        nm.appendChild(document.createTextNode(x.player
+          ? shortName(x.player.name, x.player.pos) : '?'));
         var sm = el('small', null, ' ' + (x.player ? x.player.pos + ' ' + x.player.nfl : ''));
         nm.appendChild(sm);
         var gb0 = x.player ? gameBadge(x.player.nfl) : null;
