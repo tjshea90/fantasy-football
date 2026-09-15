@@ -59,6 +59,7 @@ app/assets/playerdb.js
 tools/mkplayers.py
 app/assets/gamelog.js
 tools/test_gamelog.js
+app/assets/stats.js
 VERSION
 tools/version.sh
 app/assets/version.js
