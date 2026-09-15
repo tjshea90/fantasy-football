@@ -1018,9 +1018,16 @@
   function freshenInjuries() {
     if (!window.Recommend || !Recommend.loadNews) return;
     try {
+      /* 2026-09-15e sweep: this had no .catch — the surrounding try/catch
+         only guards a SYNCHRONOUS throw from the call itself, not an async
+         rejection from the promise it returns (a network failure, a parse
+         error). liveTick's own Espn.weekGames call right after this one
+         already catches its own rejection the same way; this was the one
+         call on this exact poll that did not, left as an unhandled
+         rejection every tick a fetch failed instead of a quiet no-op. */
       Recommend.loadNews(null).then(function (nc) {
         if (nc && !nc.reused) render();
-      });
+      })['catch'](function () { /* offline or a bad feed: try again next tick */ });
     } catch (e) { /* never let an injury refresh break the score poll */ }
   }
   function liveTick() {
