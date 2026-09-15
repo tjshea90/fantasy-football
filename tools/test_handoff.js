@@ -337,9 +337,13 @@ console.log('\n-- the waiver loop --');
      'the plain request-echo kind is still recognised as waivers');
   ok(H.detect({ kind: H.KIND_WAIVER + '.reply', adds: [] }) === 'waivers',
      'the .reply skeleton kind is still recognised as waivers');
-  ok(H.detect({ kind: H.KIND_ADVICE + '-final', players: [] }) === '',
+  /* no `players`/`adds` array here on purpose — detect() falls back to
+     shape when the kind does not match anything real (see its own comment),
+     so including one would pass via that fallback regardless of the kind
+     check this is actually testing. */
+  ok(H.detect({ kind: H.KIND_ADVICE + '-final' }) === '',
      'a kind that merely STARTS WITH the real one, but is not it, is no longer accepted');
-  ok(H.detect({ kind: H.KIND_ADVICE + 'x', players: [] }) === '',
+  ok(H.detect({ kind: H.KIND_ADVICE + 'x' }) === '',
      'same for a trailing-character typo on the request kind');
 }());
 
