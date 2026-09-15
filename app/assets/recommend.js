@@ -683,14 +683,16 @@
       ? (newsCache.error ? 'failed — ' + newsCache.error
          : (newsCache.count || 0) + ' records, ' + ago(newsCache.at))
       : 'not loaded', !!newsCache.error || !newsCache.at);
-    if (root.Usage && root.Ai && root.Ai.configured()) {
-      var ut = root.Usage.load() && root.Usage.totals();
-      if (ut.calls) {
-        line('Spend', root.Usage.money(ut.spend) + ' so far' +
-          (ut.perSync ? ' · ' + root.Usage.money(ut.perSync) + ' per sync' : '') +
-          (ut.budget ? ' · ' + root.Usage.money(ut.remaining) + ' left' : ''),
-          !!(ut.budget && ut.pct > 90));
-      }
+    /* Tj, 2026-09-15: "get rid of anywhere it says how much Claude usage I
+     * have left, because I no longer have the API key. Instead, put an
+     * estimate of what each request would cost." Shown regardless of
+     * whether a key is configured — the whole point is he can see this
+     * without one — and computed from the REAL triage/prompt this exact
+     * sync would send right now, not a stale historical average (once the
+     * key is gone, nothing will ever add a new one). */
+    if (root.Usage && root.Ai) {
+      var estText = claudeAdviceEstimate(week, teamId);
+      if (estText) line('Estimated cost to sync', estText + ' on the Claude API — Data → Claude costs');
     }
     line('Claude', root.Ai && root.Ai.configured()
       ? (aiCache.at ? (aiCache.count || Object.keys(aiCache.byName || {}).length) +
