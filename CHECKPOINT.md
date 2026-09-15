@@ -1,12 +1,12 @@
-# CHECKPOINT 281 — read me first, then TASKS.md
+# CHECKPOINT 291 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T08:13:50Z · **version:** 6.3 · **tests:** all 14 suites green
+**Written:** 2026-09-15T08:22:14Z · **version:** 6.3 · **tests:** all 14 suites green
 
 ## Just done
-Sweep round 3 (UI/feature correctness): fixed four real bugs. (1) claudeAdviceEstimate showed a non-zero dollar cost even when syncAll would skip the Claude call entirely (nothing to research) -- fixed to return $0. (2) The Advice tab never wired the long-press View stats feature at all, contradicting Tj's original explicit request that it work everywhere in the app -- fixed by threading markPlayer through viewAdvice's ctx and marking all three row sets recommend.js builds (starters, bench, opponent roster). (3) showPlayer's stat modal showed a stale, wrong point total after Save adjustment -- the toast and the page behind it updated but the modal's own visible breakdown never did; fixed by building the pre element directly (not through the generic modal() wrapper) so the save handler can rewrite it in place, verified live in a real browser (19.0 -> 24.0 points shown correctly after a +5 adjustment, no reload/close needed). (4) stats.js's team browser read the real current NFL week as its ceiling instead of the header's selected week (ctx.week), the same bug class Top Players was already fixed for once -- fixed teamPickerCard/teamRosterCard, deliberately left player-search's own currentWeek read alone since that mode has a genuinely different 'show everything so far' semantic. All verified with real tests (a live browser interaction for the modal fix, source-text pins matching this repo's established idiom for the others) plus a full live-browser sweep across every tab with zero new console errors. All 13 suites + ES2018 gate green.
+Round 4 (Android hardening) complete: fixed alertsTest()'s synchronous up-to-13s network call on the JS-interface thread (converted to the established async pool/evaluateJavascript pattern), and all 6 file-descriptor leaks across NativeBridge.java and Alerts.java (try-with-resources -- save() runs on effectively every app-state write, so this was a real accumulating leak under a sustained low-storage condition, not theoretical). Added source-text regression pins in test_boot.js for all 6 FD-leak fixes plus the alertsTest async fix. Verified via bash build.sh compiling cleanly (28 classes, signature OK) and all 13 suites + ES2018 gate green (0 failures).
 
 ## Do this next
-Continue the priority list: Android hardening next (alertsTest() synchronous network call freezing the JS thread for up to 13s -- the exact bug class the whole async-bridge architecture exists to prevent; 6 file-descriptor leaks on I/O exception; NativeBridge's thread pool never shut down; dead legacy HTTP methods as unnecessary attack surface; verify whether the back-button OnBackInvokedCallback registration-failure fallback claim actually holds), then cost/model accuracy (usage.js pricing is model-blind; prompt caching silently never engages since both cached prefixes are under the model's cache floor; outdated web_search tool type), then a batch of smaller verified fixes, then flag (write up, do not implement unasked) the Data tab card-wall UI issue and the fully-dead recap.js feature for Tj's decision.
+Continue Round 4: (a) NativeBridge's ExecutorService pool is never shut down and the bridge instance isn't stored as a field -- add a shutdown() method wired to MainActivity.onDestroy(); (b) remove or gate the dead legacy httpGet/httpGetH/httpPost JS-interface methods (confirmed unreachable from shipped app JS); (c) verify/harden the back-button OnBackInvokedCallback registration-failure fallback claim now that enableOnBackInvokedCallback=true is unconditional in the manifest. Then Round 5: usage.js's model-blind cost tracking (thread model into priceOf/estimate), prompt caching never engaging (both cached prefixes under the model's cache floor -- pad or document), outdated web_search_20250305 tool type (upgrade to web_search_20260209 at both ai.js call sites, verified current via claude-api skill). Then a batch of ~10 smaller verified fixes (full list in TASKS.md / conversation history: long-press click-suppression window, pull-to-refresh double-render on 5 tabs, freshenInjuries missing .catch, stale earlyGameCard comment, shadowed view var in openPlayerStatsMenu, Alerts.java dead schedule() method, empty-me-string edge case, backupLoad path-traversal-lite, handoff.js KIND_ADVICE prefix looseness, Wire/Advice cost-line copy inconsistency, gamelog.js/ui.js duplicate gcache, recommend.js opponentsForWeek hardcoded seasontype, value.js _faMemo invalidation nitpicks). Then flag for Tj WITHOUT implementing (per 'no major changes unless approved'): the Data tab's 13-14-card wall with no sub-navigation, and the fully-dead recap.js feature (never called anywhere -- needs Tj's decision: wire it up or remove it). Finally: update TASKS.md/STATE.md/LADDER.md for the whole sweep, run final full test+build, and ship as a new version per the task's own step 5 if changes are ship-worthy (trigger+verify GitHub Release, send Tj the plain tappable link).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  8337f3a ckpt 281: Sweep round 3 (UI/feature correctness): fixed four real bugs. (1) claudeAdvice
   669bdca ckpt 264: Sweep round 2 (value.js correctness): fixed two real bugs. (1) Store.bookTrend
   94534c3 ckpt 252: Sweep round 1 (data integrity, highest stakes): fixed two real bugs found by t
   ae43731 ckpt 236: UI sweep finding #2 (Stats tab): the Pts column was the LAST column in the gam
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   f21a19e ship v6.3: Real back-button fix: registered the platform OnBackInvokedCallback (API 33+)
   b518033 ckpt 218: Fixed the real back-button regression: registered android.window.OnBackInvoked
   ab24515 ckpt 208: Wrote Tj's real-device bug report to TASKS.md (2026-09-15d): back button still
-  50c304f ckpt 205: Archived the finished 2026-09-15c job to LADDER.md §30, reset TASKS.md to 'no
 ```
 
-(16 automatic checkpoint(s) since the last deliberate one — the
+(9 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
