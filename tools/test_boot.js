@@ -698,5 +698,29 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
      'Rosters and Lineups keep full names — they have room; this is scoped to the tight two-column Live view only');
 }());
 
+/* ---- Stats tab: Pts must not be the LAST column of a wide table
+ * (2026-09-15e) --------------------------------------------------------
+ * Found in the app-wide sweep, confirmed with a live browser screenshot: a
+ * QB's game-log row is Wk/Opp + 6 stat columns (Cmp/Yds/TD/INT/RuYd/RuTD)
+ * before Pts ever appeared, pushing the one number this whole tab exists
+ * to show off the right edge of a 390px phone — reachable only via an
+ * undiscoverable horizontal swipe on a table (.twrap, overflow-x:auto in
+ * app.css) that already looks complete without it. Fixed by moving Pts to
+ * right after the identifying column(s). stats.js exports only render() —
+ * statTable() itself is a private closure function, and building a full
+ * async render() harness (PlayerDB/Gamelog stubs, a real DOM) for one
+ * column-order check is disproportionate to what this guards, so — same
+ * as the rest of this file does for cases like it — it is pinned as
+ * source text instead, backed by the live screenshot as the real proof
+ * the rendered output is actually correct. */
+(function () {
+  ok(/var head = headPrefix\.concat\(\['Pts'\]\)\.concat\(cols\.map/.test(stH),
+     'Pts is spliced in right after the row-identifying column(s), not appended after every stat column');
+  var i1 = stH.indexOf("cells.push(ctx.fmt(r.pts))");
+  var i2 = stH.indexOf('cols.forEach', stH.indexOf('function statTable'));
+  ok(i1 >= 0 && i2 >= 0 && i1 < i2,
+     'and the row cells push Pts BEFORE the stat-column loop runs, matching the header order exactly');
+}());
+
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
