@@ -1,12 +1,12 @@
-# CHECKPOINT 451 — read me first, then TASKS.md
+# CHECKPOINT 454 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T17:03:45Z · **version:** 6.7 · **tests:** all 14 suites green
+**Written:** 2026-09-15T17:47:40Z · **version:** 6.7 · **tests:** all 14 suites green
 
 ## Just done
-v6.7 shipped and verified: GitHub Release published (non-empty assets, FFTracker-v6.7.apk at 264345 bytes, correct content type) before telling Tj. STATE.md header updated to v6.7/ladder 168-170.
+Recorded new job 2026-09-15i in TASKS.md: a real premise change -- Tj will only track his own and his weekly opponent's lineups, never the other 8 teams'. Need to find and remove everything assuming other teams' weekly lineups, then assess whether deducing a team's starters from their roster's per-player points and a manually-typed total score is actually feasible (position-slot-constrained subset-sum against real scoring data -- ties and ambiguity are a real risk, feasibility must be checked before promising it), and either implement it cleanly or remove the lineup-assuming code if it doesn't hold up.
 
 ## Do this next
-Nothing pending -- both the interrupting week-advance bug (2026-09-15h, v6.6) and the originally-requested recap feature + Data tab sub-nav (2026-09-15g, v6.7) are fully shipped, documented, archived and verified. Session idles unless Tj responds with something new.
+Start step 1: grep the whole app for every place that reads Store.getLineup/lineup-derived data for a team that is not S.league.me and not that week's opponent -- recap.js's build() (best/worst starter, biggest bust, bench regret) is the known one, but check value.js, sim.js, standings and anywhere else iterating S.teams. Then step 2: assess deduction feasibility with real data before deciding whether to build it.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  b7104ad ckpt 451: v6.7 shipped and verified: GitHub Release published (non-empty assets, FFTrack
   adb8ee4 ship v6.7: 2026-09-15g: wired up the weekly recap Claude write-up feature (Recap.build/t
   6989a9e ckpt 448: Removed two scratch Playwright test scripts (tools/_data_tab_check.js, tools/_
   3f6499e ckpt 446: 2026-09-15g documentation complete: TASKS.md ticked with full proof and reset 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   687d92b ckpt 420: Fixed the week-advance bug for real this time (Tj reported it persisting even 
   336f833 ckpt 414: In progress on 2026-09-15g (recap feature + Data tab sub-nav): built weeklyRec
   a0d725b ckpt 403: Recorded new job 2026-09-15g in TASKS.md: wire up the weekly recap Claude writ
-  fcbbbcb ckpt 400: v6.5 shipped and verified: GitHub Release published (mcp__github__get_release_
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
