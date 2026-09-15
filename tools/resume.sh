@@ -138,6 +138,27 @@ BRIEF="$(
     echo
   fi
 
+  # THE RAW INBOX (2026-09-15, added after a real failure — see INBOX.md's own
+  # header). A UserPromptSubmit hook writes every message Tj sends here,
+  # verbatim, the instant it arrives — before any session has done a single
+  # read, let alone updated TASKS.md. Printed UNCONDITIONALLY, every session,
+  # because the whole point is that nothing here depends on a session having
+  # remembered to curate it. Compare this against TASKS.md below: if it names
+  # something TASKS.md does not yet cover, THAT is the request that was never
+  # written down, not a stale duplicate.
+  if [ -f INBOX.md ]; then
+    INBOXTAIL="$(tail -c 2500 INBOX.md 2>/dev/null | sed -n '/^## /,$p')"
+    if [ -n "$INBOXTAIL" ]; then
+      echo "----------------------------------------------------------------"
+      echo "RAW INBOX (INBOX.md tail) — guaranteed captured, may be ahead of"
+      echo "TASKS.md. Read it before assuming TASKS.md is the whole job:"
+      echo "----------------------------------------------------------------"
+      printf '%s\n' "$INBOXTAIL"
+      echo "----------------------------------------------------------------"
+      echo
+    fi
+  fi
+
   bash bootstrap.sh 2>&1 || true
 )"
 
