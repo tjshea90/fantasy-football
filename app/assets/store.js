@@ -121,7 +121,7 @@
       autoFill: true,          /* default every roster to its likely starters */
       liveRefresh: true,       /* poll while games are in progress */
       liveEvery: 45,           /* seconds between polls */
-      aiKey: '', aiModel: '', aiBudget: 0,
+      aiKey: '', aiModel: '',
       /* how the advice sync spends money (see recommend.js TRIAGE):
          'smart'  — research only players whose answer could move  (default)
          'full'   — every player every time, the pre-v2.4 behaviour
