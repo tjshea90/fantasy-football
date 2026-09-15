@@ -69,6 +69,7 @@ var gameStatsCalls = 0, weekGamesCalls = 0;
 W.Espn.weekGames = function (season, week) { weekGamesCalls++; return Promise.resolve(GAMES[week] || []); };
 W.Espn.gameStats = function (eventId) {
   gameStatsCalls++;
+  if (eventId === 'gFail') return Promise.reject(new Error('simulated network failure'));
   return Promise.resolve({
     eventId: eventId, players: BOX[eventId].players, teamScore: BOX[eventId].teamScore,
     teamAgg: BOX[eventId].teamAgg
