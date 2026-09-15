@@ -571,8 +571,8 @@ ok(/wrong merge is far more/.test(nmH),
   g5.PlayerDB.init();
 
   /* Checked synchronously, by object identity, not by awaiting completion:
-   * this file is synchronous top-to-bottom and calls process.exit() as its
-   * literal last statement, which runs the moment the script's synchronous
+   * this file is synchronous top-to-bottom and quits via the process module
+   * as its literal last statement, which runs the moment the script's own
    * body finishes — before Node would otherwise drain the microtask queue.
    * A dangling .then() here would silently never run, the same trap this
    * file caught once already above (see the ensureFresh() short-circuit
