@@ -563,6 +563,8 @@ ok(/function tierFor\(model\)/.test(usX), 'the tier is chosen from the model str
 ok(/opponentsForWeek\(week\)\['catch'\]/.test(recX),
    'a failed schedule no longer abandons the injury feed, projections and Claude');
 ok(/schedule FAILED/.test(recX), 'and it says so in the report rather than vanishing');
+ok(/Espn\.weekGames\(S\.settings\.season, week, week > 18 \? 3 : 2\)/.test(recX),
+   "opponentsForWeek uses the same week>18?3:2 seasontype pattern every other weekGames call site does");
 var alertsGuarded = /try \{\s*ok = Native\.alertsSet/.test(uiX) &&
                     /try \{ Native\.alertsTest\(\); \}/.test(uiX);
 ok(alertsGuarded, 'both raw alerts bridge calls are wrapped, like alertsStatus already was');
