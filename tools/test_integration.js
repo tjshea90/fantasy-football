@@ -480,5 +480,38 @@ var me = S.league.me;
   S2.settings.rate_searchPer1000 = 10.00; W.Store.save();
 }());
 
+/* ---- 19. reading an unsynced week's stats must not dirty the archive
+ * (review finding, 2026-09-15e) ---------------------------------------------
+ * getStats() used to call markArchive() when it lazily created an EMPTY
+ * bucket for a week nobody has synced yet — reached from plain reads
+ * (lineFor -> playerPoints -> teamWeekPoints -> standings, and the Live
+ * tab's matchup card), not just from writers. The archive split's whole
+ * point (this file's own header comment, store.js:7-37) is that a lineup
+ * edit writes ~25KB, not the ~1.9MB book+stats archive — and simply
+ * viewing the Live tab for an unsynced week (the common case right after
+ * boot) was silently defeating that by flagging the archive dirty on a
+ * read. Proven here by instrumenting Native.save and counting how many
+ * times the archive key is actually written. */
+(function () {
+  var archiveWrites = 0;
+  var realSave = W.Native.save;
+  W.Native.save = function (k, v) { if (k === 'fftracker_archive_v1') archiveWrites++; return realSave(k, v); };
+
+  var freshWeek = 9;   /* a week with no stats synced yet in this test roster */
+  ok(!W.Store.getStats(freshWeek)[Object.keys(W.Store.getStats(freshWeek))[0] || '__none__'],
+     'sanity: this week really has no stats yet');
+  W.Store.getStats(freshWeek);   /* the read under test */
+  archiveWrites = 0;
+  W.Store.save();
+  ok(archiveWrites === 0, 'a plain read of an unsynced week does not write the archive on the next save');
+
+  W.Store.setLine(freshWeek, me + '-test-pid', { played: true, manualAdj: 1 });
+  archiveWrites = 0;
+  W.Store.save();
+  ok(archiveWrites === 1, 'but a REAL write (setLine) still does — real writers were never relying on the read to do it');
+
+  W.Native.save = realSave;
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
