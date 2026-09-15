@@ -96,10 +96,19 @@
     starters.sort(function (x, y) { return y.pts - x.pts; });
     busts.sort(function (x, y) { return y.short - x.short; });
 
-    /* who left the most on the bench */
+    /* who left the most on the bench — same real-vs-inferred restriction as
+       starters/busts above: an inferred lineup only feeds this when it is
+       the single possible one, since bench regret needs the WHOLE lineup
+       (who did NOT start) to mean anything, not just a few confirmed names */
     var regrets = [];
     teams.forEach(function (t) {
-      var rg = root.Sim ? root.Sim.regret(week, t.id) : null;
+      var override = null;
+      if (t.id !== S.league.me && t.id !== oppId) {
+        var inf2 = root.Store.inferLineup(week, t.id);
+        if (!inf2.ok || inf2.confidence !== 'unique') return;
+        override = inf2.slots;
+      }
+      var rg = root.Sim ? root.Sim.regret(week, t.id, override) : null;
       if (rg) regrets.push({ name: t.name, id: t.id, lost: rg.lost, actual: rg.actual });
     });
     regrets.sort(function (x, y) { return y.lost - x.lost; });
