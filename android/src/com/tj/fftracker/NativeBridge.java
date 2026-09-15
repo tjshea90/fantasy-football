@@ -476,16 +476,25 @@ public class NativeBridge {
     catch (Exception e) { return false; }
   }
 
+  /* try-with-resources everywhere a stream opens below (found in the
+   * 2026-09-15e sweep) — this project targets Java 8 (build.sh: -source 8
+   * -target 8), so it has been available the whole time. Before this fix,
+   * every one of these closed the stream as the LAST line inside the try
+   * block, so an exception partway through (a real, reachable Android
+   * failure mode: disk full, an I/O error) skipped the close and leaked
+   * the file descriptor. save() in particular runs on effectively every
+   * app-state write — a sustained low-storage condition would leak one FD
+   * per failed save until the process hit its FD ulimit, after which every
+   * subsequent file/socket operation in the app starts failing too, a
+   * cascading failure from one transient disk error. */
   private String readFile(File f) {
-    try {
-      if (!f.exists()) return null;
-      InputStream in = new java.io.FileInputStream(f);
+    if (!f.exists()) return null;
+    try (InputStream in = new java.io.FileInputStream(f);
+         BufferedReader r = new BufferedReader(new InputStreamReader(in, "UTF-8"), 16384)) {
       StringBuilder sb = new StringBuilder();
-      BufferedReader r = new BufferedReader(new InputStreamReader(in, "UTF-8"), 16384);
       char[] buf = new char[16384];
       int k;
       while ((k = r.read(buf)) > 0) sb.append(buf, 0, k);
-      r.close();
       return sb.toString();
     } catch (Exception e) { return null; }
   }
@@ -497,10 +506,10 @@ public class NativeBridge {
       File dir = ctx.getFilesDir();
       File tmp = new File(dir, safe(name) + ".tmp");
       File dst = new File(dir, safe(name) + ".json");
-      FileOutputStream o = new FileOutputStream(tmp);
-      o.write(data.getBytes("UTF-8"));
-      o.getFD().sync();
-      o.close();
+      try (FileOutputStream o = new FileOutputStream(tmp)) {
+        o.write(data.getBytes("UTF-8"));
+        o.getFD().sync();
+      }
       // keep the previous good copy: a corrupt write must not lose the season
       if (dst.exists()) {
         File bak = new File(dir, safe(name) + ".bak");
