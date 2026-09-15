@@ -377,8 +377,50 @@ console.log('\n-- gestures are wired to the real tab order --');
      (pauseErr ? '  <-- ' + pauseErr.message : ''));
 }());
 
-console.log('\n-- nothing reached the network during boot --');
-ok(netCalls === 0, 'boot made no network call through the stub bridge');
+console.log('\n-- the current-NFL-week check also runs on RESUME, not just a cold boot --');
+/* Tj, 2026-09-15: "week 1 is complete... yet the app still has all tabs
+ * open to week 1." Root cause: syncCurrentWeek() (ui.js) was only ever
+ * called from boot() — a true cold start — and this app deliberately
+ * keeps its process alive across a background/foreground cycle (see the
+ * back-button work: moveTaskToBack, not finish()), so anyone who does not
+ * force-quit the app could go days without boot() running again. Fixed by
+ * also calling syncCurrentWeek() from appResume(). This is the one
+ * meaningful async gap in an otherwise fully synchronous suite, so it is
+ * deferred to the very end and the file's final checks/exit move inside
+ * its callback rather than converting the whole suite to async. */
+var weekCheckDone = (function () {
+  var S2 = W.Store.get();
+  ok(S2.settings.currentWeek === 1, 'sanity: still showing week 1 before this test (got ' +
+     S2.settings.currentWeek + ')');
+  /* the exact real-world state Tj described: week 1 fully synced and final */
+  S2.weekMeta['1'] = { synced: true, allFinal: true, games: 16 };
+  /* clear any cached nflWeek check from boot()'s own earlier (network-less,
+     silently-failed) syncCurrentWeek() call, so this test exercises a real
+     fetch through the stub rather than a stale/absent cache entry */
+  delete S2.settings.nflWeek;
+  var realCurrentWeek = W.Espn.currentWeek;
+  W.Espn.currentWeek = function () { return Promise.resolve({ week: 2, seasonType: 2 }); };
+  W.__appPause();                 /* guarantee asleep, whatever earlier tests left it as */
+  var threw2 = null;
+  try { W.__appResume(); } catch (e) { threw2 = e; }
+  ok(!threw2, 'resume with a pending week-advance does not throw' +
+     (threw2 ? '  <-- ' + threw2.message : ''));
+  W.Espn.currentWeek = realCurrentWeek;   /* restore before this promise settles */
+  return new Promise(function (resolve) { setTimeout(resolve, 0); });
+}());
 
-console.log(fails ? ('\n  ' + fails + ' lifecycle check(s) FAILED') : '\n  lifecycle checks pass');
-process.exit(fails ? 1 : 0);
+weekCheckDone.then(function () {
+  var S3 = W.Store.get();
+  ok(S3.settings.currentWeek === 2,
+     'AND APPRESUME PICKED UP THE ADVANCE — week is now 2 (got ' + S3.settings.currentWeek +
+     ')  <-- this is the fix: it used to take a true cold boot to ever notice');
+
+  console.log('\n-- nothing reached the network during boot --');
+  ok(netCalls === 0, 'boot made no network call through the stub bridge');
+
+  console.log(fails ? ('\n  ' + fails + ' lifecycle check(s) FAILED') : '\n  lifecycle checks pass');
+  process.exit(fails ? 1 : 0);
+}).catch(function (e) {
+  console.log('  FAIL uncaught in the week-check test: ' + (e && e.stack ? e.stack : e));
+  process.exit(1);
+});
