@@ -108,7 +108,7 @@ public class MainActivity extends Activity {
       } catch (Throwable t) { /* an old shell without runtime permissions */ }
     }
 
-    NativeBridge bridge = new NativeBridge(this);
+    bridge = new NativeBridge(this);
     web.addJavascriptInterface(bridge, "Native");
     bridge.attach(web);
 
