@@ -1,77 +1,20 @@
 # TASKS — the current job, in Tj's words
 
-## 2026-09-15d: back button still closes the app on a real device (v6.2)
+**There is no active job right now.** The most recent one (2026-09-15d: the
+back button still closing the app on a real device, even after 2026-09-15c
+had already claimed to fix it) is complete, shipped as v6.3, and archived at
+the end of `LADDER.md` (§31) — full root-cause writeup in STATE.md's
+2026-09-15d entry. **This one specifically needs a real check, not a
+formality** — see "Waiting on Tj" below, which flags it as a second attempt
+at the same symptom, the first having looked correct by every test that
+existed at the time.
 
-> "The back button still closes the app to my home screen"
-
-Reported on a real device running v6.2. This is the SAME symptom item 2 of
-2026-09-15c claimed was already fixed (and was proven by
-`tools/test_lifecycle.js`) — so either that test is checking something
-that does not reflect what actually happens on a real phone, or the
-Java-side wiring to `__onBack` is broken/bypassed in a way no unit test
-can see (this repo's own tests do not run on a real device or a real
-WebView). Treat as a real regression, not a duplicate — do not just
-re-point Tj at the same "already fixed" evidence.
-
-- [x] 1. Read `MainActivity.java`'s actual back-press handling (the
-      `onBackPressed()` override or, if targetSdk 33+, the newer
-      `OnBackInvokedCallback`/predictive-back API — targetSdk is 36 per
-      `build.sh`'s own output, so check whether the old override still
-      fires at all under Android's predictive-back system) and confirm it
-      really calls into the WebView's `__onBack()` and respects what it
-      returns, rather than falling through to the default (finish the
-      Activity) in some case the JS-side unit tests cannot exercise. Done —
-      the app only had `onKeyDown(KeyEvent.KEYCODE_BACK)`, nothing else.
-- [x] 2. Find the actual root cause — do not guess and patch symptoms.
-      Found: `onKeyDown(KEYCODE_BACK)` is the CLASSIC back dispatch path.
-      On a real Android 13+ phone (this app's targetSdk 36 makes predictive
-      back the effective default), a gesture-based back SWIPE does not
-      synthesize a `KEYCODE_BACK` `KeyEvent` at all once predictive back is
-      active — it goes through a completely separate dispatch
-      (`OnBackInvokedCallback`), which nothing in this app registered.
-      `onKeyDown` was silently never invoked on Tj's phone. This is
-      structurally invisible to `test_lifecycle.js`'s proof that `__onBack`'s
-      OWN trail-walking logic is correct (still true, and still not the bug)
-      and to any source-grep of `MainActivity.java` that only checks WHAT
-      the method does, never whether the platform actually calls it.
-- [x] 3. Fix it, and find a way to verify beyond "the JS trail-walking
-      logic is correct in a stub" (which was already true and evidently
-      insufficient) — at minimum, trace the real call path end to end and
-      identify exactly why the previous fix did not reach a real device.
-      Fixed — registered `android.window.OnBackInvokedCallback` (part of the
-      API 36 platform SDK this app already compiles against; no AndroidX,
-      no new dependency) on `Build.VERSION.SDK_INT >= 33`, routed to the
-      SAME shared `askPageToHandleBack()` method `onKeyDown` now also calls
-      (one implementation, not two that could quietly stop agreeing — which
-      is exactly the shape of bug this was). Required
-      `android:enableOnBackInvokedCallback="true"` in the manifest —
-      registering the callback in code has no effect without it.
-      `onKeyDown` is kept, unchanged in behavior, as the sole path below API
-      33 (minSdk 29), where predictive back does not exist. Verified:
-      `bash build.sh` compiles clean against the real platform API (26
-      classes, dex check passed); new source-text regression tests in
-      `tools/test_gestures.js` pin the import, the registration, the
-      manifest flag, and that both dispatch paths call the one shared
-      method. **Cannot be verified beyond that from this environment** — no
-      `adb`/emulator here, and the bug only reproduces via a real
-      gesture-navigation swipe on a real Android 13+ device, which is
-      exactly why the first attempt (proven correct by every test that
-      existed) still missed it. Genuinely needs Tj's phone.
-- [x] 4. Ship as a new version once fixed and verified, same release
-      process as before. Shipped as v6.3.
-
-**There is no OTHER active job right now.** The 2026-09-15c request (Rosters
-reorder, back button, app-resume state, no splash flash, Claude cost
-estimates, bench "why not", PlayerDB auto-refresh, and a full bug sweep) is
-complete, shipped as v6.2, and archived at the end of `LADDER.md` (§30).
-Full design notes and the item-8 sweep's writeup (including the two real
-concurrency bugs an independent review found and this session fixed) are in
-STATE.md's 2026-09-15c entry.
-
-The 2026-09-15 / 2026-09-15b requests before it — the resume-system fix and
-the Stats tab (plus its same-day v6.1 bugfix) — are archived at the end of
-`LADDER.md` too (§28, §29). Full design notes and the testing-pass writeup
-are in STATE.md's 2026-09-15 entries.
+The 2026-09-15c request before it (Rosters reorder, back button,
+app-resume state, no splash flash, Claude cost estimates, bench "why not",
+PlayerDB auto-refresh, and a full bug sweep) is archived at LADDER.md §30;
+the 2026-09-15 / 2026-09-15b requests before that (the resume-system fix
+and the Stats tab, plus its same-day v6.1 bugfix) at §28/§29. Full design
+notes for all of them are in STATE.md's 2026-09-15 entries.
 
 ## When Tj asks for something new
 
