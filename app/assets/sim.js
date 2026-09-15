@@ -311,9 +311,12 @@
    * position, then the FLEX from whoever is left. With one FLEX that IS the
    * optimum, and it matters that it is — a "you left 30 points on the bench"
    * number that is wrong is worse than not showing one. */
-  function regret(week, teamId) {
+  /* `lineupOverride` lets a caller supply a lineup that isn't the one on
+     file — used by recap.js for teams whose lineup is never hand-tracked,
+     passing an inferred one (Store.inferLineup) instead of Store.getLineup. */
+  function regret(week, teamId, lineupOverride) {
     if (!root.Store.weekIsScored(week)) return null;
-    var lineup = root.Store.getLineup(week, teamId) || {};
+    var lineup = lineupOverride || root.Store.getLineup(week, teamId) || {};
     var keys = root.Store.slotKeys(), started = {}, actual = 0, i;
     for (i = 0; i < keys.length; i++) {
       var pid = lineup[keys[i].key];
