@@ -1993,3 +1993,33 @@ green throughout. Scope note, stated plainly rather than implied: this was
 a thorough test of the new feature and everything it touches, not a
 line-by-line re-audit of the entire pre-existing app — thousands of lines
 outside this feature's path were not independently re-verified here.
+
+## 2026-09-15b: two real bugs from Tj's own phone, fixed same day as v6.0
+
+Tj tested v6.0 within minutes of the release link and found two real bugs
+neither the automated suite nor the browser testing pass had caught, both
+screenshotted from the actual device:
+
+1. **Top players stuck on the wrong week.** The header showed "Wk 1" but
+   the Top Players card said "WEEK 2" and "No games yet" for every
+   position. Root cause: `stats.js` kept its own `topWeek` variable, set
+   once the first time that mode was entered and never updated again — so
+   navigating away via the app's one global week control (the header's
+   `< Wk N >`, shared by every tab) and back left the card desynced
+   forever. There was never a reason for this card to have independent
+   week state; it now reads `ctx.week` every render, like every other tab.
+2. **Team roster showed a full stat table with no player names.** The
+   table-building helper (`gameLogTable`) was written for one shape — a
+   single player's multi-week log, where each row is identified by
+   week/opponent because the player is already named in the card header —
+   and reused unchanged for a different shape: one team's several players
+   in a single week, where week/opponent is the same on every row and
+   PLAYER is what needed identifying. Split into a shared `statTable()`
+   plus two thin wrappers (`gameLogTable`: Wk/Opp prefix; `rosterTable`:
+   Player-name prefix), which also drops the now-redundant Wk/Opp columns
+   from the team view — a real readability win alongside the fix.
+
+Both verified live in a real browser (same Playwright + real-ESPN-fixture
+harness as the v6.0 testing pass), reproducing Tj's exact steps
+programmatically — not just re-reading the code and assuming it was right.
+Shipped as v6.1. All 14 suites green throughout.
