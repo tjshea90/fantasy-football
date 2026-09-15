@@ -1,12 +1,12 @@
-# CHECKPOINT 51 — read me first, then TASKS.md
+# CHECKPOINT 64 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T01:46:37Z · **version:** 5.9 · **tests:** all 13 suites green
+**Written:** 2026-09-15T01:59:37Z · **version:** 5.9 · **tests:** all 13 suites green
 
 ## Just done
-resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.8->v5.9 doc edits were already complete and consistent at HEAD, verified all 13 suites + ES2018 gate green on the current tree, and confirmed the v5.9 GitHub Release the previous session already triggered was fully published (non-empty assets, FFTracker-v5.9.apk uploaded with correct content type) -- the previous session had finished ship+publish but was cut off before confirming it and telling Tj
+root-caused the resume-system failure Tj reported: a session ran a long research phase on the new stats/game-log feature request and was cut off by a usage cap before ever writing it to TASKS.md, and the PostToolUse autosave hook (Edit|Write|NotebookEdit|Bash only) never fired during pure-research reading either -- so nothing reached disk and the next session opened cold with no way to know the request existed. Confirmed against real history (origin/main's ckpt-51 commit was a sibling session resuming correctly from what WAS on disk, proving the mechanics work when there is something to find). Fixed in two parts: (1) immediately wrote Tj's verbatim stats/game-log request into TASKS.md as the actual current job with an architecture-notes section so the research already done is not lost either; (2) closed the systemic gap with a new UserPromptSubmit hook (tools/capture_inbox.sh) that appends every message Tj sends to a new INBOX.md, verbatim, and commits+pushes it the instant it arrives -- before any tool call, independent of a session's judgment about when to save. resume.sh now prints the INBOX.md tail unconditionally on every boot. CLAUDE.md documents this as a new level 0 under Saving work. MANIFEST.txt updated for the two new files; bootstrap.sh confirmed clean. Tested by hand: fed capture_inbox.sh a sample JSON payload with quotes and a newline on stdin, confirmed it appended correctly and committed+pushed; verified resume.sh's tail-extraction sed against a synthetic multi-entry sample.
 
 ## Do this next
-send Tj the v5.9 release link now (standing rule, was never sent); after that, nothing active -- next session should just check TASKS.md 'Waiting on Tj' for anything he's answered
+start building the Stats tab feature itself per the now-recorded TASKS.md breakdown: gamelog.js first (per-team-per-week full box score cache), then the Stats tab UI, then long-press wiring, then Top Players, then the full 8-point testing pass Tj asked for, then ship + release.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  730d4e5 ckpt 51: resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.
   a8e2c3f ship v5.9: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
   6ff1bcd ship v5.8: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
   a6e7847 ckpt 90: wrote up the full 2026-09-14e job (5 requests) in STATE.md under its own dated 
@@ -36,5 +37,5 @@ request in his own words and `git log` carries every step already taken.
   65fe8fd ckpt 145: saved Tj's exact message-style request into the CLAUDE.md standing rule: every
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(12 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
