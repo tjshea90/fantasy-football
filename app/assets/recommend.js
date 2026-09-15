@@ -1025,6 +1025,7 @@
                      autoLineup: autoLineup, projectAll: projectAll,
                      opponentsForWeek: opponentsForWeek, syncAll: syncAll,
                      loadCaches: loadCaches, PRIOR: PRIOR,
+                     claudeAdviceEstimate: claudeAdviceEstimate,
                      /* the offline Claude-app handoff writes through these */
                      mergeAi: mergeAi, aiCache: function () { return aiCache; },
                      /* read-only, same pattern as aiCache above — lets the Wire
