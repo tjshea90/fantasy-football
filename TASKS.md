@@ -38,16 +38,6 @@ claimed fixed once (v6.5).
 
 ## 2026-09-15g: wire up the weekly recap feature, and sub-navigation for the Data tab
 
-**Paused mid-flight for 2026-09-15h above — resume here once that ships.**
-Progress so far (ckpt 414): `weeklyRecapCard()`/`openRecapDialog()` built
-(wires `Recap.build`/`text` + `Ai.recap()` + `Native.share`/`copy()`,
-degrades gracefully with no API key). `viewData()` split into 4 group
-functions (`viewDataLeague`/`viewDataClaude`/`viewDataSync`/`viewDataApp`)
-with every existing card relocated, none dropped. Syntax-checked, full
-suite green. **Still needed**: a live-browser check of the new sub-nav,
-test pins for the new grouping/recap feature specifically, then step 3
-below.
-
 > "Build The 'weekly recap' Claude write-up feature you told me about. Make
 > the button where it is most appropriate but it shouldn't push away any
 > major feature because I probably won't use it much. Then organize the
