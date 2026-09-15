@@ -103,11 +103,10 @@ ok(/if \(me\.isEmpty\(\)\) return "";/.test(alertsJ),
    'check() bails out on an empty league.me instead of letting it fall through to the team-match loop');
 ok(/return \(r\.equals\("\."\) \|\| r\.equals\("\.\."\)\) \? "_" : r;/.test(nb),
    "safe() rejects a bare '.' or '..' result outright, not just relying on slash-stripping and readFile's own directory failure");
-var uiSrc = fs.readFileSync('app/assets/ui.js', 'utf8');
-ok(!/Shown at the top of Live, Lineups and Advice/.test(uiSrc),
+ok(!/Shown at the top of Live, Lineups and Advice/.test(ui),
    'the earlyGameCard comment no longer claims a Live call site that never existed');
-ok(/var viewBtn = el\('button', 'btn pri', 'View stats'\);/.test(uiSrc) &&
-   !/var view = el\('button', 'btn pri', 'View stats'\);/.test(uiSrc),
+ok(/var viewBtn = el\('button', 'btn pri', 'View stats'\);/.test(ui) &&
+   !/var view = el\('button', 'btn pri', 'View stats'\);/.test(ui),
    'openPlayerStatsMenu no longer shadows the file-level `view` (current tab) with a local button variable');
 /* the old catch-block comment here claimed "onKeyDown is still there" as a
  * fallback if callback registration ever throws — false per Android's own
