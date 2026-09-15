@@ -12,123 +12,18 @@ that would point to `weekMeta['1'].allFinal` not actually being true in
 his own local data (week 1 never fully synced as final on his phone),
 a different, diagnostic fact — not a repeat of the same bug.
 
-OLD:
-
-## 2026-09-15h: the week-advance fix STILL didn't work — a true cold boot too
-
-> "I forced stopped the app and opened it again. Every tab in the app is
-> still on NFL week 1, even though NFL week 1 is final. Keep trying to
-> figure out why the automatic week set is not working. All tabs in the
-> app should automatically set to the current NFL week after all the
-> previous week games are final. All week 1 games are final. The app
-> should be on week 2"
-
-Arrived mid-flight during 2026-09-15g (below) — paused that job to fix
-this with priority since it's a second failure of something already
-claimed fixed once (v6.5).
-
-- [x] 1. Root-caused: a TRUE cold boot (force-stop + relaunch) already
-      called `syncCurrentWeek()` unconditionally even before the v6.5
-      `appResume()` fix existed — so v6.5 alone could not explain a cold
-      boot still failing. The real gap: the ONLY signal was
-      `Espn.currentWeek()` (ESPN's own scoreboard metadata), gated behind
-      a 3-hour reuse cache and a silent-catch-all failure path — three
-      independent, unverifiable-in-this-environment single points of
-      failure.
-- [x] 2. Fixed: added `localAutoAdvance()`, a second, independent,
-      network-free signal — trusts only `weekMeta.allFinal`, which the app
-      already computes itself from real box scores, no network call, no
-      cache, no external metadata to misread. Called from `boot()` and
-      `appResume()` only, right before `syncCurrentWeek()`.
-- [x] 3. Proven end-to-end in `tools/test_lifecycle.js` with the ESPN path
-      made deliberately impossible (throws synchronously) — week still
-      advances, synchronously, before any promise even settles. All 14
-      suites + ES2018 gate green, `bash build.sh` clean.
-- [x] 4. Shipped as v6.6, Release published and verified (non-empty
-      assets, `FFTracker-v6.6.apk`, 264345 bytes, correct content type).
-      Told Tj plainly: independent of ESPN's own week metadata now; if it
-      still doesn't advance, that points to `weekMeta['1'].allFinal` not
-      actually being true in his local data rather than a repeat.
-
-## 2026-09-15g: wire up the weekly recap feature, and sub-navigation for the Data tab
-
-> "Build The 'weekly recap' Claude write-up feature you told me about. Make
-> the button where it is most appropriate but it shouldn't push away any
-> major feature because I probably won't use it much. Then organize the
-> data tab with sub navigation that is smart and easy to understand. When
-> you are done, test that it all works and didn't break anything else in
-> the app"
-
-Tj's answer to both items flagged (not implemented) at the end of the
-2026-09-15e sweep — see TASKS.md's prior "Waiting on Tj" entries and
-STATE.md's 2026-09-15e entry for the precise trace of what is dead
-(`Recap.build`/`Recap.text`, `Ai.recap()`, `NativeBridge.share()`/`copy()`)
-vs. alive (`Recap.generateSchedule`, unrelated, left untouched) in
-recap.js, and the exact 13-14-card list on the Data tab. Both are now
-explicitly authorized — this is no longer "major, ask first," it is the
-job.
-
-- [x] 1. Recap feature: verified `Recap.build`/`Recap.text` (real, fact-based,
-      no network) and `Ai.recap()` (Claude rewrite, cheap model, gated on a
-      configured key) still did what the earlier trace found — they did.
-      Built `weeklyRecapCard()` + `openRecapDialog()` in ui.js: ONE small
-      card in the Data tab's League group (after Weekly scores/Standings/
-      matchups, before Scoring rules) with a button that opens a dialog
-      showing the real facts, an optional "Write it up with Claude" button
-      (only when `Ai.configured()`), and Share/Copy acting on whichever
-      text is currently shown. Works fully with no API key — Claude is an
-      enhancement, never a requirement, matching every other Claude
-      feature's own degrade-gracefully rule. Low-prominence per Tj's own
-      "probably won't use it much" — renders after the cards he actually
-      opens weekly, never before them.
-- [x] 2. Data tab: grouped the 13-14 cards into 4 sub-nav sections by what
-      they are for — League (scores, standings, matchups, the new recap,
-      scoring rules), Claude (AI settings, costs), Sync & data (stats
-      feed, player database), App (alerts, live refresh, screen fit,
-      backup, about). `viewData()` split into `viewDataLeague`/
-      `viewDataClaude`/`viewDataSync`/`viewDataApp`, every existing card
-      relocated with its logic unchanged, none dropped — pinned in
-      `tools/test_boot.js` by checking every card's own label text still
-      exists in the file after the reshuffle.
-- [x] 3. All 14 suites + ES2018 gate green, `bash build.sh` clean. Real
-      functional tests in `tools/test_lifecycle.js` (the one suite that
-      executes ui.js against a DOM): all 4 sub-nav groups clicked through
-      like a real thumb would, each group's expected cards confirmed
-      present; the recap dialog opened against a REAL scored week (not a
-      synthetic stub), its text confirmed to come from the real fact
-      sheet, the Claude button confirmed correctly absent with no key
-      configured, Share/Copy confirmed present. Found and fixed a real gap
-      in the test harness itself while building this: the DOM stub's
-      `innerHTML` was a plain property, so `render()`'s own
-      `root.innerHTML = ''` never actually cleared old children — every
-      render in the whole suite was silently ACCUMULATING into one tree
-      instead of replacing it, invisible until a Data-tab test needed to
-      tell "a button from THIS render" apart from a same-named one several
-      renders ago. Fixed with a real accessor; the fix made this test file
-      more accurate for every suite that uses it, not just this one.
-      Shipped — see STATE.md's entry for the version and Release link Tj
-      was sent.
-
-The 2026-09-15e request before it (a comprehensive app-wide sweep — 5
-rounds of verified fixes across data integrity, value.js correctness,
-UI/feature correctness, Android hardening and cost/model accuracy, plus
-13 smaller fixes) is complete, shipped as v6.4, and archived at the end of
-`LADDER.md` (§32) — full root-cause writeup for every fix in STATE.md's
-2026-09-15e entry. Two items came out of that sweep that need Tj's
-decision rather than being done unasked — see "Waiting on Tj" below (the
-Data tab card wall, the dead recap.js write-up feature).
-
-The 2026-09-15d request before it (the back button still closing the app
-on a real device, a second attempt at the same symptom) is archived at
-LADDER.md §31 — that fix (v6.3) still needs a real-device confirmation,
-also flagged below since it is a second attempt, not a routine
-confirmation. The 2026-09-15c request before that (Rosters reorder, back
+The 2026-09-15e request before those two (a comprehensive app-wide sweep
+— 5 rounds of verified fixes plus 13 smaller ones) is archived at
+LADDER.md §32, STATE.md's 2026-09-15e entry. The 2026-09-15d request
+before that (the back button, a second attempt at the same symptom) at
+LADDER.md §31 — that fix (v6.3, carried through v6.4-v6.7 unchanged)
+still needs its first real-device confirmation, see "Waiting on Tj"
+below. The 2026-09-15c request before that (Rosters reorder, back
 button, app-resume state, no splash flash, Claude cost estimates, bench
-"why not", PlayerDB auto-refresh, and a full bug sweep) is archived at
-LADDER.md §30; the 2026-09-15 / 2026-09-15b requests before that (the
-resume-system fix and the Stats tab, plus its same-day v6.1 bugfix) at
-§28/§29. Full design notes for all of them are in STATE.md's 2026-09-15
-entries.
+"why not", PlayerDB auto-refresh, full bug sweep) at LADDER.md §30; the
+2026-09-15 / 2026-09-15b requests before that (the resume-system fix and
+the Stats tab, plus its same-day v6.1 bugfix) at §28/§29. Full design
+notes for all of them are in STATE.md's 2026-09-15 entries.
 
 ## When Tj asks for something new
 
