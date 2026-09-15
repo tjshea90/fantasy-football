@@ -127,7 +127,7 @@ var TAB_NAMES = ['live', 'lineups', 'rosters', 'wire', 'stats', 'advice', 'data'
    module load order when gamelog.js/stats.js were added (see below). Real
    parity, not an assumption. */
 (function () {
-  var html = fs.readFileSync(path.join(__dirname, '..', 'app/assets/index.html'), 'utf8');
+  var html = fs.readFileSync(A('index.html'), 'utf8');
   var found = [], re = /data-v="([^"]+)"/g, m;
   while ((m = re.exec(html))) found.push(m[1]);
   ok(found.join(',') === TAB_NAMES.join(','),
