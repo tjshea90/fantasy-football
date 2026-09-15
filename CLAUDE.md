@@ -102,7 +102,17 @@ this is never missed twice.
 Tick a `TASKS.md` box only when it is written, tested and committed, and name
 the test that proves it. The next account will not re-verify a ticked box.
 
-## Saving work — three levels, and you are responsible for the middle one
+## Saving work — three levels, plus a backstop underneath the first one
+
+**0. The raw message itself (hooks — happens without you, before you do
+anything).** `tools/capture_inbox.sh` (a `UserPromptSubmit` hook) appends
+every message Tj sends to `INBOX.md`, verbatim, and commits+pushes it the
+moment it arrives — before any tool call, before any judgment about whether
+it is "worth" saving yet. This is not a substitute for level 1 below or for
+writing `TASKS.md`; it exists only so the exact words are never lost even if
+nothing else gets written down before a usage cap hits. You do not call it,
+and you should not need it if you write `TASKS.md` promptly — treat it as
+the net under the net.
 
 **1. Automatic (hooks — happens without you).** `tools/autosave.sh` commits
 and pushes after every file edit and every bash command. It has no gate and
