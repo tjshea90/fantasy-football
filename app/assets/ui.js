@@ -3280,18 +3280,30 @@
       'kickoff, not at one minute to.'));
 
     var t = el('button', 'btn pri', 'Run the check now');
+    /* alertsTest() is async now (2026-09-15e): the real check is a real
+       network fetch on the Java side, and a @JavascriptInterface method
+       blocks the calling JS thread until it returns — this button used to
+       freeze the whole page for however long that fetch took (up to 13s
+       worst case). Native.alertsTest() now returns immediately and wakes
+       the page through this one global callback once the real result is
+       ready, the same shape as every other async bridge call. */
     t.addEventListener('click', function () {
-      var r;
-      try { r = Native.alertsTest(); }
+      t.disabled = true; t.textContent = 'Running the check…';
+      window.__alertsTestDone = function (r) {
+        window.__alertsTestDone = null;
+        t.disabled = false; t.textContent = 'Run the check now';
+        modal('Lineup check', r + '\n\nA notification was posted as well. If you ' +
+          'did not see one, Android is blocking notifications for this app — ' +
+          'turn them on in Settings → Apps → League Tracker.');
+        render();
+      };
+      try { Native.alertsTest(); }
       catch (e) {
+        window.__alertsTestDone = null;
+        t.disabled = false; t.textContent = 'Run the check now';
         modal('The check could not run', ((e && e.message) ? e.message : String(e)) +
           '\n\nNothing else is affected — every other tab still works.');
-        return;
       }
-      modal('Lineup check', r + '\n\nA notification was posted as well. If you ' +
-        'did not see one, Android is blocking notifications for this app — ' +
-        'turn them on in Settings → Apps → League Tracker.');
-      render();
     });
     c.appendChild(t);
 
