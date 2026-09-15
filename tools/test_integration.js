@@ -498,9 +498,8 @@ var me = S.league.me;
   W.Native.save = function (k, v) { if (k === 'fftracker_archive_v1') archiveWrites++; return realSave(k, v); };
 
   var freshWeek = 9;   /* a week with no stats synced yet in this test roster */
-  ok(!W.Store.getStats(freshWeek)[Object.keys(W.Store.getStats(freshWeek))[0] || '__none__'],
-     'sanity: this week really has no stats yet');
-  W.Store.getStats(freshWeek);   /* the read under test */
+  var st = W.Store.getStats(freshWeek);   /* the read under test — also lazily creates the bucket */
+  ok(Object.keys(st).length === 0, 'sanity: this week really has no stats yet (an empty bucket, not a real sync)');
   archiveWrites = 0;
   W.Store.save();
   ok(archiveWrites === 0, 'a plain read of an unsynced week does not write the archive on the next save');
