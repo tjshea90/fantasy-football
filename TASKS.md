@@ -1,6 +1,48 @@
 # TASKS — the current job, in Tj's words
 
-**There is no active job right now.** The most recent one (2026-09-15e: a
+## 2026-09-15f: the app never advances past a finished NFL week
+
+> "Week 1 NFL is complete (after Monday games are final, the NFL week is
+> final and moves to the next week), yet the app still has all tabs open
+> to week 1. I want the app to automatically move to the next NFL week
+> after the previous week becomes final. All tabs across the entire app
+> should be on week 2 right now."
+
+- [x] 1. Root-caused: `syncCurrentWeek()` (ui.js) — the check that compares
+      ESPN's own current-week number against what the app shows, and
+      advances the one shared `week` variable every tab reads — was called
+      ONLY from `boot()`, a true cold start. This app deliberately keeps
+      its process alive across a background/foreground cycle
+      (`moveTaskToBack`, not `finish()`, on back press — an earlier
+      session's own fix), so anyone who does not force-quit the app could
+      go days without `boot()` running again. Made worse by
+      `appResume()`'s own "a week that is finished stays finished, do not
+      wake a poll for it" early return — exactly the state where a real
+      week having moved on is most likely, and there was no periodic
+      re-check to catch it anyway.
+- [x] 2. Fixed: `appResume()` now also calls `syncCurrentWeek()`, placed
+      BEFORE the "week already final" early return. `syncCurrentWeek()`
+      has its own 3-hour staleness cache, so this costs nothing extra on
+      the common case (repeated resumes within the same window just
+      no-op). Since `week` is one shared module-level variable every tab
+      (Live, Lineups, Rosters, Wire, Stats, Advice, Data) already reads,
+      this one fix moves ALL of them together — there was never a per-tab
+      state problem, only a per-resume one.
+- [x] 3. Proven end-to-end, not just source-text pinned: `tools/
+      test_lifecycle.js` (the one suite that actually executes ui.js
+      against a DOM stub) now stubs `Espn.currentWeek`, marks week 1
+      synced+final, calls `appResume()`, and confirms `week` actually
+      advances to 2. `tools/test_boot.js` pins that the call site exists
+      and runs before the early return. All 14 suites + the ES2018 gate
+      green, `bash build.sh` clean (28 classes).
+- [x] 4. Shipped — see STATE.md's entry for the version and the Release
+      link Tj was sent. **Does not retroactively fix his already-running
+      app session** — there is no way to push a live update into a process
+      already running on his phone. He needs to background and reopen the
+      app (or fully close/relaunch) once this version is installed; the
+      very next resume catches the week-1-to-2 transition.
+
+**There is no OTHER active job right now.** The most recent one (2026-09-15e: a
 comprehensive app-wide sweep — 5 rounds of verified fixes across data
 integrity, value.js correctness, UI/feature correctness, Android hardening
 and cost/model accuracy, plus 13 smaller fixes) is complete, shipped as
