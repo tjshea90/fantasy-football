@@ -139,6 +139,30 @@
     };
   }
 
+  /* Estimate what a call would cost from its REAL inputs — the exact prompt
+   * text length and search budget the call would actually send, computed by
+   * the same functions the real call uses (Ai.adviceSearchBudget /
+   * Ai.waiverSearchBudget) — never a number invented separately from what
+   * the app would really do. ~4 characters per token is the standard rough
+   * approximation for English prose and JSON, which is what every prompt
+   * here is; outputTokens is necessarily rougher (there is no formula for
+   * it the way there is for search count), but per ai.js's own comment
+   * ("SEARCHES ARE THE BILL, not the tokens") search cost dominates the
+   * total, so an imprecise output figure costs the estimate little.
+   *
+   * Tj, 2026-09-15: "I no longer have the API key... put an estimate of
+   * what each request would cost." There is no historical average worth
+   * trusting once the key is gone — nothing will ever add a new data point
+   * to led.calls again — so a live number grounded in TODAY's real prompt
+   * and triage size is the accurate answer, not a frozen average from
+   * before he removed the key. */
+  function estimate(promptChars, searches, outputTokens) {
+    var r = rates();
+    var inTok = n(promptChars) / 4;
+    return inTok / 1e6 * r.inPerM + n(outputTokens) / 1e6 * r.outPerM +
+           n(searches) / 1000 * r.searchPer1000;
+  }
+
   function history(limit) { if (!led.since) load(); return led.calls.slice(0, limit || 20); }
   function reset() {
     led = { calls: [], spend: 0, tokensIn: 0, tokensOut: 0, searches: 0, since: Date.now() };
