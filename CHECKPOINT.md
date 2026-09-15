@@ -1,12 +1,12 @@
-# CHECKPOINT 236 — read me first, then TASKS.md
+# CHECKPOINT 252 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T07:52:45Z · **version:** 6.3 · **tests:** all 14 suites green
+**Written:** 2026-09-15T07:58:08Z · **version:** 6.3 · **tests:** all 14 suites green
 
 ## Just done
-UI sweep finding #2 (Stats tab): the Pts column was the LAST column in the game-log/roster table, pushed off-screen behind 6+ stat columns on a 390px phone -- the one number the whole Stats tab exists to show was reachable only via an undiscoverable horizontal swipe. Fixed by moving Pts right after the row-identifying column(s) in statTable(). Verified live in browser (PTS now shows immediately: 'WK OPP PTS CMP YDS TD INT RUYD' -> '1 vs DEN(live) 29.1 10 127 1 1 27') and with new source-text regression tests. All 13 suites + ES2018 gate green.
+Sweep round 1 (data integrity, highest stakes): fixed two real bugs found by the 6 background review agents. (1) NativeBridge.java's load() only fell back to .bak when the main file was missing/empty -- a readable-but-CORRUPTED file (truncated write, bit-rot) was returned as-is, and store.js's JSON.parse failure then silently reset a whole season to the bundled seed instead of using the intact .bak. Fixed with a real JSON-parseability check before accepting the main file. (2) store.js's getStats() dirtied the archive (the ~1.9MB book+stats file the whole point of the archive split is to avoid writing on every trivial save) on a mere READ -- just opening the Live tab for an unsynced week (common right after boot) silently flagged the next unrelated lineup edit to trigger the full archive write instead of the cheap ~25KB main-file write. Fixed by removing the stray markArchive() call from the lazy-bucket-creation path; verified every real writer (setLine, setBook) already calls markArchive() independently, so no real dirty-tracking was lost. Both verified: the getStats fix has a real executable test (instruments Native.save and counts archive writes before/after a read vs a real write); the Java fix is pinned as source text (no JUnit exists in this hand-rolled build) backed by a real bash build.sh compile. All 13 suites + ES2018 gate green.
 
 ## Do this next
-First of 6 background code-review agents reported back (AI/Claude integration layer): found a real bug (usage.js's cost tracking/estimates are model-blind -- always prices against one flat rate table even though the app dispatches calls to two different real models, main vs cheap, so the displayed cost can be off by 2.5x-5x depending on settings) plus a caching-floor finding (the cheap-model path's prompt caching likely never engages since both prefixes are under Haiku 4.5's 4096-token minimum) and a minor handoff.js detect() prefix-matching looseness. Need to verify each independently before fixing -- continue triaging as the other 5 agents report back.
+6 background review agents (data/scoring core, network/sync, AI integration, UI part 1, UI part 2, Android shell) have all reported back with a large body of additional verified findings. Continue triaging in priority order: next is the value.js correctness bugs (perGame/usage bypassing the tolerant Names.hit lookup -- degrades Wire-board accuracy; needs() hardcoding FLEX to RB replacement level -- feeds wrong data to Claude's waiver prioritization), then UI/feature correctness bugs (Advice tab missing long-press entirely, claudeAdviceEstimate showing cost for a free sync, stats.js team-picker week-desync repeat of an already-fixed bug class, showPlayer's stale-modal-after-save), then Android hardening (alertsTest() synchronous network call freezing the JS thread, 6 file-descriptor leaks, NativeBridge pool never shut down, dead legacy HTTP methods as attack surface), then cost/model accuracy (usage.js model-blind pricing, prompt caching under the model floor, outdated web_search tool type), then a batch of smaller verified fixes, then flag (do not implement unasked) the Data tab's undifferentiated-card-wall UI issue and the fully-dead recap.js feature for Tj's decision.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  ae43731 ckpt 236: UI sweep finding #2 (Stats tab): the Pts column was the LAST column in the gam
   24a73a3 ckpt 230: UI sweep finding #1 (Live tab): player names were truncating mid-word in the t
   1827e5c ckpt 226: Wrote Tj's comprehensive app-wide improvement request to TASKS.md (2026-09-15e
   882ace6 ckpt 223: Shipped v6.3, triggered and verified the GitHub Release (non-empty asset, corr
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   50c304f ckpt 205: Archived the finished 2026-09-15c job to LADDER.md §30, reset TASKS.md to 'no
   82284ab ship v6.2: Rosters reorder, Android back-button/app-resume/splash-flash fixes, live Clau
   d30a945 ckpt 198: Item 8 (full sweep) complete: live-browser walkthrough of all 7 tabs found no 
-  bfaec3e ckpt 178: Item 7 done: PlayerDB.ensureFresh() auto-refreshes the player database quietly
 ```
 
-(5 automatic checkpoint(s) since the last deliberate one — the
+(15 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
