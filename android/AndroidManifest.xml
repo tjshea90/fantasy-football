@@ -13,6 +13,14 @@
 
   <!-- No native libraries anywhere in this app, so the same APK is valid on
        armeabi-v7a (Android 10) and arm64-v8a (Android 16). Do not add an NDK. -->
+  <!-- Required for MainActivity's OnBackInvokedCallback (API 33+) to actually
+       receive back events — registering the callback in code has no effect
+       without this. Without it, a real Android 13+ phone's predictive-back
+       gesture bypassed onKeyDown(KEYCODE_BACK) entirely and closed the app
+       (Tj, 2026-09-15, v6.2: "the back button still closes the app to my
+       home screen"). No effect below API 33 — minSdk 29 keeps working
+       through onKeyDown alone, which is the only back dispatch that exists
+       there. -->
   <application
       android:label="League Tracker"
       android:icon="@mipmap/ic_launcher"
