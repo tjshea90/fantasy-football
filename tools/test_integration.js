@@ -512,5 +512,37 @@ var me = S.league.me;
   W.Native.save = realSave;
 }());
 
+/* ---- 20. Store.bookTrend() resolves a spelling mismatch tolerantly
+ * (review finding, 2026-09-15e) ---------------------------------------------
+ * The league book is keyed by however ESPN spelled a box score — "Kenny
+ * Gainwell", say. value.js's perGame()/usage() (the Wire tab's whole free-
+ * agent board and usage trend) and recommend.js's usageSwing() ("his
+ * opportunities rose X% last week") all look a player up by the roster/DB's
+ * own spelling — "Kenneth Gainwell" — which can differ. bookTrend() used to
+ * require an EXACT key match; a mismatch did not error, it just silently
+ * returned nothing, so every affected player's real recent production was
+ * invisible everywhere that data feeds. Fixed to resolve tolerantly via
+ * Names.hit, the same pattern Projections.find() already used. */
+(function () {
+  var wk = 3;
+  W.Store.setBook(wk, { 'kenny gainwell': { n: 'Kenny Gainwell', t: 'TB', p: 14.2, pa: 0, cr: 12, tg: 3 } });
+
+  var trend = W.Store.bookTrend('Kenneth Gainwell', wk, 1);
+  ok(trend.length === 1 && trend[0].row && trend[0].row.p === 14.2,
+     'bookTrend finds the ESPN-spelled row even when asked for the roster/DB spelling');
+
+  var trend2 = W.Store.bookTrend('kenny gainwell', wk, 1);
+  ok(trend2.length === 1 && trend2[0].row && trend2[0].row.p === 14.2,
+     'and still works when the caller already happens to pass the exact ESPN spelling (no regression)');
+
+  var pg = W.Value.perGame('Kenneth Gainwell', 'RB', wk + 1);
+  ok(pg.v === 14.2 && pg.src.indexOf('scored week') >= 0,
+     'Value.perGame (the free-agent board) now picks up his real recent production, not a season-pace/floor guess');
+
+  var usageRows = W.Value.usage('Kenneth Gainwell', wk + 1, 1);
+  ok(usageRows.length === 1 && usageRows[0].played && usageRows[0].pts === 14.2,
+     'Value.usage (the Wire tab\'s usage trend) resolves the same way');
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
