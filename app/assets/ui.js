@@ -1617,8 +1617,9 @@
    * to survive a tab switch away and back, so it is not part of Store. */
   var rosterSel = null;
   function viewRosters(root) {
-    addSafe(root, 'The trade evaluator', tradeCard);
-
+    /* Tj: "move the trade evaluator to the very bottom, I want to see team
+       rosters at the top." Rosters are what he opens this tab to see; the
+       trade evaluator is a secondary tool underneath it, not the headline. */
     if (!rosterSel || !S.teams.some(function (t) { return t.id === rosterSel; })) {
       rosterSel = S.league.me;   /* land on Tj's own team first, every time */
     }
@@ -1634,8 +1635,8 @@
     root.appendChild(chips);
 
     var team = Store.team(rosterSel);
-    if (!team) return;
-    addSafe(root, team.name + ' roster', function () { return teamRosterCard(team); });
+    if (team) addSafe(root, team.name + ' roster', function () { return teamRosterCard(team); });
+    addSafe(root, 'The trade evaluator', tradeCard);
   }
   function teamRosterCard(t) {
     var c = el('div', 'card');
