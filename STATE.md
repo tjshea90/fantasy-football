@@ -2417,3 +2417,7 @@ the dialog's own Cancel button, tapped inside the 400ms window the old
 code used to swallow entirely, now actually dismisses it. All 14 suites +
 the ES2018 gate green throughout every round; `bash build.sh` run clean
 repeatedly.
+
+Shipped as v6.4. Release published and verified
+(`mcp__github__get_release_by_tag`: non-empty `assets`, correct
+`FFTracker-v6.4.apk`, 264345 bytes) before telling Tj.
