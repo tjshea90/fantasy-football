@@ -470,6 +470,7 @@
                  byPos: byPos, byVor: byVor, POS: POS,
                  perGame: perGame, usage: usage, usageText: usageText,
                  valueOf: valueOf, trade: trade, weeksLeft: weeksLeft,
-                 rosteredSet: rosteredSet, myInjuries: myInjuries };
+                 rosteredSet: rosteredSet, myInjuries: myInjuries,
+                 myStarters: myStarters };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Value;
 })(typeof window !== 'undefined' ? window : this);
