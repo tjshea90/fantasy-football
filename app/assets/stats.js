@@ -58,15 +58,20 @@
   POS_COLS.TE = POS_COLS.WR;
   function colsFor(pos) { return POS_COLS[pos] || POS_COLS.WR; }
 
-  /* one row per GAME, most recent first — Wk / Opp / this position's stat
-   * columns / Pts. Used for both a single player's season log and (with one
-   * row) a team roster's per-player line. */
-  function gameLogTable(ctx, pos, rows) {
+  /* Shared table shape: some identifying prefix column(s), then this
+   * position's stat columns, then Pts. headPrefix/rowPrefix let the two
+   * real uses below share the stat-column logic without sharing what
+   * identifies each row — a player's OWN game log identifies each row by
+   * WEEK (he is already named in the card header), while a team roster
+   * identifies each row by PLAYER (they are all the same week, already
+   * named in ITS card header). Conflating the two used to mean a team
+   * roster table carried no player name at all — Tj: "the team tab doesn't
+   * show the player names who scored those statistics." */
+  function statTable(ctx, pos, headPrefix, rows, rowPrefix) {
     var cols = colsFor(pos);
-    var head = ['Wk', 'Opp'].concat(cols.map(function (c) { return c[0]; })).concat(['Pts']);
+    var head = headPrefix.concat(cols.map(function (c) { return c[0]; })).concat(['Pts']);
     var trows = rows.map(function (r) {
-      var cells = [String(r.week), (r.home ? 'vs ' : '@ ') + (r.opp || '?') +
-                   (r.state === 'in' ? ' (live)' : '')];
+      var cells = rowPrefix(r);
       cols.forEach(function (c) { cells.push(String(c[1](r.line))); });
       cells.push(ctx.fmt(r.pts));
       return { cells: cells };
@@ -74,6 +79,17 @@
     var wrap = ctx.el('div', 'twrap');
     wrap.appendChild(ctx.table(head, trows));
     return wrap;
+  }
+  /* one row per GAME, most recent first — for a single player's season log. */
+  function gameLogTable(ctx, pos, rows) {
+    return statTable(ctx, pos, ['Wk', 'Opp'], rows, function (r) {
+      return [String(r.week), (r.home ? 'vs ' : '@ ') + (r.opp || '?') +
+              (r.state === 'in' ? ' (live)' : '')];
+    });
+  }
+  /* one row per PLAYER, all the same game — for a team's roster. */
+  function rosterTable(ctx, pos, rows) {
+    return statTable(ctx, pos, ['Player'], rows, function (r) { return [r.name]; });
   }
 
   /* ---- the one shared "here is this player's stats" view -----------------
