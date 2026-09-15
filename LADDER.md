@@ -1018,3 +1018,84 @@ correct by `test_lifecycle.js`) was never the bug.
       attempt at the same symptom, not a routine confirmation.
 
 Shipped as v6.3. All 13 suites + the ES2018 gate green.
+
+## 32. Comprehensive app-wide sweep — 5 rounds, 13 smaller fixes, 2 flagged for Tj (2026-09-15e)
+
+> "Do a comprehensive app wide scan for improvements in code and function
+> and ui. Take as long as you need and use as much usage as you need. Do a
+> thorough job. Improve the app as much as you can and I'll check back
+> much later."
+
+Full write-up, every fix with its root cause and proof, is in STATE.md's
+2026-09-15e entry — condensed here to what shipped.
+
+- [x] 1. Six parallel background review agents dispatched (one per logical
+      area), every finding personally re-verified against real source
+      before acting — caught two review-agent claims that did NOT hold up
+      under inspection (the legacy httpGet/httpGetH/httpPost Java methods
+      are tested-and-used by design, not dead; value.js's `_faMemo`
+      generation-keyed cache is a deliberate, robust, already-correct
+      pattern, not an "incidental" gap) — both correctly left alone.
+- [x] 2. **Round 1 (data integrity):** NativeBridge's `.bak` fallback gap
+      that could silently wipe a season on a readable-but-corrupted save;
+      store.js's `getStats()` dirtying the archive split on a plain read.
+- [x] 3. **Round 2 (value.js correctness):** `Store.bookTrend()`'s
+      exact-key lookup silently losing real production data on any
+      roster/ESPN spelling mismatch across 3 call sites; `needs()`'s
+      hardcoded FLEX→RB replacement-level bug feeding wrong positional
+      data into Claude's waiver prompt.
+- [x] 4. **Round 3 (UI/feature correctness):** `claudeAdviceEstimate`
+      showing a false non-zero cost for a free sync; the Advice tab having
+      zero long-press support anywhere (Tj's original request was
+      explicit — everywhere); `showPlayer()`'s modal showing a stale total
+      after a Save; `stats.js`'s team browser repeating the exact
+      wrong-week-source bug Top Players was already fixed for once.
+- [x] 5. **Round 4 (Android hardening):** `alertsTest()`'s up-to-13s
+      freeze from a synchronous call on the JS-interface thread, converted
+      to the established async pattern; 6 file-descriptor leaks across
+      NativeBridge.java/Alerts.java fixed via try-with-resources; the
+      thread pool now shuts down in `onDestroy`; the back-button
+      registration-failure fallback comment corrected after checking it
+      against Android's own predictive-back documentation (it was wrong).
+- [x] 6. **Round 5 (cost/model accuracy):** `usage.js`'s cost tracking was
+      model-blind (one flat Sonnet-shaped rate table for every call,
+      regardless of which model actually ran it — a recap was overstated
+      ~2x, an Opus call would have been understated ~5x); fixed with a
+      real per-model rate tier. Outdated `web_search_20250305` tool type
+      upgraded to `web_search_20260209`, gated to models confirmed to
+      support it (Haiku 4.5 stays on the safe old type). Prompt-caching
+      gap on the advice prefix (measured ~130 tokens short of Sonnet's
+      floor) investigated and deliberately left undone — documented, not
+      silently dropped — rather than padding real prompt content on an
+      unverifiable guess.
+- [x] 7. **13 smaller verified fixes**, each independently checkpointed:
+      long-press click-suppression scoped to the triggering row instead of
+      swallowing every click on the page for 400ms; pull-to-refresh's
+      double-render removed; `freshenInjuries` now catches its own
+      rejection; a stale `earlyGameCard` comment corrected; a shadowed
+      `view` variable renamed before it became a landmine; a dead
+      `Alerts.schedule()` method removed (confirmed zero callers); an
+      empty-`league.me` edge case in `Alerts.check()` guarded; a
+      path-traversal-lite gap in `NativeBridge.safe()` hardened;
+      `handoff.js`'s `detect()` tightened from a loose prefix match to an
+      exact one (the old check would have accepted a model typo as a
+      valid reply); the Advice/Wire cost-line copy unified;
+      `gamelog.js`/`doSync`'s duplicate `Espn.gameStats` fetch eliminated
+      via a new shared `Gamelog.ingestEvent`; `recommend.js`'s
+      `opponentsForWeek` matched the app's own seasontype pattern; three
+      value.js/projections.js/names.js redundancy cleanups, each traced by
+      hand and proven with a real test, not assumed.
+- [x] 8. Flagged for Tj rather than implemented (see TASKS.md "Waiting on
+      Tj"): the Data tab's 13-14-card wall with no sub-navigation; the
+      fully-wired-but-never-triggered `recap.js`/`Ai.recap()`/
+      `NativeBridge.share+copy` write-up feature (grepped every call
+      site — genuinely unreachable, not broken — needs Tj's decision:
+      wire it up or remove it).
+- [x] 9. Live-browser pass (a local static server + Playwright/chromium):
+      clean boot, no real console errors; the long-press click-suppression
+      fix specifically proven on a real touch-event sequence — the
+      dialog's own Cancel button, tapped inside the exact 400ms window the
+      old code used to swallow, now actually dismisses it.
+
+Shipped as v6.4. All 14 suites + the ES2018 gate green throughout every
+round; `bash build.sh` run clean repeatedly.
