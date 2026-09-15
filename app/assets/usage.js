@@ -23,17 +23,40 @@
   var KEY = 'fftracker_usage_v1';
   var MAX_CALLS = 200;          /* keep the ledger from growing without bound */
 
-  /* Rates are per MILLION tokens, and per 1000 web searches. Defaults are
-   * Claude Sonnet 5's published prices. They are editable in settings because
-   * prices and model names both change, and a wrong constant baked into an APK
-   * is worse than a field someone can correct. */
+  /* Rates are per MILLION tokens, and per 1000 web searches. Found in the
+   * 2026-09-15e sweep: this used to be ONE flat table (Sonnet 5's prices)
+   * applied to every call regardless of which model actually ran it — but
+   * ai.js picks the model per call (depth()==='cheap' sends Haiku 4.5;
+   * 'weekly recap' always uses CHEAP_MODEL), so a Haiku call was silently
+   * priced at roughly double its real cost, and any Opus call at roughly a
+   * fifth. Tiered by model now; searchPer1000 stays flat because Anthropic
+   * prices the web-search server tool per use, not per model. Each is still
+   * editable in settings, per field, because prices and model names both
+   * change and a wrong constant baked into an APK is worse than a field
+   * someone can correct — an override wins over whichever tier a given call
+   * used. Verified against Anthropic's published prices this session. */
+  var RATE_TIERS = {
+    opus:   { inPerM: 5.00, outPerM: 25.00, cacheReadPerM: 0.50, cacheWritePerM: 6.25 },
+    sonnet: { inPerM: 2.00, outPerM: 10.00, cacheReadPerM: 0.20, cacheWritePerM: 2.50 },
+    haiku:  { inPerM: 1.00, outPerM: 5.00,  cacheReadPerM: 0.10, cacheWritePerM: 1.25 }
+  };
   var DEFAULT_RATES = {
-    inPerM: 2.00,
-    outPerM: 10.00,
-    cacheReadPerM: 0.20,        /* 0.1x input */
-    cacheWritePerM: 2.50,       /* 1.25x input */
+    inPerM: RATE_TIERS.sonnet.inPerM,
+    outPerM: RATE_TIERS.sonnet.outPerM,
+    cacheReadPerM: RATE_TIERS.sonnet.cacheReadPerM,
+    cacheWritePerM: RATE_TIERS.sonnet.cacheWritePerM,
     searchPer1000: 10.00
   };
+  /* Classified by substring rather than an exact-id map, so a future dot
+   * release (e.g. a 5.1) keeps pricing at the right tier without an edit
+   * here — and anything unrecognised (a custom id Tj typed into settings)
+   * falls back to the sonnet tier, the same default this always had. */
+  function tierFor(model) {
+    var m = String(model || '').toLowerCase();
+    if (m.indexOf('opus') >= 0) return RATE_TIERS.opus;
+    if (m.indexOf('haiku') >= 0) return RATE_TIERS.haiku;
+    return RATE_TIERS.sonnet;
+  }
 
   var led = { calls: [], spend: 0, tokensIn: 0, tokensOut: 0, searches: 0, since: 0 };
 
