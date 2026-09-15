@@ -565,6 +565,13 @@ ok(/opponentsForWeek\(week\)\['catch'\]/.test(recX),
 ok(/schedule FAILED/.test(recX), 'and it says so in the report rather than vanishing');
 ok(/Espn\.weekGames\(S\.settings\.season, week, week > 18 \? 3 : 2\)/.test(recX),
    "opponentsForWeek uses the same week>18?3:2 seasontype pattern every other weekGames call site does");
+var valX = fs.readFileSync('app/assets/value.js', 'utf8');
+ok(!/out\[root\.Names\.canon\(pl\.name\)\] = x\.team\.id;/.test(valX),
+   'rosteredSet no longer writes the same key twice — variants() already includes canon() as its first element');
+var projX = fs.readFileSync('app/assets/projections.js', 'utf8');
+ok(!/got\.byName\[k\]\.fullName \|\| k/.test(projX) &&
+   /root\.Names\.hitKey\(best\.byName, k\)/.test(projX),
+   "the dead .fullName fallback in the Sleeper merge is gone — ingestSleeper's records never carried that field");
 var alertsGuarded = /try \{\s*ok = Native\.alertsSet/.test(uiX) &&
                     /try \{ Native\.alertsTest\(\); \}/.test(uiX);
 ok(alertsGuarded, 'both raw alerts bridge calls are wrapped, like alertsStatus already was');
