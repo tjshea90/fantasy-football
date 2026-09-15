@@ -1904,6 +1904,12 @@
    * waiver list on the internet is computed in scoring where a completion is
    * worth nothing, and here it is worth a point. */
   function viewWire(root) {
+    /* Tj, 2026-09-15: keep the player database fresh "each time I refresh
+     * waiver wire information or anything else that it is important to see
+     * all players" — the free-agent board below IS that screen. Quiet and
+     * a no-op unless the database has actually gone stale (see
+     * refreshPlayerDBIfStale above). */
+    refreshPlayerDBIfStale();
     addSafe(root, 'Your roster — injuries', rosterInjuryCard);
     addSafe(root, 'The free-agent board', freeAgentCard);
   }
