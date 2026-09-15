@@ -69,11 +69,23 @@
    * show the player names who scored those statistics." */
   function statTable(ctx, pos, headPrefix, rows, rowPrefix) {
     var cols = colsFor(pos);
-    var head = headPrefix.concat(cols.map(function (c) { return c[0]; })).concat(['Pts']);
+    /* Pts right after the identifying column(s), NOT last (found in the
+     * app-wide sweep, 2026-09-15e). A QB's row alone is 6 stat columns
+     * wide (Cmp/Yds/TD/INT/RuYd/RuTD) before Pts ever appeared — on a
+     * 390px phone that pushed the one number this whole tab exists to
+     * show ("calculate the fantasy points scored... using only the rules
+     * for this league") off the right edge of the screen, reachable only
+     * by an undiscoverable horizontal swipe on a table that already looks
+     * complete without it (.twrap is overflow-x:auto, app.css — the
+     * scroll works fine, nobody could tell it was there to try). Moving
+     * it up front costs nothing: table() styles every column after the
+     * first identically regardless of position, so this is a pure
+     * reorder, not a new column. */
+    var head = headPrefix.concat(['Pts']).concat(cols.map(function (c) { return c[0]; }));
     var trows = rows.map(function (r) {
       var cells = rowPrefix(r);
-      cols.forEach(function (c) { cells.push(String(c[1](r.line))); });
       cells.push(ctx.fmt(r.pts));
+      cols.forEach(function (c) { cells.push(String(c[1](r.line))); });
       return { cells: cells };
     });
     var wrap = ctx.el('div', 'twrap');
