@@ -56,6 +56,23 @@
     var m = settings().aiModelList;
     return (m && m.length) ? m : FALLBACK;
   }
+  /* 2026-09-15e sweep: both web_search tool calls below were pinned to
+   * web_search_20250305, the basic (non-dynamic-filtering) tool version —
+   * stale even when this app shipped it, verified this session against
+   * current Anthropic documentation. The newer web_search_20260209 is
+   * confirmed supported on Opus 5 and Sonnet 5, but NOT documented as
+   * available on Haiku 4.5 — and depth()==='cheap' sends exactly this call
+   * to cheapModel(), which defaults to Haiku 4.5 and can be set to it
+   * explicitly in settings. Picking the tool version by an ALLOWLIST of
+   * models confirmed to support it (rather than excluding only the ones
+   * confirmed not to) means an unrecognised model — a custom id Tj typed in,
+   * or a future one this file has never heard of — gets the always-safe
+   * older version instead of a guess that could 400 the whole call. */
+  function searchToolType(mdl) {
+    var m = String(mdl || '').toLowerCase();
+    return (m.indexOf('opus-5') >= 0 || m.indexOf('sonnet-5') >= 0)
+      ? 'web_search_20260209' : 'web_search_20250305';
+  }
   /* Resolves to the list AND writes it into settings. Rejects with a readable
      reason; the caller shows it rather than silently falling back. */
   function listModels() {
