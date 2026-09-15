@@ -250,7 +250,17 @@
     var S = root.Store.get();
     return root.Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2).then(function (games) {
       var want = games.filter(function (g) { return g.state !== 'pre'; });
-      return root.Espn.pool(want, 3, function (g) { return ensureEvent(week, g, force); }).then(function () {
+      return root.Espn.pool(want, 3, function (g) { return ensureEvent(week, g, force); }).then(function (results) {
+        /* Same reasoning as playerLog: Espn.pool turns a real fetch failure
+         * into a clean no-op, which reads identically to "nobody has played
+         * yet". If every single game this week failed to fetch, say so. */
+        if (want.length) {
+          var errs = 0, i2;
+          for (i2 = 0; i2 < results.length; i2++) if (results['err' + i2]) errs++;
+          if (errs === want.length) {
+            throw new Error('could not reach the network for any of week ' + week + '’s games — try again');
+          }
+        }
         var bucket = weekBucket(week), out = {}, i;
         for (i = 0; i < TOP_POS.length; i++) out[TOP_POS[i]] = [];
         var abbr;
