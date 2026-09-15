@@ -1,12 +1,12 @@
-# CHECKPOINT 120 — read me first, then TASKS.md
+# CHECKPOINT 127 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T02:35:45Z · **version:** 6.0 · **tests:** all 14 suites green
+**Written:** 2026-09-15T02:45:36Z · **version:** 6.0 · **tests:** all 14 suites green
 
 ## Just done
-shipped v6.0 (Stats tab + resume-system fix), triggered and verified the GitHub Release (mcp__github__get_release_by_tag confirmed a non-empty asset with the correct content type before telling Tj), and archived both of today's finished jobs from TASKS.md into LADDER.md (§28 resume-system fix, §29 Stats tab) with STATE.md's full narrative writeup. TASKS.md reset to no-active-job plus an updated 'waiting on Tj' list (v6.0 confirmation added at the top, noted as superseding the older per-version asks below it rather than replacing them outright).
+fixed two real bugs Tj found on his phone within minutes of v6.0, both confirmed live in the browser with screenshots before this commit. (1) Top players showed 'WEEK 2' with 'No games yet' everywhere while the app header said 'Wk 1' -- stats.js kept its own sticky topWeek variable that was set ONCE on first entry into that mode and never tracked the app's one global week again, so switching weeks via the header (the only week control that exists) desynced the card from it permanently. Removed the separate variable entirely; topCard now reads ctx.week directly every render, same as every other tab already does -- there was never a reason for Top Players to have its own week state since nothing lets you pick one independently. (2) The team roster view showed a full stats table with no player name on any row -- gameLogTable() was written for ONE shape (a single player's multi-week log, identified by Wk/Opp per row since the player is already named in the card header) and reused unchanged for a completely different shape (one team's multiple players in a single week, where Wk/Opp is redundant -- same every row -- but the PLAYER needs identifying per row, and nothing did). Split into statTable() (shared stat-column logic) with two thin wrappers: gameLogTable (Wk/Opp prefix, for a player's own log) and the new rosterTable (Player-name prefix, for a team's roster) -- also removes the now-redundant Wk/Opp columns from the team view, which is a real readability improvement on top of the fix, not just a bug fix. Verified live in a real browser with real ESPN fixture data reproducing Tj's exact steps: Stats tab -> Top players -> next-week arrow -> prev-week arrow (header and card both land back on 'week 1', confirmed programmatically not just visually) and Stats -> By team -> KC (first row now reads 'Patrick Mahomes', not a week number). All 14 suites + ES2018 gate green.
 
 ## Do this next
-nothing active. Next session should check TASKS.md 'Waiting on Tj' for anything Tj has answered, starting with whether v6.0 (Stats tab + long-press) actually works on his phone.
+ship this as v6.1 (patch, not a new feature) and send Tj the release link.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  dc92ac5 ckpt 120: shipped v6.0 (Stats tab + resume-system fix), triggered and verified the GitHu
   be33e59 ship v6.0: add a Stats tab: search any current NFL player (or team defense) and see this
   d0cfa77 ckpt 111: real-browser validation of the Stats tab + long-press, end to end, with REAL l
   1f64c89 ckpt 104: steps 2+4 of the stats-tab job: built stats.js (Stats.render(root,ctx), mirror
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   730d4e5 ckpt 51: resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.
   a8e2c3f ship v5.9: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
   6ff1bcd ship v5.8: v5.8: auto-select current NFL week app-wide, fix stale cached projections on 
-  a6e7847 ckpt 90: wrote up the full 2026-09-14e job (5 requests) in STATE.md under its own dated 
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(6 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
