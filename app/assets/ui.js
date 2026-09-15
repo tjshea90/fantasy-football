@@ -1132,12 +1132,35 @@
     if (window.Gestures) { try { Gestures.enable(true); } catch (e) { } }
     lpEnabled = true;
     if (!S) return;             /* not booted yet; boot() starts the poll itself */
+    /* Tj, 2026-09-15: "week 1 is complete... yet the app still has all
+     * tabs open to week 1. I want the app to automatically move to the
+     * next NFL week." syncCurrentWeek() (see below) already does exactly
+     * that, correctly, everywhere — but until now it was called ONLY from
+     * boot(), a true cold start. This app deliberately keeps its process
+     * alive across a background/foreground cycle (see the back-button
+     * work: moveTaskToBack rather than finish(), specifically so
+     * reopening is instant and nothing is destroyed) — so for anyone who
+     * does not force-quit the app, boot() can go days without running
+     * again, and the current-NFL-week check never got a second chance to
+     * fire. Called here too now, so every real-world "switch away and
+     * back" resume also catches a week transition, not just a true cold
+     * start. It has its own 3-hour staleness cache and safely no-ops once
+     * the app is already caught up, so calling it on every resume costs
+     * nothing extra on the common case. Placed BEFORE the "week already
+     * final" branch below on purpose: a week looking finished locally is
+     * precisely the state where the real NFL week having moved on is
+     * likely, not a reason to skip checking. */
+    syncCurrentWeek();
     /* Coming back after a while is exactly when a flex-scheduling change would
        have landed, and it is cheap: refresh() only fetches if the stored copy
        is over three hours old. */
     freshenSchedule();
     refreshPlayerDBIfStale();
-    /* A week that is finished stays finished — do not wake a poll for it. */
+    /* A week that is finished stays finished — do not wake a poll for it.
+       (If syncCurrentWeek() just above found a real advance, applyCurrentWeek
+       already updated `week` and armed its own live poll for the new one —
+       this check below runs against whatever `week` is NOW, not the stale
+       value from before this function started.) */
     var m = S.weekMeta[String(week)];
     if (m && m.synced && m.allFinal) { renderHeader(); return; }
     if (!S.settings.liveRefresh) { renderHeader(); return; }
