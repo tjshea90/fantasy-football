@@ -48,6 +48,12 @@ var S = W.Store.init(W.SEED);
 var me = S.league.me;                 /* 'myteam' */
 var WK = 9;                           /* a week this suite fully controls */
 
+/* neutralise byes entirely — this suite fabricates exact point values via
+   manualAdj (see setPts below) and needs every player to actually count
+   this week, not be silently zeroed by the league's real bye schedule */
+S.byes = {};
+S.teams.forEach(function (t) { t.players.forEach(function (p) { p.bye = 0; }); });
+
 /* every player, on every team, gets an exact, deterministic point value —
  * manualAdj on a played, otherwise-empty line scores as exactly that value
  * (see scoring.js), so the test never depends on any stat-to-points formula.
