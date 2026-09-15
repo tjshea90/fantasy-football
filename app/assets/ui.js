@@ -588,6 +588,7 @@
       wire(); render();
       startLive();
       freshenSchedule();
+      refreshPlayerDBIfStale();
       syncCurrentWeek();
     } catch (e) {
       fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
