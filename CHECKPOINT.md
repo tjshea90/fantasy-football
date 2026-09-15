@@ -1,12 +1,12 @@
-# CHECKPOINT 400 — read me first, then TASKS.md
+# CHECKPOINT 403 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T16:37:36Z · **version:** 6.5 · **tests:** all 14 suites green
+**Written:** 2026-09-15T16:39:00Z · **version:** 6.5 · **tests:** all 14 suites green
 
 ## Just done
-v6.5 shipped and verified: GitHub Release published (mcp__github__get_release_by_tag confirmed non-empty assets, FFTracker-v6.5.apk uploaded at 264345 bytes, correct content type) before telling Tj. STATE.md's header line updated to v6.5/ladder 162-164.
+Recorded new job 2026-09-15g in TASKS.md: wire up the weekly recap Claude write-up feature (a button, placed low-prominence per Tj's own 'probably won't use it much'), and smart sub-navigation for the Data tab's 13-14-card wall. Both are Tj's explicit answers to the two items flagged (not implemented) at the end of the 2026-09-15e sweep -- now authorized, no longer 'ask first.'
 
 ## Do this next
-Nothing pending -- the week-auto-advance fix (2026-09-15f) is fully shipped, documented, archived and verified end to end. GitHub Release for v6.5 is live: https://github.com/tjshea90/fantasy-football/releases/tag/v6.5. Next step is sending Tj the release message per CLAUDE.md's exact required shape (plain tappable link, never a code block), making sure to explicitly flag that his currently-running app session needs a background/reopen or relaunch to pick up the fix -- that is the one thing about this specific fix a user could easily read as 'still broken' if not told plainly. Session then idles unless Tj responds with something new.
+Start step 1: re-verify recap.js/ai.js/NativeBridge.java's existing dead pieces (Recap.build/text, Ai.recap(), NativeBridge.share()/copy()) still match the 2026-09-15e trace, design where the recap button goes without displacing anything Tj actually uses regularly, then implement and test it. Then step 2: design and implement Data tab sub-navigation. Then step 3: full test+build+live-browser pass, ship.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  fcbbbcb ckpt 400: v6.5 shipped and verified: GitHub Release published (mcp__github__get_release_
   5c03345 ship v6.5: 2026-09-15f: fixed the app never advancing past a finished NFL week unless tr
   d043179 ckpt 397: Documented the week-auto-advance fix: TASKS.md job entry ticked with full proo
   a7d07f7 ckpt 389: Fixed: the app never advanced past a finished NFL week unless truly cold-boote
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   e68baf4 ckpt 361: Small-fixes batch complete (2026-09-15e sweep), final items. (12) recommend.js
   895701a ckpt 353: Small-fixes batch, part 2 of 2 continued (2026-09-15e sweep). (9) handoff.js: 
   cf63635 ckpt 336: Small-fixes batch, part 1 of 2 (2026-09-15e sweep). (1) ui.js: pull-to-refresh
-  f2a8ef5 ckpt 321: Round 5 (cost/model accuracy) complete. (1) usage.js's cost tracking was model
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
