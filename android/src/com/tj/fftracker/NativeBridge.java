@@ -779,5 +779,19 @@ public class NativeBridge {
         "\",\"model\":\"" + Build.MODEL.replace('"', ' ') + "\"}";
   }
 
-  private static String safe(String s) { return s.replaceAll("[^A-Za-z0-9_.-]", "_"); }
+  /* 2026-09-15e sweep: `.` and `-` are both in the allowed set (so a real
+   * name like "auto-2026-09-15" survives), which means the two-character
+   * result "." or ".." passes through completely untouched — and unlike
+   * load()/save()/export(), which always append a suffix afterward (turning
+   * ".." into the harmless literal filename "...json"), backupLoad() passes
+   * safe(name) straight into `new File(backupDir(), ...)` with nothing
+   * appended. new File(dir, "..") resolves to dir's own PARENT — still
+   * sandboxed to this app's private storage, and readFile() already fails
+   * closed on a directory, so this was never a real read of anything
+   * sensitive — but closing it here, in the one place every caller shares,
+   * beats relying on that as the only thing stopping it. */
+  private static String safe(String s) {
+    String r = s.replaceAll("[^A-Za-z0-9_.-]", "_");
+    return (r.equals(".") || r.equals("..")) ? "_" : r;
+  }
 }
