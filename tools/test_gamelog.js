@@ -47,6 +47,17 @@ var GAMES = {
         teams: [{ abbr: 'DAL', score: 27, homeAway: 'home' }, { abbr: 'GB', score: 21, homeAway: 'away' }] }]
 };
 var BOX = {
+  g6: {
+    players: {
+      'dak prescott': { name: 'Dak Prescott', espnId: '3', abbr: 'DAL',
+        line: line(function (l) { l.pass = { cmp: 20, yds: 250, td: 2, int: 0, twoPt: 0, long: 30 }; }) }
+    },
+    teamScore: { DAL: 27, GB: 21 },
+    teamAgg: {
+      DAL: { sacks: 2, int: 0, fr: 0, defTD: 0, retTD: 0, safety: 0, pointsAllowed: 21 },
+      GB: { sacks: 1, int: 0, fr: 0, defTD: 0, retTD: 0, safety: 0, pointsAllowed: 27 }
+    }
+  },
   g1: {
     players: {
       'patrick mahomes': { name: 'Patrick Mahomes', espnId: '1', abbr: 'KC',
