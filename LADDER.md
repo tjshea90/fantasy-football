@@ -830,4 +830,86 @@ again.
       caught before commit) and `test_lifecycle.js`'s full-screen render
       pass staying green for every tab.
 
+## 28. The resume-system failure (Tj, 2026-09-15, fixed same session)
+
+> "A major failure happened that must be fixed. I sent the [stats tab]
+> request in this chat to Claude and it was interrupted by usage running
+> out. When I opened a new claude code session and asked it to resume this
+> project, Claude could not find this prompt at all... Figure out why Claude
+> could not resume this prompt and fix it thoroughly. It is very important
+> that Claude can resume all tasks after usage interruptions without me
+> re-explaining everything."
+
+Full root-cause writeup in STATE.md ("the resume-system fix"). Short
+version: a session read the codebase for a long stretch, never got to
+writing the request into `TASKS.md`, and was cut off before it did — the
+`PostToolUse` autosave hook only fires on `Edit|Write|NotebookEdit|Bash`,
+which a pure research stretch never trips.
+
+- [x] 1. Root-caused and confirmed against real history — `origin/main`'s
+      `730d4e5` was a sibling session resuming correctly from what WAS on
+      disk, proof the mechanics work when there is something to find.
+- [x] 2. `tools/capture_inbox.sh` + a `UserPromptSubmit` hook: every message
+      Tj sends is appended to `INBOX.md`, verbatim, and committed+pushed
+      before any work starts on it. Proven by hand (fed it a sample payload
+      with quotes and a newline, confirmed a clean commit) and in
+      production the same session (the next real message landed in
+      `INBOX.md` exactly as designed, unprompted).
+- [x] 3. `tools/resume.sh` prints `INBOX.md`'s tail unconditionally on every
+      session start. Proven by running it against both an empty and a
+      populated `INBOX.md`.
+- [x] 4. Documented in `CLAUDE.md` as a new "level 0" under Saving work,
+      plus notes in "Starting a session" and "When Tj asks for something
+      new".
+- [x] 5. `bash bootstrap.sh` runs clean with both new files in
+      `MANIFEST.txt`; `tools/resume.sh`/`tools/capture_inbox.sh` both pass
+      `bash -n`.
+- [x] 6. Reported to Tj plainly, same turn, what the failure was and what
+      closes it.
+
+## 29. The Stats tab: game logs, long-press, top players (Tj, 2026-09-15, v6.0)
+
+> "Make a new tab and section in this app called stats. In the stats
+> section i can search for any current NFL player using the search feature
+> already in the app, and I can click on a player and see the game logs
+> stats line for the player for all games so far this season starting with
+> the last game they played... calculate the fantasy points scored for
+> each game... using only the rules for this league... include defenses as
+> a whole... view game logs by team... sort the team stats by player
+> position... a drop down box... to select older games... long press on a
+> player and press view stats... just like in the stats tab... top players
+> [button]... top 10 highest fantasy points scored by position, including
+> team defenses, for the current (or just finished) NFL week..."
+
+Full verbatim request, architecture notes, and the full testing-pass
+writeup are in `TASKS.md`'s history and STATE.md ("the Stats tab itself" /
+"Testing, against Tj's own 8 numbered requirements") — not repeated here.
+
+- [x] 1. `gamelog.js`: per-team-per-week full box-score cache, independent
+      of roster, one fetch covers both teams, a final week cached forever.
+      Proven by `tools/test_gamelog.js`, 29 assertions.
+- [x] 2. Stats tab search (reusing `PlayerDB.search`) -> full-season game
+      log, most recent first, league points via `Scoring.score`. Proven
+      live against real ESPN data in a real browser (Mahomes' week-1 line).
+- [x] 3. Browse by team -> last game's full stat line for every player who
+      played + the DEF unit, sorted by position, with a week picker.
+      Proven live (KC roster, real data).
+- [x] 4. Long-press "View stats" everywhere a player appears (Live,
+      Lineups, Rosters, Wire), opening the exact same view the Stats tab's
+      own search does. Proven with real dispatched `TouchEvent` sequences —
+      a 100ms tap does nothing, a 700ms hold opens it.
+- [x] 5. Top players: top 10 by position incl. DEF for the current week.
+      Proven live; cross-validated against item 2's own per-game total for
+      the same player (both landed on 29.1).
+- [x] 6. Wired into the nav/swipe order/pull-to-refresh. Proven by driving
+      `Gestures`' own test seams against the live app and confirming
+      `Stats.refresh()` fired.
+- [x] 7. The 8-point testing pass — see STATE.md for the full writeup.
+      Found and fixed two real bugs: a pre-existing `lp.nfl` bug (Lineups
+      tab's kickoff badge has never shown), and a real-network-failure
+      misread as "no games yet" in `playerLog`/`weekPositionTops`.
+- [x] 8. Shipped as v6.0, Release published and verified
+      (`mcp__github__get_release_by_tag`, non-empty assets, correct
+      content type) before telling Tj.
+
 All 13 suites green throughout.
