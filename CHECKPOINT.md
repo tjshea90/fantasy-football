@@ -1,12 +1,12 @@
-# CHECKPOINT 223 — read me first, then TASKS.md
+# CHECKPOINT 226 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T04:39:20Z · **version:** 6.3 · **tests:** all 14 suites green
+**Written:** 2026-09-15T07:42:17Z · **version:** 6.3 · **tests:** all 14 suites green
 
 ## Just done
-Shipped v6.3, triggered and verified the GitHub Release (non-empty asset, correct content type). Archived the back-button job to LADDER.md §31, reset TASKS.md, and rewrote the 'Waiting on Tj' pointer to make v6.3's back-button check the explicit priority item, with a specific ask for what detail to report if it fails again (which tab, swipe vs button) since this is a second attempt at the same symptom.
+Wrote Tj's comprehensive app-wide improvement request to TASKS.md (2026-09-15e): full sweep for code/function/UI improvements, no specific bug reported this time, he'll check back much later so this runs autonomously
 
 ## Do this next
-Nothing in progress. Waiting on Tj to confirm v6.3 on his phone (back button especially), or to give a new request.
+Plan and dispatch parallel background review agents across logical codebase areas (data/scoring core, network/sync layer, AI/Claude integration, UI layer in 2 halves, Android/Java shell), then personally triage and verify every finding before applying any fix. Real bugs and clear improvements get fixed; anything 'major' gets flagged for Tj rather than done unasked.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  882ace6 ckpt 223: Shipped v6.3, triggered and verified the GitHub Release (non-empty asset, corr
   f21a19e ship v6.3: Real back-button fix: registered the platform OnBackInvokedCallback (API 33+)
   b518033 ckpt 218: Fixed the real back-button regression: registered android.window.OnBackInvoked
   ab24515 ckpt 208: Wrote Tj's real-device bug report to TASKS.md (2026-09-15d): back button still
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   bfaec3e ckpt 178: Item 7 done: PlayerDB.ensureFresh() auto-refreshes the player database quietly
   e85f9ca ckpt 164: Verified item 6 (bench 'why not' explanations): all 13 test suites + ES2018 ga
   54cdf5a ckpt 162: item 5 done: removed every 'how much Claude usage I have left' display and rep
-  46f5b26 ckpt 143: items 1-4 of today's 8-part request. (1) Rosters tab: trade evaluator moved to
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
