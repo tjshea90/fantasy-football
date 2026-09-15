@@ -1104,6 +1104,7 @@
        have landed, and it is cheap: refresh() only fetches if the stored copy
        is over three hours old. */
     freshenSchedule();
+    refreshPlayerDBIfStale();
     /* A week that is finished stays finished — do not wake a poll for it. */
     var m = S.weekMeta[String(week)];
     if (m && m.synced && m.allFinal) { renderHeader(); return; }
