@@ -302,7 +302,7 @@
 
   var API = { teamWeek: teamWeek, playedWeeks: playedWeeks, playerLog: playerLog,
               teamRoster: teamRoster, weekPositionTops: weekPositionTops,
-              resolveEntry: resolveEntry, _get: get, _KEY: KEY };
+              resolveEntry: resolveEntry, ingestEvent: ingestEvent, _get: get, _KEY: KEY };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.Gamelog = API;
 })(typeof window !== 'undefined' ? window : this);
