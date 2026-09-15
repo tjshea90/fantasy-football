@@ -33,3 +33,8 @@ TASKS.md.
 ```
 Continue building the stats tab feature
 ```
+
+## 2026-09-15T02:42:43Z
+```
+Look at the attached screenshots. It won't load week 1 for the top players at all even though I have week 1 selected. Also the team tab doesn't show the player names who scored those statistics
+```
