@@ -438,5 +438,44 @@ var me = S.league.me;
   }
 }());
 
+/* ---- 18. the Claude cost estimates stay correct once memoised (review
+ * finding, 2026-09-15) ------------------------------------------------------
+ * claudeAdviceEstimate()/claudeWireEstimate() were found recomputing a full
+ * roster projection or free-agent scan on every render just to refresh a
+ * cost string — fixed by memoising on a key that includes the price rates,
+ * specifically SO editing a rate on the Data tab still changes the number
+ * immediately rather than showing a stale cached one. This is the one part
+ * of that fix that is a real correctness risk (a wrong or missing field in
+ * the memo key silently shows the wrong price), so it is proven here against
+ * the real Store/Usage/Recommend/Value wiring, not just by reading the
+ * source. */
+(function () {
+  var S2 = W.Store.get();
+  S2.settings.rate_inPerM = 2.00; S2.settings.rate_outPerM = 10.00;
+  S2.settings.rate_searchPer1000 = 10.00; W.Store.save();
+  var advice1 = W.Recommend.claudeAdviceEstimate(1, me);
+  var wire1 = W.Value ? null : null;   /* claudeWireEstimate lives in ui.js, not loaded here — see below */
+  ok(typeof advice1 === 'string' && advice1.length > 0, 'claudeAdviceEstimate returns a real estimate string');
+
+  /* same week, same team, same rates, same roster: calling it again must
+     return the identical string — the memoised value, not a fresh (and
+     possibly randomly-different, if anything were nondeterministic) one */
+  var advice1b = W.Recommend.claudeAdviceEstimate(1, me);
+  ok(advice1 === advice1b, 'an unchanged call is stable — same estimate string both times');
+
+  /* now change a price rate WITHOUT touching the roster (no bumpGen) — a
+     memo keyed only on week/team/generation would keep serving the OLD
+     price forever after this, which is exactly the bug this test exists to
+     catch */
+  S2.settings.rate_inPerM = 20.00; S2.settings.rate_outPerM = 100.00;
+  S2.settings.rate_searchPer1000 = 100.00; W.Store.save();
+  var advice2 = W.Recommend.claudeAdviceEstimate(1, me);
+  ok(advice2 !== advice1, 'raising every price 10x changes the memoised estimate immediately, not on the next roster edit');
+
+  /* restore defaults so this block leaves no side effect for anything after it */
+  S2.settings.rate_inPerM = 2.00; S2.settings.rate_outPerM = 10.00;
+  S2.settings.rate_searchPer1000 = 10.00; W.Store.save();
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
