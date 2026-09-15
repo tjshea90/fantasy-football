@@ -932,5 +932,42 @@ ok(/settings\.currentWeek : 1/.test(stH),
      'and it runs BEFORE the "week already final" early return, not after (or it would never get a chance to run once a week looks done)');
 }());
 
+/* ---- 2026-09-15g: the weekly recap feature and Data tab sub-navigation
+ * both wired up on Tj's explicit go-ahead, since they had been flagged
+ * (not implemented) at the end of the 2026-09-15e sweep. Real functional
+ * proof (dialog opens, real fact-based text, Claude button correctly
+ * gated on Ai.configured(), every sub-nav group renders its own cards) is
+ * in tools/test_lifecycle.js, the one suite that actually executes ui.js
+ * against a DOM. These are the source-text half of the same double-check
+ * idiom this file uses everywhere else. */
+(function () {
+  var uiSrc3 = fs.readFileSync('app/assets/ui.js', 'utf8');
+  ok(/function weeklyRecapCard\(\)/.test(uiSrc3) && /function openRecapDialog\(rw\)/.test(uiSrc3),
+     'the recap card and its dialog both exist');
+  ok(/Recap\.text\(rw\)/.test(uiSrc3) && /Ai\.recap\(facts, rw\)/.test(uiSrc3),
+     'the dialog is built from recap.js\'s real fact sheet, and Claude is only ever asked to rewrite it, never to invent it');
+  ok(/if \(window\.Ai && Ai\.configured\(\)\)/.test(uiSrc3),
+     '"Write it up with Claude" is conditional on a configured key — the plain facts always work without one');
+  ok(/Native\.share\(preEl\.textContent\)/.test(uiSrc3) && /Native\.copy\(preEl\.textContent\)/.test(uiSrc3),
+     'Share and Copy act on whatever text is CURRENTLY shown — the facts, or Claude\'s rewrite if that ran');
+  ok(/function latestScoredWeek\(\)/.test(uiSrc3),
+     'the recap defaults to the most recently SCORED week, not necessarily the header\'s currently-selected one');
+
+  ok(/var DATA_SUBTABS = \[\['league', 'League'\], \['claude', 'Claude'\],\s*\['sync', 'Sync & data'\], \['app', 'App'\]\];/.test(uiSrc3),
+     'the Data tab has exactly the four groups it was designed with, in this order');
+  ['viewDataLeague', 'viewDataClaude', 'viewDataSync', 'viewDataApp'].forEach(function (fn) {
+    ok(new RegExp('function ' + fn + '\\(root\\)').test(uiSrc3), fn + '(root) exists as its own function');
+  });
+  /* every card this app had BEFORE the split must still exist somewhere
+     after it — a name appearing anywhere in the file does not prove it is
+     reachable, but a name DISAPPEARING would prove a card was dropped,
+     which is the one thing this sweep must never do silently */
+  ['Enter week ' /* weeklyScoresCard */, 'Standings', 'matchups', 'Scoring rules',
+   'Claude reasoning (optional)', 'Claude costs', 'Stats feed', 'Player database',
+   'Lineup alerts', 'Live updating', 'Screen fit', 'Backup', 'About'].forEach(function (label) {
+    ok(uiSrc3.indexOf(label) >= 0, 'the "' + label + '" card text still exists in ui.js after the reshuffle');
+  });
+}());
+
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
