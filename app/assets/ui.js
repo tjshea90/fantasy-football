@@ -3198,11 +3198,11 @@
       rd.appendChild(l); rd.appendChild(i2);
     });
     rd.appendChild(el('p', 'hint',
-      'Defaults are Claude Sonnet 5\'s published prices' +
-      (t.usingDefaults ? '' : ' (you have changed these)') +
-      '. They are editable because prices and model names both change, and a ' +
-      'wrong number baked into the app would be worse than one you can correct. ' +
-      'If you switch models on the card above, update these to match.'));
+      'Shown for ' + (mdl || 'the selected model') + ', the model the next call would ' +
+      'actually use' + (t.usingDefaults ? ' — its published prices' : ' (you have changed these)') +
+      '. Switching models above updates these automatically; they stay editable ' +
+      'because prices change too, and a wrong number baked into the app would be ' +
+      'worse than one you can correct.'));
     c.appendChild(rd);
 
     if (t.calls) {
