@@ -813,10 +813,13 @@
           if (view === 'stats') return Stats.refresh();
           /* NOT quiet. A pull is a deliberate act, so it gets the same progress
              bar the Sync week button gets — "box score 3 of 8" is the
-             difference between waiting and wondering whether it is stuck. */
-          var p = doSync({ quiet: false });
-          return (p && p.then) ? p.then(function () { render(); }, function () { render(); })
-                               : Promise.resolve();
+             difference between waiting and wondering whether it is stuck.
+             2026-09-15e sweep: doSync() already calls render() itself on
+             BOTH its success and its catch path (see the end of doSync
+             below) — wrapping it in another .then(render)/.catch(render)
+             here rendered the whole page a second time, on every pull-to-
+             refresh on every tab but Advice and Stats, for nothing. */
+          return doSync({ quiet: false });
         }
       });
     } catch (e) { /* a phone with no touch, or a stubbed DOM: buttons still work */ }
