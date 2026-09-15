@@ -758,11 +758,13 @@
         blocked: function () { return modalOpen() || busy || jobRunning('advice'); },
         refreshLabel: function () {
           return view === 'advice' ? 'Refreshing week ' + week + ' advice…'
+                                    : view === 'stats' ? 'Refreshing stats…'
                                     : 'Refreshing week ' + week + '…';
         },
         refresh: function () {
           if (window.Schedule) { try { Schedule.refresh(week, true); } catch (e) { } }
           if (view === 'advice') return adviceSyncQuiet();
+          if (view === 'stats') return Stats.refresh();
           /* NOT quiet. A pull is a deliberate act, so it gets the same progress
              bar the Sync week button gets — "box score 3 of 8" is the
              difference between waiting and wondering whether it is stuck. */
