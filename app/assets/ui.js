@@ -1157,10 +1157,15 @@
     freshenSchedule();
     refreshPlayerDBIfStale();
     /* A week that is finished stays finished — do not wake a poll for it.
-       (If syncCurrentWeek() just above found a real advance, applyCurrentWeek
-       already updated `week` and armed its own live poll for the new one —
-       this check below runs against whatever `week` is NOW, not the stale
-       value from before this function started.) */
+       syncCurrentWeek() above is fire-and-forget: its network round trip
+       resolves after this synchronous function has already returned, so
+       `week` here is still whatever was on screen when appResume() was
+       called. That is fine — if this really is a stale, finished week,
+       there is nothing worth polling for it either way, and if
+       syncCurrentWeek() does find a real advance, applyCurrentWeek()
+       (called from inside its own .then()) independently sets the new
+       `week`, arms its own live poll and re-renders on its own schedule,
+       decoupled from the rest of this function. */
     var m = S.weekMeta[String(week)];
     if (m && m.synced && m.allFinal) { renderHeader(); return; }
     if (!S.settings.liveRefresh) { renderHeader(); return; }
