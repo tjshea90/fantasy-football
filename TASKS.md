@@ -1,6 +1,52 @@
 # TASKS — the current job, in Tj's words
 
+## 2026-09-15h: the week-advance fix STILL didn't work — a true cold boot too
+
+> "I forced stopped the app and opened it again. Every tab in the app is
+> still on NFL week 1, even though NFL week 1 is final. Keep trying to
+> figure out why the automatic week set is not working. All tabs in the
+> app should automatically set to the current NFL week after all the
+> previous week games are final. All week 1 games are final. The app
+> should be on week 2"
+
+Arrived mid-flight during 2026-09-15g (below) — paused that job to fix
+this with priority since it's a second failure of something already
+claimed fixed once (v6.5).
+
+- [x] 1. Root-caused: a TRUE cold boot (force-stop + relaunch) already
+      called `syncCurrentWeek()` unconditionally even before the v6.5
+      `appResume()` fix existed — so v6.5 alone could not explain a cold
+      boot still failing. The real gap: the ONLY signal was
+      `Espn.currentWeek()` (ESPN's own scoreboard metadata), gated behind
+      a 3-hour reuse cache and a silent-catch-all failure path — three
+      independent, unverifiable-in-this-environment single points of
+      failure.
+- [x] 2. Fixed: added `localAutoAdvance()`, a second, independent,
+      network-free signal — trusts only `weekMeta.allFinal`, which the app
+      already computes itself from real box scores, no network call, no
+      cache, no external metadata to misread. Called from `boot()` and
+      `appResume()` only, right before `syncCurrentWeek()`.
+- [x] 3. Proven end-to-end in `tools/test_lifecycle.js` with the ESPN path
+      made deliberately impossible (throws synchronously) — week still
+      advances, synchronously, before any promise even settles. All 14
+      suites + ES2018 gate green, `bash build.sh` clean.
+- [ ] 4. Ship, verify the Release, tell Tj plainly: if this STILL doesn't
+      advance after installing and relaunching, that means
+      `weekMeta['1'].allFinal` itself is not true in his own local data
+      (week 1 never fully synced on his phone) — a different, diagnostic
+      fact worth knowing, not a repeat of the same bug.
+
 ## 2026-09-15g: wire up the weekly recap feature, and sub-navigation for the Data tab
+
+**Paused mid-flight for 2026-09-15h above — resume here once that ships.**
+Progress so far (ckpt 414): `weeklyRecapCard()`/`openRecapDialog()` built
+(wires `Recap.build`/`text` + `Ai.recap()` + `Native.share`/`copy()`,
+degrades gracefully with no API key). `viewData()` split into 4 group
+functions (`viewDataLeague`/`viewDataClaude`/`viewDataSync`/`viewDataApp`)
+with every existing card relocated, none dropped. Syntax-checked, full
+suite green. **Still needed**: a live-browser check of the new sub-nav,
+test pins for the new grouping/recap feature specifically, then step 3
+below.
 
 > "Build The 'weekly recap' Claude write-up feature you told me about. Make
 > the button where it is most appropriate but it shouldn't push away any
