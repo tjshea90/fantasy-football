@@ -127,6 +127,11 @@ ok(/lpSuppressRow = row;/.test(ui) &&
    other network call on the same live-poll chain right below it. */
 ok(/Recommend\.loadNews\(null\)\.then\(function \(nc\) \{[\s\S]{0,80}\}\)\['catch'\]\(function \(\)/.test(ui),
    'freshenInjuries now catches a failed news fetch instead of leaving it unhandled');
+/* the Advice and Wire tabs' cost-estimate lines used to end differently for
+   no reason — matched wording. */
+ok(/on the Claude API, at current prices \(see Data → Claude costs\)\.'/.test(rec) &&
+   /on the Claude API, at current prices \(see Data → Claude costs\)\.'/.test(ui),
+   'the Advice and Wire cost-estimate lines share the same closing wording now');
 /* the old catch-block comment here claimed "onKeyDown is still there" as a
  * fallback if callback registration ever throws — false per Android's own
  * predictive-back docs once enableOnBackInvokedCallback=true is set
