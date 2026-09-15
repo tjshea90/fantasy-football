@@ -1,12 +1,12 @@
-# CHECKPOINT 132 — read me first, then TASKS.md
+# CHECKPOINT 135 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T02:47:01Z · **version:** 6.1 · **tests:** all 14 suites green
+**Written:** 2026-09-15T03:35:09Z · **version:** 6.1 · **tests:** all 14 suites green
 
 ## Just done
-shipped v6.1 (both bug fixes), triggered and verified the GitHub Release (non-empty asset, correct content type) before replying to Tj. Updated TASKS.md's waiting-on-Tj pointer to v6.1 and added a same-day follow-up note to LADDER.md section 29.
+wrote Tj's new 8-part request (bug/UI sweep, Rosters reorder, Android back-button fix, app-resume state restore, no splash flash on resume, remove Claude-usage-remaining displays in favor of per-request cost estimates, bench 'why not to start' Claude explanations, PlayerDB auto-refresh) into TASKS.md verbatim, broken into checkable steps, before reading any code -- exactly the discipline that failed earlier today. INBOX.md already had it captured automatically the instant it arrived (confirmed by its own timestamp), so this write was not a race against anything, just the deliberate curated breakdown TASKS.md is for.
 
 ## Do this next
-nothing active. Next session should check TASKS.md 'Waiting on Tj' -- starting with whether v6.1 (Stats tab fixes) actually works on Tj's phone this time.
+start investigating each of the 8 items in ui.js/android -- MainActivity.java's onKeyDown/onPause/onResume for items 2-4, usage.js/ai.js for item 5, recommend.js's existing bench-vs-start 'why' logic for item 6, playerdb.js's refresh() + wireGestures' pull-to-refresh dispatch for item 7, viewRosters' card order for item 1 (should be quick). Work roughly in the order listed since 1 is trivial and 2-4 (all about Android lifecycle) are likely related enough to investigate together.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  1de4930 ckpt 132: shipped v6.1 (both bug fixes), triggered and verified the GitHub Release (non-
   b98c220 ship v6.1: fix two bugs found on Tj's phone within minutes of v6.0: Top Players got stuc
   16c61b7 ckpt 127: fixed two real bugs Tj found on his phone within minutes of v6.0, both confirm
   dc92ac5 ckpt 120: shipped v6.0 (Stats tab + resume-system fix), triggered and verified the GitHu
@@ -35,7 +36,6 @@ request in his own words and `git log` carries every step already taken.
   11bddd6 ckpt 73: fixed the red left over from the last checkpoint: test_lifecycle.js keeps its o
   581837a ckpt 71: step 1 of the stats-tab job done: gamelog.js -- a self-contained (own Native.sa
   9563bc3 ckpt 64: root-caused the resume-system failure Tj reported: a session ran a long researc
-  730d4e5 ckpt 51: resumed after the interruption: confirmed the mid-change LADDER.md/STATE.md v5.
 ```
 
 (2 automatic checkpoint(s) since the last deliberate one — the
