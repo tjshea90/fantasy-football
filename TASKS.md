@@ -38,41 +38,97 @@ token count for that exact call) is the accurate path available; investigate
 whether `Usage.money`/the existing per-sync cost tracking (usage.js) already
 has real historical token counts to base this on before inventing new math.
 
-- [ ] 1. Rosters tab: move the trade-evaluator card to the bottom, team
-      roster card(s) to the top.
-- [ ] 2. Android back button: currently exits straight to the home screen
+- [x] 1. Rosters tab: move the trade-evaluator card to the bottom, team
+      roster card(s) to the top. Done — `viewRosters()` renders the roster
+      card before `tradeCard()`. Verified live in a browser: card order on
+      the Rosters tab is "My team · 17 players" then "Trade evaluator".
+- [x] 2. Android back button: currently exits straight to the home screen
       instead of unwinding in-app history — investigate why (this exact
       behavior was supposedly built in v4.7 per LADDER.md; either it
       regressed or Tj is describing a case that behavior doesn't cover) and
       fix it so back always goes to "the last thing in the app" first.
-- [ ] 3. App resume (switching away and back) must restore exactly the
+      Done earlier this same job (unchanged since, confirmed by diffing
+      b98c220..HEAD). Proven by `tools/test_lifecycle.js`: "from a non-Live
+      tab, back unwinds the visit history", "it walks back through the
+      whole trail, one tab at a time", "draining the trail lands back on
+      Live", "once the trail is empty it declines — the Activity
+      backgrounds instead of closing".
+- [x] 3. App resume (switching away and back) must restore exactly the
       screen/tab Tj was last looking at, not jump to Live — investigate
       MainActivity's onResume/state handling; this is a DIFFERENT bug from
-      #2 even though both are about "coming back to the app."
-- [ ] 4. No splash flash on resume — investigate whether this is fixable
+      #2 even though both are about "coming back to the app." Done —
+      `S.settings.lastTab` is persisted on every real tab change (`goTab()`)
+      and restored in `boot()` if still a valid tab. Covers the common real
+      case (Android killing the background process, so the next "resume" is
+      actually a fresh `boot()`); code-reviewed, cannot be confirmed against
+      a real device from this environment — carried to "Waiting on Tj" below.
+- [x] 4. No splash flash on resume — investigate whether this is fixable
       from the WebView/Activity side (likely an Android launch-theme /
       window-background question, not JS) and do what's actually possible;
       report honestly if something is a hard OS-level limit rather than
-      silently skipping it.
-- [ ] 5. Remove every "Claude usage remaining / spend so far" display
+      silently skipping it. Done, as far as the platform allows: below API
+      31 there was never an OS splash, only WebView's own white flash before
+      content, fixed via `MainActivity.java`'s `web.setBackgroundColor` (now
+      matches `@color/bg` exactly, confirmed against both `colors.xml` and
+      `app.css`'s `--bg`). API 31+ shows its own unavoidable splash — no
+      manifest flag turns it off entirely — so `values-v31/styles.xml`
+      overrides its background and icon to be invisible instead
+      (`splash_empty.xml`, a 1dp fully-transparent vector). Verified the APK
+      actually builds clean with both new resources (`bash build.sh`, dex
+      class check passed); the visual result cannot be confirmed against a
+      real device from this environment — carried to "Waiting on Tj" below.
+- [x] 5. Remove every "Claude usage remaining / spend so far" display
       (usage.js-backed UI, since there is no key to meter); replace with a
       per-request estimated-cost label (e.g. "estimated 8 cents") next to
       every "Ask Claude" / Claude-sync action, computed from Anthropic's
-      published pricing and a real token-count basis, not a guess.
-- [ ] 6. Advice tab: for each BENCHED player, show a Claude-generated "why
+      published pricing and a real token-count basis, not a guess. Done —
+      `Usage.estimate()` prices the exact prompt/search-budget the next real
+      call would send (`Ai.adviceSearchBudget`/`waiverSearchBudget`, shared
+      with the real call so they can never disagree); shown live next to
+      both the "Sync advice" and "Ask Claude about the wire" buttons and
+      together on the Data tab's "Claude costs" card. All "budget/remaining/
+      % used/syncs left" fields and UI removed. Verified live in a browser
+      (Claude costs card shows "$0.104"/"$0.042" estimates, zero mentions of
+      "left" or a budget meter) and by `tools/test_engine.js`.
+- [x] 6. Advice tab: for each BENCHED player, show a Claude-generated "why
       not to start him" explanation, the same way the recommended starters
       already get a "why" explanation — same data/sync path, not a second
-      Claude integration.
-- [ ] 7. PlayerDB (the 785-player database, Data tab's manual refresh
+      Claude integration. Done — reuses `x.why` (already computed by
+      `projectAll()`/`projectOne()` for every roster player, starters and
+      bench alike, Claude's own reasoning included when he was researched);
+      added the same "why ▾" `<details>` pattern the starter rows already
+      use, worded "why not ▾", to each bench row. Verified with a
+      data-layer check: every bench player in the seeded roster carries a
+      non-empty `why[]`, identical field and shape to what starters show.
+- [x] 7. PlayerDB (the 785-player database, Data tab's manual refresh
       button): keep the manual button, add automatic refresh at least every
       ~2 days, and also trigger a refresh whenever waiver-wire/free-agent
       data (or anything else that needs the full player pool current) is
-      refreshed.
-- [ ] 8. Full bug/UI/functionality sweep across the app (Tj's own ask, not
+      refreshed. Done — `PlayerDB.ensureFresh()` (2-day `STALE_MS` gate,
+      de-duped in-flight) called quietly from `boot()`, `appResume()`,
+      opening the Wire tab, and pressing "Ask Claude about the wire"; manual
+      button unchanged, now with an explanatory hint. Along the way, fixed a
+      real bug: `refresh()` used to stamp "updated" to now even when every
+      team failed (e.g. fully offline), which would have hidden a failed
+      auto-refresh from ever retrying. Proven by new `tools/test_boot.js`
+      coverage (`stale()` behavior at several ages, the bug-fix guard, and
+      all four call sites, as source-text pins where full execution is too
+      slow — a real `refresh()` walks 32 ESPN rosters with retry backoff).
+- [x] 8. Full bug/UI/functionality sweep across the app (Tj's own ask, not
       scoped to the 7 items above) plus a final comprehensive test pass —
       everything still works, well coded, efficient. Mirror the rigor of
       the 2026-09-15 Stats-tab testing pass (real browser, real data, not
-      just the unit suite) where it applies.
+      just the unit suite) where it applies. Done — live-browser walkthrough
+      of all 7 tabs plus the long-press "View stats" flow, zero real bugs
+      found beyond intentional/documented behavior (verified the two things
+      that looked suspicious at first glance both check out: the JSON-parse
+      error text is a test-harness artifact, not reachable in production,
+      since `NativeBridge.java` guarantees every real response is either
+      valid JSON or its `ERRMARK`-prefixed error; the repeated "positional
+      floor" values on the wire board are the documented no-data fallback,
+      correctly labelled as a guess). Independent code-quality review of
+      the full diff also run. All 13 suites + the ES2018 gate green;
+      `bash build.sh` succeeds.
 
 **There is no OTHER active job right now.** The 2026-09-15 / 2026-09-15b
 requests — the resume-system fix and the Stats tab (plus its same-day v6.1
