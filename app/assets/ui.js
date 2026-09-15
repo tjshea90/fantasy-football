@@ -603,6 +603,19 @@
    * something has to ask. `Schedule.refresh` is a no-op unless the stored copy
    * is more than three hours old, so calling it on every boot, week change and
    * resume is a handful of requests a day, not a poll. */
+  /* Same "quiet, only if actually stale" shape as freshenSchedule() below,
+   * for the player database instead of the week's kickoff schedule. Never
+   * awaited by a caller — it runs in the background and re-renders only if
+   * it actually changed something. See playerdb.js's own ensureFresh() for
+   * the staleness rule (2 days) and why a fully-failed attempt no longer
+   * masks itself from being retried. */
+  function refreshPlayerDBIfStale() {
+    if (!window.PlayerDB || !PlayerDB.ensureFresh) return;
+    try {
+      var p = PlayerDB.ensureFresh();
+      if (p && p.then) p.then(function (r) { if (r) render(); })['catch'](function () { /* offline is fine */ });
+    } catch (e) { /* never block startup, resume or a tab render for a background refresh */ }
+  }
   function freshenSchedule() {
     if (!window.Schedule) return;
     try {
