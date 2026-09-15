@@ -262,21 +262,53 @@
    * refresh(week): a no-op unless the stored copy has actually gone stale,
    * so calling it from several places (boot, resume, opening the wire
    * board, running a wire sync) costs nothing extra on the common case
-   * where the database was refreshed recently. */
+   * where the database was refreshed recently.
+   *
+   * ONE single-flight guard, shared by the manual button AND the background
+   * path (found in review, 2026-09-15): the manual button used to call
+   * doRefresh directly, so a tap landing while a background refresh was
+   * already in flight started a SECOND concurrent 32-team fetch against the
+   * same shared DB.players array — each call snapshots its own `byKey` at
+   * start, so a player added by one call after the other's snapshot pushed
+   * a duplicate entry that would sit in search/free-agent results until the
+   * next cold boot's dedupe(). refresh() below is now the only way either
+   * caller reaches doRefresh, so a concurrent call always attaches to the
+   * one already running instead of starting a second. */
   var STALE_MS = 2 * 24 * 3600 * 1000;   /* two days */
-  var inFlight = null;   /* de-dupes concurrent callers, same as Schedule's own pattern */
+  var RETRY_COOLDOWN_MS = 15 * 60 * 1000;   /* 15 minutes */
+  var inFlight = null;
+  var lastAttempt = 0;
   function stale() {
     var m = meta();
     if (!m.updated) return true;
     var t = new Date(m.updated).getTime();
     return !isFinite(t) || (Date.now() - t) > STALE_MS;
   }
+  /* Forces a refresh right now, staleness aside — what the manual "Refresh
+   * from ESPN" button calls. Only the concurrency guard applies; a
+   * deliberate tap is never throttled by the cooldown below. */
+  function refresh(onProgress) {
+    if (inFlight) return inFlight;
+    lastAttempt = Date.now();
+    inFlight = doRefresh(onProgress).then(function (r) { inFlight = null; return r; },
+                                          function (e) { inFlight = null; throw e; });
+    return inFlight;
+  }
+  /* The quiet background path. Same concurrency guard as refresh() (an
+   * in-flight attempt, from EITHER caller, is always shared), plus two gates
+   * a deliberate tap does not need: skip entirely when not stale, and — found
+   * in the same review — do not retry more than once per RETRY_COOLDOWN_MS
+   * even while still stale. Without that second gate, a phone with no signal
+   * sitting on the Wire tab would retry a full 32-team fetch on every single
+   * render() of that screen forever: refresh() never stamps `updated` on a
+   * total failure (by design, see doRefresh below), so stale() stays true,
+   * and refreshPlayerDBIfStale's own re-render (ui.js) after any completed
+   * attempt — success or failure — would immediately trigger the next one. */
   function ensureFresh(onProgress) {
     if (inFlight) return inFlight;
     if (!stale()) return Promise.resolve(null);
-    inFlight = refresh(onProgress).then(function (r) { inFlight = null; return r; },
-                                        function (e) { inFlight = null; throw e; });
-    return inFlight;
+    if (lastAttempt && (Date.now() - lastAttempt) < RETRY_COOLDOWN_MS) return Promise.resolve(null);
+    return refresh(onProgress);
   }
 
   root.PlayerDB = { init: init, get: get, meta: meta, search: search,
