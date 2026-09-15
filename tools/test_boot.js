@@ -540,22 +540,73 @@ ok(/wrong merge is far more/.test(nmH),
   g3.PlayerDB.init();
   ok(g3.PlayerDB.stale() === true, 'a database refreshed 3 days ago is stale again (the 2-day threshold)');
   ok(g3.PlayerDB.STALE_MS === 2 * 24 * 3600 * 1000, 'the threshold really is "at least every couple days"');
-
 }());
+
+/* ---- refresh()/ensureFresh() share ONE in-flight attempt (review finding,
+ * 2026-09-15) -----------------------------------------------------------
+ * The manual "Refresh from ESPN" button used to call the 32-team fetch
+ * directly, bypassing ensureFresh()'s in-flight guard entirely — a tap
+ * landing while a background auto-refresh was already running started a
+ * SECOND concurrent fetch against the same shared PlayerDB.get().players
+ * array, and each call snapshots its own dedupe key map at start, so a
+ * player one call added after the other's snapshot was taken landed as a
+ * duplicate entry. Fixed by giving refresh() itself the single-flight
+ * guard, so ensureFresh() and a direct refresh() call always share the
+ * same promise. This is fast enough to actually execute (unlike a fully
+ * offline 32-team run, which retries each team through 350ms backoff
+ * delays for tens of seconds): every team's FIRST candidate URL resolves
+ * immediately with one fake player, so nothing ever falls into that retry
+ * path at all. */
+(function () {
+  var g5 = {}; g5.window = g5;
+  g5.localStorage = { getItem: function () { return null; }, setItem: function () {}, removeItem: function () {} };
+  g5.Espn = {
+    BASE: 'https://x',
+    _httpGet: function (url) {
+      return Promise.resolve({ athletes: [{ fullName: 'Player ' + url, position: { abbreviation: 'WR' } }] });
+    }
+  };
+  new Function('window', pjs)(g5);
+  new Function('window', fs.readFileSync('app/assets/playerdb.js', 'utf8'))(g5);
+  g5.PlayerDB.init();
+
+  var p1 = g5.PlayerDB.refresh();
+  var p2 = g5.PlayerDB.ensureFresh();
+  var p3 = g5.PlayerDB.refresh();
+  ok(p1 === p2 && p2 === p3,
+     'refresh() and ensureFresh(), called back to back before either settles, share the exact same promise ' +
+     '(a manual tap during a background refresh attaches to it instead of starting a second 32-team fetch)');
+
+  return p1.then(function (r) {
+    ok(r && r.total > 0 && r.failed.length === 0, 'and that one shared attempt actually completed successfully');
+    var p4 = g5.PlayerDB.refresh();
+    ok(p4 !== p1, 'once settled, the NEXT call starts a genuinely new attempt, not the stale old promise');
+  });
+}());
+
 /* ensureFresh()'s short-circuit ("do not even attempt a refresh unless
- * actually stale") is checked as source text, not by calling it: a call
+ * actually stale, and do not retry more than once per RETRY_COOLDOWN_MS even
+ * while still stale") is checked as source text, not by calling it: a call
  * returns its promise synchronously either way (that is just how promises
  * work), so timing the call proves nothing — only awaiting the result would,
  * and this suite is synchronous and quits at its final statement the moment
  * the last top-level line finishes, before any dangling .then() could fire.
  * The real behaviour this guards — stale() itself — is exercised directly
- * above; this just pins that ensureFresh() actually consults it first. */
-ok(/function ensureFresh\(onProgress\) \{\s*if \(inFlight\) return inFlight;\s*if \(!stale\(\)\) return Promise\.resolve\(null\);/
-   .test(pdH), 'ensureFresh() checks stale() first and skips the network entirely when nothing is due');
+ * above; the in-flight sharing is exercised directly above too; this just
+ * pins that ensureFresh() actually consults stale() and the cooldown, in
+ * that order, before ever calling refresh(). */
+ok(/function ensureFresh\(onProgress\) \{\s*if \(inFlight\) return inFlight;\s*if \(!stale\(\)\) return Promise\.resolve\(null\);\s*if \(lastAttempt && \(Date\.now\(\) - lastAttempt\) < RETRY_COOLDOWN_MS\) return Promise\.resolve\(null\);\s*return refresh\(onProgress\);/
+   .test(pdH),
+   'ensureFresh() checks in-flight, then stale(), then the retry cooldown, before ever touching the network ' +
+   '<-- without the cooldown, a phone offline on the Wire tab would retry a full 32-team fetch on every render, forever');
+ok(/var RETRY_COOLDOWN_MS = 15 \* 60 \* 1000/.test(pdH), 'the retry cooldown really is a bounded, sane interval');
 
 ok(/var ok = failed\.length < TEAMS\.length/.test(pdH) && /if \(ok\) \{/.test(pdH),
    'refresh() only stamps "updated" when at least one team actually came back  <-- ' +
    'otherwise a fully offline auto-refresh attempt would mark itself current and never retry');
+ok(/function doRefresh\(onProgress\)/.test(pdH) && (pdH.match(/doRefresh\(onProgress\)/g) || []).length === 2,
+   'doRefresh (the actual 32-team fetch) is named and called exactly once in the whole file — from refresh() ' +
+   'itself, never directly — so there is only one path into it for the in-flight guard to protect');
 ok(/function ensureFresh/.test(pdH) && /function stale\(\)/.test(pdH),
    'PlayerDB exposes the staleness gate the background refresh needs');
 ok(/function refreshPlayerDBIfStale/.test(uiN), 'ui.js has one quiet background-refresh helper, not several ad-hoc calls');
