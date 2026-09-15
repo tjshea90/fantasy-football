@@ -385,6 +385,7 @@
       c.appendChild(el('div', 'subhd', 'Recommended, but not in your lineup'));
       a.shouldStart.forEach(function (r) {
         var row = el('div', 'row');
+        markPlayer(row, r.name, r.pos, r.nfl);
         row.appendChild(el('div', 'slot', r.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(r.name));
