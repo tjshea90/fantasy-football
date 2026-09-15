@@ -670,5 +670,32 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
   }
 }());
 
+/* ---- Live tab matchup: names must not truncate mid-word (2026-09-15e) ---
+ * Found in the app-wide sweep: the Live tab's side-by-side matchup view
+ * (.halfbox, half a 390px phone screen minus a slot column and a points
+ * column) truncated real player names mid-word — "Jaylen Warr...", "Ka'imi
+ * Fair...", "Baltimore ..." — confirmed with a live browser screenshot.
+ * shortName() fixes it with the standard fantasy-app shorthand ("M.
+ * Stafford"), used only in lineupDetail() (the Live tab's two-column view),
+ * never elsewhere where there is room for a full name. Extracted and run
+ * for real, not just pinned as source text — the function has no DOM or
+ * other ui.js dependency, so it can be evaluated in isolation. */
+(function () {
+  var m = uiN.match(/function shortName\(name, pos\) \{[\s\S]*?\n  \}/);
+  if (!m) { ok(false, 'shortName() exists in ui.js'); return; }
+  var shortName = new Function('name', 'pos', m[0].replace(/^function shortName\(name, pos\) \{/, '').replace(/\}$/, ''));
+  ok(shortName('Matthew Stafford') === 'M. Stafford', 'a two-word name shortens to "first initial. last"');
+  ok(shortName('Ka\'imi Fairbairn') === 'K. Fairbairn', 'an apostrophe in the first name does not break it');
+  ok(shortName('Amon-Ra St. Brown') === 'A. St. Brown', 'a multi-word LAST name is kept whole, only the first name is initialed');
+  ok(shortName('Baltimore Ravens', 'DEF') === 'Baltimore Ravens',
+     'a defense keeps its full team name  <-- "B. Ravens" is not how anyone refers to one');
+  ok(shortName('Cher') === 'Cher', 'a single-word name (no space to split on) is returned unchanged, not mangled');
+  ok(shortName('') === '', 'an empty/missing name does not throw');
+  ok(/lineupDetail\(team, res\)[\s\S]{0,400}shortName\(x\.player\.name, x\.player\.pos\)/.test(uiN),
+     'lineupDetail (the Live tab matchup view) actually calls it');
+  ok(!/function viewRosters[\s\S]{0,2000}shortName\(/.test(uiN) && !/function viewLineups[\s\S]{0,2000}shortName\(/.test(uiN),
+     'Rosters and Lineups keep full names — they have room; this is scoped to the tight two-column Live view only');
+}());
+
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
