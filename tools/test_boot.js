@@ -502,6 +502,65 @@ ok(!/Espn\.normName\(p\.name\)\] = \{/.test(fs.readFileSync('app/assets/ai.js', 
 ok(/wrong merge is far more/.test(nmH),
    'names.js records WHY the obvious same-team rule was rejected');
 
+/* ---- player database auto-refresh (item 7, 2026-09-15) ------------------
+ * Tj: "make the app itself automatically refresh this data at least every
+ * couple days and each time I refresh waiver wire information or anything
+ * else that it is important to see all players." A full refresh() walks 32
+ * ESPN team rosters with retry backoff and is far too slow to run in this
+ * suite, so the staleness GATE (the part that decides whether to bother) is
+ * exercised directly against a controllable fake disk, and the two things a
+ * full run cannot cheaply prove — that a totally failed attempt no longer
+ * masks itself as current, and that every call site is actually wired up —
+ * are pinned as source-text checks, the same way the rest of this file
+ * pins invariants a full execution would be too slow or too flaky for. */
+(function () {
+  var KEY = 'fftracker_playerdb_v1', disk = {};
+  var g3 = {}; g3.window = g3;
+  g3.localStorage = { getItem: function (k) { return disk[k] === undefined ? null : disk[k]; },
+                       setItem: function (k, v) { disk[k] = String(v); },
+                       removeItem: function (k) { delete disk[k]; } };
+  new Function('window', pjs)(g3);
+  new Function('window', fs.readFileSync('app/assets/playerdb.js', 'utf8'))(g3);
+
+  g3.PlayerDB.init();
+  ok(g3.PlayerDB.stale() === true, 'a never-refreshed database is stale');
+
+  disk[KEY] = JSON.stringify({ version: 'espn-x', updated: new Date(Date.now() - 3600e3).toISOString(),
+                                players: g3.PLAYERDB.players.slice(0, 5) });
+  g3.PlayerDB.init();
+  ok(g3.PlayerDB.stale() === false, 'a database refreshed an hour ago is not stale');
+
+  disk[KEY] = JSON.stringify({ version: 'espn-x', updated: new Date(Date.now() - 3 * 24 * 3600e3).toISOString(),
+                                players: g3.PLAYERDB.players.slice(0, 5) });
+  g3.PlayerDB.init();
+  ok(g3.PlayerDB.stale() === true, 'a database refreshed 3 days ago is stale again (the 2-day threshold)');
+  ok(g3.PlayerDB.STALE_MS === 2 * 24 * 3600 * 1000, 'the threshold really is "at least every couple days"');
+
+  disk[KEY] = JSON.stringify({ version: 'espn-x', updated: new Date().toISOString(),
+                                players: g3.PLAYERDB.players.slice(0, 5) });
+  g3.PlayerDB.init();
+  var t0 = Date.now();
+  g3.PlayerDB.ensureFresh().then(function (r) {
+    ok(r === null, 'ensureFresh() resolves to null (never runs the slow network path) when not stale');
+    ok(Date.now() - t0 < 100, 'and it resolves immediately, not after any network round trip');
+  });
+}());
+
+ok(/var ok = failed\.length < TEAMS\.length/.test(pdH) && /if \(ok\) \{/.test(pdH),
+   'refresh() only stamps "updated" when at least one team actually came back  <-- ' +
+   'otherwise a fully offline auto-refresh attempt would mark itself current and never retry');
+ok(/function ensureFresh/.test(pdH) && /function stale\(\)/.test(pdH),
+   'PlayerDB exposes the staleness gate the background refresh needs');
+ok(/function refreshPlayerDBIfStale/.test(uiN), 'ui.js has one quiet background-refresh helper, not several ad-hoc calls');
+ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,40}syncCurrentWeek/.test(uiN),
+   'boot() refreshes the player database quietly on cold start');
+ok(/freshenSchedule\(\);\s*refreshPlayerDBIfStale\(\);\s*\/\* A week that is finished/.test(uiN),
+   'appResume() refreshes it again on every resume, so a phone that is never rebooted still gets it');
+ok(/function viewWire\(root\) \{[\s\S]{0,120}refreshPlayerDBIfStale\(\);/.test(uiN),
+   'opening the Wire tab (the "see all players" screen) also nudges a stale database');
+ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
+   'pressing "Ask Claude about the wire" — the literal "refresh waiver wire information" action — does too');
+
 /* ---- the score-input width actually wins its specificity fight ----------
  * `.scoreInput{width:76px}` used to lose outright to the base
  * `input[type=number]{width:100%}` rule — an attribute selector plus the
