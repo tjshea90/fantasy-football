@@ -155,10 +155,10 @@ function run() {
       /* same formula as MAHOMES_PTS above: 20 cmp + 250/20 yds + 2*6 TD = 44.5 */
       ok(!!dal && near(W.Scoring.score(dal.players['dak prescott'].line).total, 44.5),
          'Prescott\'s line (20cmp/250yd/2TD = 20+12.5+12 = 44.5) reads back correctly through the shared cache');
-    });
 
-    /* ---- teamRoster: sorted by position, includes the DEF line ---------- */
-    return W.Gamelog.teamRoster('KC', 1);
+      /* ---- teamRoster: sorted by position, includes the DEF line -------- */
+      return W.Gamelog.teamRoster('KC', 1);
+    });
   }).then(function (tr) {
     ok(!!tr && tr.rows.length === 1 && tr.rows[0].pos === 'QB', 'teamRoster(KC,1) has one QB row');
     ok(near(tr.rows[0].pts, MAHOMES_PTS), 'teamRoster row carries the right league points');
