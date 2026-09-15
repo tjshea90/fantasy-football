@@ -409,6 +409,18 @@ console.log('\n-- the weekly recap dialog (2026-09-15g) --');
   W.Store.save();
 
   clickTab('data');
+  /* the sub-nav test just above leaves dataSubView on 'App' (the last
+     group it iterated) — the recap card lives in 'League', so switch back
+     the same way a thumb would, through the real button, not by reaching
+     into ui.js's internals directly */
+  var leagueBtns = [];
+  (function walk(n) {
+    if (!n) return;
+    if (n.tagName === 'BUTTON' && String(n.textContent).indexOf('League') >= 0) leagueBtns.push(n);
+    (n.children || []).forEach(walk);
+  }(ids.view));
+  if (leagueBtns.length && leagueBtns[0]._h && leagueBtns[0]._h.click) leagueBtns[0]._h.click.call(leagueBtns[0]);
+
   var found = [];
   (function walk(n) {
     if (!n) return;
