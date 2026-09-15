@@ -110,8 +110,7 @@ will never be filled in and is silently wrong, not just stale.
       recap dialog renders correctly — high score, low score, closest/
       biggest, and "Best starter: KC Concepcion (WR, Jose/Brandon)
       999999" all exactly as expected, zero console/page errors.
-      Screenshot confirmed visually clean. Shipped as v6.8 (see
-      BUILDLOG.md / GitHub Release).
+      Screenshot confirmed visually clean.
 
 **There is no OTHER active job right now.** The most recent one (2026-09-15g:
 the weekly recap feature, and Data tab sub-navigation) is complete,
