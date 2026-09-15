@@ -364,7 +364,12 @@
                  player and the blend downstream still averaged one source. */
               var hk = k;
               if (best.byName[hk] === undefined && root.Names && root.Names.hitKey) {
-                var alt = root.Names.hitKey(best.byName, got.byName[k].fullName || k);
+                /* 2026-09-15e sweep: `.fullName ||` was dead — ingestSleeper's
+                   own records (built a few dozen lines up) are always
+                   { pos, week, weekLine, src }, never a .fullName field, so
+                   got.byName[k].fullName is undefined on every real call and
+                   this fallback to `k` fired unconditionally. */
+                var alt = root.Names.hitKey(best.byName, k);
                 if (alt) hk = alt;
               }
               var have = best.byName[hk];
