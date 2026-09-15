@@ -167,7 +167,29 @@ public class MainActivity extends Activity {
             new OnBackInvokedCallback() {
               @Override public void onBackInvoked() { askPageToHandleBack(); }
             });
-      } catch (Throwable t) { /* an OEM shell missing the platform API: onKeyDown is still there */ }
+      } catch (Throwable t) {
+        // 2026-09-15e sweep: this comment used to claim "onKeyDown is still
+        // there" as a fallback. Checked against Android's own predictive-back
+        // docs and that is false: once enableOnBackInvokedCallback="true" is
+        // set in the manifest (unconditional here, not gated on this
+        // registration succeeding), the platform itself stops synthesizing
+        // KEYCODE_BACK for a gesture — "intercepting back events from
+        // KeyEvent.KEYCODE_BACK is no longer supported" is Android's own
+        // wording. So on a device where this call throws, gesture-back stops
+        // reaching askPageToHandleBack() entirely, and every gesture instead
+        // runs the platform's own default predictive-back action instead of
+        // ours — no way to detect that in the JS test suite (which never
+        // sees a Java exception), and no runtime fallback exists once the
+        // manifest flag is set. Nothing here is known to actually throw
+        // (AOSP's own implementation is a plain in-memory registration, not
+        // IPC- or hardware-dependent, and no exception case is documented),
+        // so this is defensive against a hypothetical OEM bug rather than a
+        // reproduced failure — logged so it is at least diagnosable from
+        // logcat if it ever does happen on a real phone, instead of silently
+        // swallowed the way it was before.
+        android.util.Log.e("FFT", "registerOnBackInvokedCallback failed — "
+            + "gesture back will bypass in-app handling on this device", t);
+      }
     }
   }
 
