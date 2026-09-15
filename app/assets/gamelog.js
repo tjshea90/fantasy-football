@@ -174,8 +174,9 @@
     return root.Espn.pool(weeks, 3, function (w) {
       return teamWeek(abbr, w, opts).then(function (entry) { return { w: w, entry: entry }; });
     }).then(function (results) {
-      var out = [], i, v;
+      var out = [], i, v, errs = 0;
       for (i = 0; i < results.length; i++) {
+        if (results['err' + i]) errs++;
         var r = results[i]; if (!r || !r.entry) continue;
         var line = null;
         if (isDef) {
@@ -193,6 +194,17 @@
         });
       }
       out.sort(function (a, b) { return b.week - a.week; });
+      /* Espn.pool swallows a per-week fetch failure into a clean `null`
+       * (one dead game must not lose the rest of the season) — which reads
+       * identically to "he genuinely has no games yet" unless something
+       * distinguishes them. It does: pool also records the real error under
+       * results['err'+i]. If EVERY week came back empty and at least one of
+       * them was a real failure, this was the network, not an empty season —
+       * say so, rather than showing a misleading "no games yet". */
+      if (!out.length && errs) {
+        throw new Error('could not reach the network for ' + errs + ' of ' + weeks.length +
+                         ' week' + (weeks.length === 1 ? '' : 's') + ' — try again');
+      }
       return out;
     });
   }
