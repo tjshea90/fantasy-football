@@ -632,6 +632,10 @@
     if (!fromBack) navHistory.push(view);
     scrollMem[view] = curScroll();
     view = name;
+    /* so a cold relaunch (see boot()) can restore this instead of always
+       landing on Live — cheap: this only runs on an actual tab CHANGE,
+       never per-render, matching how every other settings write here works */
+    if (S && S.settings) { S.settings.lastTab = name; Store.save(); }
     var t = document.querySelectorAll('#tabs .tab'), k;
     for (k = 0; k < t.length; k++) {
       var on = t[k].getAttribute('data-v') === name;
