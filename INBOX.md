@@ -552,3 +552,8 @@ Build The "weekly recap" Claude write-up feature you told me about. Make the but
 ```
 I forced stopped the app and opened it again. Every tab in the app is still on NFL week 1, even though NFL week 1 is final. Keep trying to figure out why the automatic week set is not working. All tabs in the app should automatically set to the current NFL week after all the previous week games are final. All week 1 games are final. The app should be on week 2
 ```
+
+## 2026-09-15T17:46:49Z
+```
+For the weekly recap and anything else in the app involving other teams in there fantasy league, I will not be keeping track of teams' weekly lineups and the players they select each week. Therefore the weekly recap feature doesn't make much sense because it assumes which players each team started, and may be incorrect. The only lineups I will track and record each week is my lineup and my opponent for that week. Search the app for anything assuming other teams' weekly lineups and get rid of it, as long as this doesn't break any other features in the app. I will manually enter each team's final score every week after the week is final. Maybe if it is easy to implement, the app can deduce which players each team actually started based on the final score I type in, by seeing which combination of players on their roster equal the points total I entered. If this is possible, then keep the sections about other team lineups and adjust them according to what the app can deduce for their lineups based on the total points they scored for the week
+```
