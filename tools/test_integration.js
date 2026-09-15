@@ -592,5 +592,32 @@ var me = S.league.me;
   }
 }());
 
+/* ---- 22. claudeAdviceEstimate() shows $0 when the real sync would
+ * actually be free (review finding, 2026-09-15e) -----------------------------
+ * syncAll() skips the Claude call entirely — no request, no charge — once
+ * every roster player has been "carried forward" (checked recently, came
+ * back clear, nothing since). The estimate never special-cased that: with
+ * research.length === 0, Ai.adviceSearchBudget's hard floor of 2 searches
+ * still produced a few cents, showing a non-zero price for a press that
+ * would cost nothing. Reproduced here by populating the AI cache with a
+ * fresh "clear" verdict for every roster player — mergeAi() is the exact
+ * function the offline Claude-app handoff uses for this, so this is a real
+ * roster-context path, not a synthetic shortcut. */
+(function () {
+  var wk = 1;
+  var t = W.Store.team(me);
+  var byName = {};
+  t.players.forEach(function (p) {
+    byName[W.Names.canon(p.name)] = { status: 'clear', at: Date.now(), week: wk };
+  });
+  W.Recommend.mergeAi(wk, { byName: byName, at: Date.now() }, {});
+
+  var ctx = W.Recommend.rosterContext(wk, me, null);
+  ok(ctx.players.length === 0, 'sanity: every roster player is now "carried forward" — nothing left to research');
+
+  var est = W.Recommend.claudeAdviceEstimate(wk, me);
+  ok(est === '$0', 'and the estimate correctly says the next sync would cost $0, not a few cents from the search-count floor');
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
