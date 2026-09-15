@@ -1143,6 +1143,7 @@
       var nm = el('div', 'nm');
       if (!x.pid) { nm.appendChild(el('span', 'muted', '— empty —')); }
       else {
+        if (x.player) markPlayer(r, x.player.name, x.player.pos, x.player.nfl);
         nm.appendChild(document.createTextNode(x.player ? x.player.name : '?'));
         var sm = el('small', null, ' ' + (x.player ? x.player.pos + ' ' + x.player.nfl : ''));
         nm.appendChild(sm);
