@@ -415,6 +415,37 @@ weekCheckDone.then(function () {
      'AND APPRESUME PICKED UP THE ADVANCE — week is now 2 (got ' + S3.settings.currentWeek +
      ')  <-- this is the fix: it used to take a true cold boot to ever notice');
 
+  console.log('\n-- the LOCAL advance works with zero network, zero ESPN involvement --');
+  /* Tj, 2026-09-15h: "I forced stopped the app and opened it again. Every
+   * tab is still on NFL week 1..." — a TRUE cold boot, where boot() already
+   * called syncCurrentWeek() unconditionally even before the appResume()
+   * fix above existed. So the ESPN-based check itself is not reliable
+   * enough alone: its 3-hour nflWeek cache can re-apply an old wrong
+   * answer, and Espn.currentWeek()'s own .catch swallows every failure
+   * silently by design, with nothing surfaced anywhere. localAutoAdvance()
+   * is the fix: it trusts only weekMeta.allFinal, which this app already
+   * computed itself from real box scores — no network call, no cache, no
+   * ESPN metadata to misread. Proven here by making the ESPN path itself
+   * IMPOSSIBLE (reject synchronously) and confirming the week still
+   * advances, SYNCHRONOUSLY, before any promise even gets a chance to
+   * settle — the strongest proof this does not depend on the network layer
+   * being present, correct, or even reachable at all. */
+  var S4 = W.Store.get();
+  ok(S4.settings.currentWeek === 2, 'sanity: week 2 from the resume test above, before this one');
+  S4.weekMeta['2'] = { synced: true, allFinal: true, games: 16, at: new Date().toISOString() };
+  delete S4.settings.nflWeek;
+  var realCurrentWeek2 = W.Espn.currentWeek;
+  W.Espn.currentWeek = function () { throw new Error('the network is not available in this test on purpose'); };
+  W.__appPause();
+  var threw3 = null;
+  try { W.__appResume(); } catch (e) { threw3 = e; }
+  ok(!threw3, 'resume still does not throw even when Espn.currentWeek is unusable' +
+     (threw3 ? '  <-- ' + threw3.message : ''));
+  ok(S4.settings.currentWeek === 3,
+     'AND THE WEEK ADVANCED ANYWAY — week 3 (got ' + S4.settings.currentWeek + '), synchronously, ' +
+     'with the ESPN-based check impossible — this is the local, network-free backstop actually working');
+  W.Espn.currentWeek = realCurrentWeek2;
+
   console.log('\n-- nothing reached the network during boot --');
   ok(netCalls === 0, 'boot made no network call through the stub bridge');
 
