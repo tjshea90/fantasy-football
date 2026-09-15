@@ -658,7 +658,15 @@
   function claudeAdviceEstimate(week, teamId) {
     try {
       var gen = (root.Store && root.Store.generation) ? root.Store.generation() : 0;
-      var k = week + '|' + teamId + '|' + gen + '|' + JSON.stringify(root.Usage.rates());
+      /* Same model a real ask() call would use for this exact press —
+       * ai.js's own depth()==='cheap' ? cheapModel() : model() — found in the
+       * 2026-09-15e sweep: this used to estimate at a flat rate table that
+       * assumed the main model always, so a 'cheap' depth (real calls sent
+       * to Haiku) showed a Sonnet-priced number, silently overstating the
+       * cost of the exact call this function exists to price accurately. */
+      var mdl = (root.Ai && root.Ai.depth() === 'cheap' && root.Ai.cheapModel)
+        ? root.Ai.cheapModel() : (root.Ai ? root.Ai.model() : '');
+      var k = week + '|' + teamId + '|' + gen + '|' + mdl + '|' + JSON.stringify(root.Usage.rates(mdl));
       if (_adviceEstMemo && _adviceEstMemo.k === k) return _adviceEstMemo.v;
       var opp = (root.Store.get().weekMeta[String(week)] &&
                  root.Store.get().weekMeta[String(week)].opponents) || null;
