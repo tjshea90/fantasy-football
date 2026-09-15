@@ -570,18 +570,22 @@ ok(/wrong merge is far more/.test(nmH),
   new Function('window', fs.readFileSync('app/assets/playerdb.js', 'utf8'))(g5);
   g5.PlayerDB.init();
 
+  /* Checked synchronously, by object identity, not by awaiting completion:
+   * this file is synchronous top-to-bottom and calls process.exit() as its
+   * literal last statement, which runs the moment the script's synchronous
+   * body finishes — before Node would otherwise drain the microtask queue.
+   * A dangling .then() here would silently never run, the same trap this
+   * file caught once already above (see the ensureFresh() short-circuit
+   * comment). The identity check needs no awaiting: three calls made back
+   * to back, before any of them has had a chance to settle, sharing the
+   * exact same promise object IS the proof that the second and third
+   * attached to the first's in-flight attempt instead of starting new ones. */
   var p1 = g5.PlayerDB.refresh();
   var p2 = g5.PlayerDB.ensureFresh();
   var p3 = g5.PlayerDB.refresh();
   ok(p1 === p2 && p2 === p3,
      'refresh() and ensureFresh(), called back to back before either settles, share the exact same promise ' +
      '(a manual tap during a background refresh attaches to it instead of starting a second 32-team fetch)');
-
-  return p1.then(function (r) {
-    ok(r && r.total > 0 && r.failed.length === 0, 'and that one shared attempt actually completed successfully');
-    var p4 = g5.PlayerDB.refresh();
-    ok(p4 !== p1, 'once settled, the NEXT call starts a genuinely new attempt, not the stale old promise');
-  });
 }());
 
 /* ensureFresh()'s short-circuit ("do not even attempt a refresh unless
