@@ -625,5 +625,60 @@ var me = S.league.me;
   ok(est === '$0', 'and the estimate correctly says the next sync would cost $0, not a few cents from the search-count floor');
 }());
 
+/* ---- 23. Usage prices a call at the tier of the model that actually ran it
+ * (review finding, 2026-09-15e) --------------------------------------------
+ * priceOf/record/estimate used to apply ONE flat (Sonnet 5) rate table
+ * regardless of which model a call actually used — but ai.js's own 'weekly
+ * recap' always runs on the cheap model (Haiku 4.5 by default), so every
+ * recap's logged cost was overstated by roughly 2x, and any Opus call would
+ * have been understated by roughly 5x. Verified here with the SAME
+ * 1,000,000-token usage object priced against three different model
+ * strings, confirming the three real published rate tiers rather than one
+ * constant. */
+(function () {
+  var usage = { input_tokens: 1000000, output_tokens: 0 };
+  var sonnetPrice = W.Usage.priceOf(usage, 'claude-sonnet-5').cost;
+  var opusPrice = W.Usage.priceOf(usage, 'claude-opus-5').cost;
+  var haikuPrice = W.Usage.priceOf(usage, 'claude-haiku-4-5').cost;
+  near(sonnetPrice, 2.00, 'Sonnet 5 prices 1M input tokens at its own $2/M rate');
+  near(opusPrice, 5.00, 'Opus 5 prices the SAME usage at its own, higher $5/M rate');
+  near(haikuPrice, 1.00, 'Haiku 4.5 prices the SAME usage at its own, lower $1/M rate');
+  ok(opusPrice > sonnetPrice && sonnetPrice > haikuPrice,
+     'the three tiers are actually distinct, not the same constant three times');
+
+  /* record() already received `model` before this fix — it just never used
+     it for anything. Confirm a 'weekly recap' entry (always Haiku) and a
+     same-size 'advice sync' entry (Sonnet by default) land at different
+     costs in the real ledger, not just in priceOf() taken alone. */
+  W.Usage.reset();
+  W.Usage.record('weekly recap', 'claude-haiku-4-5', usage);
+  W.Usage.record('advice sync', 'claude-sonnet-5', usage);
+  var hist = W.Usage.history(2);
+  var recapEntry = hist.filter(function (x) { return x.what === 'weekly recap'; })[0];
+  var syncEntry = hist.filter(function (x) { return x.what === 'advice sync'; })[0];
+  ok(!!recapEntry && !!syncEntry, 'sanity: both ledger entries were recorded');
+  if (recapEntry && syncEntry) {
+    ok(recapEntry.cost < syncEntry.cost,
+       'the ledger itself now reflects that a recap (Haiku) costs less than a sync (Sonnet) for equal tokens');
+  }
+}());
+
+/* ai.js picks the web_search tool version per model — 20260209 (dynamic
+ * filtering) is confirmed supported on Opus 5 and Sonnet 5, but Haiku 4.5 is
+ * not documented as supporting it, and depth()==='cheap' sends real calls
+ * to exactly that model. An allowlist (only known-good models get the new
+ * type) rather than a denylist means an unrecognised model string is never
+ * gambled on. */
+(function () {
+  ok(W.Ai.searchToolType('claude-sonnet-5') === 'web_search_20260209',
+     'Sonnet 5 gets the current dynamic-filtering search tool');
+  ok(W.Ai.searchToolType('claude-opus-5') === 'web_search_20260209',
+     'Opus 5 gets the current dynamic-filtering search tool');
+  ok(W.Ai.searchToolType('claude-haiku-4-5') === 'web_search_20250305',
+     'Haiku 4.5 stays on the basic search tool — not documented as supporting the newer one');
+  ok(W.Ai.searchToolType('some-future-model-id') === 'web_search_20250305',
+     'an unrecognised model id is never gambled on the newer tool type');
+}());
+
 console.log(fails ? ('  ' + fails + ' integration check(s) FAILED') : '  integration checks pass');
 process.exit(fails ? 1 : 0);
