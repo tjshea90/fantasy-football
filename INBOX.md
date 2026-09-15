@@ -28,3 +28,9 @@ gets long, keep only entries newer than the oldest one not yet folded into
 TASKS.md.
 
 ---
+
+## 2026-09-15T01:58:01Z
+```
+test message with "quotes" and
+newline
+```
