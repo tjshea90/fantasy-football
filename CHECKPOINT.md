@@ -1,12 +1,12 @@
-# CHECKPOINT 135 — read me first, then TASKS.md
+# CHECKPOINT 143 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T03:35:09Z · **version:** 6.1 · **tests:** all 14 suites green
+**Written:** 2026-09-15T03:43:13Z · **version:** 6.1 · **tests:** all 14 suites green
 
 ## Just done
-wrote Tj's new 8-part request (bug/UI sweep, Rosters reorder, Android back-button fix, app-resume state restore, no splash flash on resume, remove Claude-usage-remaining displays in favor of per-request cost estimates, bench 'why not to start' Claude explanations, PlayerDB auto-refresh) into TASKS.md verbatim, broken into checkable steps, before reading any code -- exactly the discipline that failed earlier today. INBOX.md already had it captured automatically the instant it arrived (confirmed by its own timestamp), so this write was not a race against anything, just the deliberate curated breakdown TASKS.md is for.
+items 1-4 of today's 8-part request. (1) Rosters tab: trade evaluator moved to the bottom, team roster card first. (2-4) Android lifecycle -- root-caused as one likely shared cause: this Activity has no android:configChanges gap (already covers rotation/uiMode/etc, checked AndroidManifest.xml) and no active code path finishes() or kills anything itself, so 'jumps back to Live' + 'splashes a logo' on resume is consistent with ordinary Android reclaiming a backgrounded single-Activity WebView process under memory pressure -- ui.js's boot() always defaulted view to 'live' with no memory of what was open before, so a forced cold relaunch (which looks identical to onResume from the JS side, but isn't) always looked like 'jumped to Live'. Fixed the concrete, verifiable half of that: goTab() now persists the current tab to S.settings.lastTab on every real tab change (cheap -- only fires on an actual change, same as every other settings write here), and boot() restores it before first render if valid. Left __onBack's own history-unwind logic untouched -- read it closely and it is already correct (this exact 'never close the app, background instead' design is thoroughly documented in MainActivity.java's own comments from v4.7) -- backgrounding when there is genuinely nothing behind the current tab in navHistory is the intended Android 'at the root' behavior, not a bug, and restoring the right tab on relaunch should make that read correctly for the common case Tj described. For the splash flash: WebView.setBackgroundColor() now matches @color/bg exactly (WebView paints white by default regardless of the Activity's own windowBackground until content has painted -- a real, documented quirk, separate from the app's own theme already being dark). Added android/res/values-v31/styles.xml overriding Android 12+'s own automatic per-launch splash screen (unavoidable OS behavior on API 31+, not an app opt-out) to use the app's real background color and an empty icon (android/res/drawable/splash_empty.xml) instead of the launcher logo. Build verified clean (aapt2 parses the new versioned resource dir correctly, 25/25 classes). Honest limitation: none of this can be verified against real Android process-death/OS-splash behavior from this sandbox -- no emulator, no real device -- both fixes are grounded in well-documented, specific Android platform mechanics (WebView's white-paint default; the API 31+ automatic splash; no onSaveInstanceState existed before to restore anything) rather than guesses, but only Tj's phone can confirm they actually close the gap he is seeing. All 14 suites + ES2018 gate green; build.sh produces a clean signed APK with the new resources.
 
 ## Do this next
-start investigating each of the 8 items in ui.js/android -- MainActivity.java's onKeyDown/onPause/onResume for items 2-4, usage.js/ai.js for item 5, recommend.js's existing bench-vs-start 'why' logic for item 6, playerdb.js's refresh() + wireGestures' pull-to-refresh dispatch for item 7, viewRosters' card order for item 1 (should be quick). Work roughly in the order listed since 1 is trivial and 2-4 (all about Android lifecycle) are likely related enough to investigate together.
+item 5: replace Claude usage-remaining tracking with per-request cost estimates. Plan: extract the search-budget formulas already inline in ai.js's ask()/askWaivers() into named exported functions (adviceSearchBudget/waiverSearchBudget) so the real call and the new estimate can never disagree about how many searches a call would use; add Usage.estimate(promptChars, searches, outputTokens) computed from the SAME rates() table already used for real spend tracking; call it with REAL current inputs (Ai.buildPrompt(realCtx).length, Recommend.rosterContext()'s real triage count for advice; Ai.buildWaiverPrompt + Value.waiverContext for wire) at the two actual Ask-Claude buttons (recommend.js's Sync advice, ui.js's Ask Claude about the wire), shown regardless of Ai.configured() since the whole point is Tj no longer has a key and still wants to see what it WOULD cost. Then gut ui.js's usageCard() (Data tab) -- remove the budget input/meter/'X left of Y' entirely, keep the editable price-rate fields (still needed for the estimate math) and the factual call-history record, add a live estimated-cost section.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  c55702b ckpt 135: wrote Tj's new 8-part request (bug/UI sweep, Rosters reorder, Android back-but
   1de4930 ckpt 132: shipped v6.1 (both bug fixes), triggered and verified the GitHub Release (non-
   b98c220 ship v6.1: fix two bugs found on Tj's phone within minutes of v6.0: Top Players got stuc
   16c61b7 ckpt 127: fixed two real bugs Tj found on his phone within minutes of v6.0, both confirm
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   1f64c89 ckpt 104: steps 2+4 of the stats-tab job: built stats.js (Stats.render(root,ctx), mirror
   11bddd6 ckpt 73: fixed the red left over from the last checkpoint: test_lifecycle.js keeps its o
   581837a ckpt 71: step 1 of the stats-tab job done: gamelog.js -- a self-contained (own Native.sa
-  9563bc3 ckpt 64: root-caused the resume-system failure Tj reported: a session ran a long researc
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(7 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
