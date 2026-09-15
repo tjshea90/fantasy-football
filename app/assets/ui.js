@@ -2028,7 +2028,14 @@
   var _wireEstMemo = null;
   function claudeWireEstimate() {
     try {
-      var gen = (root.Store && root.Store.generation) ? root.Store.generation() : 0;
+      /* NOT root.Store — ui.js is a bare (function () {...})(), unlike every
+         other module here, so `root` does not mean `window` in this file
+         (see the __appPause/__appResume note above). Writing root.Store was
+         a ReferenceError on every call, silently swallowed by the catch
+         below, which is why this line vanished entirely until caught in the
+         same sweep that added it — same class of mistake this file already
+         has one standing warning about, now a second. */
+      var gen = (window.Store && Store.generation) ? Store.generation() : 0;
       var k = week + '|' + S.league.me + '|' + gen + '|' + JSON.stringify(Usage.rates());
       if (_wireEstMemo && _wireEstMemo.k === k) return _wireEstMemo.v;
       var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
