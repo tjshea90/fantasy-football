@@ -703,20 +703,55 @@
    * module variable, and commitWeek is the one place it is written), so
    * fixing it here fixes it everywhere at once — nothing per-tab to repeat.
    *
-   * BOOT ONLY, not every appResume. Android usually kills the JS context when
-   * the app is backgrounded for a while, so appResume() already doubles as a
-   * fresh boot most of the time (see that function's own comment on the
-   * subject). The rare case where the process survives backgrounding is
-   * exactly a session already in progress — possibly mid-review of an old
-   * week — and that must never be yanked to a different week out from under
-   * whatever Tj is actually looking at. A fresh cold start carries no such
-   * risk: there is nothing on screen yet to disrupt.
+   * 2026-09-15h: Tj reported that even a full force-stop and relaunch — a
+   * genuine cold boot — still left the app on a finished week 1. This
+   * comment used to say the check ran "BOOT ONLY, not every appResume"
+   * because "Android usually kills the JS context when the app is
+   * backgrounded... so appResume() already doubles as a fresh boot most of
+   * the time" — WRONG, and already corrected once (2026-09-15f: appResume()
+   * now also calls syncCurrentWeek()). But Tj's force-stop report is a TRUE
+   * cold boot, where boot() already called this unconditionally even
+   * before that fix — so a cold boot still failing means the ESPN-based
+   * check itself (below) is not reliable enough on its own: either
+   * S.settings.nflWeek's 3-hour reuse cache re-applies an earlier wrong
+   * answer, or Espn.currentWeek()'s network round trip silently fails (its
+   * own .catch swallows everything, by design, so the app looks stuck with
+   * no error surfaced anywhere), or ESPN's own "current week" metadata
+   * simply does not flip the moment every game ends. All three are single
+   * points of failure this app cannot verify or control. localAutoAdvance()
+   * below is a second, INDEPENDENT signal with none of those failure modes:
+   * it trusts only weekMeta.allFinal, which this app already computes
+   * itself from real box scores it already fetched — no network call of
+   * its own, no cache to go stale, no ESPN metadata field to misread.
+   * Whichever of the two notices a transition first wins; applyCurrentWeek
+   * itself is what actually makes the change, so both share its one set of
+   * guards.
    *
    * Only ever moves the week FORWARD, and only within this league's 1-17
    * (LAST_WEEK, not the NFL's 18) — a stale cache, a network hiccup, or an
    * ESPN preseason/postseason week number must never send it backward or off
-   * the end of the season this league actually plays. */
+   * the end of the season this league actually plays.
+   *
+   * Called from boot() and appResume() ONLY — never from a manual sync or
+   * navigation — so deliberately reviewing an old, already-final week later
+   * is never yanked forward mid-review. */
   var NFL_WEEK_STALE_MS = 3 * 3600 * 1000;   /* same reasoning as Schedule.STALE_MS */
+  /* The local, network-free backstop: if everything this app already knows
+   * about the currently-displayed week says it is done, move on — do not
+   * wait on ESPN's own notion of "current week" to agree first. Walks
+   * forward through as many CONSECUTIVE already-final weeks as are known
+   * (the ordinary case is one step; more only matters after a long
+   * absence), then applies the result once through applyCurrentWeek so the
+   * two checks share one implementation of "how to actually advance." */
+  function localAutoAdvance() {
+    var w = week, guard = 0;
+    while (guard++ < LAST_WEEK) {
+      var m = S.weekMeta[String(w)];
+      if (!(m && m.synced && m.allFinal) || w >= LAST_WEEK) break;
+      w++;
+    }
+    if (w > week) applyCurrentWeek({ week: w, seasonType: 2, at: Date.now() });
+  }
   function syncCurrentWeek() {
     if (!window.Espn || !Espn.currentWeek) return;
     var c = S.settings.nflWeek;
