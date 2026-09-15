@@ -475,8 +475,18 @@
   function detect(obj) {
     if (!obj || typeof obj !== 'object') return '';
     var k = String(obj.kind || '');
-    if (k.indexOf(KIND_ADVICE) === 0) return 'advice';
-    if (k.indexOf(KIND_WAIVER) === 0) return 'waivers';
+    /* 2026-09-15e sweep: this used to be k.indexOf(KIND_ADVICE) === 0, a
+     * PREFIX match — today harmless only because the app itself only ever
+     * emits exactly two literal strings per kind (the request's own
+     * KIND_ADVICE, and the reply skeleton's KIND_ADVICE + '.reply'), so an
+     * exact check on those two catches the same real cases. A prefix match
+     * would also have silently accepted anything merely starting with
+     * "fftracker.advice" — a plausible model typo or hallucinated variant —
+     * as a fully valid advice reply, directly contradicting this function's
+     * own comment above ("Strict because... the wrong kind of reply
+     * entirely must never be half-applied"). */
+    if (k === KIND_ADVICE || k === KIND_ADVICE + '.reply') return 'advice';
+    if (k === KIND_WAIVER || k === KIND_WAIVER + '.reply') return 'waivers';
     /* no kind field — fall back to shape, because a model that rewrote the
        skeleton by hand is still giving a usable answer */
     /* Array.isArray, not a truthy `.length` — a STRING has a length, so
