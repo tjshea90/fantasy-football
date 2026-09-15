@@ -213,6 +213,16 @@ public class Alerts {
       JSONObject settings = S.optJSONObject("settings");
       if (league == null || settings == null) return "";
       String me = league.optString("me", "");
+      /* 2026-09-15e sweep: without this, an empty me fell through to the
+       * team-matching loop below, where `!me.equals(t.optString("id"))`
+       * would treat ANY team whose own "id" field is also missing/blank —
+       * a malformed team object in a truncated or corrupted state file,
+       * exactly the failure mode the .bak fallback elsewhere in this app
+       * exists for — as "mine", silently building an alert off a stranger's
+       * roster instead of just saying nothing. league.me being unset always
+       * means "we don't actually know which team is mine," so nothing
+       * downstream should proceed as if it does. */
+      if (me.isEmpty()) return "";
       int week = settings.optInt("currentWeek", 1);
       JSONObject byes = S.optJSONObject("byes");
 
