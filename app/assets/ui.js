@@ -2192,7 +2192,10 @@
      * this without one. Computed from the REAL prompt this exact press
      * would send (claudeWireEstimate below), not a flat guess. */
     var westText = claudeWireEstimate();
-    west.textContent = westText ? ('Estimated cost: ' + westText + ' on the Claude API, at current prices (Data → Claude costs).') : '';
+    /* 2026-09-15e sweep: matched wording with the Advice tab's identical
+       estimate line (recommend.js render()'s own "Estimated cost to sync"). */
+    west.textContent = westText ? ('Estimated cost: ' + westText +
+      ' on the Claude API, at current prices (see Data → Claude costs).') : '';
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
       /* This IS "refreshing waiver wire information" — fired in the
