@@ -1099,3 +1099,36 @@ Full write-up, every fix with its root cause and proof, is in STATE.md's
 
 Shipped as v6.4. All 14 suites + the ES2018 gate green throughout every
 round; `bash build.sh` run clean repeatedly.
+
+## 33. The app never advanced past a finished NFL week (Tj, 2026-09-15, v6.5)
+
+> "Week 1 NFL is complete... yet the app still has all tabs open to week
+> 1. I want the app to automatically move to the next NFL week after the
+> previous week becomes final. All tabs across the entire app should be
+> on week 2 right now."
+
+Full write-up is in STATE.md's 2026-09-15f entry. The mechanism
+(`syncCurrentWeek()`, comparing ESPN's own current-week number against
+the one shared `week` variable every tab reads) was already correct — it
+just only ever ran from `boot()`, a true cold start, and this app
+deliberately keeps its process alive across backgrounding (an earlier
+session's own back-button fix), so anyone who does not force-quit the app
+could go days without it re-checking. `appResume()`'s own "a week that is
+finished stays finished" early return made it worse, short-circuiting
+exactly the moment a real advance was most likely.
+
+- [x] 1. Root-caused: the check existed, was correct, and simply never got
+      a second chance to run outside a cold boot.
+- [x] 2. Fixed: `appResume()` now calls `syncCurrentWeek()` too, before
+      the early return. Its own 3-hour staleness cache makes this free on
+      repeat resumes.
+- [x] 3. Verified end-to-end in `tools/test_lifecycle.js` (the one suite
+      that actually executes ui.js against a DOM) with a real
+      `Espn.currentWeek` stub — week correctly advances 1 → 2 on resume,
+      not just on a fresh boot. Pinned in `tools/test_boot.js` too. All 14
+      suites + the ES2018 gate green, `bash build.sh` clean.
+- [x] 4. Explicitly told Tj this does not retroactively fix an
+      already-running session — he needs to background/reopen (or
+      relaunch) the app once this version installs.
+
+Shipped as v6.5. All 14 suites + the ES2018 gate green.
