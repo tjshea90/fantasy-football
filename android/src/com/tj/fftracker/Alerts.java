@@ -71,26 +71,6 @@ public class Alerts {
 
   /* ---- scheduling ------------------------------------------------------ */
 
-  /** dayOfWeek: Calendar.SUNDAY..SATURDAY. Fires at the next such day/time. */
-  public static void schedule(Context ctx, int dayOfWeek, int hour, int minute, int slot) {
-    AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
-    if (am == null) return;
-    Calendar c = Calendar.getInstance();
-    c.set(Calendar.HOUR_OF_DAY, hour);
-    c.set(Calendar.MINUTE, minute);
-    c.set(Calendar.SECOND, 0);
-    c.set(Calendar.MILLISECOND, 0);
-    while (c.get(Calendar.DAY_OF_WEEK) != dayOfWeek || c.getTimeInMillis() <= System.currentTimeMillis()) {
-      c.add(Calendar.DAY_OF_YEAR, 1);
-      c.set(Calendar.HOUR_OF_DAY, hour);
-      c.set(Calendar.MINUTE, minute);
-    }
-    PendingIntent pi = intentFor(ctx, slot);
-    /* a half-hour window: no special permission, and nothing about this needs
-       to land on a particular second */
-    am.setWindow(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), 30 * 60 * 1000L, pi);
-  }
-
   public static void cancel(Context ctx, int slot) {
     AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
     if (am != null) am.cancel(intentFor(ctx, slot));
