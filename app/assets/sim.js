@@ -288,7 +288,7 @@
       for (wi = 1; wi <= Math.min(throughWeek, reg); wi++) {
         if (!root.Store.weekIsScored(wi)) continue;
         for (ti = 0; ti < idsA.length; ti++) {
-          only[idsA[ti]] += root.Store.teamWeekPoints(wi, idsA[ti]).pts;
+          only[idsA[ti]] += root.Store.teamWeekScore(wi, idsA[ti]).total;
         }
       }
       for (ti = 0; ti < idsA.length; ti++) {
