@@ -605,19 +605,23 @@ var me = S.league.me;
  * roster-context path, not a synthetic shortcut. */
 (function () {
   var wk = 1;
-  var t = W.Store.team(me);
+  /* a DIFFERENT team than "me" — earlier tests in this file inject a real
+     ESPN designation onto my own roster (QUESTIONABLE, for the injuries-
+     block test above), which correctly always forces research regardless
+     of cache state, so it can never reach n=0 by design. Any other team's
+     roster is untouched by that and free for a clean scenario here. */
+  var otherId = 'steve';
+  var t = W.Store.team(otherId);
   var byName = {};
   t.players.forEach(function (p) {
     byName[W.Names.canon(p.name)] = { status: 'clear', at: Date.now(), week: wk };
   });
   W.Recommend.mergeAi(wk, { byName: byName, at: Date.now() }, {});
 
-  var ctx = W.Recommend.rosterContext(wk, me, null);
-  console.log('DEBUG t.players.length=' + t.players.length + ' ctx.players.length=' + ctx.players.length);
-  ctx.players.forEach(function (p) { console.log('  DEBUG research:', p.name, '|', p.why); });
+  var ctx = W.Recommend.rosterContext(wk, otherId, null);
   ok(ctx.players.length === 0, 'sanity: every roster player is now "carried forward" — nothing left to research');
 
-  var est = W.Recommend.claudeAdviceEstimate(wk, me);
+  var est = W.Recommend.claudeAdviceEstimate(wk, otherId);
   ok(est === '$0', 'and the estimate correctly says the next sync would cost $0, not a few cents from the search-count floor');
 }());
 
