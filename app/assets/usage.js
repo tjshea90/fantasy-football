@@ -81,12 +81,13 @@
     var S = root.Store && root.Store.get ? root.Store.get() : null;
     return (S && S.settings) ? S.settings : {};
   }
-  function rates() {
-    var s = settings(), r = {}, k;
+  function rates(model) {
+    var s = settings(), tier = tierFor(model), r = {}, k;
     for (k in DEFAULT_RATES) {
       if (!Object.prototype.hasOwnProperty.call(DEFAULT_RATES, k)) continue;
       var v = s['rate_' + k];
-      r[k] = (typeof v === 'number' && isFinite(v) && v >= 0) ? v : DEFAULT_RATES[k];
+      r[k] = (typeof v === 'number' && isFinite(v) && v >= 0) ? v :
+             (tier[k] !== undefined ? tier[k] : DEFAULT_RATES[k]);
     }
     return r;
   }
