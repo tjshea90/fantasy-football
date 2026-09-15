@@ -54,29 +54,46 @@ recap.js, and the exact 13-14-card list on the Data tab. Both are now
 explicitly authorized — this is no longer "major, ask first," it is the
 job.
 
-- [ ] 1. Recap feature: re-verify the existing recap.js/ai.js/
-      NativeBridge.java pieces still do what the trace found, design the
-      button placement (low-prominence, does not compete with anything he
-      actually uses weekly — his own words: "probably won't use it much"),
-      wire it to `Ai.recap()` with the week's settled facts and
-      `Native.share`/`Native.copy` on the result, real tests.
-- [ ] 2. Data tab: design sub-navigation for the 13-14 cards that is
-      "smart and easy to understand" — group by what they're for, not an
-      arbitrary split — implement, real tests, a live-browser check that
-      every card is still reachable and nothing behind the split silently
-      became unreachable.
-- [ ] 3. Full test suite + ES2018 gate + `bash build.sh` green. Live-browser
-      pass confirming both features actually work and nothing else in the
-      app regressed (Tj's own explicit ask: "test that it all works and
-      didn't break anything else"). Ship if ship-worthy.
-
-**There is no OTHER active job right now.** The most recent one (2026-09-15f: the
-app never advanced past a finished NFL week unless truly cold-booted) is
-complete, shipped as v6.5, and archived at LADDER.md §33 — full
-root-cause writeup in STATE.md's 2026-09-15f entry. **Tell Tj plainly that
-this does not retroactively fix his already-running session** — he needs
-to background/reopen or relaunch the app once v6.5 installs for the fix
-to take effect.
+- [x] 1. Recap feature: verified `Recap.build`/`Recap.text` (real, fact-based,
+      no network) and `Ai.recap()` (Claude rewrite, cheap model, gated on a
+      configured key) still did what the earlier trace found — they did.
+      Built `weeklyRecapCard()` + `openRecapDialog()` in ui.js: ONE small
+      card in the Data tab's League group (after Weekly scores/Standings/
+      matchups, before Scoring rules) with a button that opens a dialog
+      showing the real facts, an optional "Write it up with Claude" button
+      (only when `Ai.configured()`), and Share/Copy acting on whichever
+      text is currently shown. Works fully with no API key — Claude is an
+      enhancement, never a requirement, matching every other Claude
+      feature's own degrade-gracefully rule. Low-prominence per Tj's own
+      "probably won't use it much" — renders after the cards he actually
+      opens weekly, never before them.
+- [x] 2. Data tab: grouped the 13-14 cards into 4 sub-nav sections by what
+      they are for — League (scores, standings, matchups, the new recap,
+      scoring rules), Claude (AI settings, costs), Sync & data (stats
+      feed, player database), App (alerts, live refresh, screen fit,
+      backup, about). `viewData()` split into `viewDataLeague`/
+      `viewDataClaude`/`viewDataSync`/`viewDataApp`, every existing card
+      relocated with its logic unchanged, none dropped — pinned in
+      `tools/test_boot.js` by checking every card's own label text still
+      exists in the file after the reshuffle.
+- [x] 3. All 14 suites + ES2018 gate green, `bash build.sh` clean. Real
+      functional tests in `tools/test_lifecycle.js` (the one suite that
+      executes ui.js against a DOM): all 4 sub-nav groups clicked through
+      like a real thumb would, each group's expected cards confirmed
+      present; the recap dialog opened against a REAL scored week (not a
+      synthetic stub), its text confirmed to come from the real fact
+      sheet, the Claude button confirmed correctly absent with no key
+      configured, Share/Copy confirmed present. Found and fixed a real gap
+      in the test harness itself while building this: the DOM stub's
+      `innerHTML` was a plain property, so `render()`'s own
+      `root.innerHTML = ''` never actually cleared old children — every
+      render in the whole suite was silently ACCUMULATING into one tree
+      instead of replacing it, invisible until a Data-tab test needed to
+      tell "a button from THIS render" apart from a same-named one several
+      renders ago. Fixed with a real accessor; the fix made this test file
+      more accurate for every suite that uses it, not just this one.
+      Shipped — see STATE.md's entry for the version and Release link Tj
+      was sent.
 
 The 2026-09-15e request before it (a comprehensive app-wide sweep — 5
 rounds of verified fixes across data integrity, value.js correctness,
