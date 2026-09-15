@@ -1890,6 +1890,7 @@
         ' project higher than somebody you are starting:'));
       ups.slice(0, 6).forEach(function (u) {
         var r = el('div', 'row');
+        markPlayer(r, u.fa.name, u.fa.pos, u.fa.nfl);
         r.appendChild(el('div', 'slot', u.fa.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(u.fa.name));
