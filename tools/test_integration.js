@@ -475,9 +475,14 @@ var me = S.league.me;
   var advice2 = W.Recommend.claudeAdviceEstimate(1, me);
   ok(advice2 !== advice1, 'raising every price 10x changes the memoised estimate immediately, not on the next roster edit');
 
-  /* restore defaults so this block leaves no side effect for anything after it */
-  S2.settings.rate_inPerM = 2.00; S2.settings.rate_outPerM = 10.00;
-  S2.settings.rate_searchPer1000 = 10.00; W.Store.save();
+  /* restore defaults so this block leaves no side effect for anything after
+     it — DELETE the overrides, not set them to sonnet-shaped numbers: since
+     the 2026-09-15e model-tiering fix, a lingering override (even one that
+     happens to match Sonnet's own published rate) would pin every later
+     test's pricing to Sonnet regardless of which model it asked about,
+     exactly the bug that fix was for. */
+  delete S2.settings.rate_inPerM; delete S2.settings.rate_outPerM;
+  delete S2.settings.rate_searchPer1000; W.Store.save();
 }());
 
 /* ---- 19. reading an unsynced week's stats must not dirty the archive
