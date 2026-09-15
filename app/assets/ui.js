@@ -3118,7 +3118,11 @@
    * live below. */
   function usageCard() {
     Usage.load();
-    var t = Usage.totals();
+    /* the same depth()-resolved model claudeAdviceEstimate/claudeWireEstimate
+       use, so the "prices used for this estimate" panel below matches the
+       numbers shown above it instead of always assuming the main model. */
+    var mdl = (window.Ai && Ai.depth() === 'cheap') ? Ai.cheapModel() : (window.Ai ? Ai.model() : '');
+    var t = Usage.totals(mdl);
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Claude costs'));
 
