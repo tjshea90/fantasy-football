@@ -21,7 +21,6 @@
   var playerLog = { key: '', loading: false, data: null, error: '' };
   var selTeamAbbr = null, selTeamWeek = null;
   var teamState = { key: '', loading: false, data: null, error: '' };
-  var topWeek = null;
   var topState = { key: '', loading: false, data: null, error: '' };
   var _ctx = null;   /* last render's ctx, so refresh() (called from outside a render) still works */
 
