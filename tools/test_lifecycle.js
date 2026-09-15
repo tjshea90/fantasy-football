@@ -343,6 +343,99 @@ console.log('\n-- every screen renders --');
   });
 }());
 
+console.log('\n-- Data tab sub-navigation renders every group (2026-09-15g) --');
+/* Tj: "organize the data tab with sub navigation that is smart and easy to
+ * understand." viewData() was split into 4 group functions
+ * (viewDataLeague/viewDataClaude/viewDataSync/viewDataApp) with every
+ * existing card relocated into exactly one group. This walks all 4 the
+ * same way a thumb would — finding and clicking the real sub-nav buttons
+ * built by dataSubNav(), not just calling the group functions directly —
+ * and checks each group's cards actually appear, so a card silently
+ * dropped during the reshuffle would fail here, not just look fine in a
+ * source-text pin. */
+(function () {
+  function findButtons(node, text, out) {
+    if (!node) return out;
+    if (node.tagName === 'BUTTON' && String(node.textContent).indexOf(text) >= 0) out.push(node);
+    (node.children || []).forEach(function (c) { findButtons(c, text, out); });
+    return out;
+  }
+  function h2Texts(node, out) {
+    if (!node) return out;
+    if (node.tagName === 'H2') out.push(String(node.textContent));
+    (node.children || []).forEach(function (c) { h2Texts(c, out); });
+    return out;
+  }
+  function clickButtonWithText(text) {
+    var found = findButtons(ids.view, text, []);
+    ok(found.length > 0, 'a "' + text + '" sub-nav button exists on the Data tab');
+    if (found.length && found[0]._h && found[0]._h.click) found[0]._h.click.call(found[0]);
+  }
+  clickTab('data');   /* land on Data, sub-nav defaults to League */
+  var groups = {
+    'League': ['Enter week', 'Standings', 'matchups', 'Weekly recap', 'Scoring rules'],
+    'Claude': ['Claude reasoning', 'Claude costs'],
+    'Sync & data': ['Stats feed', 'Player database'],
+    'App': ['Lineup alerts', 'Live updating', 'Screen fit', 'Backup', 'About']
+  };
+  Object.keys(groups).forEach(function (label) {
+    clickButtonWithText(label);
+    var heads = h2Texts(ids.view, []);
+    var missing = groups[label].filter(function (exp) {
+      return !heads.some(function (h) { return h.indexOf(exp) >= 0; });
+    });
+    ok(missing.length === 0,
+       label + ' group shows every card it should (' + heads.length + ' headings)' +
+       (missing.length ? '  <-- missing: ' + missing.join(', ') + ' (got: ' + heads.join(' | ') + ')' : ''));
+  });
+}());
+
+console.log('\n-- the weekly recap dialog (2026-09-15g) --');
+/* Tj: "Build the 'weekly recap' Claude write-up feature you told me
+ * about." recap.js's build()/text() already compute a real, fact-based
+ * recap with no network at all; this only had to get a button and a
+ * dialog wired to it. Proven here against a REAL scored week (not a
+ * synthetic stub), through the actual dialog() component, with the
+ * "Write it up with Claude" button correctly absent since no key is
+ * configured in this harness — it must never be the only way to see a
+ * recap. */
+(function () {
+  var S2 = W.Store.get();
+  S2.weekMeta['1'] = { synced: true, allFinal: true, games: 1, at: new Date().toISOString() };
+  var L = W.Scoring.emptyLine(); L.played = true;
+  L.pass = { cmp: 20, yds: 250, td: 2, int: 0, twoPt: 0, long: 30 };
+  var pid = S2.teams[0].players[0].id;
+  W.Store.setLine(1, pid, L);
+  W.Store.save();
+
+  clickTab('data');
+  var found = [];
+  (function walk(n) {
+    if (!n) return;
+    if (n.tagName === 'BUTTON' && String(n.textContent).indexOf('View week') >= 0) found.push(n);
+    (n.children || []).forEach(walk);
+  }(ids.view));
+  ok(found.length > 0, 'the "View week N recap" button appears once a week is fully scored');
+  if (found.length && found[0]._h && found[0]._h.click) found[0]._h.click.call(found[0]);
+
+  var dlgText = null, writeBtn = null, shareBtn = null, copyBtn = null;
+  (function walk(n) {
+    if (!n) return;
+    if (n.tagName === 'PRE' && dlgText === null) dlgText = n.textContent;
+    if (n.tagName === 'BUTTON') {
+      var t = String(n.textContent);
+      if (t.indexOf('Write it up with Claude') >= 0) writeBtn = n;
+      if (t === 'Share') shareBtn = n;
+      if (t === 'Copy') copyBtn = n;
+    }
+    (n.children || []).forEach(walk);
+  }(W.document.body));
+  ok(!!dlgText && dlgText.indexOf('WEEK 1') >= 0, 'the dialog shows the real fact-based recap text' +
+     (dlgText ? '' : '  <-- no <pre> found'));
+  ok(!writeBtn, '"Write it up with Claude" is correctly absent — no API key is configured in this harness');
+  ok(!!shareBtn && !!copyBtn, 'Share and Copy are both offered regardless of whether Claude is configured');
+}());
+
 console.log('\n-- the back button --');
 (function () {
   ok(typeof W.__onBack === 'function', 'the page exposes __onBack for MainActivity');
