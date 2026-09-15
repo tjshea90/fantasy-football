@@ -422,12 +422,27 @@ public class NativeBridge {
     } catch (Throwable t) { return "failed: " + t; }
   }
 
-  /** Falls back to the .bak if the main file is missing or unreadable. */
+  /** Falls back to the .bak if the main file is missing, unreadable, or not
+   * valid JSON. Found in the 2026-09-15e app-wide sweep: this used to only
+   * check for missing/empty (`s == null || s.length() < 2`), so a file that
+   * was READABLE but CORRUPTED — a truncated write, storage bit-rot, any
+   * event that leaves non-empty garbage at the path — was returned as-is.
+   * store.js's own JSON.parse then fails, and Store.init() silently resets
+   * to the bundled seed, wiping a whole season's rosters/lineups/scores —
+   * even though the .bak sitting right next to it is perfectly intact.
+   * Cheap to check: this app's own save() never writes anything but JSON,
+   * so a parse failure here always means real corruption, never a false
+   * positive on legitimate content. */
   @JavascriptInterface
   public String load(String name) {
     String s = readFile(new File(ctx.getFilesDir(), safe(name) + ".json"));
-    if (s == null || s.length() < 2) s = readFile(new File(ctx.getFilesDir(), safe(name) + ".bak"));
+    if (!looksLikeJson(s)) s = readFile(new File(ctx.getFilesDir(), safe(name) + ".bak"));
     return s;
+  }
+  private boolean looksLikeJson(String s) {
+    if (s == null || s.length() < 2) return false;
+    try { new org.json.JSONTokener(s).nextValue(); return true; }
+    catch (Exception e) { return false; }
   }
 
   private String readFile(File f) {
