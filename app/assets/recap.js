@@ -43,13 +43,35 @@
       if (!bestP || book[k].p > bestP.p) bestP = { key: k, n: book[k].n, t: book[k].t, p: book[k].p };
     }
 
+    /* this week's opponent is the only other team whose lineup is real —
+       Tj hand-sets his own and theirs; everyone else is scored by one
+       manual number, so their lineup (if shown below at all) is inferred
+       from it rather than tracked */
+    var oppId = null;
+    mus.forEach(function (pair) {
+      if (pair[0] === S.league.me) oppId = pair[1];
+      else if (pair[1] === S.league.me) oppId = pair[0];
+    });
+
     /* the best and worst STARTER in this league, and the biggest bust
        measured against that player's own season average — the only baseline
-       the app can defend without having stored last week's projection */
+       the app can defend without having stored last week's projection.
+       For everyone but me/this week's opponent, "started" is a guess
+       worked backward from their manual score — see Store.inferLineup —
+       and only trusted here when it lands on exactly one possible lineup;
+       an ambiguous or unmatched score leaves that team out rather than
+       showing a starter that might be wrong. */
     var starters = [], busts = [];
     var keys = root.Store.slotKeys();   /* identical for every team — hoisted */
     teams.forEach(function (t) {
-      var lineup = root.Store.getLineup(week, t.id) || {};
+      var lineup;
+      if (t.id === S.league.me || t.id === oppId) {
+        lineup = root.Store.getLineup(week, t.id) || {};
+      } else {
+        var inf = root.Store.inferLineup(week, t.id);
+        if (!inf.ok || inf.confidence !== 'unique') return;
+        lineup = inf.slots;
+      }
       keys.forEach(function (kk) {
         var pid = lineup[kk.key];
         if (!pid) return;
