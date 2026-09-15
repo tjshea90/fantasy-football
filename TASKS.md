@@ -1,6 +1,57 @@
 # TASKS — the current job, in Tj's words
 
-**There is no active job right now.** The most recent one (2026-09-15g:
+## 2026-09-15i: stop assuming other teams' weekly lineups; deduce them from a typed-in total score if possible
+
+> "For the weekly recap and anything else in the app involving other
+> teams in there fantasy league, I will not be keeping track of teams'
+> weekly lineups and the players they select each week. Therefore the
+> weekly recap feature doesn't make much sense because it assumes which
+> players each team started, and may be incorrect. The only lineups I
+> will track and record each week is my lineup and my opponent for that
+> week. Search the app for anything assuming other teams' weekly lineups
+> and get rid of it, as long as this doesn't break any other features in
+> the app. I will manually enter each team's final score every week after
+> the week is final. Maybe if it is easy to implement, the app can deduce
+> which players each team actually started based on the final score I
+> type in, by seeing which combination of players on their roster equal
+> the points total I entered. If this is possible, then keep the sections
+> about other team lineups and adjust them according to what the app can
+> deduce for their lineups based on the total points they scored for the
+> week"
+
+A real premise change: only 2 of 10 teams (his own + that week's
+opponent) will ever have a real, entered lineup. Every feature reading
+`Store.getLineup(week, otherTeamId)` for the other 8 is reading data that
+will never be filled in and is silently wrong, not just stale.
+
+- [ ] 1. Find every place in the app that reads or assumes another team's
+      (not-mine, not-this-week's-opponent) weekly LINEUP specifically —
+      as opposed to their total score (`teamWeekPoints`, entered manually
+      or computed), which stays valid regardless. recap.js's `build()` is
+      the known one (best/worst starter, biggest bust, bench regret all
+      walk every team's lineup); check value.js, sim.js, standings, and
+      anywhere else that iterates `S.teams` and reads a lineup.
+- [ ] 2. Assess whether "deduce a team's starters from their roster's
+      individual point values and a typed-in total" is actually solvable
+      — feasibility first, before promising it: does a unique (or
+      near-unique) combination usually exist given this league's real
+      scoring spread, positions/slots (QB, RB, RB, WR, WR, WR, TE, FLEX,
+      K, DEF) as real constraints on which subset is even valid, and
+      real-world ties/ambiguity (a 0 for a bye/bench player is common,
+      multiple subsets can share a sum). Report findings plainly if it
+      is unreliable rather than shipping a feature that quietly guesses
+      wrong lineups with false confidence.
+- [ ] 3. If feasible: implement the deduction, wire it back into whatever
+      it can honestly replace (recap.js and anywhere else from step 1),
+      clearly marked as inferred, not confirmed. If NOT reliably
+      feasible: remove the other-teams-lineup-assuming code cleanly
+      instead (adjust recap.js etc. to use only real per-player
+      book/season data, never a specific team's inferred/assumed weekly
+      lineup) and say why the deduction idea does not hold up.
+- [ ] 4. Full test suite + ES2018 gate + `bash build.sh` green, real tests
+      for whatever changed, live-browser check, ship if ship-worthy.
+
+**There is no OTHER active job right now.** The most recent one (2026-09-15g:
 the weekly recap feature, and Data tab sub-navigation) is complete,
 shipped as v6.7, and archived at LADDER.md §35 — full write-up in
 STATE.md's 2026-09-15g entry. The job right before it (2026-09-15h: the
