@@ -1,12 +1,12 @@
-# CHECKPOINT 198 — read me first, then TASKS.md
+# CHECKPOINT 205 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T04:24:28Z · **version:** 6.1 · **tests:** all 14 suites green
+**Written:** 2026-09-15T04:27:58Z · **version:** 6.2 · **tests:** all 14 suites green
 
 ## Just done
-Item 8 (full sweep) complete: live-browser walkthrough of all 7 tabs found no real bugs; independent code review of the full diff found and I fixed two real concurrency bugs in item 7's auto-refresh (manual button bypassing the single-flight guard; an unthrottled offline retry storm on the Wire tab), memoised the two Claude cost-estimate functions per the review's efficiency findings (and caught+fixed a root.Store ReferenceError my own memoization edit introduced, via re-running the live browser check), plus three minor consistency fixes. New real+source-text test coverage for all of it. TASKS.md items 1-8 all ticked with proof; STATE.md entry written. All 13 suites + ES2018 gate green; bash build.sh succeeds twice.
+Archived the finished 2026-09-15c job to LADDER.md §30, reset TASKS.md to 'no active job', and pointed the top of the 'Waiting on Tj' section at v6.2 (superseding v6.1) with a specific checklist of the 4 device-only-verifiable items from this job.
 
 ## Do this next
-Run ship.sh to cut the release, trigger+verify the GitHub Release via the MCP workflow, then send Tj the plain tappable release link per CLAUDE.md's standing rule.
+Nothing in progress. Waiting on Tj to confirm v6.2 on his phone, or to give a new request (write it into TASKS.md verbatim before any code, per the working agreement).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  82284ab ship v6.2: Rosters reorder, Android back-button/app-resume/splash-flash fixes, live Clau
+  d30a945 ckpt 198: Item 8 (full sweep) complete: live-browser walkthrough of all 7 tabs found no 
   bfaec3e ckpt 178: Item 7 done: PlayerDB.ensureFresh() auto-refreshes the player database quietly
   e85f9ca ckpt 164: Verified item 6 (bench 'why not' explanations): all 13 test suites + ES2018 ga
   54cdf5a ckpt 162: item 5 done: removed every 'how much Claude usage I have left' display and rep
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   1de4930 ckpt 132: shipped v6.1 (both bug fixes), triggered and verified the GitHub Release (non-
   b98c220 ship v6.1: fix two bugs found on Tj's phone within minutes of v6.0: Top Players got stuc
   16c61b7 ckpt 127: fixed two real bugs Tj found on his phone within minutes of v6.0, both confirm
-  dc92ac5 ckpt 120: shipped v6.0 (Stats tab + resume-system fix), triggered and verified the GitHu
-  be33e59 ship v6.0: add a Stats tab: search any current NFL player (or team defense) and see this
 ```
 
-(19 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
