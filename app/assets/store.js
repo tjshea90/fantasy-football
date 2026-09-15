@@ -689,11 +689,29 @@
    * Scoring.score(), never from anyone else's total. */
   function setBook(week, rows) { S.book[String(week)] = rows; markArchive(); }
   function bookWeek(week) { var w = String(week); return S.book[w] || {}; }
-  /* the last n scored weeks for one normalised name, most recent first */
-  function bookTrend(key, throughWeek, n) {
+  /* the last n scored weeks for one player, most recent first.
+   * `name` is a PLAIN display name — any spelling. Found in the 2026-09-15e
+   * sweep: this used to require an exact `Espn.normName(...)` key and every
+   * one of its three real callers (value.js's perGame/usage, recommend.js's
+   * usageSwing) passed one straight in, bypassing Names.hit — the tolerant
+   * lookup this exact class of mismatch exists for (see names.js's own
+   * header: the book is keyed by however ESPN spelled a box score, "Kenny
+   * Gainwell" say, while a caller's roster/DB copy says "Kenneth Gainwell").
+   * A mismatch here does not error, it just returns nothing — so every
+   * affected player silently fell back to a season-pace number or a flat
+   * "no data, treat as a guess" floor everywhere his real recent production
+   * should have counted: the free-agent board, usage trends shown on the
+   * Wire tab, and recommend.js's "opportunities rose/fell" news line. Fixed
+   * at the one place all three callers share, rather than patching each
+   * separately — a fourth caller making the same mistake was exactly how
+   * this was found (recommend.js's usageSwing had it too). Names.hit
+   * already re-normalises internally, so an already-normalised string
+   * still matches — no caller needs to change what it passes. */
+  function bookTrend(name, throughWeek, n) {
     var out = [], w;
     for (w = throughWeek; w >= 1 && out.length < (n || 3); w--) {
-      var row = bookWeek(w)[key];
+      var bw = bookWeek(w);
+      var row = (root.Names && root.Names.hit) ? root.Names.hit(bw, name) : bw[name];
       if (row) out.push({ week: w, row: row });
       else if (weekIsScored(w)) out.push({ week: w, row: null });
     }
