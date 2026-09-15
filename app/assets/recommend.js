@@ -1006,6 +1006,7 @@
             'see what you are up against this week.'));
           oppAll.forEach(function (x) {
             var r2 = el('div', 'row');
+            if (ctx.markPlayer) ctx.markPlayer(r2, x.p.name, x.p.pos, x.p.nfl);
             r2.appendChild(el('div', 'slot', x.p.pos));
             var nm3 = el('div', 'nm');
             nm3.appendChild(document.createTextNode(x.p.name));
