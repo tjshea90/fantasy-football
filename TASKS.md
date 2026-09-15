@@ -1,6 +1,44 @@
 # TASKS — the current job, in Tj's words
 
-**There is no active job right now.** The most recent one (2026-09-15d: the
+## 2026-09-15e: comprehensive app-wide scan for improvements (code, function, UI)
+
+> "Do a comprehensive app wide scan for improvements in code and function
+> and ui. Take as long as you need and use as much usage as you need. Do a
+> thorough job. Improve the app as much as you can and I'll check back much
+> later"
+
+Open-ended, not scoped to a specific bug or feature — the whole app, all
+three axes (code quality, functional correctness, UI/UX). Per his standing
+preference (see the top of this session's system context): after major
+updates do a full sweep, take as much time as needed, don't introduce new
+bugs, keep everything resumable, and — the one hard boundary — "do not make
+any major changes unless I approve." So: real bugs get fixed outright;
+small/moderate code-quality and UI improvements get made outright; anything
+that would be a major redesign, a new feature, or a significant behavior
+change gets flagged/asked about rather than just done. He said he'll check
+back much later, so this runs autonomously — checkpoint after every real
+step, the way every job in this repo already does.
+
+- [ ] 1. Plan the sweep: split the ~13,400-line codebase into logical
+      review areas, use background research agents for the read-heavy
+      survey work (this app is large enough that a single linear read is
+      not the efficient path), and personally verify every finding before
+      acting on it — an agent's report describes what it found, not a
+      pre-approved patch.
+- [ ] 2. Triage findings: real bugs (fix), clear code-quality/efficiency
+      wins (fix), UI/UX polish within the existing design (fix), anything
+      "major" (flag for Tj rather than doing it unasked).
+- [ ] 3. Apply fixes in verified, tested batches — not one giant unreviewed
+      diff. Checkpoint after each batch via `tools/ckpt.sh`.
+- [ ] 4. A live-browser UI pass across every tab, the way earlier sessions
+      already have for smaller changes — this is the one thing a source
+      read cannot catch on its own.
+- [ ] 5. Full test suite + ES2018 gate + `bash build.sh` green before
+      calling this done. Ship as a new version if the accumulated changes
+      are ship-worthy; do not ship something untested because Tj said he
+      would check back later.
+
+**There is no OTHER active job right now.** The most recent one (2026-09-15d: the
 back button still closing the app on a real device, even after 2026-09-15c
 had already claimed to fix it) is complete, shipped as v6.3, and archived at
 the end of `LADDER.md` (§31) — full root-cause writeup in STATE.md's
