@@ -2421,3 +2421,69 @@ repeatedly.
 Shipped as v6.4. Release published and verified
 (`mcp__github__get_release_by_tag`: non-empty `assets`, correct
 `FFTracker-v6.4.apk`, 264345 bytes) before telling Tj.
+
+## 2026-09-15f: the app never advances past a finished NFL week
+
+> "Week 1 NFL is complete (after Monday games are final, the NFL week is
+> final and moves to the next week), yet the app still has all tabs open
+> to week 1. I want the app to automatically move to the next NFL week
+> after the previous week becomes final. All tabs across the entire app
+> should be on week 2 right now."
+
+**The mechanism to do this already existed and was already correct** —
+`syncCurrentWeek()` (ui.js) compares ESPN's own current-week number
+(`Espn.currentWeek()`, reading the scoreboard endpoint's `week.number`,
+which the code's own comment notes sits comfortably past Monday Night
+Football before flipping) against `week`, the one module-level variable
+every tab in this file reads for its own rendering. If ESPN's number is
+ahead, `applyCurrentWeek()` bumps `week`, invalidates the relevant caches,
+re-arms the live poll for the new week, and re-renders. Since every tab —
+Live, Lineups, Rosters, Wire, Stats, Advice, Data — already reads that
+same shared variable, there was never a per-tab state problem here; fixing
+where the CHECK fires was the whole job.
+
+**Where it fired was the bug.** `syncCurrentWeek()` was called from
+exactly one place: `boot()`, which only runs on a true cold start. This
+app deliberately does NOT tear its process down when backgrounded — an
+earlier session's own back-button fix specifically switched from
+`finish()` to `moveTaskToBack()` so that reopening the app is instant and
+nothing is destroyed. That is the correct choice for responsiveness, but
+it means `boot()` can go days without running again for anyone who does
+not force-quit the app — which is exactly the situation Tj described.
+Worse: `appResume()` (called on every real foreground resume, the far
+more common path) had its own early return — "a week that is finished
+stays finished, do not wake a poll for it" — which is precisely the state
+where the real NFL week having moved on is MOST likely, and there was no
+periodic re-check anywhere else to catch it regardless.
+
+Fixed by calling `syncCurrentWeek()` from `appResume()` too, placed BEFORE
+the "week already final" early return rather than after (placing it after
+would have meant it still only fired for a week the app did not yet think
+was finished — a no-op the one time it would actually matter).
+`syncCurrentWeek()` already carries its own 3-hour staleness cache, so
+calling it on every resume is free on the common case: back-to-back
+resumes within that window just re-apply the cached answer rather than
+re-fetching. `applyCurrentWeek()`'s own guard (`clamped <= week` is a
+no-op) makes the extra call safe even when nothing has changed.
+
+Verified end-to-end, not just by reading the source: `tools/
+test_lifecycle.js` is the one suite that actually executes ui.js against a
+DOM stub (every other suite either tests a module in isolation or asserts
+on source text). Extended it to stub `Espn.currentWeek()` directly,
+marked week 1 as `synced && allFinal` in `weekMeta` — the exact state Tj
+described — called `appResume()`, and confirmed `S.settings.currentWeek`
+actually advances from 1 to 2 once the promise chain resolves. A
+source-text pin in `tools/test_boot.js` separately confirms the call site
+exists in `appResume()` and sits before the early return, so a future edit
+cannot silently move it back to the wrong side of that check without
+turning the suite red. All 14 suites + the ES2018 gate green, `bash
+build.sh` clean (28 classes).
+
+**This does not retroactively fix a session already running on Tj's
+phone** — there is no way to push a live update into an already-running
+process. He needs to background and reopen the app (or fully close and
+relaunch) once this version installs; the very next resume will catch the
+week-1-to-2 transition and move every tab to week 2 together, the way the
+mechanism was always designed to.
+
+Shipped as v6.5.
