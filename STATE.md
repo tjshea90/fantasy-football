@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-15** · ladder 0-17 COMPLETE · **v5.9**, shipping next · APK builds, signed, all 14 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-15** · ladder 158/160 · **v6.4**, shipped · APK builds, signed, all 14 test suites green · now on GitHub, worked across three Claude accounts
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
