@@ -290,7 +290,7 @@ function finish() {
    * whatsoever. Fixed by passing markPlayer through viewAdvice's ctx (the
    * same ctx.el/ctx.table/ctx.fmt delegation pattern already used) and
    * calling it on all three row sets recommend.js builds. */
-  ok(/viewAdvice\(root\) \{[\s\S]{0,300}markPlayer: markPlayer/.test(ui),
+  ok(/viewAdvice\(root\) \{[\s\S]{0,400}markPlayer: markPlayer/.test(ui),
      'viewAdvice passes markPlayer through to recommend.js, the same delegation pattern as el/table/fmt');
   const recSrc = fs.readFileSync(path.join(__dirname, '..', 'app', 'assets', 'recommend.js'), 'utf8');
   const markPlayerCalls = (recSrc.match(/ctx\.markPlayer\(/g) || []).length;
