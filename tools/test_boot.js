@@ -735,6 +735,20 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
      'and the row cells push Pts BEFORE the stat-column loop runs, matching the header order exactly');
 }());
 
+/* ---- stats.js's team browser now follows ctx.week too (review finding,
+ * 2026-09-15e) — the same shape of bug topCard's own comment documents
+ * fixing once already (Top Players stuck on a stale week after navigating
+ * via the header). teamPickerCard/teamRosterCard used S.settings.currentWeek
+ * — "the real current NFL week" — as the ceiling for which weeks a team's
+ * browsable roster defaults to and offers, instead of ctx.week — the
+ * header's globally-shared selected week every other tab honors — so
+ * browsing a team while reviewing an earlier week via the header silently
+ * jumped back to the current week's game instead of respecting the
+ * selection. */
+ok(!/currentWeek/.test(stH), 'stats.js no longer reads S.settings.currentWeek anywhere — ctx.week is the only source of "which week" now');
+ok((stH.match(/var through = ctx\.week/g) || []).length === 2,
+   'both teamPickerCard\'s click handler and teamRosterCard use ctx.week for the browsable-weeks ceiling');
+
 /* ---- recommend.js's usageSwing() also resolves book lookups tolerantly
  * now (review finding, 2026-09-15e) — same fix as Store.bookTrend() itself
  * (proven directly, with real data, in tools/test_integration.js's §20);
