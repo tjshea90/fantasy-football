@@ -2802,6 +2802,10 @@
     c.appendChild(auto);
     root.appendChild(c);
 
+    addSafe(root, 'Weekly recap', weeklyRecapCard);
+    root.appendChild(scoringCard());
+  }
+  function viewDataSync(root) {
     /* sync + diagnostics */
     var c2 = el('div', 'card');
     c2.appendChild(el('h2', null, 'Stats feed'));
