@@ -1,12 +1,12 @@
-# CHECKPOINT 454 — read me first, then TASKS.md
+# CHECKPOINT 473 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T17:47:40Z · **version:** 6.7 · **tests:** all 14 suites green
+**Written:** 2026-09-15T18:11:32Z · **version:** 6.7 · **tests:** all 15 suites green
 
 ## Just done
-Recorded new job 2026-09-15i in TASKS.md: a real premise change -- Tj will only track his own and his weekly opponent's lineups, never the other 8 teams'. Need to find and remove everything assuming other teams' weekly lineups, then assess whether deducing a team's starters from their roster's per-player points and a manually-typed total score is actually feasible (position-slot-constrained subset-sum against real scoring data -- ties and ambiguity are a real risk, feasibility must be checked before promising it), and either implement it cleanly or remove the lineup-assuming code if it doesn't hold up.
+Removed the other-teams-weekly-lineup assumption from recap.js/sim.js per Tj's request (he only ever tracks his own + his weekly opponent's real lineup). Built Store.inferLineup() — a slot-constrained backtracking solver that works backward from a team's manually-entered score to which of their own roster's players summed to it, stress-tested at 29/30 unique on realistic data — and wired it into recap.js's starters/busts/bench-regret (only trusted when unique, never guessed). Fixed 3 independent teamWeekPoints-vs-teamWeekScore bugs in sim.js (allPlay/teamProfile/season) plus a .pts/.total typo that was silently producing NaN season projections. Removed Sim.matchup/lineupMeans (confirmed zero callers, and their premise no longer holds for 8 of 10 teams). New tools/test_recap.js (22 real-execution assertions) plus a live-browser check of the actual recap dialog, both green; full suite + ES2018 gate + build.sh all green.
 
 ## Do this next
-Start step 1: grep the whole app for every place that reads Store.getLineup/lineup-derived data for a team that is not S.league.me and not that week's opponent -- recap.js's build() (best/worst starter, biggest bust, bench regret) is the known one, but check value.js, sim.js, standings and anywhere else iterating S.teams. Then step 2: assess deduction feasibility with real data before deciding whether to build it.
+TASKS.md's 2026-09-15i job is fully done (all 4 boxes ticked with proof) and not yet shipped — next step is bash ship.sh, then the standard post-ship GitHub Release + STATE.md/LADDER.md write-up.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a083cad ckpt 454: Recorded new job 2026-09-15i in TASKS.md: a real premise change -- Tj will onl
   b7104ad ckpt 451: v6.7 shipped and verified: GitHub Release published (non-empty assets, FFTrack
   adb8ee4 ship v6.7: 2026-09-15g: wired up the weekly recap Claude write-up feature (Recap.build/t
   6989a9e ckpt 448: Removed two scratch Playwright test scripts (tools/_data_tab_check.js, tools/_
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   dafed68 ckpt 424: Documented 2026-09-15h fix: TASKS.md job entry with steps 1-3 ticked (step 4 p
   687d92b ckpt 420: Fixed the week-advance bug for real this time (Tj reported it persisting even 
   336f833 ckpt 414: In progress on 2026-09-15g (recap feature + Data tab sub-nav): built weeklyRec
-  a0d725b ckpt 403: Recorded new job 2026-09-15g in TASKS.md: wire up the weekly recap Claude writ
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(18 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
