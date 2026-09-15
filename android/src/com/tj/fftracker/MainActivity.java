@@ -391,6 +391,15 @@ public class MainActivity extends Activity {
   }
 
   @Override protected void onDestroy() {
+    // NativeBridge's pool is 3 plain (non-daemon) threads — left running they
+    // would keep the process alive past the Activity, and every queued or
+    // in-flight Runnable holds a reference to `web`, which is about to be
+    // destroyed and nulled out below. Shut it down first, before the WebView
+    // itself goes, so nothing pool-side races the teardown.
+    if (bridge != null) {
+      try { bridge.shutdown(); } catch (Throwable ignored) { }
+      bridge = null;
+    }
     if (web != null) {
       try {
         ViewGroup p = (ViewGroup) web.getParent();
