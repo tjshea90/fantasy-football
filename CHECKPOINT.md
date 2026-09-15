@@ -1,12 +1,12 @@
-# CHECKPOINT 381 — read me first, then TASKS.md
+# CHECKPOINT 389 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T15:32:39Z · **version:** 6.4 · **tests:** all 14 suites green
+**Written:** 2026-09-15T16:34:21Z · **version:** 6.4 · **tests:** all 14 suites green
 
 ## Just done
-Post-ship documentation finalized: STATE.md's 2026-09-15e entry closed with the verified Shipped-as-v6.4 line (release confirmed via mcp__github__get_release_by_tag -- non-empty assets, FFTracker-v6.4.apk uploaded at 264345 bytes, correct content type); STATE.md's header line updated from a stale 'v5.9, shipping next' to 'v6.4, shipped'; TASKS.md reset to 'no active job' per the standing convention now that 2026-09-15e is fully archived at LADDER.md ss32; the phone-confirmation request in Waiting on Tj updated from v6.3 to v6.4 (which carries the identical back-button fix forward unchanged, so confirming v6.4 covers both) and the older v6.2/v6.1 entries' supersession notes updated to match.
+Fixed: the app never advanced past a finished NFL week unless truly cold-booted (Tj, 2026-09-15: 'week 1 NFL is complete... yet the app still has all tabs open to week 1'). Root cause: syncCurrentWeek() -- the check that compares ESPN's own current-week number against what the app is showing, and advances week (the one module-level variable every tab reads) if it fell behind -- was called ONLY from boot(), a true cold start. This app deliberately keeps its process alive across background/foreground (moveTaskToBack, not finish(), on back press -- an earlier session's own fix), so anyone who does not force-quit the app could go days without boot() ever running again, and the check never got a second chance to fire. Made worse by appResume()'s own 'a week that is finished stays finished, do not wake a poll for it' early return, which is exactly the state where the real week having moved on is most likely -- it was short-circuiting past the one place a periodic re-check could have lived, and there wasn't one anyway. Fixed by calling syncCurrentWeek() from appResume() too, placed BEFORE that early return; it has its own 3-hour staleness cache so this is free on the common case. Since week is one shared module-level variable every tab (Live, Lineups, Rosters, Wire, Stats, Advice, Data) already reads, this one fix moves ALL of them together -- there was never a per-tab state problem, only a per-resume one. Proven end-to-end (not just source-text pinned) in tools/test_lifecycle.js with a real Espn.currentWeek stub: week 1 marked synced+final, appResume() called, week correctly advances to 2. Source-text pin in test_boot.js confirms both the call site and that it runs before the early-return. All 14 suites + ES2018 gate green, bash build.sh clean (28 classes).
 
 ## Do this next
-Nothing pending -- the 2026-09-15e sweep is fully shipped, documented, archived and verified end to end. GitHub Release for v6.4 is live and confirmed working (https://github.com/tjshea90/fantasy-football/releases/tag/v6.4). Next step is sending Tj the release message per CLAUDE.md's exact required shape (plain tappable link, never a code block), then the session is done unless Tj responds with something new -- per his own 'I'll check back much later,' no further autonomous work is expected until he does.
+This does not retroactively fix Tj's currently-running app session -- there is no way to push a live update into an already-running process. He needs to background and reopen the app (or fully close/relaunch) once this ships for the fix to take effect; the very next resume will catch the week-1-to-2 transition. Should tell him this plainly when reporting the fix, not just say 'fixed' and imply his current screen will update itself. Next: ship this as a new version (bash ship.sh) and follow the standing GitHub Release process (trigger publish-release.yml, verify, send the plain tappable link) since this is a real, verified, reported bug fix worth shipping on its own rather than batching with unrelated future work.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  59a5289 ckpt 381: Post-ship documentation finalized: STATE.md's 2026-09-15e entry closed with th
   1eeaf7d ship v6.4: 2026-09-15e comprehensive app-wide sweep: 5 rounds of verified fixes (data in
   deb0d7c ckpt 374: Wrap-up of the 2026-09-15e comprehensive sweep: ticked all 5 job steps in TASK
   e68baf4 ckpt 361: Small-fixes batch complete (2026-09-15e sweep), final items. (12) recommend.js
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   17a02e8 ckpt 299: Round 4 (Android hardening) finished. (a) NativeBridge's pool is stored as a f
   b14b738 ckpt 291: Round 4 (Android hardening) complete: fixed alertsTest()'s synchronous up-to-1
   8337f3a ckpt 281: Sweep round 3 (UI/feature correctness): fixed four real bugs. (1) claudeAdvice
-  669bdca ckpt 264: Sweep round 2 (value.js correctness): fixed two real bugs. (1) Store.bookTrend
 ```
 
-(5 automatic checkpoint(s) since the last deliberate one — the
+(7 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
