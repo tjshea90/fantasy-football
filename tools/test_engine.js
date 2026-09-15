@@ -86,7 +86,7 @@ var Sc = root.Scoring, Espn = root.Espn, Proj = root.Projections;
     setItem: function (k, v) { this._d[k] = v; }
   };
   root.Native = null;
-  root.Store = { get: function () { return { settings: { aiBudget: 20 } }; } };
+  root.Store = { get: function () { return { settings: {} }; } };
   load('usage.js');
   var U = root.Usage;
   U.load(); U.reset();
