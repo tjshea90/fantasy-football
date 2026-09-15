@@ -613,6 +613,8 @@ var me = S.league.me;
   W.Recommend.mergeAi(wk, { byName: byName, at: Date.now() }, {});
 
   var ctx = W.Recommend.rosterContext(wk, me, null);
+  console.log('DEBUG t.players.length=' + t.players.length + ' ctx.players.length=' + ctx.players.length);
+  ctx.players.forEach(function (p) { console.log('  DEBUG research:', p.name, '|', p.why); });
   ok(ctx.players.length === 0, 'sanity: every roster player is now "carried forward" — nothing left to research');
 
   var est = W.Recommend.claudeAdviceEstimate(wk, me);
