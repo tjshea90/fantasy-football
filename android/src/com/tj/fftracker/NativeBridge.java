@@ -58,6 +58,19 @@ public class NativeBridge {
   /** MainActivity hands us the WebView so a finished request can wake the page. */
   void attach(WebView w) { this.web = w; }
 
+  /** MainActivity.onDestroy() calls this. The pool's 3 threads are daemon-less
+   *  (Executors.newFixedThreadPool uses normal threads), so without an explicit
+   *  shutdown they would keep the process alive after the Activity is gone —
+   *  and every in-flight pool Runnable above still holds a reference to `web`,
+   *  which onDestroy() is about to tear down and null out. shutdownNow() drops
+   *  queued work and interrupts anything running rather than waiting for a
+   *  slow network call to finish; nothing here needs to complete once the
+   *  Activity is going away, and no result any of it could produce would have
+   *  anywhere left to be delivered. */
+  void shutdown() {
+    try { pool.shutdownNow(); } catch (Throwable ignored) { }
+  }
+
   private void notifyPage(final String id) {
     final WebView w = web;
     if (w == null) return;
