@@ -107,82 +107,15 @@
     cvCache = { through: throughWeek, map: map };
     return map;
   }
-  function invalidate() { cvCache = null; projCache = {}; }
+  function invalidate() { cvCache = null; }
 
-  /* ---- one team's starting lineup, as means -------------------------------
-   * A player whose game is already in the books is not a random variable any
-   * more: he is a number. That is what makes this a LIVE win probability
-   * rather than a pre-game one — as the afternoon goes on, the distribution
-   * collapses onto the truth. */
-  var projCache = {};
-  function lineupMeans(week, teamId, opponents) {
-    var ck = week + '|' + teamId;
-    if (projCache[ck]) return projCache[ck];
-    var lineup = root.Store.getLineup(week, teamId) || {};
-    var proj = {}, out = { fixed: 0, live: [], done: 0, left: 0, names: [] };
-    root.Recommend.projectAll(week, teamId, opponents).forEach(function (x) {
-      proj[x.p.id] = x;
-    });
-    var keys = root.Store.slotKeys(), i;
-    for (i = 0; i < keys.length; i++) {
-      var pid = lineup[keys[i].key];
-      if (!pid) { out.left++; continue; }
-      var line = root.Store.lineFor(week, pid);
-      var x2 = proj[pid];
-      var p = root.Store.playerById(pid);
-      if (line && line.played) {
-        out.fixed += root.Scoring.score(line).total;
-        out.done++;
-      } else {
-        out.live.push({ pid: pid, pos: (p && p.player) ? p.player.pos : 'WR',
-                        name: (p && p.player) ? p.player.name : pid,
-                        mean: x2 ? x2.proj : 0 });
-        out.left++;
-        if (p && p.player) out.names.push(p.player.name);
-      }
-    }
-    projCache[ck] = out;
-    return out;
-  }
-
-  /* ---- one matchup ------------------------------------------------------ */
-  function matchup(week, aId, bId, opponents) {
-    var cv = positionCV(week);
-    var A = lineupMeans(week, aId, opponents), B = lineupMeans(week, bId, opponents);
-    function meanOf(T) {
-      var m = T.fixed, i;
-      for (i = 0; i < T.live.length; i++) m += T.live[i].mean;
-      return m;
-    }
-    var r = rng(hash(week + aId + bId)), i, j, aw = 0, bw = 0, tie = 0, sumA = 0, sumB = 0;
-    var margins = [];
-    for (i = 0; i < SIMS; i++) {
-      var ta = A.fixed, tb = B.fixed;
-      for (j = 0; j < A.live.length; j++) {
-        ta += draw(r, A.live[j].mean, (cv[A.live[j].pos] || cv.WR).cv);
-      }
-      for (j = 0; j < B.live.length; j++) {
-        tb += draw(r, B.live[j].mean, (cv[B.live[j].pos] || cv.WR).cv);
-      }
-      sumA += ta; sumB += tb; margins.push(ta - tb);
-      if (ta > tb) aw++; else if (tb > ta) bw++; else tie++;
-    }
-    margins.sort(function (x, y) { return x - y; });
-    return {
-      week: week, a: aId, b: bId, sims: SIMS,
-      pA: aw / SIMS, pB: bw / SIMS, pTie: tie / SIMS,
-      meanA: meanOf(A), meanB: meanOf(B),
-      projA: sumA / SIMS, projB: sumB / SIMS,
-      doneA: A.done, doneB: B.done, leftA: A.live.length, leftB: B.live.length,
-      fixedA: A.fixed, fixedB: B.fixed,
-      p10: margins[Math.floor(SIMS * 0.1)], p90: margins[Math.floor(SIMS * 0.9)],
-      /* what each side still needs from the players it has left, measured
-         against where the other side is projected to finish */
-      needA: Math.max(0, (sumB / SIMS) - A.fixed),
-      needB: Math.max(0, (sumA / SIMS) - B.fixed),
-      liveA: A.live, liveB: B.live
-    };
-  }
+  /* lineupMeans()/matchup() — a live win-probability simulator between any
+   * two teams' lineups — were removed 2026-09-15i. They had zero callers
+   * anywhere in the app or the test suite (confirmed by grep before
+   * deletion), and their premise — a real, slot-by-slot lineup for BOTH
+   * sides — no longer holds for 8 of the league's 10 teams: Tj now tracks
+   * a real lineup only for his own team and that week's opponent. Bringing
+   * this back later would mean rebuilding it for that pair specifically. */
 
   /* ---- all-play: the record you would have if you played everyone ---------
    * The single most honest number in a fantasy league. Your record depends on
