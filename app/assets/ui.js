@@ -417,6 +417,7 @@
       c.appendChild(el('div', 'subhd', 'Already starting, playing early'));
       a.starting.forEach(function (r) {
         var row = el('div', 'row');
+        markPlayer(row, r.name, r.pos, r.nfl);
         row.appendChild(el('div', 'slot', r.slot || r.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(r.name));
