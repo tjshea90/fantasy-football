@@ -1019,7 +1019,7 @@
   /* ---------- header ---------- */
   function renderHeader() {
     var names = { live: 'Live', lineups: 'Lineups', rosters: 'Rosters', wire: 'Wire',
-                  advice: 'Advice', data: 'Data' };
+                  stats: 'Stats', advice: 'Advice', data: 'Data' };
     $('title').textContent = names[view] || 'Tracker';
     $('wkLabel').textContent = 'Wk ' + week;
     var m = S.weekMeta[String(week)];
