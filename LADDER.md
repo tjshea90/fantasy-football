@@ -923,3 +923,58 @@ re-verified live in the same browser harness, reproducing Tj's exact steps
 programmatically. Shipped as v6.1 same session.
 
 All 13 suites green throughout.
+
+## 30. Rosters reorder, back button, app-resume state, no splash flash, Claude cost estimates, bench "why not", PlayerDB auto-refresh, full sweep (Tj, 2026-09-15, v6.2)
+
+Full verbatim request, and the full write-up of both the original 7 items
+and everything the item-8 sweep found and fixed, are in STATE.md's
+2026-09-15c entry — not repeated here.
+
+- [x] 1. Rosters tab: team roster card(s) above the trade evaluator, not
+      below. Proven live in a browser (card order confirmed).
+- [x] 2. Android back button unwinds in-app visit history instead of
+      exiting to the home screen. Already fixed earlier the same session;
+      proven by `tools/test_lifecycle.js`.
+- [x] 3. App resume restores the last-viewed tab instead of always landing
+      on Live (`S.settings.lastTab`, persisted on every tab change,
+      restored in `boot()`). Code-reviewed; cannot be confirmed further
+      without a real device — carried to TASKS.md's "Waiting on Tj".
+- [x] 4. No splash-logo flash on resume, as far as the platform allows:
+      `WebView.setBackgroundColor` below API 31, `values-v31/styles.xml` +
+      an empty splash icon on API 31+ (no manifest flag disables the OS
+      splash outright). `bash build.sh` confirms both new Android
+      resources actually compile; visual result needs a real device.
+- [x] 5. Every "Claude usage remaining" display removed; replaced with a
+      live per-call cost estimate (`Usage.estimate()`) built from the SAME
+      functions the real Claude calls use, so it can never disagree with
+      what a press would actually send. Proven live in a browser (Data
+      tab's "Claude costs" card) and by `tools/test_engine.js`.
+- [x] 6. Bench players on the Advice tab get the same Claude "why not to
+      start him" explanation starters already got — reused `why[]`, which
+      `projectAll()` already built for every roster player. Proven by a
+      data-layer check: every bench player carries a non-empty `why[]`.
+- [x] 7. PlayerDB auto-refreshes at least every 2 days and whenever the
+      waiver wire is checked or refreshed, manual button kept. Found and
+      fixed a real bug along the way: a fully-failed refresh used to stamp
+      itself as current anyway, masking itself from ever being retried.
+      Proven by new `tools/test_boot.js` coverage.
+- [x] 8. Full sweep: a live-browser walkthrough of all 7 tabs found nothing
+      real. An independent code-quality review of the full diff (a
+      background agent, given the exact diff and feature descriptions)
+      found two real concurrency bugs in item 7's auto-refresh — the
+      manual button bypassing the single-flight guard (risk of duplicate
+      database entries), and an unthrottled offline retry storm on the
+      Wire tab — both fixed, plus the two Claude cost-estimate functions
+      memoised (they were recomputing a full roster/free-agent scan on
+      every render). The memoisation edit itself introduced a `root.Store`
+      `ReferenceError` (`ui.js` is the one module where `root` isn't
+      `window`) — caught by re-running the live-browser check, since no
+      unit suite loads `ui.js` against a real DOM. Proven by new
+      `tools/test_boot.js` (a real, fast concurrency test — every ESPN
+      candidate resolves immediately so the retry-backoff path is never
+      hit) and `tools/test_integration.js` (the memoised estimate proven to
+      change immediately when a price rate changes).
+
+Shipped as v6.2. Release published and verified (`mcp__github__get_
+release_by_tag`, non-empty assets, correct content type) before telling
+Tj. All 13 suites green throughout, `bash build.sh` run clean twice.
