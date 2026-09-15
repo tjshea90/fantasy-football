@@ -542,3 +542,8 @@ Continue this session where you left off
 ```
 Week 1 NFL is complete (after Monday games are final, the NFL week is final and moves to the next week), yet the app still has all tabs open to week 1. I want the app to automatically move to the next NFL week after the previous week becomes final. All tabs across the entire app should be on week 2 right now. 
 ```
+
+## 2026-09-15T16:38:26Z
+```
+Build The "weekly recap" Claude write-up feature you told me about. Make the button where it is most appropriate but it shouldn't push away any major feature because I probably won't use it much. Then organize the data tab with sub navigation that is smart and easy to understand. When you are done, test that it all works and didn't break anything else in the app
+```
