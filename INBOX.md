@@ -537,3 +537,8 @@ Do a comprehensive app wide scan for improvements in code and function and ui. T
 ```
 Continue this session where you left off 
 ```
+
+## 2026-09-15T16:28:11Z
+```
+Week 1 NFL is complete (after Monday games are final, the NFL week is final and moves to the next week), yet the app still has all tabs open to week 1. I want the app to automatically move to the next NFL week after the previous week becomes final. All tabs across the entire app should be on week 2 right now. 
+```
