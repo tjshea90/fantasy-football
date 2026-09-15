@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (API 31) ONLY: the platform shows its OWN automatic splash
+     screen on every cold start — including an OS-forced Activity recreation
+     after the process was killed in the background, which on a real phone
+     is common for a single-Activity app — using the launcher icon, no matter
+     what this app does. Tj: "when I switch back to the app, it splashes the
+     app logo first. I want no delays."
+
+     There is no manifest flag to opt an app OUT of the platform splash
+     screen entirely — it is baseline OS behaviour on API 31+, not
+     something this app can disable outright. What CAN be controlled: its
+     background colour, and its icon. Both are overridden here so what
+     actually shows is a plain screen already in the app's own colour
+     (matching @color/bg exactly, so there is no visible colour change at
+     all) with an empty icon instead of the launcher logo — as close to
+     "no splash" as the platform allows without a splash-screen library
+     this hand-rolled, no-Gradle build does not carry.
+
+     Below API 31 this file does not apply at all (no such directory is
+     read), and there was never an automatic OS splash there to begin
+     with — only WebView's own white-flash-before-content, fixed
+     separately in MainActivity.java via web.setBackgroundColor(). -->
+<resources>
+  <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+    <item name="android:windowBackground">@color/bg</item>
+    <item name="android:statusBarColor">@color/bg</item>
+    <item name="android:navigationBarColor">@color/bg</item>
+    <item name="android:windowSplashScreenBackground">@color/bg</item>
+    <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_empty</item>
+    <item name="android:windowSplashScreenIconBackgroundColor">@color/bg</item>
+  </style>
+</resources>
