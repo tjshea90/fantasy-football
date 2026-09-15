@@ -1,12 +1,12 @@
-# CHECKPOINT 448 — read me first, then TASKS.md
+# CHECKPOINT 451 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T17:02:47Z · **version:** 6.6 · **tests:** all 14 suites green
+**Written:** 2026-09-15T17:03:45Z · **version:** 6.7 · **tests:** all 14 suites green
 
 ## Just done
-Removed two scratch Playwright test scripts (tools/_data_tab_check.js, tools/_recap_check.js) that were used for manual live-browser verification of the recap feature/Data tab sub-nav and got auto-committed by the autosave hook -- an earlier cleanup attempt did not actually take effect (likely a shell exit-code issue in a compound rm command), left undetected until ship.sh's bootstrap/MANIFEST check caught them as 'on disk but not in MANIFEST.'
+v6.7 shipped and verified: GitHub Release published (non-empty assets, FFTracker-v6.7.apk at 264345 bytes, correct content type) before telling Tj. STATE.md header updated to v6.7/ladder 168-170.
 
 ## Do this next
-Re-run bash ship.sh now that the working tree is clean and matches MANIFEST.txt.
+Nothing pending -- both the interrupting week-advance bug (2026-09-15h, v6.6) and the originally-requested recap feature + Data tab sub-nav (2026-09-15g, v6.7) are fully shipped, documented, archived and verified. Session idles unless Tj responds with something new.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  adb8ee4 ship v6.7: 2026-09-15g: wired up the weekly recap Claude write-up feature (Recap.build/t
+  6989a9e ckpt 448: Removed two scratch Playwright test scripts (tools/_data_tab_check.js, tools/_
   3f6499e ckpt 446: 2026-09-15g documentation complete: TASKS.md ticked with full proof and reset 
   f923c2d ckpt 428: v6.6 shipped and verified: GitHub Release published (non-empty assets, FFTrack
   a2f35cf ship v6.6: 2026-09-15h: the week-advance fix still failed on a true cold boot -- added l
@@ -34,8 +36,6 @@ request in his own words and `git log` carries every step already taken.
   336f833 ckpt 414: In progress on 2026-09-15g (recap feature + Data tab sub-nav): built weeklyRec
   a0d725b ckpt 403: Recorded new job 2026-09-15g in TASKS.md: wire up the weekly recap Claude writ
   fcbbbcb ckpt 400: v6.5 shipped and verified: GitHub Release published (mcp__github__get_release_
-  5c03345 ship v6.5: 2026-09-15f: fixed the app never advancing past a finished NFL week unless tr
-  d043179 ckpt 397: Documented the week-auto-advance fix: TASKS.md job entry ticked with full proo
 ```
 
 (1 automatic checkpoint(s) since the last deliberate one — the
