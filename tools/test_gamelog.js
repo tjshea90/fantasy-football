@@ -152,6 +152,19 @@ function run() {
     return W.Gamelog.teamWeek('NE', 10).then(function () {
       ok(gameStatsCalls === callsBefore + 1, 'a cached \'in\' entry still re-fetches on the next plain read (live scores move)');
     });
+    /* ---- a real network failure must never read as "no games yet" ------- */
+    W.Store.get().byes.XX = 0;
+    return W.Gamelog.playerLog({ n: 'Nobody Real', p: 'QB', t: 'XX' }, 20);
+  }).then(function () {
+    ok(false, 'playerLog should have rejected when every week failed to fetch, not resolved quietly');
+  }, function (e) {
+    ok(/could not reach the network/.test(e.message), 'playerLog surfaces a real fetch failure instead of "no games" (got: ' + e.message + ')');
+  }).then(function () {
+    return W.Gamelog.weekPositionTops(20);
+  }).then(function () {
+    ok(false, 'weekPositionTops should have rejected when every game that week failed to fetch, not resolved quietly');
+  }, function (e) {
+    ok(/could not reach the network/.test(e.message), 'weekPositionTops surfaces a real fetch failure instead of empty buckets (got: ' + e.message + ')');
   }).then(function () {
     console.log(fails === 0 ? ('  OK  gamelog behaves correctly — 0 failures')
                              : ('  ' + fails + ' gamelog assertion(s) FAILED'));
