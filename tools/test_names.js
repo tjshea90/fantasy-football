@@ -67,6 +67,15 @@ ok(N.canon('Amon-Ra St. Brown').indexOf('robert') < 0,
 ok(N.canon('Will Shipley') === N.canon('William Shipley'), 'Will/William fold');
 ok(N.canon('Cam Ward') === N.canon('Cameron Ward'), 'Cam/Cameron fold');
 ok(N.canon('Mike Evans') === N.canon('Michael Evans'), 'Mike/Michael fold');
+/* 2026-09-15e sweep: 'gabe davis'/'gabriel davis' used to also be a curated
+   ALIAS_PAIRS entry — removed as redundant once traced by hand: the generic
+   gabriel: ['gabe'] NICK entry already folds canon() both directions AND
+   variants() already generates the other spelling, so the explicit pair
+   contributed nothing. Pinned here, in the generic-fold section rather than
+   "explicit aliases" below, precisely because it no longer is one. */
+ok(N.canon('Gabe Davis') === N.canon('Gabriel Davis'), 'Gabe/Gabriel fold (generically, not via a curated alias)');
+ok(N.variants('Gabriel Davis').indexOf('gabe davis') >= 0,
+   'and variants() still generates the short form without a curated entry for this specific player');
 ok(N.canon('D.J. Moore') === N.canon('DJ Moore'),
    'punctuation is already handled by normalisation');
 
