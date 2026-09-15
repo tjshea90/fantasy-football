@@ -177,8 +177,8 @@
    * to led.calls again — so a live number grounded in TODAY's real prompt
    * and triage size is the accurate answer, not a frozen average from
    * before he removed the key. */
-  function estimate(promptChars, searches, outputTokens) {
-    var r = rates();
+  function estimate(promptChars, searches, outputTokens, model) {
+    var r = rates(model);
     var inTok = n(promptChars) / 4;
     return inTok / 1e6 * r.inPerM + n(outputTokens) / 1e6 * r.outPerM +
            n(searches) / 1000 * r.searchPer1000;
