@@ -890,9 +890,18 @@
     d.addEventListener('touchcancel', lpCancel, { passive: true });
     /* capturing phase, so this runs and can stop the click BEFORE it ever
        reaches a row's own tap handler (e.g. showPlayer, or "Add" on a
-       free-agent row) */
+       free-agent row). 2026-09-15e sweep: this used to suppress ANY click
+       anywhere in the document for 400ms, not just the one synthetic click
+       this exists to stop — so tapping Cancel or View in the dialog that
+       openPlayerStatsMenu just opened (a separate DOM subtree, not the row)
+       inside that same window silently did nothing. Scoped to clicks that
+       land back on the SAME row that triggered the long press; the dialog's
+       own buttons are never that row, so they were never meant to be caught
+       by this at all. */
     d.addEventListener('click', function (e) {
-      if (Date.now() < lpSuppressClickUntil) { e.stopPropagation(); e.preventDefault(); }
+      if (Date.now() < lpSuppressClickUntil && findPlayerRow(e.target) === lpSuppressRow) {
+        e.stopPropagation(); e.preventDefault();
+      }
     }, true);
     /* desktop/browser testing: right-click reaches the same menu */
     d.addEventListener('contextmenu', function (e) {
