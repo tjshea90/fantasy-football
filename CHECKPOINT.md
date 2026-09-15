@@ -1,12 +1,12 @@
-# CHECKPOINT 226 — read me first, then TASKS.md
+# CHECKPOINT 230 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T07:42:17Z · **version:** 6.3 · **tests:** all 14 suites green
+**Written:** 2026-09-15T07:49:05Z · **version:** 6.3 · **tests:** all 14 suites green
 
 ## Just done
-Wrote Tj's comprehensive app-wide improvement request to TASKS.md (2026-09-15e): full sweep for code/function/UI improvements, no specific bug reported this time, he'll check back much later so this runs autonomously
+UI sweep finding #1 (Live tab): player names were truncating mid-word in the two-column matchup view ('Jaylen Warr...', 'Baltimore ...') -- confirmed with a live browser screenshot. Fixed with the standard fantasy-app shorthand (shortName(): 'M. Stafford'), scoped to lineupDetail() (the Live tab's halfbox view only, where DEF names are left full). Verified with a real extracted-and-executed unit test (not just source pins) plus a fresh screenshot showing every name fully readable. All 13 suites + ES2018 gate green.
 
 ## Do this next
-Plan and dispatch parallel background review agents across logical codebase areas (data/scoring core, network/sync layer, AI/Claude integration, UI layer in 2 halves, Android/Java shell), then personally triage and verify every finding before applying any fix. Real bugs and clear improvements get fixed; anything 'major' gets flagged for Tj rather than done unasked.
+6 background review agents are still running across the whole codebase (data/scoring core, network/sync, AI integration, UI part 1, UI part 2, Android/Java shell). Continue the live-browser UI walkthrough myself in the meantime; triage and apply their findings as each reports back.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  1827e5c ckpt 226: Wrote Tj's comprehensive app-wide improvement request to TASKS.md (2026-09-15e
   882ace6 ckpt 223: Shipped v6.3, triggered and verified the GitHub Release (non-empty asset, corr
   f21a19e ship v6.3: Real back-button fix: registered the platform OnBackInvokedCallback (API 33+)
   b518033 ckpt 218: Fixed the real back-button regression: registered android.window.OnBackInvoked
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   d30a945 ckpt 198: Item 8 (full sweep) complete: live-browser walkthrough of all 7 tabs found no 
   bfaec3e ckpt 178: Item 7 done: PlayerDB.ensureFresh() auto-refreshes the player database quietly
   e85f9ca ckpt 164: Verified item 6 (bench 'why not' explanations): all 13 test suites + ES2018 ga
-  54cdf5a ckpt 162: item 5 done: removed every 'how much Claude usage I have left' display and rep
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
