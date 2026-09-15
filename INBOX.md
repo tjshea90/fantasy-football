@@ -107,3 +107,8 @@ After all these are finished, run tests that everything works and everything is 
 ```
 The back button still closes the app to my home screen
 ```
+
+## 2026-09-15T07:41:10Z
+```
+Do a comprehensive app wide scan for improvements in code and function and ui. Take as long as you need and use as much usage as you need. Do a thorough job. Improve the app as much as you can and I'll check back much later
+```
