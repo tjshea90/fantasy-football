@@ -606,10 +606,13 @@
    * resume is a handful of requests a day, not a poll. */
   /* Same "quiet, only if actually stale" shape as freshenSchedule() below,
    * for the player database instead of the week's kickoff schedule. Never
-   * awaited by a caller — it runs in the background and re-renders only if
-   * it actually changed something. See playerdb.js's own ensureFresh() for
-   * the staleness rule (2 days) and why a fully-failed attempt no longer
-   * masks itself from being retried. */
+   * awaited by a caller — it runs in the background and re-renders whenever
+   * an attempt actually ran (success OR failure — same as freshenSchedule's
+   * own re-render below), never when ensureFresh() short-circuited without
+   * touching the network. See playerdb.js's own ensureFresh() for the
+   * staleness rule (2 days), the retry cooldown that keeps a failed attempt
+   * from re-triggering itself through this very re-render forever, and why
+   * a fully-failed attempt no longer masks itself from being retried. */
   function refreshPlayerDBIfStale() {
     if (!window.PlayerDB || !PlayerDB.ensureFresh) return;
     try {
