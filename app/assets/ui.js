@@ -2442,7 +2442,7 @@
       fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
       jobEnd: jobEnd, jobRunning: jobRunning, rerender: render,
       handoffCard: handoffCard, adviceHandoff: adviceHandoff,
-      gameBadge: gameBadge, earlyGameCard: earlyGameCard });
+      gameBadge: gameBadge, earlyGameCard: earlyGameCard, markPlayer: markPlayer });
   }
 
   /* The Advice tab's round trip. Lives here rather than in recommend.js so the
