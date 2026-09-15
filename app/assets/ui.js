@@ -351,12 +351,15 @@
     return (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
   }
 
-  /* The alert card. Shown at the top of Live, Lineups and Advice — the three
-     screens he is actually on when he thinks about his lineup — and only when
-     there is something to act on. It leads with the ACTIONABLE case (someone
-     benched who ought to be starting) because "you have players on Thursday"
-     is a reminder and "two of them are on your bench" is the thing that saves
-     a week. */
+  /* The alert card. Shown at the top of Lineups (called directly below) and
+     Advice (via ctx.earlyGameCard, see viewAdvice and recommend.js's own
+     render()) — the two screens he is actually on when he thinks about his
+     lineup — and only when there is something to act on. NOT Live: found in
+     the 2026-09-15e sweep that this comment used to claim all three, but no
+     call site for Live ever existed. It leads with the ACTIONABLE case
+     (someone benched who ought to be starting) because "you have players on
+     Thursday" is a reminder and "two of them are on your bench" is the thing
+     that saves a week. */
   function earlyGameCard() {
     if (!window.Schedule) return null;
     var a = null;
