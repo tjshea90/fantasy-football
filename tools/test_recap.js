@@ -131,11 +131,13 @@ W.Store.setManualScore(WK, 'tugdude', 5000000);
 /* ---- jr: no manual score at all — the "nothing to infer from" case ------- */
 
 /* ---- steve: the teamWeekPoints -> teamWeekScore regression probe --------- *
- * a huge manual score with NO lineup on file. Under the old bug (allPlay/
- * teamProfile/season reading the lineup-only teamWeekPoints) this team would
- * have scored a flat 0 despite the entry; under the fix it reads the manual
- * number like every other display in the app already does. */
-W.Store.setManualScore(WK, 'steve', 99999);
+ * a manual score deliberately larger than every other team's — real,
+ * inferred, or unreachable — could possibly total, with NO lineup on file.
+ * Under the old bug (allPlay/teamProfile/season reading the lineup-only
+ * teamWeekPoints) this team would have scored a flat 0 despite the entry;
+ * under the fix it reads the manual number like every other display in the
+ * app already does. */
+W.Store.setManualScore(WK, 'steve', 100000000);
 
 /* dustin, mo, ron: ordinary, fully-determined manual entries so the week is
    completely scored, same as Tj's real weekly routine */
