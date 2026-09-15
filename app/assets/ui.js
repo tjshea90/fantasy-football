@@ -1417,7 +1417,11 @@
      * dialog() itself would have used) so the save handler can rewrite its
      * text in place. */
     var preEl;
-    dialog(rec.player.name + ' · week ' + week, null, function (box, row, close) {
+    /* NOT `row` for the dialog's own button row below — this function
+       already has an outer `row` (the +5/-5/Clear buttons above) in scope,
+       and shadowing it here would be exactly the kind of landmine a later
+       edit could trip over even though nothing reads the wrong one today. */
+    dialog(rec.player.name + ' · week ' + week, null, function (box, dlgRow, close) {
       preEl = el('pre');
       preEl.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
         'font-family:inherit;line-height:1.5';
@@ -1426,7 +1430,7 @@
       box.appendChild(wrap);
       var ok = el('button', 'btn pri', 'Close');
       ok.addEventListener('click', close);
-      row.appendChild(ok);
+      dlgRow.appendChild(ok);
     });
     var save = el('button', 'btn pri', 'Save adjustment');
     save.style.marginTop = '8px';
