@@ -1,12 +1,12 @@
-# CHECKPOINT 397 — read me first, then TASKS.md
+# CHECKPOINT 400 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T16:36:35Z · **version:** 6.4 · **tests:** all 14 suites green
+**Written:** 2026-09-15T16:37:36Z · **version:** 6.5 · **tests:** all 14 suites green
 
 ## Just done
-Documented the week-auto-advance fix: TASKS.md job entry ticked with full proof and reset to 'no active job'; STATE.md's 2026-09-15f entry written (root cause, fix, verification, the explicit caveat that an already-running session needs a background/reopen or relaunch to pick it up); archived to LADDER.md ss33; the phone-confirmation request in Waiting on Tj rewritten for v6.5, covering both the new week-advance fix and the still-unconfirmed back-button fix in one entry, with older v6.4/v6.3/v6.2/v6.1 supersession notes updated to match. Final full test suite + ES2018 gate green (14 suites, 0 failures) and bash build.sh clean (28 classes) immediately before this checkpoint.
+v6.5 shipped and verified: GitHub Release published (mcp__github__get_release_by_tag confirmed non-empty assets, FFTracker-v6.5.apk uploaded at 264345 bytes, correct content type) before telling Tj. STATE.md's header line updated to v6.5/ladder 162-164.
 
 ## Do this next
-Run bash ship.sh (expected to bump VERSION from 6.4 to 6.5), then trigger+verify the GitHub Release per CLAUDE.md's standing rule: mcp__github__actions_run_trigger on publish-release.yml with the real version, poll until it actually succeeded, fix the 'v6.5' references in STATE.md/LADDER.md if ship.sh picked a different number, then send Tj the plain tappable release link in the exact message shape CLAUDE.md specifies -- and explicitly tell him in that same message that the fix will not apply to his currently-open app until he backgrounds/reopens or relaunches it after installing, since that is the one thing about this fix a user could easily misunderstand as 'still broken.'
+Nothing pending -- the week-auto-advance fix (2026-09-15f) is fully shipped, documented, archived and verified end to end. GitHub Release for v6.5 is live: https://github.com/tjshea90/fantasy-football/releases/tag/v6.5. Next step is sending Tj the release message per CLAUDE.md's exact required shape (plain tappable link, never a code block), making sure to explicitly flag that his currently-running app session needs a background/reopen or relaunch to pick up the fix -- that is the one thing about this specific fix a user could easily read as 'still broken' if not told plainly. Session then idles unless Tj responds with something new.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  5c03345 ship v6.5: 2026-09-15f: fixed the app never advancing past a finished NFL week unless tr
+  d043179 ckpt 397: Documented the week-auto-advance fix: TASKS.md job entry ticked with full proo
   a7d07f7 ckpt 389: Fixed: the app never advanced past a finished NFL week unless truly cold-boote
   59a5289 ckpt 381: Post-ship documentation finalized: STATE.md's 2026-09-15e entry closed with th
   1eeaf7d ship v6.4: 2026-09-15e comprehensive app-wide sweep: 5 rounds of verified fixes (data in
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   895701a ckpt 353: Small-fixes batch, part 2 of 2 continued (2026-09-15e sweep). (9) handoff.js: 
   cf63635 ckpt 336: Small-fixes batch, part 1 of 2 (2026-09-15e sweep). (1) ui.js: pull-to-refresh
   f2a8ef5 ckpt 321: Round 5 (cost/model accuracy) complete. (1) usage.js's cost tracking was model
-  17a02e8 ckpt 299: Round 4 (Android hardening) finished. (a) NativeBridge's pool is stored as a f
-  b14b738 ckpt 291: Round 4 (Android hardening) complete: fixed alertsTest()'s synchronous up-to-1
 ```
 
-(7 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
