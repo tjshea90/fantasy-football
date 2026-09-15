@@ -272,7 +272,7 @@
   }
   function teamRosterCard(ctx) {
     var c = ctx.el('div', 'card');
-    var through = root.Store.get().settings.currentWeek;
+    var through = ctx.week;   /* see the comment in teamPickerCard's click handler above */
     var weeks = root.Gamelog.playedWeeks(selTeamAbbr, through);
     if (selTeamWeek === null) selTeamWeek = weeks.length ? weeks[0] : through;
 
