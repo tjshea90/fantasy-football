@@ -229,8 +229,18 @@
     });
     var before = d.players.length;
     return chain.then(function () {
-      d.updated = new Date().toISOString();
-      d.version = 'espn-' + d.updated.slice(0, 10);
+      /* Only stamp "updated" if at least one team actually came back — a
+       * refresh attempted with no network at all used to still set
+       * `updated` to right now, which then told meta()/the Data tab (and,
+       * below, ensureFresh's staleness check) that the database was
+       * current when literally nothing had been fetched. A phone offline
+       * for the whole attempt would silently mask itself from ever being
+       * retried. */
+      var ok = failed.length < TEAMS.length;
+      if (ok) {
+        d.updated = new Date().toISOString();
+        d.version = 'espn-' + d.updated.slice(0, 10);
+      }
       /* drop the cached norm keys before persisting — they rebuild lazily */
       var slim = d.players.map(function (p) {
         return { n: p.n, p: p.p, t: p.t, b: p.b, e: p.e || '' };
@@ -242,7 +252,34 @@
     });
   }
 
+  /* ---- keeping the database fresh without being asked -------------------
+   * Tj, 2026-09-15: "make the app itself automatically refresh this data at
+   * least every couple days and each time I refresh waiver wire information
+   * or anything else that it is important to see all players." The manual
+   * "Refresh from ESPN" button on the Data tab stays exactly as it was —
+   * this only adds a quiet background path, same shape as schedule.js's own
+   * refresh(week): a no-op unless the stored copy has actually gone stale,
+   * so calling it from several places (boot, resume, opening the wire
+   * board, running a wire sync) costs nothing extra on the common case
+   * where the database was refreshed recently. */
+  var STALE_MS = 2 * 24 * 3600 * 1000;   /* two days */
+  var inFlight = null;   /* de-dupes concurrent callers, same as Schedule's own pattern */
+  function stale() {
+    var m = meta();
+    if (!m.updated) return true;
+    var t = new Date(m.updated).getTime();
+    return !isFinite(t) || (Date.now() - t) > STALE_MS;
+  }
+  function ensureFresh(onProgress) {
+    if (inFlight) return inFlight;
+    if (!stale()) return Promise.resolve(null);
+    inFlight = refresh(onProgress).then(function (r) { inFlight = null; return r; },
+                                        function (e) { inFlight = null; throw e; });
+    return inFlight;
+  }
+
   root.PlayerDB = { init: init, get: get, meta: meta, search: search,
-                    refresh: refresh, norm: norm, TEAMS: TEAMS,
+                    refresh: refresh, ensureFresh: ensureFresh, stale: stale,
+                    norm: norm, TEAMS: TEAMS, STALE_MS: STALE_MS,
                     diagnose: diagnose, candidates: candidates };
 })(typeof window !== 'undefined' ? window : this);
