@@ -637,6 +637,26 @@
              carriedList: carried, teamName: t ? t.name : '' };
   }
 
+  /* What "Sync advice" would actually cost right now, from the REAL triage
+   * and prompt this exact press would send — Ai.adviceSearchBudget is the
+   * same function ask() itself calls, so this can never claim a cheaper (or
+   * pricier) call than the real one. Wrapped: an estimate must never be
+   * able to break the tab it sits on. */
+  function claudeAdviceEstimate(week, teamId) {
+    try {
+      var opp = (root.Store.get().weekMeta[String(week)] &&
+                 root.Store.get().weekMeta[String(week)].opponents) || null;
+      var ctx = rosterContext(week, teamId, opp);
+      var n = ctx.players.length;
+      var budget = root.Ai.adviceSearchBudget(n);
+      var promptChars = root.Ai.buildPrompt(ctx).length;
+      /* Same reasoning as the wire estimate: output is the fuzzier half,
+         search cost dominates the bill either way. */
+      var outputTokens = 150 + n * 90 + budget * 60;
+      return root.Usage.money(root.Usage.estimate(promptChars, budget, outputTokens));
+    } catch (e) { return null; }
+  }
+
   /* ---- UI -------------------------------------------------------------- */
   function render(host, ctx) {
     var el = ctx.el, fmt = ctx.fmt, week = ctx.week, teamId = ctx.teamId;
