@@ -97,9 +97,9 @@
   /* v3.10: this took a second `r` parameter that no caller ever passed, and
      the body then did `r = r || rates()` — an assignment to an undeclared
      name once the parameter was removed. Declared locally instead. */
-  function priceOf(u) {
+  function priceOf(u, model) {
     if (!u) return { cost: 0, parts: [] };
-    var r = rates();
+    var r = rates(model);
     var inTok = n(u.input_tokens);
     var outTok = n(u.output_tokens);
     var cr = n(u.cache_read_input_tokens);
