@@ -664,6 +664,17 @@
                  root.Store.get().weekMeta[String(week)].opponents) || null;
       var ctx = rosterContext(week, teamId, opp);
       var n = ctx.players.length;
+      /* syncAll() (see the "nothing has changed since the last check" step
+       * above) skips the Claude call ENTIRELY — no request, no charge — when
+       * nothing needs researching. Found in the 2026-09-15e sweep: this
+       * estimate never checked for that case, and Ai.adviceSearchBudget has
+       * a hard floor of 2 searches even at n=0, so it kept showing a few
+       * cents for a press that would actually cost nothing. That directly
+       * broke the one guarantee this function exists to make ("this can
+       * never claim a cheaper or pricier call than the real one") in
+       * exactly the state a synced, up-to-date roster sits in most of the
+       * time. */
+      if (n === 0) { var v0 = root.Usage.money(0); _adviceEstMemo = { k: k, v: v0 }; return v0; }
       var budget = root.Ai.adviceSearchBudget(n);
       var promptChars = root.Ai.buildPrompt(ctx).length;
       /* Same reasoning as the wire estimate: output is the fuzzier half,
