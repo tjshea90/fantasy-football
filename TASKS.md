@@ -19,24 +19,40 @@ change gets flagged/asked about rather than just done. He said he'll check
 back much later, so this runs autonomously — checkpoint after every real
 step, the way every job in this repo already does.
 
-- [ ] 1. Plan the sweep: split the ~13,400-line codebase into logical
-      review areas, use background research agents for the read-heavy
-      survey work (this app is large enough that a single linear read is
-      not the efficient path), and personally verify every finding before
-      acting on it — an agent's report describes what it found, not a
-      pre-approved patch.
-- [ ] 2. Triage findings: real bugs (fix), clear code-quality/efficiency
-      wins (fix), UI/UX polish within the existing design (fix), anything
-      "major" (flag for Tj rather than doing it unasked).
-- [ ] 3. Apply fixes in verified, tested batches — not one giant unreviewed
-      diff. Checkpoint after each batch via `tools/ckpt.sh`.
-- [ ] 4. A live-browser UI pass across every tab, the way earlier sessions
-      already have for smaller changes — this is the one thing a source
-      read cannot catch on its own.
-- [ ] 5. Full test suite + ES2018 gate + `bash build.sh` green before
-      calling this done. Ship as a new version if the accumulated changes
-      are ship-worthy; do not ship something untested because Tj said he
-      would check back later.
+- [x] 1. Planned and dispatched: 6 parallel background review agents, each
+      scoped to a logical area (data/scoring core, value/recommend engine,
+      UI part 1, UI part 2, Android/Java shell, ai/usage/handoff), each
+      explicitly read-only, reporting ranked findings independently. Every
+      finding was personally re-verified against real source before acting
+      — this caught two review-agent claims that did NOT hold up (the
+      legacy httpGet/httpGetH/httpPost methods are tested-and-used by
+      design, not dead code; value.js's _faMemo generation-keyed
+      invalidation is a deliberate, robust, already-correct pattern used
+      consistently across value.js/recommend.js/ui.js, not an "incidental"
+      gap) — both left alone rather than "fixed."
+- [x] 2. Triaged into 5 rounds by risk/area (data integrity; value.js
+      correctness; UI/feature correctness; Android hardening; cost/model
+      accuracy) plus a batch of 13 smaller verified fixes; 2 items flagged
+      for Tj below rather than done unasked (the Data tab card wall, the
+      dead recap.js/Ai.recap/NativeBridge share+copy write-up chain).
+- [x] 3. All 5 rounds plus the small-fixes batch applied and checkpointed
+      individually via `tools/ckpt.sh` (10 checkpoints across this job,
+      ckpt 281 through 361) — see STATE.md's 2026-09-15e entry for the
+      full list of real bugs fixed, with root cause and proof for each.
+- [x] 4. Live-browser pass done via a local static server + Playwright
+      (chromium): confirmed a clean boot with no real console errors (the
+      only console noise was ERR_CERT_AUTHORITY_INVALID from this sandbox's
+      own network proxy blocking live ESPN/Anthropic calls, and a harmless
+      favicon.ico 404 — neither is a real app defect); confirmed the
+      long-press "View stats" dialog opens on a real touch-event sequence
+      and, critically, that tapping its own Cancel button WITHIN the 400ms
+      suppression window now actually dismisses it (the exact
+      click-suppression-scoping fix from this sweep, proven live, not just
+      by source-text pin); confirmed the Data tab renders its "Claude
+      costs" section with the corrected copy and no errors.
+- [x] 5. All 14 suites + the ES2018 gate green throughout, `bash build.sh`
+      run clean repeatedly (28 classes, signature OK) after every round.
+      Shipped as v6.4 — see the Release link Tj was sent.
 
 **There is no OTHER active job right now.** The most recent one (2026-09-15d: the
 back button still closing the app on a real device, even after 2026-09-15c
