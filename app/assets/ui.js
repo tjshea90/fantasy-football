@@ -2107,6 +2107,7 @@
     var groups = Value.byPos(week, 0);
     function faRow(f, showPos) {
       var r2 = el('div', 'row');
+      markPlayer(r2, f.name, f.pos, f.nfl);
       r2.appendChild(el('div', 'slot', showPos ? f.pos : (f.nfl || f.pos)));
       var nm2 = el('div', 'nm');
       nm2.appendChild(document.createTextNode(f.name));
