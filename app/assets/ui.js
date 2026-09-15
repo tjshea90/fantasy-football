@@ -803,7 +803,7 @@
    * renderers in sync by hand: openPlayerStatsMenu below calls the exact
    * same Stats.openPlayerModal every search result on the Stats tab uses. */
   var LONGPRESS_MS = 500, LONGPRESS_SLOP = 10;
-  var lpTimer = null, lpStart = null, lpSuppressClickUntil = 0;
+  var lpTimer = null, lpStart = null, lpSuppressClickUntil = 0, lpEnabled = true;
   function findPlayerRow(node) {
     var n = node, depth = 0;
     while (n && n.nodeType === 1 && depth++ < 8) {
