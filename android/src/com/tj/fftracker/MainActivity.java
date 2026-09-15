@@ -206,15 +206,18 @@ public class MainActivity extends Activity {
   // The WebView's own back/forward history (canGoBack/goBack) is gone too —
   // this is a single-page app that never pushes a history entry, so it was
   // always false, dead code kept "just in case" rather than for a reason.
+  // Shared by BOTH back paths below (the classic onKeyDown, for API < 33,
+  // and the OnBackInvokedCallback registered in onCreate, for API 33+) —
+  // one implementation of "ask the page, then decide," not two that could
+  // drift apart the way the disappearing-on-a-real-phone bug just did.
   private long lastBackAsk = 0;
-  @Override public boolean onKeyDown(int code, KeyEvent e) {
-    if (code != KeyEvent.KEYCODE_BACK) return super.onKeyDown(code, e);
-    if (web == null || !pageReady) { moveTaskToBack(true); return true; }
+  private void askPageToHandleBack() {
+    if (web == null || !pageReady) { moveTaskToBack(true); return; }
     long now = System.currentTimeMillis();
     // A double-tap while the round trip is in flight would ask twice and
     // could background the app on the second answer after the first already
     // handled it. Ignore a second press inside the window it takes to answer.
-    if (now - lastBackAsk < 400) return true;
+    if (now - lastBackAsk < 400) return;
     lastBackAsk = now;
     try {
       web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'",
@@ -230,6 +233,10 @@ public class MainActivity extends Activity {
     } catch (Throwable t) {
       moveTaskToBack(true);   // never let a bridge failure close the app
     }
+  }
+  @Override public boolean onKeyDown(int code, KeyEvent e) {
+    if (code != KeyEvent.KEYCODE_BACK) return super.onKeyDown(code, e);
+    askPageToHandleBack();
     return true;
   }
 
