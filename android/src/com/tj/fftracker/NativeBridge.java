@@ -641,15 +641,14 @@ public class NativeBridge {
         if (uri == null) return false;
         OutputStream o = ctx.getContentResolver().openOutputStream(uri);
         if (o == null) return false;
-        o.write(data.getBytes("UTF-8"));
-        o.close();
+        try (OutputStream oo = o) { oo.write(data.getBytes("UTF-8")); }
         return true;
       }
       File d = new File(Environment.getExternalStoragePublicDirectory(
           Environment.DIRECTORY_DOWNLOADS), fn);
-      FileOutputStream o = new FileOutputStream(d);
-      o.write(data.getBytes("UTF-8"));
-      o.close();
+      try (FileOutputStream o = new FileOutputStream(d)) {
+        o.write(data.getBytes("UTF-8"));
+      }
       return true;
     } catch (Exception e) {
       android.util.Log.w("FFT", "export failed: " + e);
