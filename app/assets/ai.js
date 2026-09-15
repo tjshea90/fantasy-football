@@ -838,7 +838,7 @@
         { type: 'text', text: waiverPrefix(), cache_control: { type: 'ephemeral' } },
         { type: 'text', text: waiverBlock(ctx) }
       ] }],
-      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: budget }],
+      tools: [{ type: searchToolType(mdl), name: 'web_search', max_uses: budget }],
       stream: true
     };
     if (onStep) onStep('Claude is reading the waiver wire…', 60);
