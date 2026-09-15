@@ -514,7 +514,7 @@
         { type: 'text', text: staticPrefix(), cache_control: { type: 'ephemeral' } },
         { type: 'text', text: rosterBlock(ctx) }
       ] }],
-      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: budget }],
+      tools: [{ type: searchToolType(mdl), name: 'web_search', max_uses: budget }],
       /* see parseSse(): a silent minute-long connection gets closed on mobile */
       stream: true
     };
