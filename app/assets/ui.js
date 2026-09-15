@@ -1720,6 +1720,7 @@
       hits.forEach(function (p) {
         var owner = have(p.n);
         var row = el('div', 'res');
+        markPlayer(row, p.n, p.p, p.t);
         row.appendChild(el('div', 'pos', p.p));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(p.n));
