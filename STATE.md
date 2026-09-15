@@ -1876,3 +1876,5 @@ clean signature, and the resulting `build/app-release.apk` is 230K —
 in line with prior versions, not a bloated or truncated package. `ship.sh`
 then verified the dex against every `android/src/**/*.java` file by name
 before it would let this version out, per its own standing gate.
+
+## 2026-09-15: the resume-system fix, plus the Stats tab (game logs, long-press, top players)
