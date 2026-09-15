@@ -2627,6 +2627,88 @@
     return c;
   }
 
+  /* ---------- weekly recap (2026-09-15g) ---------------------------------
+   * Tj: "Build the 'weekly recap' Claude write-up feature you told me
+   * about. Make the button where it is most appropriate but it shouldn't
+   * push away any major feature because I probably won't use it much."
+   *
+   * recap.js's build()/text() already compute a full, real, FACT-BASED
+   * recap from scored weeks — high/low score, closest and biggest games,
+   * the best individual week in the whole NFL, the best/worst starter, the
+   * biggest bench regret — with no Claude and no network at all. Claude's
+   * only job (ai.js's recap(), the one piece that was actually unwired) is
+   * turning that fact sheet into something readable for the league chat.
+   * So this works fully without an API key — Ai.recap() is offered as an
+   * optional "make it read less like a spreadsheet" step, never a
+   * requirement, matching the honest-degradation rule every other Claude
+   * feature in this app already follows.
+   *
+   * Deliberately ONE small card, not a big one: he said he probably won't
+   * use it much, so it does not compete for space with anything he opens
+   * every week (Weekly scores, Standings, matchups all render before it).
+   */
+  function latestScoredWeek() {
+    var w;
+    for (w = week; w >= 1; w--) { if (Store.weekIsScored(w)) return w; }
+    return 0;
+  }
+  function weeklyRecapCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Weekly recap'));
+    var rw = latestScoredWeek();
+    if (!rw) {
+      c.appendChild(el('p', 'muted', 'No week is fully scored yet — a recap needs at ' +
+        'least one week finished and synced.'));
+      return c;
+    }
+    c.appendChild(el('p', 'muted', 'High score, closest game, best and worst starter ' +
+      'and more for week ' + rw + ', built from your own league\'s real results.'));
+    var btn = el('button', 'btn pri', 'View week ' + rw + ' recap');
+    btn.addEventListener('click', function () { openRecapDialog(rw); });
+    c.appendChild(btn);
+    return c;
+  }
+  function openRecapDialog(rw) {
+    var facts = Recap.text(rw);
+    if (!facts) { toast('Week ' + rw + ' is not fully scored — nothing to recap yet.'); return; }
+    var preEl, writeBtn;
+    dialog('Week ' + rw + ' recap', null, function (box, dlgRow, close) {
+      preEl = el('pre');
+      preEl.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
+        'font-family:inherit;line-height:1.5';
+      preEl.textContent = facts;
+      box.appendChild(preEl);
+      if (window.Ai && Ai.configured()) {
+        writeBtn = el('button', 'btn', 'Write it up with Claude');
+        writeBtn.style.marginBottom = '10px';
+        writeBtn.addEventListener('click', function () {
+          writeBtn.disabled = true; writeBtn.textContent = 'Writing…';
+          Ai.recap(facts, rw).then(function (written) {
+            if (preEl) preEl.textContent = written;
+            if (writeBtn) { writeBtn.disabled = false; writeBtn.hidden = true; }
+          }).catch(function (e) {
+            if (writeBtn) { writeBtn.disabled = false; writeBtn.textContent = 'Write it up with Claude'; }
+            toast('Claude could not write it up: ' + (e && e.message ? e.message : e), 6000);
+          });
+        });
+        box.insertBefore(writeBtn, preEl);
+      }
+      var share = el('button', 'btn', 'Share');
+      share.addEventListener('click', function () {
+        if (!(window.Native && Native.share)) { toast('No share sheet on this build'); return; }
+        if (!Native.share(preEl.textContent)) toast('Could not open the share sheet');
+      });
+      var copy = el('button', 'btn', 'Copy');
+      copy.addEventListener('click', function () {
+        if (window.Native && Native.copy && Native.copy(preEl.textContent)) toast('Copied');
+        else toast('Could not copy');
+      });
+      var ok = el('button', 'btn pri', 'Close');
+      ok.addEventListener('click', close);
+      dlgRow.appendChild(share); dlgRow.appendChild(copy); dlgRow.appendChild(ok);
+    });
+  }
+
   /* ---------- DATA ---------- */
   function viewData(root) {
     var warn = feedWarnBanner(); if (warn) root.appendChild(warn);
