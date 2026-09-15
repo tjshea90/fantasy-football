@@ -440,7 +440,15 @@
     var S = root.Store.get();
     var m = S.weekMeta[String(week)];
     if (m && m.opponents) return Promise.resolve(m.opponents);
-    return root.Espn.weekGames(S.settings.season, week, 2).then(function (games) {
+    /* 2026-09-15e sweep: this was a hardcoded 2 (regular season) where every
+     * other weekGames call site in this app (doSync, liveTick — ui.js) uses
+     * week > 18 ? 3 : 2. Currently inert: LAST_WEEK is 17, so `week` here
+     * never actually exceeds 18 through any real path — but it is the one
+     * call that would silently keep asking ESPN for the wrong seasontype
+     * and get back nothing if that cap is ever raised for a playoff bracket,
+     * instead of failing the same defensive way the rest of the app already
+     * does. Matched for consistency rather than left as a latent trap. */
+    return root.Espn.weekGames(S.settings.season, week, week > 18 ? 3 : 2).then(function (games) {
       var opp = {};
       games.forEach(function (g) {
         if (g.teams.length === 2) {
