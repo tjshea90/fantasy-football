@@ -132,6 +132,30 @@ function run() {
     var mEntry = W.Gamelog.resolveEntry('patrick mahomes');
     ok(!!mEntry && mEntry.p === 'QB' && mEntry.t === 'KC', 'resolveEntry finds Mahomes as QB/KC');
 
+    /* ---- ingestEvent: doSync (ui.js) feeds an already-fetched box score in
+     * directly, no Espn.gameStats call of its own (2026-09-15e sweep) -------
+     * Before this, ui.js's own week sync and this module's ensureEvent()
+     * each independently called Espn.gameStats for the SAME game the first
+     * time Tj opened a game log for a team he had just synced — an avoidable
+     * duplicate fetch. ingestEvent is the shared write path ensureEvent
+     * itself now calls internally; this proves the OTHER caller (doSync,
+     * handing over a result it already has) populates the identical cache
+     * with zero network calls, and that a later plain read reuses it. */
+    var callsBeforeIngest = gameStatsCalls;
+    var g6 = GAMES[6][0];
+    var bucket = W.Gamelog.ingestEvent(6, g6, {
+      eventId: 'g6', players: BOX.g6.players, teamScore: BOX.g6.teamScore, teamAgg: BOX.g6.teamAgg
+    });
+    ok(gameStatsCalls === callsBeforeIngest, 'ingestEvent makes no gameStats call of its own — it is handed the result');
+    ok(!!bucket.DAL && bucket.DAL.opp === 'GB' && bucket.DAL.teamScore === 27,
+       'ingestEvent writes the same shape ensureEvent would have, for both teams, from one call');
+    return W.Gamelog.teamWeek('DAL', 6).then(function (dal) {
+      ok(gameStatsCalls === callsBeforeIngest,
+         'a later teamWeek read reuses what ingestEvent wrote — still no gameStats call (' + gameStatsCalls + ')');
+      ok(!!dal && near(W.Scoring.score(dal.players['dak prescott'].line).total, 22),
+         'Prescott\'s line (20/250/2TD = 20+12.5+12=... ) reads back correctly through the shared cache');
+    });
+
     /* ---- teamRoster: sorted by position, includes the DEF line ---------- */
     return W.Gamelog.teamRoster('KC', 1);
   }).then(function (tr) {
