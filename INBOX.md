@@ -547,3 +547,8 @@ Week 1 NFL is complete (after Monday games are final, the NFL week is final and 
 ```
 Build The "weekly recap" Claude write-up feature you told me about. Make the button where it is most appropriate but it shouldn't push away any major feature because I probably won't use it much. Then organize the data tab with sub navigation that is smart and easy to understand. When you are done, test that it all works and didn't break anything else in the app
 ```
+
+## 2026-09-15T16:43:49Z
+```
+I forced stopped the app and opened it again. Every tab in the app is still on NFL week 1, even though NFL week 1 is final. Keep trying to figure out why the automatic week set is not working. All tabs in the app should automatically set to the current NFL week after all the previous week games are final. All week 1 games are final. The app should be on week 2
+```
