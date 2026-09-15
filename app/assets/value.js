@@ -34,9 +34,12 @@
         out[norm(pl.name)] = x.team.id;
         return;
       }
+      /* variants() already includes canon(pl.name) as its first element (see
+         names.js's own variants(): `add(c)` runs before anything else) — a
+         separate out[canon(...)] assignment here was a no-op, writing the
+         same key with the same value the loop just wrote. */
       var v = root.Names.variants(pl.name), i;
       for (i = 0; i < v.length; i++) out[v[i]] = x.team.id;
-      out[root.Names.canon(pl.name)] = x.team.id;
     });
     return out;
   }
