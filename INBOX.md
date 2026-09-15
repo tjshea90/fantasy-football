@@ -102,3 +102,8 @@ After all these are finished, run tests that everything works and everything is 
 <usage><subagent_tokens>153460</subagent_tokens><tool_uses>46</tool_uses><duration_ms>507616</duration_ms></usage>
 </task-notification>
 ```
+
+## 2026-09-15T04:31:43Z
+```
+The back button still closes the app to my home screen
+```
