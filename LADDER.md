@@ -1132,3 +1132,32 @@ exactly the moment a real advance was most likely.
       relaunch) the app once this version installs.
 
 Shipped as v6.5. All 14 suites + the ES2018 gate green.
+
+## 34. The week-advance fix still didn't work — a true cold boot too (Tj, 2026-09-15, v6.6)
+
+> "I forced stopped the app and opened it again. Every tab in the app is
+> still on NFL week 1... All week 1 games are final. The app should be on
+> week 2."
+
+Full write-up in STATE.md's 2026-09-15h entry. v6.5 was a real fix for
+the resume-only gap, but a TRUE cold boot already called
+`syncCurrentWeek()` unconditionally before that fix existed — so a cold
+boot still failing meant the check ITSELF, not just where it ran from,
+was not reliable: one external signal (ESPN's own `week.number`), gated
+behind a 3-hour cache and a silently-swallowed failure path, with no way
+for this environment to verify the live API's real behavior.
+
+- [x] 1. Root-caused: three unverifiable single points of failure in
+      trusting `Espn.currentWeek()` alone (a stale cache re-applying a
+      wrong answer, a silently-swallowed fetch failure, or ESPN's own
+      metadata simply not flipping when expected).
+- [x] 2. Fixed: added `localAutoAdvance()`, a second, independent,
+      network-free signal trusting only `weekMeta.allFinal` — data the app
+      already has from its own real syncs. Called from `boot()` and
+      `appResume()`, right before the ESPN-based check.
+- [x] 3. Proven with the ESPN path made deliberately impossible (throws
+      synchronously) in `tools/test_lifecycle.js` — the week still
+      advances, synchronously. All 14 suites + ES2018 gate green, `bash
+      build.sh` clean.
+
+Shipped as v6.6. All 14 suites + the ES2018 gate green.
