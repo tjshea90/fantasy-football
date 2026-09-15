@@ -2487,3 +2487,76 @@ week-1-to-2 transition and move every tab to week 2 together, the way the
 mechanism was always designed to.
 
 Shipped as v6.5.
+
+## 2026-09-15h: the week-advance fix still didn't work — a true cold boot too
+
+> "I forced stopped the app and opened it again. Every tab in the app is
+> still on NFL week 1, even though NFL week 1 is final... All week 1 games
+> are final. The app should be on week 2."
+
+**v6.5 was a real, correct fix for what it targeted — it was just not the
+whole bug.** A force-stop-and-relaunch is a TRUE cold boot, and `boot()`
+already called `syncCurrentWeek()` unconditionally even BEFORE v6.5's
+`appResume()` fix ever existed. So a cold boot still failing meant the
+check itself — not just where it was called from — was not reliable
+enough.
+
+**The single point of failure: trusting one external signal, cached, with
+a silent failure path.** `syncCurrentWeek()`'s only source of truth was
+`Espn.currentWeek()` — a network call reading ESPN's own scoreboard
+`week.number` field. Three independent ways that could fail, none of
+which this sandboxed environment can verify directly against the real
+API: (1) `S.settings.nflWeek`'s 3-hour reuse cache re-applying an earlier
+wrong answer instead of re-fetching; (2) the fetch itself failing (a real
+network hiccup, a proxy issue, anything) — swallowed by a bare `.catch`
+that intentionally says nothing, by design, so the failure is invisible
+everywhere, including to whoever is debugging it; (3) ESPN's own
+"current week" metadata simply not flipping the instant every game ends
+— the code's own original comment assumed it did ("sits comfortably
+after Monday Night Football ends"), an assumption never verified against
+the live API this session, and apparently wrong, or at least not
+reliable enough to be the ONLY signal.
+
+**The fix: stop depending on an external field the app cannot verify.**
+Added `localAutoAdvance()` — a second, fully independent signal that
+looks at nothing but `weekMeta.allFinal`, data this app already computes
+itself from real box scores it already fetched. No network call of its
+own. No cache to go stale. No external metadata to misread or wait on.
+It walks forward through as many CONSECUTIVE already-final weeks as are
+locally known (the ordinary case is one step; more only matters after a
+long absence), then applies the result through the existing
+`applyCurrentWeek()` — sharing its guards (never backward, capped at
+`LAST_WEEK`, one-shot toast) rather than duplicating them. Called from
+`boot()` and `appResume()` only, right before `syncCurrentWeek()` — never
+from a manual sync or navigation, so deliberately reviewing an old,
+already-final week later is still never yanked forward mid-review, the
+same constraint the original design got right even where its mechanism
+did not.
+
+Also corrected: the header comment above `syncCurrentWeek()` still said
+"BOOT ONLY, not every appResume" and justified it with "Android usually
+kills the JS context when backgrounded" — the exact premise the v6.5 fix
+had already disproven, left unchanged through that fix. Updated to
+reflect what actually runs where and why, so a future session reads the
+truth instead of a stale rationale sitting right next to code that
+contradicts it.
+
+**Proven end-to-end, with the failure mode made deliberately real, not
+just avoided:** `tools/test_lifecycle.js` now makes `Espn.currentWeek()`
+throw synchronously — the ESPN path is not just unstubbed, it is made
+IMPOSSIBLE — and confirms the week still advances, synchronously, before
+any promise even gets a chance to settle. That is the strongest available
+proof this does not depend on the network layer being present, correct,
+or reachable at all. `tools/test_boot.js` pins the call-site count (two,
+exactly: boot and resume) and that `localAutoAdvance()` runs immediately
+before `syncCurrentWeek()` at both. All 14 suites + the ES2018 gate
+green, `bash build.sh` clean (28 classes).
+
+**If this still does not work after Tj installs and relaunches**, that
+would mean something different and worth knowing: `weekMeta['1'].
+allFinal` is not actually `true` in his own local data — i.e., week 1
+never fully synced as final on his phone in the first place, a real data
+gap rather than a repeat of this exact bug. Worth telling him to check
+plainly rather than assuming.
+
+Shipped as v6.6.
