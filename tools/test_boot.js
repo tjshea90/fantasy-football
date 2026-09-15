@@ -744,10 +744,15 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
  * header's globally-shared selected week every other tab honors — so
  * browsing a team while reviewing an earlier week via the header silently
  * jumped back to the current week's game instead of respecting the
- * selection. */
-ok(!/currentWeek/.test(stH), 'stats.js no longer reads S.settings.currentWeek anywhere — ctx.week is the only source of "which week" now');
+ * selection. Deliberately NOT applied to loadPlayerLog's own currentWeek
+ * read (the player-search mode) — that one has a genuinely different job,
+ * "show everything played so far" with no week picker of its own, and
+ * tying it to a header week elsewhere in the app would hide a searched
+ * player's most recent games for no reason a user would expect. */
 ok((stH.match(/var through = ctx\.week/g) || []).length === 2,
    'both teamPickerCard\'s click handler and teamRosterCard use ctx.week for the browsable-weeks ceiling');
+ok(/settings\.currentWeek : 1/.test(stH),
+   'loadPlayerLog (player search) still intentionally uses the real current week, not ctx.week — a season search has no header-week semantics to follow');
 
 /* ---- recommend.js's usageSwing() also resolves book lookups tolerantly
  * now (review finding, 2026-09-15e) — same fix as Store.bookTrend() itself
