@@ -203,7 +203,7 @@ W.Store.setManualScore(WK, 'steve', 100000000);
 
   near(W.Store.teamWeekPoints(WK, 'steve').total, 0,
        "sanity: steve's lineup-only total is 0 — he has no lineup on file, only a manual score");
-  near(W.Store.teamWeekScore(WK, 'steve').total, 99999,
+  near(W.Store.teamWeekScore(WK, 'steve').total, 100000000,
        "but the manual-aware total is his real entry");
 
   var ap = W.Sim.allPlay(WK);
