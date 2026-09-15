@@ -109,7 +109,9 @@
      player, so this costs nothing but arithmetic. */
   function usageSwing(p, week) {
     if (!root.Store.bookTrend) return '';
-    var t = root.Store.bookTrend(norm(p.name), week - 1, 2);
+    /* the raw name — bookTrend resolves it tolerantly against however ESPN
+       actually spelled the box score; see its own comment in store.js */
+    var t = root.Store.bookTrend(p.name, week - 1, 2);
     if (t.length < 2 || !t[0].row || !t[1].row) return '';
     function opp(r) { return (r.pa || 0) + (r.cr || 0) + (r.tg || 0); }
     var now = opp(t[0].row), before = opp(t[1].row);
