@@ -2837,10 +2837,12 @@
       c2.appendChild(d);
     }
     root.appendChild(c2);
-
-    root.appendChild(scoringCard());
+  }
+  function viewDataClaude(root) {
     root.appendChild(aiCard());
     root.appendChild(usageCard());
+  }
+  function viewDataApp(root) {
     addSafe(root, 'Lineup alerts', alertCard);
     root.appendChild(liveCard());
 
