@@ -90,6 +90,6 @@ tools/test_gestures.js
 tools/test_locks.js
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
-releases/FFTracker-v5.7.apk
 releases/FFTracker-v5.9.apk
 releases/FFTracker-v6.0.apk
+releases/FFTracker-v6.1.apk
