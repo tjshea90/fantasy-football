@@ -12,6 +12,8 @@ CLAUDE.md
 .github/workflows/publish-release.yml
 tools/autosave.sh
 tools/resume.sh
+tools/capture_inbox.sh
+INBOX.md
 tools/secretscan.sh
 tools/push.sh
 tools/toobig.sh
