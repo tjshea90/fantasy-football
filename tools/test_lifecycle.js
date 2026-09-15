@@ -393,7 +393,7 @@ var weekCheckDone = (function () {
   ok(S2.settings.currentWeek === 1, 'sanity: still showing week 1 before this test (got ' +
      S2.settings.currentWeek + ')');
   /* the exact real-world state Tj described: week 1 fully synced and final */
-  S2.weekMeta['1'] = { synced: true, allFinal: true, games: 16 };
+  S2.weekMeta['1'] = { synced: true, allFinal: true, games: 16, at: new Date().toISOString() };
   /* clear any cached nflWeek check from boot()'s own earlier (network-less,
      silently-failed) syncCurrentWeek() call, so this test exercises a real
      fetch through the stub rather than a stale/absent cache entry */
