@@ -7,8 +7,8 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   page.on('pageerror', e => errors.push('PAGE ERROR: ' + e.message));
   page.on('console', msg => { if (msg.type() === 'error') errors.push('CONSOLE ERROR: ' + msg.text()); });
 
-  await page.goto('http://localhost:8791/index.html', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(500);
+  await page.goto('http://localhost:8791/index.html', { waitUntil: 'load' });
+  await page.waitForTimeout(1500);
   console.log('--- boot ---');
   console.log('title:', await page.title());
   console.log('errors so far:', errors.length ? errors.join(' | ') : 'none');
