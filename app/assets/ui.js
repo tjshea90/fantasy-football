@@ -1560,6 +1560,7 @@
       return a.name.localeCompare(b.name);
     }).forEach(function (p) {
       var r = el('div', 'row');
+      markPlayer(r, p.name, p.pos, p.nfl);
       r.appendChild(el('div', 'slot', p.pos));
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(p.name));
