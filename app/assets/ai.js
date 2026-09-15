@@ -789,17 +789,24 @@
     return waiverPrefix() + '\n\n' + waiverBlock(ctx);
   }
 
-  function askWaivers(ctx, onStep) {
-    if (!configured()) return Promise.reject(new Error('no API key set'));
-    /* Searches are the bill. Sized to the POSITIONS OF NEED (two per thin
-       position covers "who just got hurt / who just took the job") plus one
-       per non-bye injury on my own roster, since that is real research too —
-       the app cannot look up an injury timeline itself, only Claude can. */
-    var nNeed = Math.max(1, (ctx.needs || []).length);
-    var nInj = (ctx.injuries || []).filter(function (x) { return !x.onBye; }).length;
+  /* Searches are the bill. Sized to the POSITIONS OF NEED (two per thin
+     position covers "who just got hurt / who just took the job") plus one
+     per non-bye injury on my own roster, since that is real research too —
+     the app cannot look up an injury timeline itself, only Claude can.
+     Pulled out for the same reason as adviceSearchBudget above — the on-
+     screen cost estimate must use this exact function, not a second copy. */
+  function waiverSearchBudget(needs, injuries) {
+    var nNeed = Math.max(1, (needs || []).length);
+    var nInj = (injuries || []).filter(function (x) { return !x.onBye; }).length;
     var budget = Math.max(3, Math.min(10, nNeed * 2 + Math.min(3, nInj)));
     if (depth() === 'cheap') budget = Math.max(2, Math.min(5, nNeed));
     if (depth() === 'full') budget = 12;
+    return budget;
+  }
+  function askWaivers(ctx, onStep) {
+    if (!configured()) return Promise.reject(new Error('no API key set'));
+    var budget = waiverSearchBudget(ctx.needs, ctx.injuries);
+    var nInj = (ctx.injuries || []).filter(function (x) { return !x.onBye; }).length;
     var mdl = depth() === 'cheap' ? cheapModel() : model();
     var body = {
       model: mdl,
