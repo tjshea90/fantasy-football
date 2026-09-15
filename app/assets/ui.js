@@ -1842,6 +1842,7 @@
     }
     list.forEach(function (x) {
       var r = el('div', 'row');
+      markPlayer(r, x.name, x.pos, x.nfl);
       r.appendChild(el('div', 'slot', x.pos));
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(x.name));
