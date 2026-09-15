@@ -688,7 +688,7 @@
       /* Same reasoning as the wire estimate: output is the fuzzier half,
          search cost dominates the bill either way. */
       var outputTokens = 150 + n * 90 + budget * 60;
-      var v = root.Usage.money(root.Usage.estimate(promptChars, budget, outputTokens));
+      var v = root.Usage.money(root.Usage.estimate(promptChars, budget, outputTokens, mdl));
       _adviceEstMemo = { k: k, v: v };
       return v;
     } catch (e) { return null; }
