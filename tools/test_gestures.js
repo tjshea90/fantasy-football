@@ -279,6 +279,25 @@ function finish() {
   ok(/askPageToHandleBack\(\);/.test(onKeyDownBody),
      'onKeyDown (the API < 33 path) calls the shared method, not its own copy of the logic');
 
+  /* ---- the Advice tab never wired long-press "View stats" at all
+   * (review finding, 2026-09-15e) -------------------------------------------
+   * Tj's original ask was explicit: "Everywhere else in the app, make it so
+   * I can long press on a player." markPlayer() is the one thing the
+   * delegated long-press listener looks for (data-player, set on the row),
+   * and it was called from every card on Live, Lineups, Rosters and Wire —
+   * but never once from recommend.js, so the Advice tab's starter, bench
+   * and opponent-roster rows had no long-press target and no feedback
+   * whatsoever. Fixed by passing markPlayer through viewAdvice's ctx (the
+   * same ctx.el/ctx.table/ctx.fmt delegation pattern already used) and
+   * calling it on all three row sets recommend.js builds. */
+  ok(/viewAdvice\(root\) \{[\s\S]{0,300}markPlayer: markPlayer/.test(ui),
+     'viewAdvice passes markPlayer through to recommend.js, the same delegation pattern as el/table/fmt');
+  const recSrc = fs.readFileSync(path.join(__dirname, '..', 'app', 'assets', 'recommend.js'), 'utf8');
+  const markPlayerCalls = (recSrc.match(/ctx\.markPlayer\(/g) || []).length;
+  ok(markPlayerCalls === 3,
+     'recommend.js calls ctx.markPlayer on all three row sets it builds (starters, bench, opponent roster) — got ' +
+     markPlayerCalls);
+
   const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'assets', 'app.css'), 'utf8');
   ok(/overscroll-behavior-y:\s*contain/.test(css),
      "the browser's own overscroll does not fight the app's pull-to-refresh");
