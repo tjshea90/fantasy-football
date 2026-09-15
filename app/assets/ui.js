@@ -2020,6 +2020,7 @@
     var wcard = el('div');
     var wsync = el('button', 'btn pri', 'Ask Claude about the wire');
     var wnote = el('p', 'hint', '');
+    var west = el('p', 'hint', '');
     var cached = Value.waiverLoad();
 
     if (!Ai.configured()) {
@@ -2032,6 +2033,13 @@
         'scoring. Public waiver lists are half-PPR standard and are wrong about ' +
         'quarterbacks here by roughly a factor of two.';
     }
+    /* Tj: "get rid of anywhere it says how much Claude usage I have left...
+     * put an estimate of what each request would cost." Shown whether or
+     * not a key is configured right now — the whole point is he can see
+     * this without one. Computed from the REAL prompt this exact press
+     * would send (claudeWireEstimate below), not a flat guess. */
+    var westText = claudeWireEstimate();
+    west.textContent = westText ? ('Estimated cost: ' + westText + ' on the Claude API, at current prices (Data → Claude spend).') : '';
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
       jobStart('waivers', 'Refreshing the injury feed…');
