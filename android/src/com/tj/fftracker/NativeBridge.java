@@ -408,18 +408,49 @@ public class NativeBridge {
   }
 
   /** Run the real check now and post the real notification — the only way to
-   *  prove on the phone that the whole path works without waiting for Sunday. */
+   *  prove on the phone that the whole path works without waiting for Sunday.
+   *
+   *  ASYNC, not synchronous (fixed in the 2026-09-15e sweep). This was the one
+   *  remaining @JavascriptInterface method that still did its work — a real
+   *  network fetch, Alerts.check(ctx, true) -> injuries() -> a blocking
+   *  HttpURLConnection with up to a 6s connect + 7s read timeout — directly on
+   *  the call, which blocks the JS thread for however long that takes. That is
+   *  the EXACT failure this file's own top-of-file comment describes fixing
+   *  forever with httpAsync: a @JavascriptInterface method blocks the calling
+   *  JS thread until it returns, so the page cannot repaint or respond to a
+   *  touch for the whole freeze. Fixed the same way: return immediately, do
+   *  the real work on the existing pool, wake the page via evaluateJavascript
+   *  once it is done. The full id/results-map machinery httpAsync uses is not
+   *  needed here — this is one manual button, not a hot path, and the result
+   *  is a short string — so a single global callback is enough. */
   @JavascriptInterface
-  public String alertsTest() {
-    try {
-      String msg = Alerts.check(ctx, true);
-      if (msg == null || msg.length() == 0) {
-        Alerts.postNote(ctx, "Lineup looks fine", "No bye, no OUT starter, no empty slot.", 7002);
-        return "all clear — a notification was posted anyway so you can see it works";
+  public void alertsTest() {
+    pool.execute(new Runnable() { public void run() {
+      String result;
+      try {
+        String msg = Alerts.check(ctx, true);
+        if (msg == null || msg.length() == 0) {
+          Alerts.postNote(ctx, "Lineup looks fine", "No bye, no OUT starter, no empty slot.", 7002);
+          result = "all clear — a notification was posted anyway so you can see it works";
+        } else {
+          Alerts.postNote(ctx, "Check your lineup", msg, 7002);
+          result = msg;
+        }
+      } catch (Throwable t) {
+        result = "failed: " + t;
       }
-      Alerts.postNote(ctx, "Check your lineup", msg, 7002);
-      return msg;
-    } catch (Throwable t) { return "failed: " + t; }
+      final String r = result;
+      final WebView w = web;
+      if (w == null) return;
+      w.post(new Runnable() { public void run() {
+        try {
+          w.evaluateJavascript("window.__alertsTestDone&&window.__alertsTestDone(" +
+              org.json.JSONObject.quote(r) + ")", null);
+        } catch (Throwable t) {
+          android.util.Log.w("FFT", "alertsTest notify failed: " + t);
+        }
+      } });
+    } });
   }
 
   /** Falls back to the .bak if the main file is missing, unreadable, or not
