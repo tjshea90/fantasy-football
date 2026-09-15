@@ -2560,3 +2560,106 @@ gap rather than a repeat of this exact bug. Worth telling him to check
 plainly rather than assuming.
 
 Shipped as v6.6.
+
+## 2026-09-15g: the weekly recap feature, and Data tab sub-navigation
+
+> "Build The 'weekly recap' Claude write-up feature you told me about.
+> Make the button where it is most appropriate but it shouldn't push away
+> any major feature because I probably won't use it much. Then organize
+> the data tab with sub navigation that is smart and easy to understand.
+> When you are done, test that it all works and didn't break anything
+> else in the app."
+
+Tj's explicit go-ahead on both items the 2026-09-15e sweep had flagged
+but deliberately not implemented — see that entry for the precise trace
+of what was dead vs. alive. Interrupted partway through by 2026-09-15h
+(the week-advance bug, above) — resumed and finished after that shipped.
+
+### The recap feature
+`recap.js` already computed a complete, real recap — `build(week)` reads
+actual scored results (high/low score, closest and biggest games, the
+best individual NFL week league-wide, the best/worst starter, the
+biggest bench regret) with NO network and NO Claude involved at all.
+`Ai.recap(factText, week)` was the one piece never wired to any button:
+it hands that fact sheet to Claude (the cheap model — this is pure
+phrasing, no judgement, so a top-tier model would be money spent for
+nothing) and gets back a short, dry, chat-ready write-up.
+
+Built `weeklyRecapCard()` + `openRecapDialog()` in ui.js. The card is
+deliberately small — a title, one line of what it offers, one button —
+and sits in the Data tab's League group AFTER Weekly scores, Standings
+and the matchups card, so it never displaces anything Tj actually opens
+every week, matching his own "probably won't use it much." The dialog
+shows `Recap.text()`'s real facts immediately; "Write it up with Claude"
+only appears when `Ai.configured()` is true, and replaces the shown text
+with Claude's version in place if pressed. Share and Copy act on
+whichever text is CURRENTLY on screen — the facts, or Claude's rewrite,
+whichever the user is looking at — via the existing `Native.share`/
+`Native.copy` Android bridge methods, which were already fully
+implemented and simply had no caller. If a week is not yet fully scored,
+the card says so plainly instead of showing a button that would fail.
+
+### The Data tab reorganization
+Grouped the tab's 13-14 cards into four sections by what they are FOR,
+not an arbitrary split — the four Tj would reach for at different times,
+not four equally-sized piles: **League** (the season's own data — scores,
+standings, matchups, the new recap, scoring rules), **Claude** (the two
+AI-related cards — reasoning settings, cost estimates), **Sync & data**
+(where the numbers come from and its health — stats feed, player
+database), **App** (device/app behaviour and maintenance — alerts, live
+refresh, screen fit, backup, about). A row of four small buttons at the
+top switches between them, styled from the app's own existing `.btn`/
+`.btn.pri` classes — no new CSS. `viewData()` was split into
+`viewDataLeague`/`viewDataClaude`/`viewDataSync`/`viewDataApp`; every
+card that existed before this landed in exactly one group, with its own
+logic completely unchanged — only physically relocated. The selected
+group is in-memory only (like the tab-level `view` itself): it survives
+switching to another tab and back within a session, but resets to League
+on a fresh boot.
+
+### Verification
+Full functional proof in `tools/test_lifecycle.js` — the one suite that
+actually executes ui.js against a DOM, not just its source text: all four
+sub-nav groups clicked through the same way a thumb would (finding and
+clicking the real buttons `dataSubNav()` builds, not calling the group
+functions directly), each group's expected cards confirmed present. The
+recap dialog opened against a REAL scored week built from an actual
+`Scoring.emptyLine()`/`Store.setLine()` pair (not a synthetic string),
+its shown text confirmed to come from the real fact sheet, "Write it up
+with Claude" confirmed correctly ABSENT with no key configured, Share and
+Copy confirmed present regardless. `tools/test_boot.js` carries the
+source-text half of the same double-check idiom this file uses
+everywhere: every card's label text confirmed still present after the
+reshuffle, so a card silently dropped during the move would fail a test
+even if nothing threw.
+
+**Found and fixed a real gap in the test harness itself while building
+this.** `test_lifecycle.js`'s DOM stub defined `innerHTML` as a plain
+property — but `render()` calls `root.innerHTML = ''` to clear the
+screen before every rebuild, and a plain property assignment does
+nothing to the stub's `children` array. Every render this whole suite
+has ever made was silently ACCUMULATING into one tree instead of
+replacing it — invisible to every existing test, because each one either
+asserts immediately after a single action (nothing earlier to collide
+with) or checks for the PRESENCE of something, which an accumulated
+superset tree still satisfies. It surfaced only once a Data-tab test
+needed to tell "a button from THIS render" apart from an identically-
+named one from several renders ago. Fixed with a real property accessor
+that clears `children` on assignment, matching what a real browser does
+when `.innerHTML` is set to any string — this makes every test in the
+file more accurate, not just the new ones.
+
+Also surfaced, and fixed, a genuine test-isolation gap of the new tests'
+own making: the recap test's fixture marks week 1 `allFinal` to get a
+real recap to open — but `localAutoAdvance()` (2026-09-15h, shipped
+moments before this) now runs on every later `appResume()` in the same
+suite, so that fixture would otherwise leak into the week-advance tests
+further down the file and advance `week` out from under their own sanity
+checks. Fixed by having the recap test clean up its own fixture
+(`delete weekMeta['1']`) once it is done, the same discipline the
+original week-advance test already used for its own cache entry.
+
+All 14 suites + the ES2018 gate green throughout, `bash build.sh` clean
+(28 classes).
+
+Shipped as v6.7.
