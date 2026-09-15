@@ -320,6 +320,29 @@ console.log('\n-- the waiver loop --');
   ok(back.model === 'Claude app (handoff)', 'and it says it came from the handoff');
 }());
 
+/* ---- 7b. detect() matches exactly, not by prefix (2026-09-15e sweep) -----
+ * Used to be k.indexOf(KIND_ADVICE) === 0 — a prefix match that would accept
+ * anything merely STARTING WITH "fftracker.advice", including a plausible
+ * model typo or hallucinated variant, directly contradicting this function's
+ * own "must never be half-applied" comment. Tightened to exact-match the two
+ * real literal kinds this app ever emits (the request's own kind, and the
+ * reply skeleton's kind + '.reply'). */
+(function () {
+  var H = W.Handoff;
+  ok(H.detect({ kind: H.KIND_ADVICE, players: [] }) === 'advice',
+     'the plain request-echo kind is still recognised as advice');
+  ok(H.detect({ kind: H.KIND_ADVICE + '.reply', players: [] }) === 'advice',
+     'the .reply skeleton kind is still recognised as advice');
+  ok(H.detect({ kind: H.KIND_WAIVER, adds: [] }) === 'waivers',
+     'the plain request-echo kind is still recognised as waivers');
+  ok(H.detect({ kind: H.KIND_WAIVER + '.reply', adds: [] }) === 'waivers',
+     'the .reply skeleton kind is still recognised as waivers');
+  ok(H.detect({ kind: H.KIND_ADVICE + '-final', players: [] }) === '',
+     'a kind that merely STARTS WITH the real one, but is not it, is no longer accepted');
+  ok(H.detect({ kind: H.KIND_ADVICE + 'x', players: [] }) === '',
+     'same for a trailing-character typo on the request kind');
+}());
+
 /* ---- 8. no drift: the handoff must not re-implement the API path --------- */
 console.log('\n-- one implementation, not two --');
 (function () {
