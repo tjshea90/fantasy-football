@@ -2133,3 +2133,58 @@ tab-restore (both are Android-behaviour-under-real-OS-conditions changes
 with no way to trigger a real backgrounding/process-kill from a
 Playwright browser harness) — carried forward to "Waiting on Tj" in
 TASKS.md.
+
+## 2026-09-15d: back button STILL closed the app on a real device — v6.2's fix was real but incomplete (v6.3)
+
+Tj tested v6.2 and reported the identical symptom item 2 of 2026-09-15c had
+just claimed was fixed: "The back button still closes the app to my home
+screen." Treated as a real regression report, not a duplicate — write-up
+below is why re-pointing him at the old evidence would have been wrong.
+
+Root cause: this app's ONLY back-press handling was
+`onKeyDown(KeyEvent.KEYCODE_BACK)` — the classic Android back dispatch
+path. `test_lifecycle.js` proves `ui.js`'s own `__onBack()` trail-walking
+logic is correct, and it is; that was never the bug. The actual failure is
+one layer below the JS entirely, in a place no test in this repo can see:
+on a real Android 13+ phone, once predictive back is active (which this
+app's targetSdk 36 makes the effective default), a gesture-based back
+SWIPE does not synthesize a `KEYCODE_BACK` `KeyEvent` at all — the
+platform routes it through a completely separate dispatch,
+`OnBackInvokedCallback`, which nothing in this app had ever registered.
+`onKeyDown` simply never fired on Tj's phone. Every test that existed —
+the JS trail-walking proof, and the source-text checks against
+`MainActivity.java`'s CONTENT — was checking what the handler does once
+called, and none of them could have caught "the platform never calls this
+handler at all," because that is a fact about the real OS's dispatch
+behavior, not about anything in this repo's own source or a JS-only test
+stub.
+
+Fixed by registering `android.window.OnBackInvokedCallback` — part of the
+platform SDK this app already compiles against at API 36, so no AndroidX
+and no new dependency were needed — guarded on `Build.VERSION.SDK_INT >=
+33`, routed through a newly shared `askPageToHandleBack()` method that
+BOTH the new callback and the existing `onKeyDown` now call, so there is
+one implementation of "ask the page, then decide," not two that could
+quietly drift apart again the way this bug just happened. This also
+required `android:enableOnBackInvokedCallback="true"` in
+`AndroidManifest.xml` — registering the callback in code has no effect
+without that flag; a subtlety worth stating plainly since it is exactly
+the kind of thing that looks done in the diff but silently is not.
+`onKeyDown` is untouched in behavior and remains the sole path below API
+33 (minSdk 29), where predictive back does not exist.
+
+Verified as far as this environment allows: `bash build.sh` compiles
+clean against the real platform API (26 Java classes now, dex check
+passed); new source-text regression tests in `tools/test_gestures.js` pin
+the import, the registration call, the manifest flag, and — specifically
+to prevent this exact class of bug recurring a third time — that BOTH
+dispatch paths call the one shared method rather than each carrying its
+own copy of the logic. There is no `adb`/emulator in this environment and
+the bug only reproduces via a real gesture-navigation swipe on a real
+Android 13+ device, which is precisely why the first fix attempt — proven
+correct by every test that existed at the time — still missed it. This
+one genuinely needs Tj's phone; said so plainly rather than declaring it
+fixed on the strength of a green test suite that structurally cannot
+observe the actual failure mode.
+
+Shipped as v6.3. All 13 suites + the ES2018 gate green.
