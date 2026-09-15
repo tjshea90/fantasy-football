@@ -178,6 +178,6 @@
 
   root.Usage = { load: load, record: record, totals: totals, history: history,
                  reset: reset, priceOf: priceOf, rates: rates, money: money,
-                 DEFAULT_RATES: DEFAULT_RATES };
+                 estimate: estimate, DEFAULT_RATES: DEFAULT_RATES };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Usage;
 })(typeof window !== 'undefined' ? window : this);
