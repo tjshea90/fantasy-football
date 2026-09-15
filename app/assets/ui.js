@@ -3459,6 +3459,15 @@
       return Espn.pool(want, 3, function (g) {
         return Espn.gameStats(g.id).then(function (r) {
           gcache.byId[g.id] = { final: g.state === 'post', r: r };
+          /* FREE: gamelog.js's own ensureEvent() would otherwise issue this
+             EXACT SAME Espn.gameStats(g.id) call again the first time Tj
+             opens a game log for one of this week's teams — same pattern as
+             Schedule.ingest above (liveTick), applied to box scores instead
+             of kickoff times. gcache above is this file's own in-memory,
+             session-only cache for scoring rostered players; this feeds the
+             SAME fetch into gamelog.js's separate, persistent, any-player
+             cache, so neither has to know about the other's shape. */
+          if (window.Gamelog) { try { Gamelog.ingestEvent(week, g, r); } catch (e) { } }
           return r;
         });
       }, function (n, total) {
