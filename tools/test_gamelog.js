@@ -152,8 +152,9 @@ function run() {
     return W.Gamelog.teamWeek('DAL', 6).then(function (dal) {
       ok(gameStatsCalls === callsBeforeIngest,
          'a later teamWeek read reuses what ingestEvent wrote — still no gameStats call (' + gameStatsCalls + ')');
-      ok(!!dal && near(W.Scoring.score(dal.players['dak prescott'].line).total, 22),
-         'Prescott\'s line (20/250/2TD = 20+12.5+12=... ) reads back correctly through the shared cache');
+      /* same formula as MAHOMES_PTS above: 20 cmp + 250/20 yds + 2*6 TD = 44.5 */
+      ok(!!dal && near(W.Scoring.score(dal.players['dak prescott'].line).total, 44.5),
+         'Prescott\'s line (20cmp/250yd/2TD = 20+12.5+12 = 44.5) reads back correctly through the shared cache');
     });
 
     /* ---- teamRoster: sorted by position, includes the DEF line ---------- */
