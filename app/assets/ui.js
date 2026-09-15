@@ -2014,9 +2014,23 @@
    * REAL prompt this exact press would send — Ai.waiverSearchBudget is the
    * same function askWaivers() itself calls, so this can never claim a
    * cheaper (or pricier) call than the real one. Wrapped: an estimate must
-   * never be able to break the wire board it sits under. */
+   * never be able to break the wire board it sits under.
+   *
+   * Memoised (found in review, 2026-09-15): freeAgentCard() calls this on
+   * every render, and every position-filter chip on that card re-renders
+   * the whole card just to change which rows show — this built a fresh
+   * waiverContext (a full projectAll over the roster plus a free-agent scan)
+   * purely to refresh a cost string that does not even depend on which
+   * position is selected. Same key shape as value.js's own _faMemo: the
+   * roster generation covers adds/drops/trades, and the rates are included
+   * because editing a price field on the Data tab must still change the
+   * number immediately. */
+  var _wireEstMemo = null;
   function claudeWireEstimate() {
     try {
+      var gen = (root.Store && root.Store.generation) ? root.Store.generation() : 0;
+      var k = week + '|' + S.league.me + '|' + gen + '|' + JSON.stringify(Usage.rates());
+      if (_wireEstMemo && _wireEstMemo.k === k) return _wireEstMemo.v;
       var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
       var ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season,
                                     new Date().toISOString().slice(0, 10));
@@ -2029,7 +2043,9 @@
          being a bit off here costs the estimate little. */
       var nNeed = Math.max(1, (ctx.needs || []).length);
       var outputTokens = 300 + nNeed * 220 + budget * 60;
-      return Usage.money(Usage.estimate(promptChars, budget, outputTokens));
+      var v = Usage.money(Usage.estimate(promptChars, budget, outputTokens));
+      _wireEstMemo = { k: k, v: v };
+      return v;
     } catch (e) { return null; }
   }
   function freeAgentCard() {
