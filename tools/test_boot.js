@@ -525,13 +525,18 @@ ok(/wrong merge is far more/.test(nmH),
   g3.PlayerDB.init();
   ok(g3.PlayerDB.stale() === true, 'a never-refreshed database is stale');
 
+  /* init() refuses a stored copy smaller than the bundled one ("a
+   * half-finished refresh must never shrink the database"), so the fixture
+   * must carry the full bundled roster, not a slice, or init() would
+   * silently fall back to the bundled copy with updated:null and this test
+   * would actually be checking the never-refreshed path by accident. */
   disk[KEY] = JSON.stringify({ version: 'espn-x', updated: new Date(Date.now() - 3600e3).toISOString(),
-                                players: g3.PLAYERDB.players.slice(0, 5) });
+                                players: g3.PLAYERDB.players });
   g3.PlayerDB.init();
   ok(g3.PlayerDB.stale() === false, 'a database refreshed an hour ago is not stale');
 
   disk[KEY] = JSON.stringify({ version: 'espn-x', updated: new Date(Date.now() - 3 * 24 * 3600e3).toISOString(),
-                                players: g3.PLAYERDB.players.slice(0, 5) });
+                                players: g3.PLAYERDB.players });
   g3.PlayerDB.init();
   ok(g3.PlayerDB.stale() === true, 'a database refreshed 3 days ago is stale again (the 2-day threshold)');
   ok(g3.PlayerDB.STALE_MS === 2 * 24 * 3600 * 1000, 'the threshold really is "at least every couple days"');
