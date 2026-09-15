@@ -909,7 +909,12 @@ ok(/settings\.currentWeek : 1/.test(stH),
 (function () {
   var uiSrc2 = fs.readFileSync('app/assets/ui.js', 'utf8');
   var arIdx = uiSrc2.indexOf('function appResume()');
-  var arBody = uiSrc2.slice(arIdx, uiSrc2.indexOf('function ', arIdx + 20));
+  /* a real function-DECLARATION boundary (two-space indent, matching this
+     file's own style), not a naive 'function' substring search — which a
+     prose comment mentioning the English word "function" would otherwise
+     fool, exactly as it did on the first draft of this pin */
+  var nextFnMatch = /\n  function \w/.exec(uiSrc2.slice(arIdx + 20));
+  var arBody = uiSrc2.slice(arIdx, nextFnMatch ? arIdx + 20 + nextFnMatch.index : uiSrc2.length);
   ok(/syncCurrentWeek\(\);/.test(arBody), 'appResume() calls syncCurrentWeek(), not just boot()');
   var syncCallIdx = arBody.indexOf('syncCurrentWeek();');
   var earlyReturnIdx = arBody.indexOf('m.synced && m.allFinal');
