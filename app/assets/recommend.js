@@ -749,7 +749,13 @@
      * key is gone, nothing will ever add a new one). */
     if (root.Usage && root.Ai) {
       var estText = claudeAdviceEstimate(week, teamId);
-      if (estText) line('Estimated cost to sync', estText + ' on the Claude API — Data → Claude costs');
+      /* 2026-09-15e sweep: matched wording with the Wire tab's identical
+         estimate line (ui.js, claudeWireEstimate's caller) — they used to
+         end differently ("— Data → Claude costs" here vs "at current
+         prices (Data → Claude costs)." there) for no reason other than
+         having been written separately. */
+      if (estText) line('Estimated cost to sync', estText +
+        ' on the Claude API, at current prices (see Data → Claude costs).');
     }
     line('Claude', root.Ai && root.Ai.configured()
       ? (aiCache.at ? (aiCache.count || Object.keys(aiCache.byName || {}).length) +
