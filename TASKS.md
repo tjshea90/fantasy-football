@@ -91,10 +91,10 @@ at cost on every cold start, forever.
       four as genuinely unused. Not doing either without your steer, since
       "add a feature" and "remove working code" are both squarely
       "major" under the standing rule.
-- [ ] **Confirm v6.3 on the phone — PRIORITY, this is a second attempt at
-      the same bug**:
+- [ ] **Confirm v6.4 on the phone — PRIORITY, includes a second attempt at
+      the back-button bug**:
       ```
-      https://github.com/tjshea90/fantasy-football/releases/tag/v6.3
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.4
       ```
       v6.2 already claimed the back button was fixed, proven by every test
       that existed at the time — and it still closed the app on Tj's real
@@ -102,29 +102,38 @@ at cost on every cold start, forever.
       `onKeyDown(KEYCODE_BACK)` handler, but a real Android 13+ phone's
       gesture-based back SWIPE (the default nav style on most modern
       phones) never generates that event at all once predictive back is
-      active — it never reached the app's own logic. v6.3 registers the
-      platform's `OnBackInvokedCallback` (API 33+) alongside the old
-      handler, which is the correct fix for gesture nav specifically. There
-      is no `adb`/emulator in this environment, so **this genuinely could
-      only be tested by compiling and reasoning about it, not by
-      reproducing the failure** — if the back button still closes the app
-      after this one, say so exactly the way you did this time (which tab
-      you were on, whether you used a swipe or a physical/on-screen back
-      button) rather than assuming it's the same already-reported issue —
-      the next session needs to know if v6.3's specific fix (predictive
-      back) didn't hold, which points somewhere new entirely.
-      Also still worth checking while there (all from v6.2, unrelated to
-      the back-button fix, not yet confirmed): (1) switch to another app
-      and back — should reopen on whatever tab was open, not jump to Live;
-      (2) same switch-away-and-back — no flash of the app logo before the
+      active — it never reached the app's own logic. v6.3 (carried forward
+      unchanged into v6.4) registers the platform's `OnBackInvokedCallback`
+      (API 33+) alongside the old handler, which is the correct fix for
+      gesture nav specifically. There is no `adb`/emulator in this
+      environment, so **this genuinely could only be tested by compiling
+      and reasoning about it, not by reproducing the failure** — if the
+      back button still closes the app on v6.4, say so exactly the way you
+      did last time (which tab you were on, whether you used a swipe or a
+      physical/on-screen back button) rather than assuming it's the same
+      already-reported issue — the next session needs to know if the
+      predictive-back fix didn't hold, which points somewhere new entirely.
+      Also still worth checking while there (from v6.2, unrelated to the
+      back-button fix, not yet confirmed): (1) switch to another app and
+      back — should reopen on whatever tab was open, not jump to Live; (2)
+      same switch-away-and-back — no flash of the app logo before the
       screen you were on reappears; (3) Data tab → "Claude costs" card —
       live dollar estimates next to "Sync advice" and "Ask Claude about the
       wire", never a "$X left" meter; (4) Advice tab → "Bench, ranked" card
       → each bench player has its own "why not ▾"; (5) Rosters tab → your
       team roster above the trade evaluator; (6) Data tab → "Player
-      database" card mentions it also refreshes itself automatically. This
-      supersedes both v6.2 and v6.1 below.
-- [ ] **Confirm v6.2 on the phone** (superseded by v6.3 above — the back
+      database" card mentions it also refreshes itself automatically. v6.4
+      itself is mostly under-the-hood (see the two decisions above and
+      STATE.md's 2026-09-15e entry) — nothing new it changed should look
+      different on screen except the Data tab's cost-estimate line wording.
+      This supersedes v6.3, v6.2 and v6.1 below.
+- [ ] **Confirm v6.3 on the phone** (superseded by v6.4 above, which
+      carries the identical back-button fix forward unchanged — no reason
+      to test this build separately):
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.3
+      ```
+- [ ] **Confirm v6.2 on the phone** (superseded by v6.4 above — the back
       button specifically is now known-broken on v6.2, so there is no
       reason to test that build further):
       ```
