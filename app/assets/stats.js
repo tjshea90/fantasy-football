@@ -291,13 +291,13 @@
     Object.keys(order).sort(function (a, b) { return order[a] - order[b]; }).forEach(function (pos) {
       if (!byPos[pos] || !byPos[pos].length) return;
       c.appendChild(ctx.el('h3', null, pos));
-      c.appendChild(gameLogTable(ctx, pos, byPos[pos].map(function (row) {
-        return { week: selTeamWeek, opp: r.opp, home: r.home, state: r.state, line: row.line, pts: row.pts };
+      c.appendChild(rosterTable(ctx, pos, byPos[pos].map(function (row) {
+        return { name: row.name, line: row.line, pts: row.pts };
       })));
     });
     if (r.dst) {
       c.appendChild(ctx.el('h3', null, 'DEF'));
-      c.appendChild(gameLogTable(ctx, 'DEF', [{ week: selTeamWeek, opp: r.opp, home: r.home, state: r.state, line: r.dst.line, pts: r.dst.pts }]));
+      c.appendChild(rosterTable(ctx, 'DEF', [{ name: selTeamAbbr + ' D/ST', line: r.dst.line, pts: r.dst.pts }]));
     }
     return c;
   }
