@@ -457,8 +457,23 @@ ok(/opponentsForWeek\(week\)\['catch'\]/.test(recX),
    'a failed schedule no longer abandons the injury feed, projections and Claude');
 ok(/schedule FAILED/.test(recX), 'and it says so in the report rather than vanishing');
 var alertsGuarded = /try \{\s*ok = Native\.alertsSet/.test(uiX) &&
-                    /try \{ r = Native\.alertsTest\(\); \}/.test(uiX);
+                    /try \{ Native\.alertsTest\(\); \}/.test(uiX);
 ok(alertsGuarded, 'both raw alerts bridge calls are wrapped, like alertsStatus already was');
+/* alertsTest() went async in the 2026-09-15e sweep — it used to make a
+ * SYNCHRONOUS network call on the Java side (Alerts.check -> injuries() ->
+ * a blocking HttpURLConnection, up to a 13s worst-case timeout) from a
+ * @JavascriptInterface method, which blocks the calling JS thread for
+ * exactly that long — the one failure this file's own httpAsync
+ * architecture exists to prevent, reintroduced in a different method. */
+ok(!/var r;\s*try \{ r = Native\.alertsTest/.test(uiX),
+   'the old synchronous "r = Native.alertsTest()" call is gone — it used to freeze the page for up to 13s');
+ok(/window\.__alertsTestDone = function \(r\) \{/.test(uiX),
+   'the button now waits on a callback the way every other async bridge call in this app does');
+var nbJ = fs.readFileSync('android/src/com/tj/fftracker/NativeBridge.java', 'utf8');
+ok(/public void alertsTest\(\)/.test(nbJ) && !/public String alertsTest\(\)/.test(nbJ),
+   'alertsTest() no longer returns a value synchronously on the Java side either');
+ok(/pool\.execute\(new Runnable\(\) \{ public void run\(\) \{[\s\S]{0,50}String result;/.test(nbJ),
+   'the real check now runs on the existing pool, not on the calling (JS-interface) thread');
 
 /* every promise chain started from a click must land somewhere */
 var chains = (uiX.match(/\.then\(/g) || []).length;
