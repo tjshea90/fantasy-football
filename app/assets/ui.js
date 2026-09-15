@@ -2671,6 +2671,9 @@
     cdb.appendChild(el('p', 'muted', dm.count + ' players · ' +
       (dm.updated ? 'refreshed ' + dm.updated.slice(0, 10) : 'bundled with the app, never refreshed') +
       '. Used by roster search so you never type a position or team by hand.'));
+    cdb.appendChild(el('p', 'hint', 'Also refreshes itself quietly in the background — at least every ' +
+      'couple of days, and whenever the free-agent wire is checked or refreshed — so this button is ' +
+      'only for forcing it right now.'));
     var rb = el('button', 'btn pri', jobRunning('db') ? 'Refreshing…' : 'Refresh from ESPN (needs internet)');
     rb.disabled = jobRunning('db');
     rb.addEventListener('click', function () {
