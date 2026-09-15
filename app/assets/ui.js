@@ -862,9 +862,15 @@
     dialog(player.name, null, function (box, row, close) {
       var cancel = el('button', 'btn', 'Cancel');
       cancel.addEventListener('click', close);
-      var view = el('button', 'btn pri', 'View stats');
-      view.addEventListener('click', function () { close(); Stats.openPlayerModal(statsCtx(), player); });
-      row.appendChild(cancel); row.appendChild(view);
+      /* NOT `view` — this file keeps the current tab name in a module-level
+         `view` (see the very top of this file). A local `var view` here
+         shadowed it silently within this function; harmless today only
+         because nothing in this function happens to read the outer one, the
+         same landmine showPlayer()'s own `dlgRow` rename avoided elsewhere
+         in this sweep. */
+      var viewBtn = el('button', 'btn pri', 'View stats');
+      viewBtn.addEventListener('click', function () { close(); Stats.openPlayerModal(statsCtx(), player); });
+      row.appendChild(cancel); row.appendChild(viewBtn);
     });
   }
   function lpCancel() { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } lpStart = null; }
