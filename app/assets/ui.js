@@ -2039,7 +2039,7 @@
      * this without one. Computed from the REAL prompt this exact press
      * would send (claudeWireEstimate below), not a flat guess. */
     var westText = claudeWireEstimate();
-    west.textContent = westText ? ('Estimated cost: ' + westText + ' on the Claude API, at current prices (Data → Claude spend).') : '';
+    west.textContent = westText ? ('Estimated cost: ' + westText + ' on the Claude API, at current prices (Data → Claude costs).') : '';
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
       jobStart('waivers', 'Refreshing the injury feed…');
