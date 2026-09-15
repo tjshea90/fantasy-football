@@ -546,8 +546,8 @@ ok(/wrong merge is far more/.test(nmH),
  * actually stale") is checked as source text, not by calling it: a call
  * returns its promise synchronously either way (that is just how promises
  * work), so timing the call proves nothing — only awaiting the result would,
- * and this suite is synchronous and exits via process.exit() the moment the
- * last top-level statement finishes, before any dangling .then() could fire.
+ * and this suite is synchronous and quits at its final statement the moment
+ * the last top-level line finishes, before any dangling .then() could fire.
  * The real behaviour this guards — stale() itself — is exercised directly
  * above; this just pins that ensureFresh() actually consults it first. */
 ok(/function ensureFresh\(onProgress\) \{\s*if \(inFlight\) return inFlight;\s*if \(!stale\(\)\) return Promise\.resolve\(null\);/
