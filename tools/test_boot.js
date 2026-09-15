@@ -95,6 +95,20 @@ ok(/try \(BufferedReader r = new BufferedReader\(new InputStreamReader\(new File
    "Alerts.java's own independent readFile() duplicate got the same try-with-resources fix");
 ok(/void shutdown\(\) \{\s*try \{ pool\.shutdownNow\(\); \}/.test(nb),
    'NativeBridge exposes a shutdown() that stops its pool (wired to onDestroy in MainActivity)');
+/* small-fixes batch, 2026-09-15e sweep */
+ok(!/public static void schedule\(Context ctx, int dayOfWeek/.test(alertsJ),
+   'the dead schedule(dayOfWeek,...) method is gone — every real caller (rearm) only ever used scheduleDaily');
+ok(/scheduleDaily\(ctx, h, m, 0\)/.test(alertsJ), 'scheduleDaily is still there doing the real work');
+ok(/if \(me\.isEmpty\(\)\) return "";/.test(alertsJ),
+   'check() bails out on an empty league.me instead of letting it fall through to the team-match loop');
+ok(/return \(r\.equals\("\."\) \|\| r\.equals\("\.\."\)\) \? "_" : r;/.test(nb),
+   "safe() rejects a bare '.' or '..' result outright, not just relying on slash-stripping and readFile's own directory failure");
+var uiSrc = fs.readFileSync('app/assets/ui.js', 'utf8');
+ok(!/Shown at the top of Live, Lineups and Advice/.test(uiSrc),
+   'the earlyGameCard comment no longer claims a Live call site that never existed');
+ok(/var viewBtn = el\('button', 'btn pri', 'View stats'\);/.test(uiSrc) &&
+   !/var view = el\('button', 'btn pri', 'View stats'\);/.test(uiSrc),
+   'openPlayerStatsMenu no longer shadows the file-level `view` (current tab) with a local button variable');
 /* the old catch-block comment here claimed "onKeyDown is still there" as a
  * fallback if callback registration ever throws — false per Android's own
  * predictive-back docs once enableOnBackInvokedCallback=true is set
