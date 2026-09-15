@@ -138,6 +138,36 @@ public class MainActivity extends Activity {
     setContentView(web);
     web.requestApplyInsets();
     web.loadUrl("file:///android_asset/index.html");
+
+    // Tj, 2026-09-15: "the back button still closes the app to my home
+    // screen" — on v6.2, AFTER onKeyDown(KEYCODE_BACK) below was already
+    // shipped and proven correct in the JS-only test suite. Root cause: that
+    // test suite proves ui.js's own trail-walking logic is correct, but it
+    // cannot see that onKeyDown(KEYCODE_BACK) never FIRES AT ALL for a
+    // gesture-based back swipe on a real Android 13+ phone with predictive
+    // back active — which this app's targetSdk 36 makes the effective
+    // default. Predictive back is a SEPARATE dispatch path from the classic
+    // KeyEvent one: once active, the system stops synthesizing a
+    // KEYCODE_BACK KeyEvent for a swipe at all, so onKeyDown below silently
+    // never ran on Tj's phone — it was never a JS bug, and no test that
+    // only loads ui.js or greps MainActivity.java's source could have
+    // caught a "this Java method is never invoked" failure. The platform's
+    // fix is registering an OnBackInvokedCallback (android.window, part of
+    // the SDK this app already compiles against at API 36 — no AndroidX,
+    // no new dependency), which the enableOnBackInvokedCallback="true"
+    // manifest flag routes EVERY back action to, gesture and button alike.
+    // onKeyDown is kept below, unchanged, as the sole path on API < 33
+    // (minSdk 29), where predictive back does not exist and the classic
+    // KeyEvent dispatch is the only one there ever is.
+    if (Build.VERSION.SDK_INT >= 33) {
+      try {
+        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+            OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+            new OnBackInvokedCallback() {
+              @Override public void onBackInvoked() { askPageToHandleBack(); }
+            });
+      } catch (Throwable t) { /* an OEM shell missing the platform API: onKeyDown is still there */ }
+    }
   }
 
   // ---- BACK ----------------------------------------------------------------
