@@ -874,6 +874,10 @@
         var nm = el('div', 'nm');
         if (!s.pick) nm.appendChild(el('span', 'muted', 'no eligible player'));
         else {
+          /* long-press "View stats" (found missing from this tab entirely in
+           * the 2026-09-15e sweep — Tj's original ask was "everywhere else
+           * in the app," and this is the one screen that never wired it). */
+          if (ctx.markPlayer) ctx.markPlayer(row, s.pick.p.name, s.pick.p.pos, s.pick.p.nfl);
           nm.appendChild(document.createTextNode(s.pick.p.name));
           /* the kickoff, on the screen where he decides who to start */
           if (ctx.gameBadge) {
