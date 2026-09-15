@@ -3085,23 +3085,27 @@
       'If you switch models on the card above, update these to match.'));
     c.appendChild(rd);
 
-    var rs = el('button', 'btn sm dan'); rs.textContent = 'Reset the meter';
-    rs.style.marginTop = '8px';
-    rs.addEventListener('click', function () {
-      confirmModal('Zero the spend total?',
-        'Resets this app\'s running estimate only. It does not touch your API key and ' +
-        'it does not touch your actual Anthropic balance.', 'Zero it', function () {
-        Usage.reset(); render(); toast('Meter reset');
+    if (t.calls) {
+      var rs = el('button', 'btn sm dan'); rs.textContent = 'Clear the call history';
+      rs.style.marginTop = '8px';
+      rs.addEventListener('click', function () {
+        confirmModal('Clear the recorded call history?',
+          'Removes the "every call" log and the spend total above. Does not touch ' +
+          'your API key and does not touch your actual Anthropic balance — it never ' +
+          'could read that.', 'Clear it', function () {
+          Usage.reset(); render(); toast('Call history cleared');
+        });
       });
-    });
-    c.appendChild(rs);
+      c.appendChild(rs);
+    }
 
     c.appendChild(el('p', 'hint',
-      'This counts THIS APP ONLY. There is no way for an ordinary API key to ' +
-      'ask Anthropic what its balance is — that needs an admin key, which can ' +
-      'read your whole organisation and manage keys, so the app deliberately ' +
-      'does not want one. If you spend the key anywhere else, this reads low. ' +
-      'The authoritative number is always the Anthropic Console.'));
+      'The estimates above are computed from today\'s real roster and prompt, ' +
+      'not a guess. The call history below them (if any) is THIS APP ONLY — ' +
+      'there is no way for an ordinary API key to ask Anthropic what its ' +
+      'balance is; that needs an admin key, which can read your whole ' +
+      'organisation and manage keys, so the app deliberately does not want ' +
+      'one. The authoritative number is always the Anthropic Console.'));
     return c;
   }
 
