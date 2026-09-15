@@ -306,12 +306,18 @@
   }
   function topCard(ctx) {
     var c = ctx.el('div', 'card');
+    /* Tj: "it won't load week 1 for the top players at all even though I
+     * have week 1 selected" — this used to remember whatever week it FIRST
+     * rendered with (topWeek, set once) rather than following the app's one
+     * global week (the header's < W1 > control every tab already shares),
+     * so switching weeks via the header left this card stuck on the old
+     * one. There is no separate week picker on this card — it must always
+     * track ctx.week, the same way every other tab does. */
     var week = ctx.week;
-    if (topWeek === null) topWeek = week;
-    c.appendChild(ctx.el('h2', null, 'Top players — week ' + topWeek));
-    if (topState.key !== String(topWeek) && !topState.loading) loadTop(ctx, topWeek);
-    if (topState.loading || topState.key !== String(topWeek)) {
-      c.appendChild(ctx.el('p', 'muted', 'Loading week ' + topWeek + '…'));
+    c.appendChild(ctx.el('h2', null, 'Top players — week ' + week));
+    if (topState.key !== String(week) && !topState.loading) loadTop(ctx, week);
+    if (topState.loading || topState.key !== String(week)) {
+      c.appendChild(ctx.el('p', 'muted', 'Loading week ' + week + '…'));
       return c;
     }
     if (topState.error) { c.appendChild(ctx.el('p', 'warnText', 'Could not load: ' + topState.error)); return c; }
