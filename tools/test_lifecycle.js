@@ -465,6 +465,23 @@ console.log('\n-- the weekly recap dialog (2026-09-15g) --');
      (dlgText ? '' : '  <-- no <pre> found'));
   ok(!writeBtn, '"Write it up with Claude" is correctly absent — no API key is configured in this harness');
   ok(!!shareBtn && !!copyBtn, 'Share and Copy are both offered regardless of whether Claude is configured');
+
+  /* close the dialog through its own Close button (not by reaching into
+     ui.js's modalStack) so the back-button test right after this one sees
+     a clean page, the same way a real dismiss would leave it */
+  var closeBtn = null;
+  (function walk(n) {
+    if (!n || closeBtn) return;
+    if (n.tagName === 'BUTTON' && String(n.textContent) === 'Close') closeBtn = n;
+    (n.children || []).forEach(walk);
+  }(W.document.body));
+  if (closeBtn && closeBtn._h && closeBtn._h.click) closeBtn._h.click.call(closeBtn);
+
+  /* undo this test's own fixture — marking week 1 allFinal here would
+     otherwise leak into the week-advance tests below via localAutoAdvance,
+     which (correctly) runs on every later appResume() in this same suite */
+  delete S2.weekMeta['1'];
+  S2.settings.currentWeek = 1; W.Store.get().settings.currentWeek = 1;
 }());
 
 console.log('\n-- the back button --');
