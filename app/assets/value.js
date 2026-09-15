@@ -53,7 +53,12 @@
     if (rec && typeof rec.week === 'number' && isFinite(rec.week) && rec.week > 0) {
       return { v: rec.week, src: 'ESPN week line, re-scored' };
     }
-    var t = root.Store.bookTrend ? root.Store.bookTrend(norm(name), week - 1, 4) : [];
+    /* the raw name, not norm(name) — bookTrend resolves it tolerantly
+       against however ESPN actually spelled the box score (see its own
+       comment in store.js); pre-normalising here bought nothing and, before
+       that fix, was the reason a "Kenny"-vs-"Kenneth" spelling gap silently
+       lost real recent production for this exact class of player. */
+    var t = root.Store.bookTrend ? root.Store.bookTrend(name, week - 1, 4) : [];
     var sum = 0, n = 0, i;
     for (i = 0; i < t.length; i++) if (t[i].row) { sum += t[i].row.p; n++; }
     if (n) return { v: sum / n, src: n + ' scored week' + (n === 1 ? '' : 's') + ' in this app' };
