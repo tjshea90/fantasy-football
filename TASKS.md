@@ -69,7 +69,7 @@ tab bar (`<nav id="tabs">`, index.html) carries no `data-nogesture`, so
 gestures.js's swipe recognizer can misclassify a tap that drifts a few
 px on a tab button as a swipe attempt instead of a plain press.
 
-- [ ] 1. value.js: apply the same OUT/IR/SUSPENDED/PUP hard-exclusion
+- [x] 1. value.js: apply the same OUT/IR/SUSPENDED/PUP hard-exclusion
       `Recommend`'s health check already does to every free agent the
       Wire tab can show or recommend (freeAgents/byPos/byVor/upgrades/
       waiverContext's pool) — a blocked player must never be offered at
@@ -77,13 +77,42 @@ px on a tab button as a swipe attempt instead of a plain press.
       offered but visibly tagged, same "tag warn" treatment already used
       on the Advice and Lineups tabs, so nothing is hidden that Tj might
       reasonably still want to grab.
-- [ ] 2. playerdb.js: capture ESPN's roster `status` field (active vs
+      DONE — `Recommend.health` exported (recommend.js) so value.js never
+      duplicates the check; `Value.freeAgents()` (value.js) now excludes
+      any player whose health label is 'OUT' (which OUT/INJURED RESERVE/
+      SUSPENDED/PUP all collapse to) before he ever enters the pool, and
+      tags DOUBTFUL/QUESTIONABLE rows with `healthLabel`/`healthNote`.
+      `byPos`/`byVor`/`upgrades`/`waiverContext`'s pool all read from
+      `freeAgents()`, so the exclusion is automatically inherited by
+      every one of them from a single point of truth. ui.js's `faRow()`
+      now shows a `tag warn` chip for any surviving DOUBTFUL/QUESTIONABLE
+      row. Proven in `tools/test_waiver.js` against the real modules (an
+      injected OUT player is absent from the output entirely; a
+      QUESTIONABLE player is present and tagged).
+- [x] 2. playerdb.js: capture ESPN's roster `status` field (active vs
       practice-squad) during refresh and exclude practice-squad players
       from the free-agent pool entirely (they cannot play in an NFL
       game). Prune players who no longer appear on ANY of the 32 rosters
       on a full, all-teams-succeeded refresh, instead of leaving stale
       entries (old team, old position) in the database forever.
-- [ ] 3. value.js: rebuild the wire board's ranking and `upgrades()`
+      DONE — `rosterStatus()` (playerdb.js) reads ESPN's real
+      `status.type` per athlete ('active'/'day-to-day' -> 'active',
+      'practice-squad' -> 'practice-squad'; the separate /injuries feed
+      already gives the real OUT/DOUBTFUL/QUESTIONABLE granularity, so
+      'day-to-day' folding into active is deliberate, not a gap), stored
+      as `.st` on every player and persisted. `Value.freeAgents()` skips
+      any `st === 'practice-squad'` row entirely; a never-refreshed
+      bundled entry with no `.st` at all defaults to active so a fresh
+      install's whole board is never filtered out by omission. `doRefresh`
+      now tracks which players were actually seen THIS run and, only when
+      EVERY one of the 32 teams answered (never on a partial failure),
+      removes any database row that fell off every roster — reported back
+      as `.removed` and surfaced in the Data tab's "Refresh from ESPN"
+      result text. Proven in `tools/test_waiver.js` with a mocked ESPN
+      roster feed: active vs practice-squad captured correctly, a player
+      missing from a full successful refresh is pruned, and — separately
+      — a totally FAILED refresh prunes nobody.
+- [x] 3. value.js: rebuild the wire board's ranking and `upgrades()`
       around rest-of-season value (the same `(perGame - replacement) *
       weeksLeft` math `dropCandidatesFrom`/`valueOf`/`trade()` already
       use), not a single week's number, so a one-week matchup spike can
@@ -92,21 +121,76 @@ px on a tab button as a swipe attempt instead of a plain press.
       positional-floor guess) before a player is eligible to appear as a
       top add, matching the app's existing "no small-sample false
       confidence" standard (see matchupFactor's own n<3 gate).
-- [ ] 4. ui.js: extend the deterministic (free, no Claude key needed)
+      DONE — `Value.perGame()` re-ordered to lead with 2+ measured games
+      this season, then ESPN's season-long (rest-of-season) projection,
+      then a single measured game, then this week's ESPN line only as a
+      last resort before the positional-floor guess — never THIS WEEK'S
+      matchup-specific number first, which is what let one good matchup
+      outrank a season-better player. Also fixed, found in the same pass:
+      the season-pace branch was returning projections.js's FULL-SEASON
+      total directly instead of dividing by 17 (recommend.js's own
+      `projectOne` already divides the identical field correctly) — any
+      player who fell through to that branch was valued at roughly 17x
+      his real rest-of-season rate. Each free agent now carries
+      `confident` (2+ measured games, or a real season projection — never
+      a single flashy week or a positional guess). `Value.upgrades()`
+      rebuilt to compare a free agent's `.v` (now season-oriented) against
+      a rostered player's `.base` (recommend.js's blended baseline BEFORE
+      the matchup/health multipliers apply for just one week) — an honest
+      apples-to-apples rest-of-season comparison — and requires
+      `confident === true`, which is what actually kills the "switch QB
+      after one great week" case. Proven in `tools/test_waiver.js`: a
+      45-point one-week-only ESPN line never fires; the season-pace /17
+      bug is pinned with an exact expected value.
+- [x] 4. ui.js: extend the deterministic (free, no Claude key needed)
       "available players project higher than someone you're starting"
       list so each suggested add is paired with a specific recommended
       drop from the same position/flex group and a plain-English,
       season-math "why" — Tj should not need a paid Claude call just to
       get a drop pairing and a reason, only the news-aware layer on top
       of it. Show injury/bye tags on every wire-board row.
-- [ ] 5. ui.js (boot()): restructure so `wire()` (the tab bar's click
+      DONE — `dropCandidatesFrom()` (value.js) now carries each
+      candidate's raw per-game `base` alongside its existing `.ros`, so
+      `upgrades()` can compare a free agent directly against a specific
+      droppable player (weakest bench player at the position, falling
+      back to the weakest starter only when there is no bench depth,
+      exactly as `dropCandidatesFrom` already did for the Claude path) —
+      the net gain and a plain-English `why` naming both players by name,
+      the point-per-game edge, the weeks left, and which source the free
+      agent's number came from. `freeAgentCard()` (ui.js) now renders
+      this as "Add + drop <name>" (reusing the existing
+      `addFreeAgentSwap` the Claude path already used) with a "why ▾"
+      detail, framed explicitly as rest-of-season, not this week. Every
+      row on the full per-position board also shows a DOUBTFUL/
+      QUESTIONABLE tag when one applies (OUT/IR/etc. never reach a row at
+      all — see step 1). Proven in `tools/test_waiver.js`: a genuinely
+      better, confident free agent is suggested paired with the correct
+      specific drop and a why-text naming both players.
+- [x] 5. ui.js (boot()): restructure so `wire()` (the tab bar's click
       listeners) is guaranteed to run even if `Store.init`,
       `Recommend.loadCaches`, or `autoFillWeek` throw — no single failure
       anywhere in startup may ever leave the tab bar permanently inert
       for the session. index.html: add `data-nogesture` to `<nav
       id="tabs">` so a tap that drifts slightly on a tab button can never
       be misread as a swipe attempt.
-- [ ] 6. Real tests for all of the above (a fixture proving an IR/OUT
+      DONE — `boot()` now has its seed/Store.init step in its own
+      try/catch (the one genuinely unrecoverable case — no data means no
+      screen means fatal() is the honest answer, and it still shows a
+      real error card rather than a silently inert one). `wire()` and
+      `render()` run UNCONDITIONALLY once that succeeds, with
+      applyAdjust/Recommend.loadCaches/autoFillWeek wrapped in their own
+      try/catch in between (a failure there costs only that feature, never
+      tab navigation) and startLive/freshenSchedule/refreshPlayerDBIfStale/
+      localAutoAdvance/syncCurrentWeek wrapped similarly afterward.
+      `<nav id="tabs">` carries `data-nogesture`. Proven in the new
+      `tools/test_tabsafety.js`: a real boot() run against a stub DOM with
+      `Recommend.loadCaches` (and, separately, `Recommend.autoLineup`)
+      forced to throw still leaves every tab clickable afterward — proven
+      by actually clicking a tab handler and confirming `lastTab` changed
+      — while a genuinely unrecoverable `Store.init` failure still shows
+      the real fatal() error text rather than a normal-looking broken
+      screen.
+- [x] 6. Real tests for all of the above (a fixture proving an IR/OUT
       player never appears in `Value.freeAgents()`'s output, a fixture
       proving `upgrades()` no longer fires on a one-week-only spike, a
       boot() test proving a thrown exception before `wire()` still
@@ -115,6 +199,16 @@ px on a tab button as a swipe attempt instead of a plain press.
       Ship only once all of that holds and nothing else in the app
       regressed, per Tj's explicit "only ship after... it didn't break
       any other features."
+      DONE — two new suites: `tools/test_waiver.js` (health exclusion,
+      practice-squad exclusion + default-active safety, DOUBTFUL/
+      QUESTIONABLE tagging, the season-pace /17 fix, the one-week-spike-
+      never-fires case, the confident-upgrade-with-drop-and-why case, and
+      three PlayerDB refresh/prune scenarios including "a partial or
+      total failure prunes nobody") and `tools/test_tabsafety.js` (the
+      boot() resilience fix, proven by actually clicking a tab handler
+      after a forced throw, plus the fatal-case and the gesture-exclusion
+      attribute). All 17 suites (15 existing + these 2 new ones) +
+      `check_es2018.js` green.
 
 The prior job (2026-09-15i: stop assuming other teams' weekly lineups,
 deduce them from a typed-in score where feasible) is complete, shipped
