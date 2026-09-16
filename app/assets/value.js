@@ -471,8 +471,12 @@
       var r = repl[p.pos] || 0;
       var ros = (x.base - r) * left;
       if (!byPosAll[p.pos]) byPosAll[p.pos] = [];
+      /* `base` (the raw per-game rate, not yet above-replacement) rides
+         along so a caller comparing this player directly against a FREE
+         AGENT's own per-game rate (upgrades() below) does not have to
+         re-derive it from `ros` and repl separately. */
       byPosAll[p.pos].push({ id: p.id, name: p.name, pos: p.pos, ros: ros,
-                              bench: !startIds[p.id] });
+                              base: x.base, bench: !startIds[p.id] });
     }
     var out = {}, k;
     for (k in byPosAll) {
