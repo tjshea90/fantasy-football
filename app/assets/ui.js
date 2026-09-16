@@ -2466,6 +2466,10 @@
       nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE' : '') +
         ' · ' + fmt(f.v) + ' proj' + vor + '  (' + f.src + ')' +
         (f.usage ? '\n' + f.usage : '')));
+      /* OUT/IR/SUSPENDED/PUP never reach this row at all (Value.freeAgents
+         excludes them entirely) — DOUBTFUL/QUESTIONABLE still show up here,
+         just visibly tagged rather than silently offered as if healthy. */
+      if (f.healthLabel) nm2.appendChild(el('span', 'tag warn', f.healthLabel));
       r2.appendChild(nm2);
       var b2 = el('button', 'btn sm', 'Add');
       b2.addEventListener('click', function () { addFreeAgent(f); });
