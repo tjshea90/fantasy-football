@@ -1,12 +1,12 @@
-# CHECKPOINT 72 — read me first, then TASKS.md
+# CHECKPOINT 74 — read me first, then TASKS.md
 
-**Written:** 2026-09-16T23:41:07Z · **version:** 6.8 · **tests:** all 17 suites green
+**Written:** 2026-09-16T23:47:20Z · **version:** 6.8 · **tests:** all 17 suites green
 
 ## Just done
-Rebuilt the waiver-wire recommendation system per Tj's request: value.js's free-agent board now hard-excludes OUT/IR/SUSPENDED/PUP players (reusing Recommend's existing health check, exported for this) and tags DOUBTFUL/QUESTIONABLE instead of showing them as if healthy; playerdb.js captures ESPN's real roster status (active vs practice-squad, excluded entirely) and prunes players who fell off every one of the 32 rosters on a clean full refresh (never on a partial failure); Value.perGame()/upgrades() rebuilt around rest-of-season value instead of a single week's number (also fixed a real 17x season-pace bug found in the same pass), gated by a 'confident' flag (2+ measured games or a real season projection, never one flashy week) that is what actually kills the 'switch QB after one good week' complaint; upgrades() now pairs every suggested add with a specific recommended drop and a plain-English season-math why, wired into ui.js's free-agent card as 'Add + drop'. Also fixed the tab-lock bug: boot() used to wrap Store.init/applyAdjust/Recommend.loadCaches/autoFillWeek in one try/catch with wire() (the only place tab click listeners get attached) running only after all of them succeeded, so any one throwing left the tab bar permanently inert for the session; restructured so wire()+render() are guaranteed to run once Store.init succeeds, with everything after individually guarded. Two new suites (test_waiver.js, test_tabsafety.js) plus TASKS.md ticked with proof. All 17 suites + ES2018 gate green.
+Added the STATE.md narrative write-up for the 2026-09-16 waiver-wire rebuild + tab-lock fix job (diagnosis, the five fixes, why no hardcoded ADP list, full verification section) so ship.sh's staleness check passes.
 
 ## Do this next
-Do the live-browser check of the actual Wire tab (per Tj's explicit ship gate), then bash build.sh, then ship.sh and the standard post-ship GitHub Release.
+Run bash ship.sh, then trigger the publish-release.yml workflow and verify the GitHub Release, per the standing post-ship instructions.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a40f873 ckpt 72: Rebuilt the waiver-wire recommendation system per Tj's request: value.js's free
   6a449a0 ckpt 55: Diagnosed the waiver wire recommendation bug and the tab-lock bug with live ESP
   1621d5e ship v6.8: Stop assuming other teams' weekly lineups in the weekly recap and bench-regre
   805b12d ckpt 473: Removed the other-teams-weekly-lineup assumption from recap.js/sim.js per Tj's
@@ -37,5 +38,5 @@ request in his own words and `git log` carries every step already taken.
   f923c2d ckpt 428: v6.6 shipped and verified: GitHub Release published (non-empty assets, FFTrack
 ```
 
-(16 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
