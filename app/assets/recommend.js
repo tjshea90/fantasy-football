@@ -1109,5 +1109,14 @@
                         actually are, instead of presenting a persisted cache
                         (possibly days old) as if it were current (v5.5b) */
                      newsCache: function () { return newsCache; },
-                     rosterContext: rosterContext };
+                     rosterContext: rosterContext,
+                     /* exported so value.js's free-agent board can apply the
+                        EXACT same OUT/IR/SUSPENDED/PUP exclusion this file
+                        already applies to a rostered player's lineup slot —
+                        one health check, not two that can silently disagree
+                        about whether the same man is startable (2026-09-16,
+                        Tj's screenshot: three players on ESPN's own Injured
+                        Reserve right now were the top-ranked RB free agents,
+                        because the wire board never called this at all). */
+                     health: health };
 })(typeof window !== 'undefined' ? window : this);
