@@ -277,31 +277,74 @@
     return out;
   }
 
-  /* Who on the wire beats somebody you are actually starting. This is the
-     whole point of a free-agent board: a ranked list nobody acts on is a
-     ranked list. */
+  /* Who on the wire is better than somebody on your roster, FOR THE REST OF
+   * THE SEASON — not just this one week. Tj, 2026-09-16: "it keeps
+   * recommending I switch QB. It is only considering week to week... I want
+   * it to suggest waiver wire drops and adds that will increase my team
+   * output for the entire season... It needs to suggest the top players
+   * available... that are better for the season than the player it
+   * recommends I drop. It should explain why to drop the player I have in
+   * favor of the player it recommends."
+   *
+   * This used to compare a free agent's THIS-WEEK number against a
+   * starter's THIS-WEEK number with a trivial 0.5-point margin — one good
+   * matchup was enough to trigger a swap suggestion that made no sense once
+   * that matchup passed. Now:
+   *   - both sides compare on the SAME rest-of-season basis: the free
+   *     agent's `.v` (perGame()'s season-oriented rate — see its own header,
+   *     never a single week's matchup) against the rostered player's `.base`
+   *     (recommend.js's blended baseline BEFORE the matchup/health
+   *     multipliers projectOne applies for just this one week);
+   *   - the free agent has to be `confident` (freeAgents() above — 2+
+   *     measured games, or ESPN's own season-long model, never one flashy
+   *     week) to be considered at all, which is what actually kills the
+   *     "switch QB after one great week" case;
+   *   - EVERY suggestion is paired with a specific player to drop for him —
+   *     the weakest bench player at the position by the same ROS math
+   *     dropCandidatesFrom() already uses (falling back to the weakest
+   *     starter only when the position has no bench depth at all) — plus a
+   *     plain-English reason, so this is never a bare ranked list nobody can
+   *     act on without also opening the Rosters tab to guess who to cut. */
   function upgrades(week, teamId, opponents, poolSize) {
     var fa = freeAgents(week, poolSize || 60);
+    var allProj = root.Recommend.projectAll(week, teamId, opponents);
     var starters = myStarters(week, teamId, opponents);
-    var byPos = {}, i;
-    for (i = 0; i < starters.length; i++) {
-      var s = starters[i];
-      var p = s.pos === 'FLEX' ? 'FLEX' : s.pos;
-      if (!byPos[p] || s.proj < byPos[p].proj) byPos[p] = s;
-    }
+    var startIds = {}, i;
+    for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
+    var repl = replacement(week), left = weeksLeft(week);
+    var dc = dropCandidatesFrom(allProj, startIds, repl, left, 1);
     var flexOK = root.Store.get().league.flexEligible || ['RB', 'WR', 'TE'];
     var out = [];
     for (i = 0; i < fa.length; i++) {
       var f = fa[i];
-      if (f.onBye) continue;
-      var worst = byPos[f.pos];
-      /* a FLEX-eligible free agent also competes with whoever is in the FLEX */
-      if (byPos.FLEX && flexOK.indexOf(f.pos) >= 0 &&
-          (!worst || byPos.FLEX.proj < worst.proj)) worst = byPos.FLEX;
-      if (!worst) continue;
-      if (f.v > worst.proj + 0.5) {
-        out.push({ fa: f, over: worst, gain: f.v - worst.proj });
+      if (f.onBye || !f.confident) continue;
+      var cands = dc[f.pos] || [];
+      /* a FLEX-eligible free agent also competes with the weakest FLEX-
+         eligible player on the roster, not just his own listed position */
+      if (flexOK.indexOf(f.pos) >= 0) {
+        var flexAll = [];
+        flexOK.forEach(function (fp) { flexAll = flexAll.concat(dc[fp] || []); });
+        flexAll.sort(function (a, b) { return a.base - b.base; });
+        if (flexAll.length && (!cands.length || flexAll[0].base < cands[0].base)) {
+          cands = flexAll;
+        }
       }
+      if (!cands.length) continue;
+      var drop = cands[0];
+      var perGameGain = f.v - drop.base;
+      /* a full point of REAL rest-of-season signal per game, not a rounding
+         margin — small enough to still catch a real upgrade, large enough
+         that ordinary week-to-week noise cannot trigger it on its own */
+      if (perGameGain <= 1) continue;
+      var seasonGain = perGameGain * left;
+      var why = f.name + ' projects about ' + perGameGain.toFixed(1) + ' more point' +
+        (Math.abs(perGameGain - 1) < 0.05 ? '' : 's') + ' per game than ' + drop.name +
+        ' for the rest of the season (' + left + ' week' + (left === 1 ? '' : 's') +
+        ' left) — roughly ' + seasonGain.toFixed(1) + ' points of season-long swing. ' +
+        f.name + '’s number: ' + f.src + '. ' + drop.name +
+        (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.');
+      out.push({ fa: f, drop: drop, over: drop, perGame: perGameGain, gain: seasonGain,
+                 weeks: left, why: why });
     }
     out.sort(function (a, b) { return b.gain - a.gain; });
     return out;
