@@ -147,12 +147,32 @@
       var key = p.p === 'DEF' ? ('DEF:' + p.t) : root.Names.canon(p.n);
       if (taken[key] || taken[norm(p.n)]) continue;
       if (POS.indexOf(p.p) < 0) continue;
+      /* practice-squad players cannot play in an NFL game — never offered
+         as a pickup at all (2026-09-16, see playerdb.js's rosterStatus;
+         missing `.st` — a never-refreshed bundled entry — defaults active
+         so this never hides the whole board on a fresh install). */
+      if (p.st === 'practice-squad') continue;
+      /* Same OUT/IR/SUSPENDED/PUP exclusion the Advice tab already applies
+         to a rostered player's lineup slot (Recommend.health, all four
+         collapse to label 'OUT') — a blocked player is never offered here
+         either, not just down-ranked. Verified live, 2026-09-16: three of
+         the top RB "adds" in Tj's own screenshot were on ESPN's Injured
+         Reserve at that exact moment. */
+      var h = (root.Recommend && root.Recommend.health)
+        ? root.Recommend.health({ name: p.n }) : { f: 1, label: '', note: '' };
+      if (h.label === 'OUT') continue;
       var onBye = Number(p.b) === Number(week);
       var pg = perGame(p.n, p.p, week);
+      /* A real signal, not one lucky/unlucky week — gates whether he can be
+         a TOP recommendation (freeAgentCard's "beats a starter" list and
+         upgrades() below), never whether he is shown at all; the full
+         per-position list still lists everyone so nothing is hidden. */
+      var confident = pg.n >= 2 || pg.src.indexOf('season pace') >= 0;
       /* usage was formatted for all ~785 players and read for about 36 of
          them. It is a getter now: same property name, built on first touch. */
       var row = { name: p.n, pos: p.p, nfl: p.t, bye: p.b, onBye: onBye,
-                  v: onBye ? 0 : pg.v, raw: pg.v, src: pg.src };
+                  v: onBye ? 0 : pg.v, raw: pg.v, src: pg.src,
+                  healthLabel: h.label, healthNote: h.note, confident: confident };
       (function (r, nm) {
         var memo = null;
         Object.defineProperty(r, 'usage', { enumerable: true, get: function () {
