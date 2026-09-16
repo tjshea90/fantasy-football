@@ -1,5 +1,121 @@
 # TASKS — the current job, in Tj's words
 
+## 2026-09-16: rebuild the waiver wire recommendation system to be season-smart and exclude inactive/injured players; diagnose the tab-lock bug
+
+> "Review the screenshot. This is the waiver wire tab. It is recommending
+> a lot of rb that are inactive or injured or no longer play. It probably
+> does this for other positions too. This is a major error. Figure out
+> how to make the recommendation system recommend only active players
+> that start in games every week that are not injured. The point of the
+> system is to recommend the best available players in each position
+> scored based on this league scoring system. Also it keeps recommending
+> I switch qb. It is only considering week to week. I want it to suggest
+> waiver wire drops and adds that will increase my team output for the
+> entire season. Rebuild the waiver wire system to make it smart. It
+> needs to suggest the top players available that aren't taken on another
+> roster that are better for the season than the player it recommends I
+> drop. It should explain why to drop the player I have in favor of the
+> player it recommends. It should only consider active players who start
+> in the NFL, considering current adp, stats from prior weeks, injury
+> reports, and it can find helpful lists online by searching for current
+> adp lists and waiver wire information online, but it is important that
+> this information is updated for the current/upcoming NFL week.
+>
+> Finally sometimes when I open the app it is on the live tab and it
+> won't let me press another tab like waiver wire. Diagnose
+>
+> Only ship after the system is well made and the code is optimized and
+> it didn't break any other features in the app."
+
+CONFIRMED ROOT CAUSES before writing any code (live ESPN API pulls, not
+guesses — see the checkpoint/commit history for the exact requests run):
+`Value.freeAgents()`/`byPos()`/`byVor()`/`upgrades()` (value.js) — the
+entire deterministic free-agent board the Wire tab renders — never call
+the injury feed or any health check at all, unlike `Recommend.projectOne`
+(recommend.js), which already has that logic and applies it correctly to
+the Advice tab. Verified live: James Conner, Dylan Sampson and Isiah
+Pacheco are ALL on ESPN's Injured Reserve right now (checked against the
+real `/injuries` feed this app already fetches), yet all three were the
+top-ranked RB recommendations in Tj's screenshot. Separately, Nick Chubb
+and Kareem Hunt are not on ANY of the 32 current NFL rosters at all
+(checked live against all 32 teams) — `PlayerDB.doRefresh()` (playerdb.js)
+only ever adds/updates players, never removes one who has fallen off
+every roster, so a released/traded-away player's stale entry (old team,
+old position) sits in the database forever. A third, separate defect:
+ESPN's own roster feed carries a `status` field playerdb.js currently
+discards entirely — 491 of ~2,450 league-wide entries are "practice-squad"
+(never plays in a game) with no way for this app to tell them apart from
+an active roster player, which is a large part of why the RB list showed
+"179 available." Finally, `Value.upgrades()` compares a free agent's
+THIS-WEEK-ONLY projection against a rostered starter's this-week
+projection with a trivial 0.5-point margin — a single great matchup week
+is enough to trigger a "switch QB" suggestion, exactly Tj's complaint,
+while `dropCandidatesFrom()` right next to it already computes a proper
+rest-of-season (ROS) value and is simply never used for the add side.
+
+TAB-LOCK BUG — confirmed mechanism, not yet reproduced live (no way to
+force a real device into the failing state from here): `boot()` (ui.js)
+wraps its entire startup sequence — `Store.init`, `applyAdjust`,
+`Recommend.loadCaches`, `autoFillWeek` — in ONE try/catch, and `wire()`
+(the only place that ever attaches click listeners to the bottom tab
+bar) does not run until AFTER all of that. If anything in that sequence
+throws — most plausibly `Store.init` on a phone with a half-written or
+corrupted local save, which this project's own CLAUDE.md already
+documents as a real failure mode after an interrupted session — `wire()`
+never runs and the tab bar is permanently inert for that entire app
+session: exactly "it is on the live tab and it won't let me press
+another tab." Separately, and independently worth hardening: the bottom
+tab bar (`<nav id="tabs">`, index.html) carries no `data-nogesture`, so
+gestures.js's swipe recognizer can misclassify a tap that drifts a few
+px on a tab button as a swipe attempt instead of a plain press.
+
+- [ ] 1. value.js: apply the same OUT/IR/SUSPENDED/PUP hard-exclusion
+      `Recommend`'s health check already does to every free agent the
+      Wire tab can show or recommend (freeAgents/byPos/byVor/upgrades/
+      waiverContext's pool) — a blocked player must never be offered at
+      all, not just down-ranked. DOUBTFUL/QUESTIONABLE players stay
+      offered but visibly tagged, same "tag warn" treatment already used
+      on the Advice and Lineups tabs, so nothing is hidden that Tj might
+      reasonably still want to grab.
+- [ ] 2. playerdb.js: capture ESPN's roster `status` field (active vs
+      practice-squad) during refresh and exclude practice-squad players
+      from the free-agent pool entirely (they cannot play in an NFL
+      game). Prune players who no longer appear on ANY of the 32 rosters
+      on a full, all-teams-succeeded refresh, instead of leaving stale
+      entries (old team, old position) in the database forever.
+- [ ] 3. value.js: rebuild the wire board's ranking and `upgrades()`
+      around rest-of-season value (the same `(perGame - replacement) *
+      weeksLeft` math `dropCandidatesFrom`/`valueOf`/`trade()` already
+      use), not a single week's number, so a one-week matchup spike can
+      no longer trigger a "switch QB"-style suggestion. Require a real
+      sample (measured games or a genuine ESPN projection, not just the
+      positional-floor guess) before a player is eligible to appear as a
+      top add, matching the app's existing "no small-sample false
+      confidence" standard (see matchupFactor's own n<3 gate).
+- [ ] 4. ui.js: extend the deterministic (free, no Claude key needed)
+      "available players project higher than someone you're starting"
+      list so each suggested add is paired with a specific recommended
+      drop from the same position/flex group and a plain-English,
+      season-math "why" — Tj should not need a paid Claude call just to
+      get a drop pairing and a reason, only the news-aware layer on top
+      of it. Show injury/bye tags on every wire-board row.
+- [ ] 5. ui.js (boot()): restructure so `wire()` (the tab bar's click
+      listeners) is guaranteed to run even if `Store.init`,
+      `Recommend.loadCaches`, or `autoFillWeek` throw — no single failure
+      anywhere in startup may ever leave the tab bar permanently inert
+      for the session. index.html: add `data-nogesture` to `<nav
+      id="tabs">` so a tap that drifts slightly on a tab button can never
+      be misread as a swipe attempt.
+- [ ] 6. Real tests for all of the above (a fixture proving an IR/OUT
+      player never appears in `Value.freeAgents()`'s output, a fixture
+      proving `upgrades()` no longer fires on a one-week-only spike, a
+      boot() test proving a thrown exception before `wire()` still
+      leaves the tab bar clickable). Full suite + ES2018 gate +
+      `bash build.sh` green. Live-browser check of the actual Wire tab.
+      Ship only once all of that holds and nothing else in the app
+      regressed, per Tj's explicit "only ship after... it didn't break
+      any other features."
+
 ## 2026-09-15i: stop assuming other teams' weekly lineups; deduce them from a typed-in total score if possible
 
 > "For the weekly recap and anything else in the app involving other
