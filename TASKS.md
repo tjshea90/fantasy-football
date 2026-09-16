@@ -115,8 +115,36 @@ at cost on every cold start, forever.
       four as genuinely unused. Not doing either without your steer, since
       "add a feature" and "remove working code" are both squarely
       "major" under the standing rule.
-- [ ] **Confirm v6.7 on the phone — PRIORITY, three things need a real
-      device**:
+- [ ] **Confirm v6.9 on the phone — PRIORITY, this is the waiver-wire
+      rebuild and the tab-lock fix you just asked for**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v6.9
+      ```
+      (1) **The Wire tab.** Open it and check: no injured/IR/suspended
+      player should appear anywhere on the board any more (a DOUBTFUL or
+      QUESTIONABLE player can still show up, but now carries a visible
+      tag rather than looking healthy); the "beats a starter" list at the
+      top should now say "Add + drop <name>" and frame everything as
+      rest-of-season, with a "why ▾" explaining the season-long math
+      rather than one week's number; a single big-week outlier should no
+      longer show up there on its own. If you spot an inactive/injured
+      player anywhere on the board, or a suggestion that still looks like
+      it is chasing one good week, say exactly who/what — that is new
+      diagnostic information, not a repeat of the bug already fixed.
+      (2) **The tab-lock issue** ("sometimes when I open the app it is on
+      the live tab and it won't let me press another tab"). The mechanism
+      was found and fixed in boot() (ui.js), but could not be reproduced
+      live from this session — there is no way to force a real device
+      into the failing state from here. Keep using the app normally and
+      say so if it happens again after v6.9; that would mean the fix
+      missed a real gap, not that the diagnosis was wrong.
+      (3) **Data tab → "Refresh from ESPN"** now also reports how many
+      players were removed for having fallen off every NFL roster (Nick
+      Chubb/Kareem Hunt were the concrete examples found this session) —
+      worth one look just to see the number is sane, not zero forever.
+- [ ] **Confirm v6.7 on the phone** (superseded by v6.9 above for
+      anything Wire/tab-related; still worth its own look for the three
+      items below, none of which v6.9 touched):
       ```
       https://github.com/tjshea90/fantasy-football/releases/tag/v6.7
       ```
