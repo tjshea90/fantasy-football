@@ -2211,23 +2211,34 @@
     var ups = Value.upgrades(week, S.league.me, opp, 80);
     if (ups.length) {
       c.appendChild(el('p', null, ups.length + ' available player' + (ups.length === 1 ? '' : 's') +
-        ' project higher than somebody you are starting:'));
+        ' project better than someone on your roster for the REST OF THE SEASON ' +
+        '(' + ups[0].weeks + ' week' + (ups[0].weeks === 1 ? '' : 's') + ' left, not just this ' +
+        'week) — each paired with who to drop for him:'));
       ups.slice(0, 6).forEach(function (u) {
         var r = el('div', 'row');
         markPlayer(r, u.fa.name, u.fa.pos, u.fa.nfl);
         r.appendChild(el('div', 'slot', u.fa.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(u.fa.name));
-        nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' + fmt(u.fa.v) + ' proj — ' +
-          '+' + fmt(u.gain) + ' over ' + u.over.name + ' in your ' + u.over.slot));
+        nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' + fmt(u.fa.v) + ' proj/gm — ' +
+          '+' + fmt(u.gain) + ' pts the rest of the season over ' + u.drop.name));
+        if (u.fa.healthLabel) nm.appendChild(el('span', 'tag warn', u.fa.healthLabel));
         r.appendChild(nm);
-        var b = el('button', 'btn sm', 'Add');
-        b.addEventListener('click', function () { addFreeAgent(u.fa); });
+        var b = el('button', 'btn sm', 'Add + drop ' + u.drop.name);
+        b.addEventListener('click', function () { addFreeAgentSwap(u.fa, u.drop.name); });
         r.appendChild(b);
         c.appendChild(r);
+
+        var d = el('details');
+        d.appendChild(el('summary', null, 'why ▾'));
+        var kv = el('div', 'kv'); kv.appendChild(el('span', null, u.why)); d.appendChild(kv);
+        c.appendChild(d);
       });
     } else {
-      c.appendChild(el('p', 'muted', 'Nobody on the wire beats a player you are starting this week.'));
+      c.appendChild(el('p', 'muted',
+        'Nobody on the wire clearly beats a player on your roster for the rest of the ' +
+        'season. This checks a full season\'s worth of value, not one week — a single ' +
+        'good matchup is never enough on its own to show up here.'));
     }
     /* ---- Claude's read of the wire (v3.4) ------------------------------
      * The button is here rather than on the Data tab because this is where he
