@@ -592,10 +592,33 @@
       if (S.settings.lastTab && tabList().indexOf(S.settings.lastTab) >= 0) {
         view = S.settings.lastTab;
       }
+    } catch (e) {
+      fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
+      return;
+    }
+    /* TAB NAVIGATION MUST NEVER DEPEND ON WHAT COMES AFTER THIS LINE.
+     * (2026-09-16, Tj: "sometimes when I open the app it is on the live tab
+     * and it won't let me press another tab like waiver wire.") `wire()` is
+     * the ONLY place that ever attaches click listeners to the bottom tab
+     * bar (see its own comment above). Before this fix it ran only after
+     * applyAdjust()/Recommend.loadCaches()/autoFillWeek() succeeded, all
+     * four sharing ONE try/catch with everything above — so if any one of
+     * those three threw (a corrupted local save recovering from an
+     * interrupted session is the most plausible real trigger; CLAUDE.md's
+     * own "INTERRUPTED MID-CHANGE" warning is exactly this class of state),
+     * `wire()` never ran and the tab bar was permanently inert for the rest
+     * of the session, with no recovery except force-closing and
+     * relaunching. Every step below is now individually guarded so a
+     * failure anywhere in startup can cost only that one piece of
+     * functionality, never the ability to switch tabs at all. */
+    wire();
+    try {
       applyAdjust();
       if (window.Recommend && Recommend.loadCaches) Recommend.loadCaches();
       autoFillWeek(week);
-      wire(); render();
+    } catch (e) { /* the tab bar and render() below must still work */ }
+    render();
+    try {
       startLive();
       freshenSchedule();
       refreshPlayerDBIfStale();
@@ -603,9 +626,7 @@
          cache — see the NFL WEEK AUTO-ADVANCE comment above */
       localAutoAdvance();
       syncCurrentWeek();
-    } catch (e) {
-      fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
-    }
+    } catch (e) { /* the app is already usable; these are all background refreshes */ }
   }
 
   /* Kickoff times, when the live poll is not going to supply them.
