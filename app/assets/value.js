@@ -44,18 +44,37 @@
     return out;
   }
 
-  /* ---- what one player is worth per game --------------------------------
-   * Three sources, in order of how much they know, and the row SAYS which one
-   * it used rather than presenting a number of unknown provenance:
-   *   1. ESPN's projected stat line for this week, re-scored here
-   *   2. what he has actually scored in this league (the book), last 4 weeks
-   *   3. nothing — a positional floor, clearly labelled as a guess
-   */
+  /* ---- what one player is worth per game, REST OF SEASON -----------------
+   * Tj, 2026-09-16: "I want it to suggest waiver wire drops and adds that
+   * will increase my team output for the entire season... it is only
+   * considering week to week." This used to lead with ESPN's THIS-WEEK
+   * projected stat line — a single game's specific matchup — ahead of even
+   * a real measured sample, which is exactly why one good matchup could
+   * outrank a player who is actually better for the rest of the season.
+   * Re-ordered toward what predicts the REST of the season, most reliable
+   * first, and the row always SAYS which one it used:
+   *   1. what he has actually scored in this league this season (the book),
+   *      last 4 weeks — but only once there is enough of it (2+ games) to
+   *      not be one lucky/unlucky week wearing a season's clothing
+   *   2. ESPN's full-SEASON (rest-of-season) projection, per game — this
+   *      updates through the season and is not tied to one week's opponent
+   *   3. a single measured game — thin, but still real, and better than a
+   *      blind guess
+   *   4. ESPN's projected stat line for THIS week only — last resort before
+   *      the guess, since by itself it says nothing about the other 16
+   *   5. nothing — a positional floor, clearly labelled as a guess
+   * `n` (the measured-game count) rides along on the result so callers can
+   * gate "is this a confident-enough signal to actively recommend" separate
+   * from "what number do we show" — see freeAgents()' `confident` below.
+   *
+   * Found in this same pass: step 2 (ESPN season pace) used to return
+   * `rec.season` directly as if it were ALREADY a per-game rate. It is not
+   * — projections.js's `ingest()` stores the FULL-SEASON total there (the
+   * same field recommend.js's projectOne divides by 17 before using), so
+   * any player who fell through to that branch was valued at roughly 17x
+   * his real rest-of-season rate. Fixed here alongside the reordering. */
   function perGame(name, pos, week) {
     var rec = root.Projections ? root.Projections.find({ name: name, pos: pos }, week) : null;
-    if (rec && typeof rec.week === 'number' && isFinite(rec.week) && rec.week > 0) {
-      return { v: rec.week, src: 'ESPN week line, re-scored' };
-    }
     /* the raw name, not norm(name) — bookTrend resolves it tolerantly
        against however ESPN actually spelled the box score (see its own
        comment in store.js); pre-normalising here bought nothing and, before
@@ -64,12 +83,20 @@
     var t = root.Store.bookTrend ? root.Store.bookTrend(name, week - 1, 4) : [];
     var sum = 0, n = 0, i;
     for (i = 0; i < t.length; i++) if (t[i].row) { sum += t[i].row.p; n++; }
-    if (n) return { v: sum / n, src: n + ' scored week' + (n === 1 ? '' : 's') + ' in this app' };
+    if (n >= 2) {
+      return { v: sum / n, src: n + ' scored weeks in this app (season average)', n: n };
+    }
     if (rec && typeof rec.season === 'number' && rec.season > 0) {
-      return { v: rec.season, src: 'ESPN season pace' };
+      return { v: rec.season / 17, src: 'ESPN season pace (rest-of-season projection)', n: n };
+    }
+    if (n === 1) {
+      return { v: sum, src: '1 scored week in this app — thin sample', n: n };
+    }
+    if (rec && typeof rec.week === 'number' && isFinite(rec.week) && rec.week > 0) {
+      return { v: rec.week, src: 'ESPN week ' + week + ' line only — no season-long signal yet', n: 0 };
     }
     var pri = (root.Recommend && root.Recommend.PRIOR) ? root.Recommend.PRIOR[pos] : 10;
-    return { v: (pri || 10) * 0.55, src: 'no data — positional floor, treat as a guess' };
+    return { v: (pri || 10) * 0.55, src: 'no data — positional floor, treat as a guess', n: 0 };
   }
 
   /* opportunity, not points: what actually predicts next week */
