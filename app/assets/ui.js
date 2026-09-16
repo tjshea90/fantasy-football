@@ -2501,12 +2501,14 @@
       });
     }
     c.appendChild(el('p', 'hint',
-      'Everyone in the bundled player database who is not on one of the ten ' +
-      'rosters, grouped by position and ranked by this league\'s points — ESPN\'s ' +
-      'projected stat line for this week re-scored here where there is one, and ' +
-      'what he has actually scored in this app where there is not. Each row says ' +
-      'which. Adding a player here does not tell your league site anything; do ' +
-      'the real add there.'));
+      'Everyone active on one of the 32 NFL rosters who is not on one of the ten ' +
+      'league rosters, grouped by position and ranked for the REST OF THE SEASON — ' +
+      'his own recent scored games in this app where there are enough of them, ' +
+      'ESPN\'s season-long projection where there are not, and this week\'s ESPN line ' +
+      'only as a last resort before a flat guess. Each row says which. Practice-squad ' +
+      'players and anyone ESPN has OUT, on Injured Reserve, suspended or on PUP are ' +
+      'never shown at all; DOUBTFUL/QUESTIONABLE still show, tagged. Adding a player ' +
+      'here does not tell your league site anything; do the real add there.'));
     return c;
   }
   function addFreeAgent(f) {
