@@ -1,12 +1,12 @@
-# CHECKPOINT 473 — read me first, then TASKS.md
+# CHECKPOINT 55 — read me first, then TASKS.md
 
-**Written:** 2026-09-15T18:11:32Z · **version:** 6.7 · **tests:** all 15 suites green
+**Written:** 2026-09-16T23:20:26Z · **version:** 6.8 · **tests:** all 15 suites green
 
 ## Just done
-Removed the other-teams-weekly-lineup assumption from recap.js/sim.js per Tj's request (he only ever tracks his own + his weekly opponent's real lineup). Built Store.inferLineup() — a slot-constrained backtracking solver that works backward from a team's manually-entered score to which of their own roster's players summed to it, stress-tested at 29/30 unique on realistic data — and wired it into recap.js's starters/busts/bench-regret (only trusted when unique, never guessed). Fixed 3 independent teamWeekPoints-vs-teamWeekScore bugs in sim.js (allPlay/teamProfile/season) plus a .pts/.total typo that was silently producing NaN season projections. Removed Sim.matchup/lineupMeans (confirmed zero callers, and their premise no longer holds for 8 of 10 teams). New tools/test_recap.js (22 real-execution assertions) plus a live-browser check of the actual recap dialog, both green; full suite + ES2018 gate + build.sh all green.
+Diagnosed the waiver wire recommendation bug and the tab-lock bug with live ESPN API verification (James Conner/Dylan Sampson/Isiah Pacheco confirmed on IR right now yet ranked as top RB adds; Nick Chubb/Kareem Hunt confirmed off all 32 NFL rosters yet still in the free-agent pool; 491 league-wide practice-squad players never filtered out; Value.upgrades() compares this-week-only numbers so one big matchup triggers a QB-switch suggestion; boot()'s single try/catch around the whole startup sequence can leave wire() — the only place tab click listeners get attached — never called if anything earlier throws). Wrote the fix plan into TASKS.md as 6 steps (health-filter the free-agent board, prune/status-tag playerdb, switch wire ranking to rest-of-season value, pair adds with a drop+why deterministically, harden boot()+tab-bar gesture exclusion, then tests+ship). Archived the finished 2026-09-15i job to LADDER.md §36. No code changed yet.
 
 ## Do this next
-TASKS.md's 2026-09-15i job is fully done (all 4 boxes ticked with proof) and not yet shipped — next step is bash ship.sh, then the standard post-ship GitHub Release + STATE.md/LADDER.md write-up.
+Implement TASKS.md step 1: value.js free-agent health filtering (OUT/IR/SUSPENDED/PUP hard exclusion, DOUBTFUL/QUESTIONABLE tagged), reusing Recommend's existing health() logic rather than duplicating it.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,17 +26,15 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  1621d5e ship v6.8: Stop assuming other teams' weekly lineups in the weekly recap and bench-regre
+  805b12d ckpt 473: Removed the other-teams-weekly-lineup assumption from recap.js/sim.js per Tj's
   a083cad ckpt 454: Recorded new job 2026-09-15i in TASKS.md: a real premise change -- Tj will onl
   b7104ad ckpt 451: v6.7 shipped and verified: GitHub Release published (non-empty assets, FFTrack
   adb8ee4 ship v6.7: 2026-09-15g: wired up the weekly recap Claude write-up feature (Recap.build/t
   6989a9e ckpt 448: Removed two scratch Playwright test scripts (tools/_data_tab_check.js, tools/_
   3f6499e ckpt 446: 2026-09-15g documentation complete: TASKS.md ticked with full proof and reset 
   f923c2d ckpt 428: v6.6 shipped and verified: GitHub Release published (non-empty assets, FFTrack
-  a2f35cf ship v6.6: 2026-09-15h: the week-advance fix still failed on a true cold boot -- added l
-  dafed68 ckpt 424: Documented 2026-09-15h fix: TASKS.md job entry with steps 1-3 ticked (step 4 p
-  687d92b ckpt 420: Fixed the week-advance bug for real this time (Tj reported it persisting even 
-  336f833 ckpt 414: In progress on 2026-09-15g (recap feature + Data tab sub-nav): built weeklyRec
 ```
 
-(18 automatic checkpoint(s) since the last deliberate one — the
+(4 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
