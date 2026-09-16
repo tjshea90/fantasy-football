@@ -2896,8 +2896,9 @@
                 Math.round(done * 100 / total));
       }).then(function (r) {
         jobEnd();
-        var msg = r.added || r.updated
-          ? (r.total + ' players · ' + r.added + ' new, ' + r.updated + ' changed')
+        var msg = (r.added || r.updated || r.removed)
+          ? (r.total + ' players · ' + r.added + ' new, ' + r.updated + ' changed' +
+             (r.removed ? ', ' + r.removed + ' removed (no longer on any of the 32 rosters)' : ''))
           : (r.total + ' players · already up to date');
         render();
         if (r.failed.length) modal('Player database', msg + '\n\nThese teams failed every route:\n  ' +
