@@ -174,12 +174,27 @@
    * not open 32 sockets at once. Each team gets one retry — a single dropped
    * request should not cost a whole team's roster.
    * onProgress(done, total, teamAbbr). Private: always call refresh() below,
-   * never this directly — see the single-flight guard there. */
+   * never this directly — see the single-flight guard there.
+   *
+   * ROSTER STATUS (2026-09-16, Tj's screenshot). ESPN's own roster response
+   * carries a `status.type` per athlete — 'active', 'practice-squad', or
+   * 'day-to-day' (still on the real 53-man roster, just currently banged up;
+   * the separate /injuries feed recommend.js already reads gives the actual
+   * OUT/DOUBTFUL/QUESTIONABLE granularity, so 'day-to-day' folds into
+   * 'active' here rather than being treated as its own exclusion). Verified
+   * live against all 32 rosters: 491 of ~2,450 entries were practice-squad —
+   * players who cannot play in an NFL game — with nothing before this
+   * recording that they were any different from an active roster player.
+   * Stored as `st` so value.js's free-agent board can filter them out. */
+  function rosterStatus(a) {
+    var t = a.status && a.status.type;
+    return t === 'practice-squad' ? 'practice-squad' : 'active';
+  }
   function doRefresh(onProgress) {
     var d = get();
     var byKey = {}, i;
     for (i = 0; i < d.players.length; i++) byKey[norm(d.players[i].n)] = d.players[i];
-    var added = 0, updated = 0, failed = [];
+    var added = 0, updated = 0, failed = [], seen = {};
     var chain = Promise.resolve();
     TEAMS.forEach(function (ab, ix) {
       chain = chain.then(function () {
@@ -211,15 +226,18 @@
             if (['QB','RB','WR','TE','K','FB','PK'].indexOf(pos) < 0) continue;
             if (pos === 'PK') pos = 'K';
             if (pos === 'FB') pos = 'RB';
+            var st = rosterStatus(a);
             var key = norm(nm), ex = byKey[key];
+            seen[key] = 1;
             if (ex) {
               if (ex.t !== ab || ex.p !== pos) updated++;
               ex.t = ab; ex.p = pos; ex.b = (root.SEED && root.SEED.byes) ? (root.SEED.byes[ab] || 0) : ex.b;
               ex.e = a.id ? String(a.id) : ex.e;
+              ex.st = st;
             } else {
               var rec = { n: nm, p: pos, t: ab,
                           b: (root.SEED && root.SEED.byes) ? (root.SEED.byes[ab] || 0) : 0,
-                          e: a.id ? String(a.id) : '' };
+                          e: a.id ? String(a.id) : '', st: st };
               rec._n = key; byKey[key] = rec; d.players.push(rec); added++;
             }
           }
@@ -238,17 +256,32 @@
        * for the whole attempt would silently mask itself from ever being
        * retried. */
       var ok = failed.length < TEAMS.length;
+      var removed = 0;
+      /* PRUNE (2026-09-16). Only when EVERY one of the 32 teams answered
+       * this run — a partial failure must never be read as "the missing
+       * teams' players are all gone now". Verified live: Nick Chubb and
+       * Kareem Hunt are not on any of the 32 current rosters, yet sat in
+       * this database forever (with a stale team/position) because
+       * nothing before this ever removed a player who fell off every
+       * roster — doRefresh only ever added or updated. A player dropped
+       * here can always come back on a later refresh if he is signed
+       * again; nothing here is permanent. */
+      if (ok && !failed.length) {
+        var kept = d.players.filter(function (p) { return seen[p._n || norm(p.n)]; });
+        removed = d.players.length - kept.length;
+        d.players = kept;
+      }
       if (ok) {
         d.updated = new Date().toISOString();
         d.version = 'espn-' + d.updated.slice(0, 10);
       }
       /* drop the cached norm keys before persisting — they rebuild lazily */
       var slim = d.players.map(function (p) {
-        return { n: p.n, p: p.p, t: p.t, b: p.b, e: p.e || '' };
+        return { n: p.n, p: p.p, t: p.t, b: p.b, e: p.e || '', st: p.st || 'active' };
       });
       rawSave({ version: d.version, updated: d.updated, players: slim });
       if (onProgress) onProgress(TEAMS.length, TEAMS.length, '');
-      return { added: added, updated: updated, failed: failed,
+      return { added: added, updated: updated, failed: failed, removed: removed,
                total: d.players.length, before: before };
     });
   }
