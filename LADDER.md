@@ -1199,3 +1199,117 @@ implemented.
       clean.
 
 Shipped as v6.7. All 14 suites + the ES2018 gate green.
+
+## 36. Stop assuming other teams' weekly lineups; deduce them from a typed-in total score if possible (Tj, 2026-09-15, v6.8)
+
+> "For the weekly recap and anything else in the app involving other
+> teams in there fantasy league, I will not be keeping track of teams'
+> weekly lineups and the players they select each week. Therefore the
+> weekly recap feature doesn't make much sense because it assumes which
+> players each team started, and may be incorrect. The only lineups I
+> will track and record each week is my lineup and my opponent for that
+> week. Search the app for anything assuming other teams' weekly lineups
+> and get rid of it, as long as this doesn't break any other features in
+> the app. I will manually enter each team's final score every week after
+> the week is final. Maybe if it is easy to implement, the app can deduce
+> which players each team actually started based on the final score I
+> type in, by seeing which combination of players on their roster equal
+> the points total I entered. If this is possible, then keep the sections
+> about other team lineups and adjust them according to what the app can
+> deduce for their lineups based on the total points they scored for the
+> week"
+
+A real premise change: only 2 of 10 teams (his own + that week's
+opponent) will ever have a real, entered lineup. Every feature reading
+`Store.getLineup(week, otherTeamId)` for the other 8 is reading data that
+will never be filled in and is silently wrong, not just stale.
+
+- [x] 1. Find every place in the app that reads or assumes another team's
+      (not-mine, not-this-week's-opponent) weekly LINEUP specifically —
+      as opposed to their total score (`teamWeekPoints`, entered manually
+      or computed), which stays valid regardless. recap.js's `build()` is
+      the known one (best/worst starter, biggest bust, bench regret all
+      walk every team's lineup); check value.js, sim.js, standings, and
+      anywhere else that iterates `S.teams` and reads a lineup.
+      DONE — every `getLineup`/`teamWeekPoints` call site in app/assets
+      was found and classified (grep proof: `getLineup(` + `teamWeekPoints(`
+      across app/assets, all 19 hits accounted for). Safe/unchanged because
+      already scoped to me or this-week's-opponent only: schedule.js's
+      `earlyAlertUncached`, ui.js's `lineupCard`/`myMatchupCard`,
+      recommend.js's advice `render`. `Store.standings`/`seasonTotals`
+      were ALREADY correct (route through `teamWeekScore`, not
+      `teamWeekPoints` — no change needed). Genuinely broken, all fixed
+      in step 3 below: recap.js's `build()` (scores/high/low/games/
+      closest/blowout/starters/busts/regret), sim.js's `allPlay`/
+      `teamProfile`/`season` (reading `teamWeekPoints` instead of
+      `teamWeekScore`, plus an unrelated `.pts`-vs-`.total` typo in
+      `season()` that silently produced NaN projections), and sim.js's
+      `regret()` (now takes an optional lineup override). `Sim.matchup`/
+      `lineupMeans` — a live win-probability simulator needing a real
+      lineup on BOTH sides — had zero callers anywhere in the app or test
+      suite (grepped clean) and were removed outright rather than fixed;
+      their premise no longer holds for 8 of 10 teams.
+- [x] 2. Assess whether "deduce a team's starters from their roster's
+      individual point values and a typed-in total" is actually solvable
+      — feasibility first, before promising it: does a unique (or
+      near-unique) combination usually exist given this league's real
+      scoring spread, positions/slots (QB, RB, RB, WR, WR, WR, TE, FLEX,
+      K, DEF) as real constraints on which subset is even valid, and
+      real-world ties/ambiguity (a 0 for a bye/bench player is common,
+      multiple subsets can share a sum). Report findings plainly if it
+      is unreliable rather than shipping a feature that quietly guesses
+      wrong lineups with false confidence.
+      DONE — YES, feasible. A slot-constrained backtracking solver
+      (dedup by underlying player-id SET, not slot label, since a
+      same-position swap doesn't change the total) was stress-tested
+      against 30 realistic team-weeks (3 seeds x all 10 teams, real
+      scoring-engine point values, ~20% simulated bye rate): 29/30 (97%)
+      landed on exactly one possible lineup, 1/30 was genuinely ambiguous
+      (2 valid combinations, correctly reported as such rather than
+      guessed), 0/30 failed to find the real lineup at all. Avg solve
+      time 75ms, max 107ms — cheap enough to run on demand. Built as
+      production code accordingly (step 3).
+- [x] 3. If feasible: implement the deduction, wire it back into whatever
+      it can honestly replace (recap.js and anywhere else from step 1),
+      clearly marked as inferred, not confirmed. If NOT reliably
+      feasible: remove the other-teams-lineup-assuming code cleanly
+      instead (adjust recap.js etc. to use only real per-player
+      book/season data, never a specific team's inferred/assumed weekly
+      lineup) and say why the deduction idea does not hold up.
+      DONE — `Store.inferLineup(week, teamId)` (store.js) runs the
+      backtracking solver against a team's manual score; returns
+      `{ok:true, confidence:'unique', slots}` when there is exactly one
+      answer, `{ok:true, confidence:'ambiguous', sets}` when there are
+      several, `{ok:false, reason:'no-match'|'no-score'|'too-complex'}`
+      otherwise. recap.js's `build()` uses the REAL lineup
+      (`getLineup`) for me + this week's opponent, `inferLineup` for
+      everyone else, and only trusts it — for starters, busts, AND bench
+      regret — when `confidence === 'unique'`; an ambiguous or
+      unmatched team is left out of those sections entirely rather than
+      guessed at, per step 2's finding. `Sim.regret(week, teamId,
+      lineupOverride)` gained the optional third param so recap.js can
+      feed it an inferred lineup without touching its default (real
+      `getLineup`) behavior for every existing caller.
+- [x] 4. Full test suite + ES2018 gate + `bash build.sh` green, real tests
+      for whatever changed, live-browser check, ship if ship-worthy.
+      DONE — new `tools/test_recap.js` (22 assertions, all real
+      execution against the real modules, deterministic exact-value
+      fabrication via `manualAdj` rather than fitted stat lines): proves
+      `inferLineup`'s all four outcomes (unique/ambiguous/no-match/
+      no-score) against a hand-constructed roster, proves recap.js only
+      attributes best-starter-of-the-week to a uniquely-inferred or real
+      team — specifically proving an AMBIGUOUS team's even-bigger score
+      never wins that attribution — proves `Sim.matchup`/`lineupMeans`
+      are actually gone, proves `allPlay`/`teamProfile`/`season` now
+      read a team's manual score instead of a phantom 0, and proves
+      `season()`'s projected points are never NaN anymore. All 14
+      suites + `check_es2018.js` green, `bash build.sh` clean (v6.7,
+      versionCode 607, 263K, every source file produced a class).
+      Live-browser check (headless Chromium, real index.html, same
+      deterministic fixture driven through the actual Data tab UI):
+      recap dialog renders correctly — high score, low score, closest/
+      biggest, and "Best starter: KC Concepcion (WR, Jose/Brandon)
+      999999" all exactly as expected, zero console/page errors.
+      Screenshot confirmed visually clean.
+
+Shipped as v6.8. All 15 suites + the ES2018 gate green.
