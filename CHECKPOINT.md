@@ -1,12 +1,12 @@
-# CHECKPOINT 74 — read me first, then TASKS.md
+# CHECKPOINT 80 — read me first, then TASKS.md
 
-**Written:** 2026-09-16T23:47:20Z · **version:** 6.8 · **tests:** all 17 suites green
+**Written:** 2026-09-16T23:53:35Z · **version:** 6.9 · **tests:** all 17 suites green
 
 ## Just done
-Added the STATE.md narrative write-up for the 2026-09-16 waiver-wire rebuild + tab-lock fix job (diagnosis, the five fixes, why no hardcoded ADP list, full verification section) so ship.sh's staleness check passes.
+Moved the completed 2026-09-16 waiver-wire/tab-lock job from TASKS.md to LADDER.md §37 (v6.9, shipped and GitHub Release verified with a non-empty assets array), reset TASKS.md to no-active-job, and added a v6.9 confirm-on-phone bullet to Waiting on Tj describing exactly what to check on the Wire tab and the tab-lock symptom.
 
 ## Do this next
-Run bash ship.sh, then trigger the publish-release.yml workflow and verify the GitHub Release, per the standing post-ship instructions.
+Nothing in flight. Job fully shipped, released, and documented. Next session picks up whatever Tj asks for next, or works through the Waiting on Tj list if he has nothing new.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  227f4bb ship v6.9: Rebuilt the waiver wire recommendation system: hard-excludes OUT/IR/SUSPENDED
+  faf988b ckpt 74: Added the STATE.md narrative write-up for the 2026-09-16 waiver-wire rebuild + 
   a40f873 ckpt 72: Rebuilt the waiver-wire recommendation system per Tj's request: value.js's free
   6a449a0 ckpt 55: Diagnosed the waiver wire recommendation bug and the tab-lock bug with live ESP
   1621d5e ship v6.8: Stop assuming other teams' weekly lineups in the weekly recap and bench-regre
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   b7104ad ckpt 451: v6.7 shipped and verified: GitHub Release published (non-empty assets, FFTrack
   adb8ee4 ship v6.7: 2026-09-15g: wired up the weekly recap Claude write-up feature (Recap.build/t
   6989a9e ckpt 448: Removed two scratch Playwright test scripts (tools/_data_tab_check.js, tools/_
-  3f6499e ckpt 446: 2026-09-15g documentation complete: TASKS.md ticked with full proof and reset 
-  f923c2d ckpt 428: v6.6 shipped and verified: GitHub Release published (non-empty assets, FFTrack
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
