@@ -65,10 +65,13 @@ console.log('\n-- Value.freeAgents(): a practice-squad player is excluded entire
      'a practice-squad player (cannot play in an NFL game) never appears, even though ' +
      'nothing about him looks unhealthy');
   /* an entry with no `.st` at all (a never-refreshed bundled database row) must
-     default to active, or a fresh install would filter out its ENTIRE board */
+     default to active, or a fresh install would filter out its ENTIRE board.
+     A different week — freeAgents() memoises on (week, store generation), and
+     pushing directly onto PlayerDB's array bumps neither, so re-asking for
+     week 1 here would just replay the FIRST call's cached answer. */
   var nm2 = 'Zzz No Status Field Guy';
   W.PlayerDB.get().players.push({ n: nm2, p: 'WR', t: 'KC', b: 10, e: '' });
-  var fa2 = W.Value.freeAgents(1, 0);
+  var fa2 = W.Value.freeAgents(2, 0);
   ok(fa2.some(function (r) { return r.name === nm2; }),
      'a bundled entry with no `.st` field yet defaults to shown, not silently dropped');
 })();
