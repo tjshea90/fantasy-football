@@ -217,6 +217,7 @@
         }
         var attempt = tryAt(0);
         return attempt.then(function (list) {
+          teamOk[ab] = true;
           var k;
           for (k = 0; k < list.length; k++) {
             var a = list[k];
