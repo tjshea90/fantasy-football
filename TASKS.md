@@ -126,6 +126,24 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
+- [ ] **Confirm v7.2 on the phone — PRIORITY, this is the team-analysis
+      feature you just asked for**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v7.2
+      ```
+      Open the Rosters tab and check: below your own roster (above the
+      trade evaluator) there's a new "How your team stacks up" card. If
+      you have an Anthropic API key configured, "Ask Claude" should work
+      and show a rank, a verdict, strengths/weaknesses, a "Team by team ▾"
+      breakdown and a recommendations list. Either way — with or without a
+      key — "Or use the Claude app" below it should make a file you can
+      hand to the Claude app with no message of your own, and "2 · Load
+      Claude's reply" should take whatever it gives back and fill in the
+      same results view. If a recommendation names a player or team that
+      doesn't look right, or credits the wrong team for a trade offer, say
+      exactly what you saw — that would be new diagnostic information, not
+      a repeat of the "JR" bug already caught and fixed before this
+      shipped (see LADDER.md §39).
 - [ ] **Confirm v7.0 on the phone — PRIORITY, this is the Chubb/Hunt-still-
       on-the-board fix you just reported**:
       ```
