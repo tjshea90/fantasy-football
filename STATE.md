@@ -3233,3 +3233,66 @@ this was a fresh container with no `build/app-release.apk` yet, so the
 first `ship.sh` call correctly WARNed "no APK in build/" and skipped
 publishing rather than shipping a stale one; running `build.sh` first and
 re-running `ship.sh` produced the real v7.1 APK.
+
+## 2026-09-17c: the team-analysis screen showed Tj his own app's unfilled template (v7.3)
+
+Minutes after v7.2 shipped, Tj sent a screenshot: the new "Claude's take"
+card was showing "Rank 1 of 10. `<a few honest sentences: where this team
+really stands and why>`" — literal placeholder text from this session's
+own `buildTeamAnalysis()` skeleton, not anything a real Claude reply would
+ever say. "When I imported it back into Claude it gave nonsense answers."
+
+### Reproduced first, before touching any code
+Built a real export with `Handoff.buildTeamAnalysis()`, then fed that
+export's own text straight back into `Handoff.importReply()` — simulating
+loading or pasting the file MADE FOR Claude instead of what Claude actually
+sent back. It imported cleanly, and the saved result was, character for
+character, the unfilled skeleton from the export's own "## The file to
+give back" section: `{"overall":{"rank":1,"of":10,"verdict":"<a few honest
+sentences...>"}, ...}`. Exact match for the screenshot.
+
+### Root cause
+`Ai.parseAnswer` (`jsonOf`) is deliberately tolerant of a whole chat message
+pasted in, prose and stray braces and all — it scans the text for every
+valid JSON object and takes the WIDEST one, on the theory that a real
+answer is the biggest coherent JSON blob in whatever Claude said. But every
+handoff's own export file ALSO contains a JSON object matching the reply
+shape: the worked skeleton under "## The file to give back", there to show
+Claude what to write. For the waiver and team-analysis exports that
+skeleton is comparable in size to (or bigger than) a real short answer, so
+if the WRONG file (the export, not the reply) is fed to `importReply`, it
+parses cleanly, passes `detect()`'s shape check (it has `overall`/`adds` in
+exactly the right shape — it IS the contract, after all), and gets
+"imported" as if genuine. Confirmed this is not new to team-analysis: the
+identical thing reproduces feeding the WAIVER export back in, and the
+identical hand-built ADVICE skeleton object too — this bug has existed
+since the very first handoff feature; Tj's screenshot on the newest one is
+just what surfaced it.
+
+### Fix
+One shared guard, in `Handoff.importReply()`, ahead of every per-kind
+branch so all three kinds get it from a single implementation:
+`findPlaceholder()` walks the parsed object recursively (through arrays and
+nested objects) looking for any string value that is ENTIRELY wrapped in a
+single `<...>` pair. Every placeholder in every skeleton this app has ever
+written is shaped exactly that way, and nothing else — no real player name,
+no real sentence of Claude's reasoning — is ever wrapped that way end to
+end. A hit refuses the whole import with a specific, actionable message
+naming the placeholder text found and explaining the likely mistake (the
+wrong file), rather than either silently accepting garbage or giving a
+generic parse error that would not tell Tj what actually went wrong.
+
+### Verification
+`tools/test_handoff.js` gained a dedicated section: the real waiver export
+fed back in is refused; a hand-built advice skeleton (chosen over its own
+export text, because that export's "machine-readable copy of this request"
+block happens to be textually WIDER than its one-example skeleton, so the
+widest-first scan picks THAT instead — a different, already-safe refusal,
+not this defence specifically) is refused; the real team-analysis export
+fed back in — the literal bug Tj hit — is refused; a placeholder nested
+inside a `recommendations[]` array element (not just a top-level field) is
+caught too; and a genuinely real, fully-written reply with no
+bracket-wrapped field anywhere still imports exactly as before. Full suite
+(18 suites) + `node tools/check_es2018.js` all green.
+
+Shipped as v7.3.
