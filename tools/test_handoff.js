@@ -443,6 +443,10 @@ console.log('\n-- the team analysis loop --');
      'the plain request-echo kind is still recognised as waivers');
   ok(H.detect({ kind: H.KIND_WAIVER + '.reply', adds: [] }) === 'waivers',
      'the .reply skeleton kind is still recognised as waivers');
+  ok(H.detect({ kind: H.KIND_TEAM, overall: {} }) === 'teamanalysis',
+     'the plain request-echo kind is still recognised as teamanalysis');
+  ok(H.detect({ kind: H.KIND_TEAM + '.reply', overall: {} }) === 'teamanalysis',
+     'the .reply skeleton kind is still recognised as teamanalysis');
   /* no `players`/`adds` array here on purpose — detect() falls back to
      shape when the kind does not match anything real (see its own comment),
      so including one would pass via that fallback regardless of the kind
@@ -451,6 +455,10 @@ console.log('\n-- the team analysis loop --');
      'a kind that merely STARTS WITH the real one, but is not it, is no longer accepted');
   ok(H.detect({ kind: H.KIND_ADVICE + 'x' }) === '',
      'same for a trailing-character typo on the request kind');
+  ok(H.detect({ kind: H.KIND_TEAM + '-final' }) === '',
+     'same prefix-typo protection for the new teamanalysis kind');
+  ok(H.detect({ overall: [1, 2, 3] }) === '',
+     '"overall" as an ARRAY (not the reply\'s object shape) does not fall back to teamanalysis');
 }());
 
 /* ---- 8. no drift: the handoff must not re-implement the API path --------- */
