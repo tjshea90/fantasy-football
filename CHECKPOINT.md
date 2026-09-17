@@ -1,12 +1,12 @@
-# CHECKPOINT 54 — read me first, then TASKS.md
+# CHECKPOINT 64 — read me first, then TASKS.md
 
-**Written:** 2026-09-17T00:22:08Z · **version:** 6.9 · **tests:** all 17 suites green
+**Written:** 2026-09-17T00:28:12Z · **version:** 6.9 · **tests:** all 17 suites green
 
 ## Just done
-Recorded the new 2026-09-17 job in TASKS.md: Tj reports Wire tab still recommending players (Nick Chubb, Trey Benson, Kareem Hunt) with zero week-1 stats; live ESPN check this session confirms Chubb and Hunt are on zero of the 32 current NFL rosters (same players v6.9 already targeted once). Benson/Randall are real rostered players with no current injury-feed entry, legitimately speculative but mis-ranked above proven production.
+Found and fixed two real root causes of Chubb/Hunt/off-roster players reappearing on the Wire board after v6.9: (1) value.js's freeAgents() memo keyed only on (week, roster generation), so it never noticed PlayerDB or the injury feed refreshing in the background and kept replaying the first, incomplete render's snapshot all session — fixed by folding PlayerDB.meta().updated and Recommend.newsCache().at into the memo key; (2) playerdb.js's prune of off-every-roster players required all 32 team fetches to succeed in the same pass, so one flaky team blocked every removal forever — fixed to prune per-player based on whether HIS OWN last-known team's fetch succeeded, confirmed with live ESPN checks that Chubb and Hunt are on zero of the 32 current rosters. Also fixed the ranking Tj asked about directly: freeAgents() now ranks any real measured production (even 1 game) ahead of a zero-signal ESPN week-line guess, however big the guess. Added 4 new tests to tools/test_waiver.js, all 17 suites + ES2018 gate + build.sh green.
 
 ## Do this next
-Diagnose the v6.9 regression: check whether value.js's _faMemo free-agent memoization or playerdb.js's all-32-must-succeed prune requirement is why Chubb/Hunt reappeared, then fix the real root cause(s) with tests.
+Ship v7.0: trigger the publish-release.yml workflow, verify the GitHub Release has a non-empty assets array, then send Tj the release link and ask if he wants this session to keep watching for his next report.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  18e4662 ckpt 54: Recorded the new 2026-09-17 job in TASKS.md: Tj reports Wire tab still recommen
   009de2b ckpt 80: Moved the completed 2026-09-16 waiver-wire/tab-lock job from TASKS.md to LADDER
   227f4bb ship v6.9: Rebuilt the waiver wire recommendation system: hard-excludes OUT/IR/SUSPENDED
   faf988b ckpt 74: Added the STATE.md narrative write-up for the 2026-09-16 waiver-wire rebuild + 
@@ -35,5 +36,5 @@ request in his own words and `git log` carries every step already taken.
   805b12d ckpt 473: Removed the other-teams-weekly-lineup assumption from recap.js/sim.js per Tj's
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(9 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
