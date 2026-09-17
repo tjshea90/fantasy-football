@@ -328,7 +328,7 @@ const taReply = {
   ],
   summary: 'Make the trade, then the waiver add.'
 };
-const taNorm = Ai.normalizeTeamAnalysis(taReply, taCtx, 'test-model');
+const taNorm = Ai.normalizeTeamAnalysis(taReply, taCtx);
 
 ok(taNorm.overall.rank === 2 && taNorm.overall.of === 3 && taNorm.overall.verdict === taReply.overall.verdict,
    'overall rank/of/verdict pass through');
