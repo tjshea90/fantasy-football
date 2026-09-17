@@ -1,5 +1,42 @@
 # TASKS — the current job, in Tj's words
 
+> "The app is still recommending at least 3 players on the waiver wire that
+> recorded no stats at all in week one. Are these legitimate recommendations?
+> If not, figure out why it is recommending these players. It should only be
+> recommending active players with the goal of producing the best weekly
+> fantasy points output using this league scoring system" (2026-09-17)
+
+Live ESPN check run this session confirms: of the flagged RBs from Tj's Wk2
+screenshot (Nick Chubb HOU, Trey Benson ARI, Kareem Hunt KC, all showing
+"wk1 —"), Nick Chubb and Kareem Hunt are on ZERO of the 32 current NFL
+rosters right now — the exact same case (by name) the 2026-09-16/v6.9 job
+already fixed once. Trey Benson and Adam Randall ARE on real rosters (ARI,
+BAL) with no current ESPN injury-feed entry — legitimate to show as
+speculative/no-data adds, just currently mis-ranked ahead of real production.
+
+- [ ] 1a. Diagnose why the v6.9 OUT/off-roster exclusion isn't holding —
+      confirm the root cause with a runnable repro, not just narrative
+      (candidates so far: `value.js`'s `_faMemo` free-agent-board memo key
+      never changes when `PlayerDB` or the injury feed refresh in the
+      background, so the board can get stuck on the first, incomplete
+      snapshot for the rest of the session; and `playerdb.js`'s prune only
+      runs when all 32 team fetches succeed in the same pass, which a phone
+      network may rarely deliver cleanly).
+- [ ] 1b. Fix the real root cause(s) found in 1a in the actual source files —
+      no source-text pins, drive the real modules, matching this suite's
+      existing test style (`tools/test_waiver.js`).
+- [ ] 1c. Also address the ranking question Tj asked directly ("are these
+      legitimate?") — a pure ESPN week-line guess for a player with ZERO
+      measured usage this season should not be able to outrank a player with
+      real, if thin, observed production, which is what the screenshot shows
+      happening (Chubb 11.5 / Benson 9.9 / Hunt 9.1 all ranked ABOVE Kendre
+      Meller/Emmett Johnson/Kaelon Black/Samaje Perine, all of whom actually
+      played and produced 8.0-9.0 in their one game).
+- [ ] 1d. Write/extend automated tests proving each fix (name the test file
+      and case when ticking this).
+- [ ] 1e. Run the full suite, `node tools/check_es2018.js`, and build.sh;
+      only `ship.sh` once everything is green and nothing else broke.
+
 **There is no active job right now.** The most recent one (2026-09-16:
 rebuild the waiver-wire recommendation system to be season-smart and
 exclude inactive/injured players; diagnose the tab-lock bug) is
