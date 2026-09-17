@@ -1229,7 +1229,7 @@
         targetPlayer: targetPlayer,
         /* same closed-set reasoning as teamComparisons above — a trade
            source must be a real team or blank, never an invented one */
-        fromTeam: teamNameIdx[root.Names.canon(fromTeamRaw)] || '',
+        fromTeam: fromTeamRaw ? (teamNameIdx[teamKey(fromTeamRaw)] || '') : '',
         /* giveUp only ever names a player confirmed on MY OWN roster — a
            model naming somebody else's player here would otherwise read as
            "trade away a player you do not own", which the app must never
