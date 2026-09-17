@@ -3227,4 +3227,9 @@ tab, the button is correctly disabled with no API key configured, the
 export produces the real ~17KB briefing in a modal, and a pasted reply
 imports and renders the full results view — confirmed with a screenshot.
 
-Full suite (18 suites) + `node tools/check_es2018.js` all green.
+Full suite (18 suites) + `node tools/check_es2018.js` all green, plus a
+real `bash build.sh` (28/28 Java classes, no ABI-specific dependency) —
+this was a fresh container with no `build/app-release.apk` yet, so the
+first `ship.sh` call correctly WARNed "no APK in build/" and skipped
+publishing rather than shipping a stale one; running `build.sh` first and
+re-running `ship.sh` produced the real v7.1 APK.
