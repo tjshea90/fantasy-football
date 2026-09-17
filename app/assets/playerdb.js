@@ -194,7 +194,7 @@
     var d = get();
     var byKey = {}, i;
     for (i = 0; i < d.players.length; i++) byKey[norm(d.players[i].n)] = d.players[i];
-    var added = 0, updated = 0, failed = [], seen = {};
+    var added = 0, updated = 0, failed = [], seen = {}, teamOk = {};
     var chain = Promise.resolve();
     TEAMS.forEach(function (ab, ix) {
       chain = chain.then(function () {
