@@ -838,8 +838,9 @@
   root.Handoff = {
     buildAdvice: buildAdvice,
     buildWaivers: buildWaivers,
+    buildTeamAnalysis: buildTeamAnalysis,
     importReply: importReply,
     detect: detect,
-    KIND_ADVICE: KIND_ADVICE, KIND_WAIVER: KIND_WAIVER, FORMAT: FORMAT
+    KIND_ADVICE: KIND_ADVICE, KIND_WAIVER: KIND_WAIVER, KIND_TEAM: KIND_TEAM, FORMAT: FORMAT
   };
 })(typeof window !== 'undefined' ? window : this);
