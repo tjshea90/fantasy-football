@@ -33,6 +33,7 @@ cross-league context, the new prompt/reply contract, and the UI card.
       league, team-by-team comparison, concrder improvement
       recommendations), carries the scoring rules, standings table, every
       team's roster, and my needs/pool/dropCandidates so a
+      team's roster, and my needs/pool/dropCandidates so a
       recommendation can be checked against real, currently-free-or-mine
       players rather than invented ones. Reply contract:
       `kind: 'fftracker.teamanalysis.reply'` with `overall` (verdict +
