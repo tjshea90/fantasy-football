@@ -99,6 +99,22 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
+- [ ] **Confirm v7.0 on the phone — PRIORITY, this is the Chubb/Hunt-still-
+      on-the-board fix you just reported**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v7.0
+      ```
+      Open the Wire tab and check: Nick Chubb, Trey Benson and Kareem Hunt
+      specifically should not appear as they did in your screenshot; more
+      generally, no player with zero recorded games this season should
+      out-rank a player who actually played and scored just because ESPN's
+      own weekly guess for him happened to be a bigger number (a
+      never-played player CAN still appear on the board — that is not
+      hidden — he just cannot sit above real production any more). If you
+      see this again — same players or new ones, same pattern or
+      different — say exactly who/what: that would be a third,
+      still-undiscovered gap, not a repeat of either of the two bugs just
+      fixed (see LADDER.md §38 for exactly what those were).
 - [ ] **Decide: the Data tab is a 13-card wall with no sub-navigation.**
       Found during the 2026-09-15e sweep (flagged, not touched — a UI
       review agent's finding, and this crosses into "major redesign"
