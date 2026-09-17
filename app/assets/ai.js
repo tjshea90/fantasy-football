@@ -1165,6 +1165,16 @@
      property — was this name actually somewhere the app told Claude to
      look? — computed against the SAME rosters/pool/dropCandidates the
      prompt itself carried, never invented rules of its own. */
+  /* Team names are owner-chosen arbitrary strings ("JR", "Tim", ...), not
+     player names — Names.canon() must never touch one. It folds standalone
+     suffix tokens ("jr"/"sr"/"ii"/"iii"/"iv"/"v") to nothing so "Odell
+     Beckham Jr." and "Odell Beckham" match, which is exactly right for a
+     player and exactly wrong here: a real team literally named "JR" would
+     canonicalize to '', the same key an EMPTY (no team given) field maps
+     to — silently pairing every field-with-no-team-named onto a real team.
+     A plain lowercase/trim is the whole normalization a team name needs. */
+  function teamKey(s) { return String(s || '').toLowerCase().trim().replace(/\s+/g, ' '); }
+
   function normalizeTeamAnalysis(parsed, ctx, mdl) {
     var o = parsed || {};
     var overall = o.overall || {};
@@ -1178,12 +1188,12 @@
     var teamNameIdx = {}, i, k;
     if (ctx && ctx.rosters) {
       for (i = 0; i < ctx.rosters.length; i++) {
-        teamNameIdx[root.Names.canon(ctx.rosters[i].name)] = ctx.rosters[i].name;
+        teamNameIdx[teamKey(ctx.rosters[i].name)] = ctx.rosters[i].name;
       }
     }
     var teamComparisons = Array.isArray(o.teamComparisons) ? o.teamComparisons.map(function (x) {
       var team = String((x && x.team) || '').trim();
-      var real = teamNameIdx[root.Names.canon(team)];
+      var real = team ? teamNameIdx[teamKey(team)] : null;
       return real ? { team: real, note: String((x && x.note) || '') } : null;
     }).filter(function (x) { return !!x; }) : [];
     var strengths = Array.isArray(o.strengths) ? o.strengths.map(String).filter(Boolean) : [];
