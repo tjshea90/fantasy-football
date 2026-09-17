@@ -1,12 +1,12 @@
-# CHECKPOINT 66 — read me first, then TASKS.md
+# CHECKPOINT 77 — read me first, then TASKS.md
 
-**Written:** 2026-09-17T21:59:57Z · **version:** 7.0 · **tests:** all 18 suites green
+**Written:** 2026-09-17T22:09:24Z · **version:** 7.0 · **tests:** all 18 suites green
 
 ## Just done
-1c done: added ai.js's live-API twin for team analysis — teamAnalysisPrefix/Block/buildTeamAnalysisPrompt/askTeamAnalysis (deliberately NO web_search: every fact in the prompt is already fresh from the app's own feeds, so a search adds cost with nothing to improve) and normalizeTeamAnalysis (shared with the handoff path, same reason normalizeAdvice/normalizeWaivers are shared) — verified against real seed data: invented players are kept but flagged unverified, invented team names are dropped outright (closed set, unlike the open player universe), giveUp/dropCandidate only ever resolve to real names from MY OWN lists
+1b done: extended handoff.js with buildTeamAnalysis() (export markdown: standings + every roster + injuries/drop-candidates/needs/AVAILABLE, same table style as buildAdvice/buildWaivers), detect()/importReply() for the new 'fftracker.teamanalysis' kind, and TeamReport.save/load for the parsed reply (own cache key, no lineup/roster mutation — this is a report). Caught and fixed a real bug during manual round-trip testing: normalizeTeamAnalysis was running TEAM names through Names.canon(), which is built for PLAYER names and folds standalone 'jr'/'sr'/'ii' suffix tokens to empty — this league has a real team literally named 'JR', which canonicalized to the same '' key as 'no team given', so every recommendation with no fromTeam was silently mislabeled as coming from team JR. Added a separate teamKey() (plain lowercase/trim, no suffix folding) for every team-name comparison; verified fixed against the real seed roster (which does have a 'JR' team)
 
 ## Do this next
-1b: extend handoff.js with buildTeamAnalysis() (the export markdown, same structure as buildWaivers), detect()/importReply() for the new 'fftracker.teamanalysis' kind, and TeamReport.save/load for the parsed reply
+1d: ui.js — the 'How my team stacks up' card at the top of the Rosters tab (Ask Claude button + cost estimate + handoffCard export/import + results view)
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  fa76b5d ckpt 66: 1c done: added ai.js's live-API twin for team analysis — teamAnalysisPrefix/B
   db8bd64 ckpt 62: 1a wrapped up: added tools/test_teamreport.js (shape + bye-week-zero-price chec
   8881beb ckpt 58: 1a done: new teamreport.js composes Store.standings + every team's roster (pric
   d4193c9 ckpt 55: Wrote the 2026-09-17b request (team-vs-league Claude analysis, export/import ha
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   18e4662 ckpt 54: Recorded the new 2026-09-17 job in TASKS.md: Tj reports Wire tab still recommen
   009de2b ckpt 80: Moved the completed 2026-09-16 waiver-wire/tab-lock job from TASKS.md to LADDER
   227f4bb ship v6.9: Rebuilt the waiver wire recommendation system: hard-excludes OUT/IR/SUSPENDED
-  faf988b ckpt 74: Added the STATE.md narrative write-up for the 2026-09-16 waiver-wire rebuild + 
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(10 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
