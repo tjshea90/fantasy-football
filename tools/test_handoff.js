@@ -471,9 +471,13 @@ console.log('\n-- one implementation, not two --');
   ok(/Ai\.normalizeInjuries/.test(code) && /Ai\.dropCandidateIndex/.test(code),
      'and the two new v5.5 normalisers — the injury outlook and the drop-candidate ' +
      'position guard are not reimplemented here either');
+  ok(/Ai\.normalizeTeamAnalysis/.test(code),
+     'the new team-analysis kind is normalised by ai.js too, not reimplemented here');
   ok(/Ai\.parseAnswer/.test(code), 'and ai.js\'s tolerant JSON finder');
   ok(/Recommend\.mergeAi/.test(code) && /Value\.waiverSave/.test(code),
      'and the same storage path a live sync uses');
+  ok(/TeamReport\.context/.test(code) && /TeamReport\.save/.test(code),
+     'and the team-analysis context/storage come from teamreport.js, not built here');
   ok(!/JSON\.parse\s*\(\s*raw/.test(code),
      'it does not parse the reply itself — that would be a second implementation to drift');
   ok(!/canon\s*\(/.test(code) || /Names\.canon/.test(code),
