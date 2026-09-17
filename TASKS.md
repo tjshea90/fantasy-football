@@ -30,9 +30,8 @@ cross-league context, the new prompt/reply contract, and the UI card.
       exactly once, my own team is flagged, values are numbers not NaN.
 - [ ] 1b. `handoff.js` — `buildTeamAnalysis(week, teamId, opponents, season,
       today)`: the export file. States the task (overall verdict vs. the
-      league, team-by-team comparison, concrder improvement
+      league, team-by-team comparison, concrete improvement
       recommendations), carries the scoring rules, standings table, every
-      team's roster, and my needs/pool/dropCandidates so a
       team's roster, and my needs/pool/dropCandidates so a
       recommendation can be checked against real, currently-free-or-mine
       players rather than invented ones. Reply contract:
