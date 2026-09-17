@@ -1,12 +1,12 @@
-# CHECKPOINT 114 — read me first, then TASKS.md
+# CHECKPOINT 119 — read me first, then TASKS.md
 
-**Written:** 2026-09-17T23:37:59Z · **version:** 7.2 · **tests:** all 18 suites green
+**Written:** 2026-09-17T23:40:42Z · **version:** 7.2 · **tests:** all 18 suites green
 
 ## Just done
-Wrote Tj's bug report ('gave nonsense answers', the unfilled-template screenshot) and its fix into TASKS.md
+Archived the unfilled-template bugfix to LADDER.md §40, added the STATE.md narrative entry, and reset TASKS.md with a v7.3 confirm-on-phone bullet superseding v7.2's
 
 ## Do this next
-Update STATE.md/LADDER.md narrative, then ship this fix as v7.3
+bash ship.sh, then bash build.sh if needed, then trigger publish-release.yml and send Tj the v7.3 link
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  0884569 ckpt 114: Wrote Tj's bug report ('gave nonsense answers', the unfilled-template screensh
   86a0848 ckpt 112: Fixed the bug Tj reported from the v7.2 screenshot: the team-analysis screen s
   367138e ckpt 107: Closed out the 2026-09-17b job: archived the team-analysis feature to LADDER.m
   74ac8fe ship v7.2: Added the team analysis feature: ask Claude for its overall take on your team
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   cb00bed ckpt 86: 1d/1e done: added the 'How your team stacks up' card to ui.js's Rosters tab (be
   31fec06 ckpt 77: 1b done: extended handoff.js with buildTeamAnalysis() (export markdown: standin
   fa76b5d ckpt 66: 1c done: added ai.js's live-API twin for team analysis — teamAnalysisPrefix/B
-  db8bd64 ckpt 62: 1a wrapped up: added tools/test_teamreport.js (shape + bye-week-zero-price chec
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(4 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
