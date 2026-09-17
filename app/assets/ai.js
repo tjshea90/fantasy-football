@@ -1168,13 +1168,28 @@
   function normalizeTeamAnalysis(parsed, ctx, mdl) {
     var o = parsed || {};
     var overall = o.overall || {};
+
+    /* Unlike a player name (a huge, open-ended universe where "not in this
+       league" is a real and common case — see `verified` below), a team
+       name is a closed set of exactly the names this prompt handed over. A
+       team that does not match one of them is not "found something outside
+       what we sent", it is invented outright, and displaying a comparison
+       against a team that does not exist is worse than dropping it. */
+    var teamNameIdx = {}, i, k;
+    if (ctx && ctx.rosters) {
+      for (i = 0; i < ctx.rosters.length; i++) {
+        teamNameIdx[root.Names.canon(ctx.rosters[i].name)] = ctx.rosters[i].name;
+      }
+    }
     var teamComparisons = Array.isArray(o.teamComparisons) ? o.teamComparisons.map(function (x) {
-      return { team: String((x && x.team) || ''), note: String((x && x.note) || '') };
-    }).filter(function (x) { return x.team; }) : [];
+      var team = String((x && x.team) || '').trim();
+      var real = teamNameIdx[root.Names.canon(team)];
+      return real ? { team: real, note: String((x && x.note) || '') } : null;
+    }).filter(function (x) { return !!x; }) : [];
     var strengths = Array.isArray(o.strengths) ? o.strengths.map(String).filter(Boolean) : [];
     var weaknesses = Array.isArray(o.weaknesses) ? o.weaknesses.map(String).filter(Boolean) : [];
 
-    var rosterIdx = {}, i, k;
+    var rosterIdx = {};
     if (ctx && ctx.rosters) {
       for (i = 0; i < ctx.rosters.length; i++) {
         for (k = 0; k < ctx.rosters[i].players.length; k++) {
@@ -1197,11 +1212,14 @@
       var giveUpRec = giveUp ? rosterIdx[root.Names.canon(giveUp)] : null;
       var dropCandidate = String(r.dropCandidate || '').trim();
       var dropRec = dropCandidate ? dropIdx[root.Names.canon(dropCandidate)] : null;
+      var fromTeamRaw = String(r.fromTeam || (fromRoster ? fromRoster.team : '')).trim();
       return {
         type: String(r.type || 'general').toLowerCase(),
         action: String(r.action || ''),
         targetPlayer: targetPlayer,
-        fromTeam: String(r.fromTeam || (fromRoster ? fromRoster.team : '')),
+        /* same closed-set reasoning as teamComparisons above — a trade
+           source must be a real team or blank, never an invented one */
+        fromTeam: teamNameIdx[root.Names.canon(fromTeamRaw)] || '',
         /* giveUp only ever names a player confirmed on MY OWN roster — a
            model naming somebody else's player here would otherwise read as
            "trade away a player you do not own", which the app must never
