@@ -1,63 +1,23 @@
 # TASKS — the current job, in Tj's words
 
-> "The app is still recommending at least 3 players on the waiver wire that
-> recorded no stats at all in week one. Are these legitimate recommendations?
-> If not, figure out why it is recommending these players. It should only be
-> recommending active players with the goal of producing the best weekly
-> fantasy points output using this league scoring system" (2026-09-17)
-
-Live ESPN check run this session confirms: of the flagged RBs from Tj's Wk2
-screenshot (Nick Chubb HOU, Trey Benson ARI, Kareem Hunt KC, all showing
-"wk1 —"), Nick Chubb and Kareem Hunt are on ZERO of the 32 current NFL
-rosters right now — the exact same case (by name) the 2026-09-16/v6.9 job
-already fixed once. Trey Benson and Adam Randall ARE on real rosters (ARI,
-BAL) with no current ESPN injury-feed entry — legitimate to show as
-speculative/no-data adds, just currently mis-ranked ahead of real production.
-
-- [x] 1a. Diagnose why the v6.9 OUT/off-roster exclusion isn't holding —
-      confirmed with a runnable repro (tools/test_waiver.js, the two new
-      "not stuck behind the memo" cases), not just narrative. TWO real,
-      independent root causes found, both confirmed in code, not guessed:
-      (i) `value.js`'s `_faMemo` free-agent-board memo keyed only on
-      (week, Store roster generation) — `PlayerDB.ensureFresh()` and
-      `Recommend.loadNews()` both refresh in the BACKGROUND and call
-      render() when they land, but neither touches roster generation, so
-      the very first render (which always happens before either async
-      fetch lands) got memoized and then replayed for the rest of the
-      session no matter what fresh data arrived later; (ii)
-      `playerdb.js`'s prune of players who fell off every roster only ran
-      when ALL 32 team fetches succeeded in the same pass — one flaky team
-      on a phone network silently blocked every removal, forever, even for
-      players whose own last-known team answered cleanly. Live ESPN check
-      this session (all 32 rosters + the /injuries feed, fetched directly)
-      confirms Nick Chubb and Kareem Hunt are on zero of the 32 current NFL
-      rosters — same two names the 2026-09-16 fix already targeted once.
-- [x] 1b. Fixed both in the actual source files, no source-text pins:
-      `value.js`'s `freeAgents()` memo key now also folds in
-      `PlayerDB.meta().updated` and `Recommend.newsCache().at`, so a
-      landed background refresh actually changes the next call's answer;
-      `playerdb.js`'s `doRefresh()` now prunes a player only when HIS OWN
-      last-known team's fetch succeeded this run and came back without
-      him — provable per-player, no longer gated on a flawless 32/32
-      sweep — while a player whose own team's fetch failed this run is
-      left untouched either way.
-- [x] 1c. Addressed the ranking question directly: `freeAgents()` now
-      tags each row `hasSignal` (has he recorded ANY real usage this
-      season, even one game, or does ESPN have a season-long model on
-      him — vs. a bare single-week guess with zero track record) and
-      sorts real-signal rows ahead of zero-signal guesses before value,
-      so an ESPN week-line guess can no longer outrank a player who
-      actually played and produced just because the guess happens to be
-      a bigger number.
-- [x] 1d. Tests: `tools/test_waiver.js` — "a background injury-feed
-      refresh is not stuck behind the memo", "same, for a background
-      PlayerDB refresh/prune", "a zero-signal ESPN guess never outranks
-      real measured production", and "a GENUINE partial refresh (one
-      team fails, the rest succeed) still prunes players whose OWN
-      last-known team actually answered". All 4 fail on the pre-fix code
-      and pass on the fix.
-- [x] 1e. Full suite (all 17 suites), `node tools/check_es2018.js`, and
-      `build.sh` all green; nothing else broke.
+There is no active job right now. The most recent one (2026-09-17: Tj
+reported the Wire tab still recommending Nick Chubb/Trey Benson/Kareem Hunt
+— all zero week-1 stats — even after v6.9's supposed fix) is complete,
+shipped as v7.0, and archived at LADDER.md §38. Live ESPN checks that
+session confirmed Chubb and Hunt were genuinely on zero of the 32 current
+NFL rosters, and found two real, independent bugs in the actual v6.9 code
+(not a data problem): `value.js`'s free-agent-board memo never noticed
+`PlayerDB` or the injury feed refreshing in the background, so it kept
+replaying its first, stale render for the rest of the session; and
+`playerdb.js`'s prune of off-every-roster players required a flawless 32/32
+team-fetch sweep, so one flaky team blocked every removal indefinitely.
+Also fixed the ranking question Tj asked directly: a zero-signal ESPN
+week-line guess could outrank a player with real measured production
+purely because the guess printed a bigger number — real signal now always
+sorts first. Full write-up, including the exact fixes and the 4 new tests
+proving them, in LADDER.md §38. **Tell Tj plainly if he reports the same
+symptom again after v7.0** — that would mean a THIRD, still-undiscovered
+gap, not a repeat of either bug just fixed.
 
 The prior job (2026-09-16:
 rebuild the waiver-wire recommendation system to be season-smart and
