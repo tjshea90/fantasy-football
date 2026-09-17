@@ -80,5 +80,30 @@
     };
   }
 
-  root.TeamReport = { context: context };
+  /* ---- the saved report — same load/save shape as Value.waiverLoad/Save,
+   * its own key so it neither grows the main state blob (see store.js's own
+   * "the archive" comment on why that matters) nor collides with the
+   * advice/waiver caches this is deliberately NOT one of. This is a report:
+   * nothing here mutates a lineup or a roster, so there is no "apply" step
+   * to gate on a matching week the way importReply's advice/waiver branches
+   * do — it is shown as-is, with its own week/date so a stale one is
+   * visibly stale rather than silently wrong. */
+  var TAKEY = 'fftracker_teamanalysis_v1';
+  function load() {
+    try {
+      var s = (root.Native && root.Native.load) ? root.Native.load(TAKEY)
+              : (root.localStorage ? root.localStorage.getItem(TAKEY) : null);
+      if (s) { var o = JSON.parse(s); if (o && o.overall) return o; }
+    } catch (e) { /* the cache is optional */ }
+    return null;
+  }
+  function save(v) {
+    try {
+      var s = JSON.stringify(v);
+      if (root.Native && root.Native.save) root.Native.save(TAKEY, s);
+      else if (root.localStorage) root.localStorage.setItem(TAKEY, s);
+    } catch (e) { /* the cache is optional */ }
+  }
+
+  root.TeamReport = { context: context, load: load, save: save };
 })(typeof window !== 'undefined' ? window : this);
