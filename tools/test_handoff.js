@@ -127,6 +127,37 @@ ok(/dropCandidate/.test(V) && /DROP CANDIDATES|Drop candidates/.test(V),
   }
 }());
 
+/* ---- 2b. the team analysis briefing (2026-09-17b) ------------------------ */
+console.log('\n-- the team analysis briefing --');
+var taExp = W.Handoff.buildTeamAnalysis(WEEK, me, null, 2026, '2026-09-07');
+var TA = taExp.text;
+ok(/handed this file with no other instructions/i.test(TA), 'same self-explaining opening');
+ok(/team analysis — week 1 vs\. the whole league/.test(TA),
+   'the title says what this file is, distinct from the advice/waiver briefings');
+ok(/## Standings/.test(TA) && /\| rank \| team \| record \| points \|/.test(TA),
+   'the standings table is included');
+ok(/## Every roster in the league/.test(TA), 'every roster in the league is included, not just mine');
+ok(taExp.ctx.rosters.length === W.Store.get().teams.length,
+   'the briefing context carries every team (' + taExp.ctx.rosters.length + ')');
+(function () {
+  var missingTeams = [], i;
+  for (i = 0; i < W.Store.get().teams.length; i++) {
+    var nm = W.Store.get().teams[i].name;
+    if (TA.indexOf('### ' + nm) < 0 && TA.indexOf('### ' + nm + ' (you)') < 0) missingTeams.push(nm);
+  }
+  ok(!missingTeams.length,
+     'every team\'s roster heading actually appears in the file' +
+     (missingTeams.length ? ' — missing: ' + missingTeams.join(', ') : ''));
+}());
+ok(/## AVAILABLE — nobody in this list is on any of the \d+ rosters/.test(TA),
+   'the free-agent shortlist is included, grounding waiver-type recommendations');
+ok(/Never invent a player or a team/.test(TA), 'inventing a player or a team is explicitly forbidden');
+ok(/fftracker-teamanalysis-reply\.json/.test(TA), 'it names the reply file');
+ok(TA.indexOf('"kind": "fftracker.teamanalysis"') > 0,
+   'it embeds a machine-readable copy of the request for the app to check against');
+ok(TA.length > 2000 && TA.length < 300000,
+   'the briefing is a sane size (' + TA.length + ' chars)');
+
 /* ---- 3. the round trip actually completes -------------------------------- */
 console.log('\n-- the loop: export, answer, import, read the app back --');
 var ctxAll = W.Recommend.rosterContext(WEEK, me, null, { everyone: true });
