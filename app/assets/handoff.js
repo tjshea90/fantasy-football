@@ -725,8 +725,9 @@
     var kind = detect(obj);
     if (!kind) {
       throw new Error('That is JSON, but not a reply this app understands. ' +
-        'It needs a "players" list (lineup advice) or an "adds" list (the ' +
-        'waiver wire). It has: ' + Object.keys(obj).slice(0, 6).join(', ') + '.');
+        'It needs a "players" list (lineup advice), an "adds" list (the ' +
+        'waiver wire), or an "overall" verdict (the team analysis). It has: ' +
+        Object.keys(obj).slice(0, 6).join(', ') + '.');
     }
 
     /* A reply for another week is the dangerous case: it parses, it applies,
