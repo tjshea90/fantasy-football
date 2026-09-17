@@ -258,17 +258,32 @@
        * retried. */
       var ok = failed.length < TEAMS.length;
       var removed = 0;
-      /* PRUNE (2026-09-16). Only when EVERY one of the 32 teams answered
-       * this run — a partial failure must never be read as "the missing
-       * teams' players are all gone now". Verified live: Nick Chubb and
-       * Kareem Hunt are not on any of the 32 current rosters, yet sat in
-       * this database forever (with a stale team/position) because
-       * nothing before this ever removed a player who fell off every
-       * roster — doRefresh only ever added or updated. A player dropped
-       * here can always come back on a later refresh if he is signed
-       * again; nothing here is permanent. */
-      if (ok && !failed.length) {
-        var kept = d.players.filter(function (p) { return seen[p._n || norm(p.n)]; });
+      /* PRUNE (2026-09-16, made resilient to a partial run 2026-09-17).
+       * A player is only ever removed when HIS OWN last-known team's fetch
+       * actually succeeded this run and came back without him in it — never
+       * because some OTHER team failed to answer. That is a precise,
+       * provable removal (we checked exactly the roster that would show
+       * him), not a guess, so it no longer needs every one of the 32 fetches
+       * to land in the same pass. The old rule (require a flawless 32/32
+       * sweep) sounds safe but is not: on a phone network, one team
+       * timing out is common and every prior sweep blocked ALL 32 removals
+       * on it, even for players whose own team answered cleanly. That is
+       * confirmed to be exactly how Nick Chubb and Kareem Hunt (live-checked
+       * 2026-09-17: on zero of the 32 current NFL rosters) kept sitting in
+       * the database with a stale team/position and reappearing on the
+       * Wire board after the 2026-09-16 fix that was supposed to remove
+       * them for good. A player whose own last-known team's fetch failed
+       * this run is left untouched either way — unproven, not removed —
+       * and a player who moved to a new team is simply found there and
+       * re-tagged, same as always. A player dropped here can always come
+       * back on a later refresh if he is signed again; nothing here is
+       * permanent. */
+      if (Object.keys(teamOk).length) {
+        var kept = d.players.filter(function (p) {
+          var key = p._n || norm(p.n);
+          if (seen[key]) return true;
+          return !teamOk[p.t];
+        });
         removed = d.players.length - kept.length;
         d.players = kept;
       }
