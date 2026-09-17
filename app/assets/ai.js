@@ -948,6 +948,286 @@
     return { adds: adds };
   }
 
+  /* ================= TEAM ANALYSIS (2026-09-17b) =========================
+   * Tj: "ask Claude its overall take on my team versus every other team in
+   * the league and recommendations on how to improve my team." Unlike the
+   * advice/waiver calls above, there is deliberately NO web_search tool here.
+   * Every fact this prompt hands over — a rest-of-season price, an injury
+   * flag, a standing — is already fresh from the app's own feeds (that is
+   * exactly what TeamReport.context assembles); a search cannot improve on
+   * a number the app already computed, and Claude has no way to research
+   * what a specific other owner would actually trade away — that is private
+   * league information no search engine has. What Claude adds here is
+   * JUDGMENT over given facts, not research, so this call is plain text in,
+   * plain text out — cheaper and faster than the advice/waiver calls, and
+   * the on-screen cost estimate should say so. */
+  function teamAnalysisPrefix() {
+    var lines = [];
+    lines.push('You are giving a fantasy football team owner your honest, professional');
+    lines.push('read on his team versus every other team in his league. A standings table');
+    lines.push('and every roster in the league follow in the next block, already priced in');
+    lines.push('this league\'s own scoring and already flagged for current injuries — that');
+    lines.push('part is done; your job is judgment, not further research.');
+    lines.push('');
+    lines.push('THIS LEAGUE DOES NOT USE STANDARD SCORING. Its exact table:');
+    lines.push(rulesText());
+    lines.push('');
+    lines.push('The single most important difference: a completed pass is worth 1 point.');
+    lines.push('A starting QB throwing 25 completions banks 25 points before yards or');
+    lines.push('touchdowns, so volume passers are far more valuable here than in a normal');
+    lines.push('league. Every public "team power ranking" assumes standard or half-PPR');
+    lines.push('scoring and is wrong here in a specific, sizeable way — judge every roster');
+    lines.push('only by the "pts/gm" numbers given below, which are already in this');
+    lines.push('league\'s own points.');
+    lines.push('');
+    lines.push('TASK.');
+    lines.push('1. Read the standings and every roster in the next block.');
+    lines.push('2. Form an honest overall verdict: where this team genuinely ranks in this');
+    lines.push('   specific league, and why — strengths, weaknesses, roster construction.');
+    lines.push('3. Compare it to each other team, briefly — one sentence per team naming');
+    lines.push('   the actual matchup (a real position battle, not a generic compliment).');
+    lines.push('4. Give concrete recommendations to improve it: a realistic trade to');
+    lines.push('   explore (naming a specific player on a specific other roster, and what');
+    lines.push('   to offer for him), a waiver add worth pursuing, or a lineup/roster-');
+    lines.push('   construction fix — whichever actually applies. Ground every player you');
+    lines.push('   name in the rosters or the AVAILABLE list given. Never invent a player');
+    lines.push('   or a team, and never claim to know what another owner would accept —');
+    lines.push('   frame a trade as worth OFFERING, never as something that will happen.');
+    lines.push('5. Write the answer as the JSON file described below.');
+    lines.push('');
+    lines.push('Answer with JSON ONLY, no prose outside it, in exactly this shape:');
+    lines.push('{"overall":{"rank":1,"of":10,');
+    lines.push('   "verdict":"<a few honest sentences: where this team really stands and');
+    lines.push('     why>"},');
+    lines.push(' "teamComparisons":[{"team":"<exact team name from the standings table>",');
+    lines.push('   "note":"<one or two sentences on that specific matchup>"}],');
+    lines.push(' "strengths":["<short phrase>"],');
+    lines.push(' "weaknesses":["<short phrase>"],');
+    lines.push(' "recommendations":[{"type":"trade|waiver|lineup|general",');
+    lines.push('   "action":"<one short imperative sentence>",');
+    lines.push('   "targetPlayer":"<exact name from a roster or AVAILABLE, or empty');
+    lines.push('     string>",');
+    lines.push('   "fromTeam":"<exact team name, only when targetPlayer is a trade target');
+    lines.push('     on another roster, else empty string>",');
+    lines.push('   "giveUp":"<exact name from MY OWN roster to offer, trade only, else');
+    lines.push('     empty string>",');
+    lines.push('   "dropCandidate":"<exact name from MY DROP CANDIDATES, waiver only, else');
+    lines.push('     empty string>",');
+    lines.push('   "why":"<the reasoning, one or two sentences>"}],');
+    lines.push(' "summary":"<two or three sentence bottom line: what to do first>"}');
+    lines.push('');
+    lines.push('RULES FOR THE FIELDS:');
+    lines.push('- "rank"/"of" — your honest read of where this team truly stands among all');
+    lines.push('  the teams in the league, 1 = best. Weigh roster strength and depth as');
+    lines.push('  given, not only the standings — a team can be lucky or unlucky so far.');
+    lines.push('- "team" in teamComparisons — copy the name EXACTLY as given in the');
+    lines.push('  standings table. Cover every other team once.');
+    lines.push('- "targetPlayer"/"fromTeam"/"giveUp"/"dropCandidate" — copy names EXACTLY');
+    lines.push('  as given. Never invent a player or a team; leave a field an empty string');
+    lines.push('  rather than guess.');
+    lines.push('- A trade recommendation needs both "targetPlayer" and "fromTeam". A');
+    lines.push('  waiver recommendation should set "dropCandidate" when there is a fair');
+    lines.push('  swap at the same position.');
+    lines.push('- Do not pad the list — 3 to 6 real recommendations beat 10 padded ones.');
+    return lines.join('\n');
+  }
+
+  function teamAnalysisBlock(ctx) {
+    var lines = [], i, k;
+    lines.push('NFL week ' + ctx.week + ' of the ' + ctx.season + ' season. Today is ' +
+               ctx.today + '.');
+    lines.push('');
+    lines.push('STANDINGS, best record first ("(you)" marks your own team):');
+    lines.push('| rank | team | record | points |');
+    lines.push('|---|---|---|---|');
+    for (i = 0; i < ctx.rosters.length; i++) {
+      var s = ctx.rosters[i];
+      lines.push('| ' + s.rankWL + ' | ' + s.name + (s.mine ? ' (you)' : '') + ' | ' +
+                 s.w + '-' + s.l + (s.t ? '-' + s.t : '') + ' | ' + s.pts.toFixed(1) + ' |');
+    }
+    lines.push('');
+    lines.push('EVERY ROSTER IN THE LEAGUE. "pts/gm" is a rest-of-season per-game price,');
+    lines.push('already in this league\'s scoring — judge every player by this number, not');
+    lines.push('by reputation. A status tag flags a current injury/inactive designation;');
+    lines.push('no tag means clear.');
+    lines.push('');
+    for (i = 0; i < ctx.rosters.length; i++) {
+      var t = ctx.rosters[i];
+      lines.push('### ' + t.name + (t.mine ? ' (YOUR TEAM)' : '') + ' — ' +
+                 t.w + '-' + t.l + (t.t ? '-' + t.t : '') + ', ' + t.pts.toFixed(1) +
+                 ' pts, rank ' + t.rankWL + ' of ' + ctx.rosters.length);
+      for (k = 0; k < t.players.length; k++) {
+        var p = t.players[k];
+        lines.push('- ' + p.name + ' | ' + p.pos + ' | ' + (p.nfl || '?') + ' | ' +
+                   p.ros.toFixed(1) + ' pts/gm' +
+                   (p.onBye ? ' | ON BYE wk ' + ctx.week : (p.health ? ' | ' + p.health : '')));
+      }
+      lines.push('');
+    }
+    lines.push('MY BENCH: ' + (ctx.bench.length ? ctx.bench.join(', ') : '(empty)'));
+    lines.push('');
+    if (ctx.injuries && ctx.injuries.length) {
+      lines.push('MY ROSTER — INJURIES:');
+      for (i = 0; i < ctx.injuries.length; i++) {
+        var inj = ctx.injuries[i];
+        lines.push('- ' + inj.name + ' (' + inj.pos + ', ' + inj.nfl + ') — ' + inj.status +
+                   (inj.note ? ': ' + inj.note : ''));
+      }
+      lines.push('');
+    }
+    if (ctx.dropCandidates) {
+      var any = false;
+      for (k in ctx.dropCandidates) {
+        if (Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k) &&
+            ctx.dropCandidates[k].length) { any = true; break; }
+      }
+      if (any) {
+        lines.push('MY DROP CANDIDATES — weakest player at each position, worst first. A');
+        lines.push('waiver recommendation\'s "dropCandidate" MUST come from here:');
+        for (k in ctx.dropCandidates) {
+          if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
+          if (!ctx.dropCandidates[k].length) continue;
+          lines.push('  ' + k + ': ' + ctx.dropCandidates[k].map(function (d) {
+            return d.name + ' (ROS value ' + d.ros.toFixed(1) + ')';
+          }).join(', '));
+        }
+        lines.push('');
+      }
+    }
+    if (ctx.needs && ctx.needs.length) {
+      lines.push('WHERE MY ROSTER IS THINNEST, weakest first:');
+      for (i = 0; i < ctx.needs.length; i++) {
+        lines.push('- ' + ctx.needs[i].pos + ': ' + ctx.needs[i].name + ' proj ' +
+                   ctx.needs[i].proj.toFixed(1) +
+                   (ctx.needs[i].note ? ' — ' + ctx.needs[i].note : ''));
+      }
+      lines.push('');
+    }
+    lines.push('AVAILABLE — nobody in this list is on any of the ' + ctx.rosters.length +
+               ' rosters. A waiver recommendation\'s "targetPlayer" may come from here:');
+    for (k in ctx.pool) {
+      if (!Object.prototype.hasOwnProperty.call(ctx.pool, k)) continue;
+      if (!ctx.pool[k].length) continue;
+      lines.push('  ' + k + ': ' + ctx.pool[k].map(function (f) {
+        return f.name + ' (' + f.v.toFixed(1) + ' pts/gm)';
+      }).join(', '));
+    }
+    lines.push('');
+    lines.push('Give your overall verdict, the team-by-team comparisons and concrete');
+    lines.push('recommendations, using the JSON shape above.');
+    return lines.join('\n');
+  }
+
+  function buildTeamAnalysisPrompt(ctx) {
+    return teamAnalysisPrefix() + '\n\n' + teamAnalysisBlock(ctx);
+  }
+
+  function askTeamAnalysis(ctx, onStep) {
+    if (!configured()) return Promise.reject(new Error('no API key set'));
+    var mdl = depth() === 'cheap' ? cheapModel() : model();
+    var body = {
+      model: mdl,
+      max_tokens: Math.max(2000, Math.min(8000, 1200 + ctx.rosters.length * 200)),
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: teamAnalysisPrefix(), cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: teamAnalysisBlock(ctx) }
+      ] }],
+      /* no `tools` at all — see the file-section comment above */
+      stream: true
+    };
+    if (onStep) onStep('Claude is comparing your team to the league…', 60);
+    return root.Espn._httpPost(API, headers(), JSON.stringify(body),
+                               { timeout: 180000, raw: true }).then(function (rawText) {
+      if (rawText.charAt(0) === '{') {
+        var errJ;
+        try { errJ = JSON.parse(rawText); } catch (e) { errJ = null; }
+        if (errJ && errJ.error) throw new Error(errJ.error.message || JSON.stringify(errJ.error));
+      }
+      var j = parseSse(rawText);
+      var parsed = jsonOf(textOf(j), { want: 'overall', stop: j.stop_reason });
+      var norm = normalizeTeamAnalysis(parsed, ctx, mdl);
+      var spent = null;
+      if (root.Usage) spent = root.Usage.record('team analysis', mdl, j.usage);
+      return {
+        at: Date.now(), model: mdl, week: ctx.week, season: ctx.season,
+        overall: norm.overall, teamComparisons: norm.teamComparisons,
+        strengths: norm.strengths, weaknesses: norm.weaknesses,
+        recommendations: norm.recommendations, summary: norm.summary,
+        count: norm.count, usage: j.usage || null, spent: spent
+      };
+    });
+  }
+
+  /* Shared with handoff.js for the same reason normalizeAdvice/
+     normalizeWaivers are: one implementation of what a reply MEANS, called
+     from both the live path and the offline round trip, so the two can never
+     silently drift apart. `verified` mirrors normalizeWaivers' own
+     property — was this name actually somewhere the app told Claude to
+     look? — computed against the SAME rosters/pool/dropCandidates the
+     prompt itself carried, never invented rules of its own. */
+  function normalizeTeamAnalysis(parsed, ctx, mdl) {
+    var o = parsed || {};
+    var overall = o.overall || {};
+    var teamComparisons = Array.isArray(o.teamComparisons) ? o.teamComparisons.map(function (x) {
+      return { team: String((x && x.team) || ''), note: String((x && x.note) || '') };
+    }).filter(function (x) { return x.team; }) : [];
+    var strengths = Array.isArray(o.strengths) ? o.strengths.map(String).filter(Boolean) : [];
+    var weaknesses = Array.isArray(o.weaknesses) ? o.weaknesses.map(String).filter(Boolean) : [];
+
+    var rosterIdx = {}, i, k;
+    if (ctx && ctx.rosters) {
+      for (i = 0; i < ctx.rosters.length; i++) {
+        for (k = 0; k < ctx.rosters[i].players.length; k++) {
+          rosterIdx[root.Names.canon(ctx.rosters[i].players[k].name)] = {
+            name: ctx.rosters[i].players[k].name, team: ctx.rosters[i].name,
+            mine: ctx.rosters[i].mine
+          };
+        }
+      }
+    }
+    var poolIdx = poolIndex((ctx && ctx.pool) || {});
+    var dropIdx = dropCandidateIndex((ctx && ctx.dropCandidates) || {});
+
+    var recs = Array.isArray(o.recommendations) ? o.recommendations.map(function (r) {
+      r = r || {};
+      var targetPlayer = String(r.targetPlayer || '').trim();
+      var fromRoster = targetPlayer ? rosterIdx[root.Names.canon(targetPlayer)] : null;
+      var fromPool = targetPlayer ? poolIdx[root.Names.canon(targetPlayer)] : null;
+      var giveUp = String(r.giveUp || '').trim();
+      var giveUpRec = giveUp ? rosterIdx[root.Names.canon(giveUp)] : null;
+      var dropCandidate = String(r.dropCandidate || '').trim();
+      var dropRec = dropCandidate ? dropIdx[root.Names.canon(dropCandidate)] : null;
+      return {
+        type: String(r.type || 'general').toLowerCase(),
+        action: String(r.action || ''),
+        targetPlayer: targetPlayer,
+        fromTeam: String(r.fromTeam || (fromRoster ? fromRoster.team : '')),
+        /* giveUp only ever names a player confirmed on MY OWN roster — a
+           model naming somebody else's player here would otherwise read as
+           "trade away a player you do not own", which the app must never
+           display as an actionable step */
+        giveUp: (giveUpRec && giveUpRec.mine) ? giveUpRec.name : '',
+        dropCandidate: dropRec ? dropRec.name : '',
+        why: String(r.why || ''),
+        verified: !targetPlayer || !!fromRoster || !!fromPool
+      };
+    }).filter(function (r) { return r.action; }) : [];
+
+    return {
+      overall: {
+        rank: (typeof overall.rank === 'number' && isFinite(overall.rank)) ? overall.rank : 0,
+        of: (typeof overall.of === 'number' && isFinite(overall.of)) ? overall.of
+            : ((ctx && ctx.rosters) ? ctx.rosters.length : 0),
+        verdict: String(overall.verdict || '')
+      },
+      teamComparisons: teamComparisons,
+      strengths: strengths, weaknesses: weaknesses,
+      recommendations: recs,
+      summary: String(o.summary || ''),
+      count: recs.length
+    };
+  }
+
   /* The canonical-name index of a waiver pool, so handoff.js can build the
      same `known` map ask/askWaivers builds internally. */
   function poolIndex(pool) {
