@@ -3139,3 +3139,92 @@ code and pass against the fix.
 
 Full suite (17 suites) + `node tools/check_es2018.js` + `bash build.sh`
 all green.
+
+## 2026-09-17b: ask Claude how my team stacks up against the whole league (v7.1)
+
+Tj: "add a feature where I can ask Claude its overall take on my team versus
+every other team in the league and recommendations on how to improve my
+team. Make the Claude prompt where I can export a file that will let me
+import it into the Claude app and then the Claude app will know exactly
+what it needs to make a file in order to import it back into the fantasy
+app — similar to other sections of this app where I can export and import
+Claude replies from the Claude app." A third instance of the existing
+export → Claude app → import round trip (handoff.js already did this for
+lineup advice and the waiver wire) — same shape, a new subject: a
+season-long verdict against the whole league rather than a per-player one.
+
+### The design decision: reuse everything, invent nothing new
+Every fact this feature's prompt needs already exists somewhere else:
+`Value.waiverContext` already builds my own starters/bench/needs/pool/
+dropCandidates/injuries for the Wire tab; `Value.perGame` already prices
+any named player rest-of-season; `Recommend.health` already flags who is
+hurt; `Store.standings` already has every team's record. A new file,
+`teamreport.js`, does nothing but put those side by side into one
+`TeamReport.context(week, teamId, opponents, season, today)` object — no
+new scoring math anywhere, so nothing here can drift from the numbers the
+Wire/Advice tabs already show.
+
+### Why the live API path has no web search
+Unlike `Ai.ask`/`Ai.askWaivers`, `Ai.askTeamAnalysis` sends no `web_search`
+tool at all. Every number in the prompt (a price, an injury tag, a
+standing) is already fresh from the app's own feeds; a search cannot
+improve on a number the app already computed, and Claude has no way to
+research what a specific other league owner would actually trade away —
+that is private information no search engine has. The value this call adds
+is judgment over given facts, not research, so it is plain text in, plain
+text out — cheaper and faster than the Advice/Wire syncs, and the on-screen
+cost estimate says so.
+
+### The bug this caught before it shipped: team names are not player names
+`normalizeTeamAnalysis` (shared by the live path and the offline import, so
+the two can never disagree about what a reply means) originally ran team
+names through `Names.canon()` for matching — the same canonicalizer the
+advice/waiver code already uses for PLAYER names. `Names.canon` folds a
+standalone `jr`/`sr`/`ii`/`iii`/`iv`/`v` token to nothing (so "Odell
+Beckham Jr." matches "Odell Beckham" — correct for a player). This league
+has a real team literally named "JR". Canonicalized, "JR" and "" (the key
+an empty/no-team field also maps to) collided — every recommendation with
+no `fromTeam` at all was silently mislabeled as coming from team JR, and it
+would have shipped invisibly against real production, on Tj's own league,
+until he noticed a recommendation crediting the wrong owner. Caught during
+manual round-trip testing against the real seed roster (which does have a
+"JR" team) before any commit claimed the feature worked. Fixed with a
+separate `teamKey()` — plain lowercase/trim, no suffix folding — used for
+every team-name comparison; `Names.canon` stays exactly where it belongs,
+on player names. Locked in as a permanent regression test in
+`tools/test_ai.js` (a hand-built ctx with a team named "JR").
+
+### Where it lives
+Rosters tab, between the roster he opens the tab to see and the trade
+evaluator he asked (2026-09-15c) to keep at the very bottom — "How your
+team stacks up" is about comparing his team to the league, not the first
+tool he reaches for. Same two-path layout as the Wire tab's "Ask Claude
+about the wire": a live "Ask Claude" button with a memoized cost estimate,
+gated on `Ai.configured()`, and beneath it the free `handoffCard()`
+export/import pair that works with no API key at all. A result shows the
+rank/verdict, strengths/weaknesses, a "Team by team ▾" breakdown, and a
+recommendations list — each one flagged `unverified` (never hidden) if it
+names a player outside every list the prompt actually sent, exactly the
+same safety property the waiver board already gives an unrecognised add.
+
+### Verification
+Extended `tools/test_ai.js` (normalizeTeamAnalysis: the JR regression, an
+invented team dropped from `teamComparisons`, an invented `fromTeam`
+blanked, `giveUp` only ever resolving to a player genuinely on my own
+roster, a real waiver target verified against the AVAILABLE pool) and
+`tools/test_handoff.js` (the briefing explains itself with no message
+needed, every team's roster heading actually appears, the full
+build → answer → import round trip lands in `TeamReport`'s own cache and
+reads back, the same-week/empty-reply/no-context refusals, `detect()`'s
+exact-match safety extended to the new kind, and a "no drift" check that
+handoff.js calls into `ai.js`/`teamreport.js` rather than reimplementing
+either). New `tools/test_teamreport.js` (context shape: every team appears
+once, mine is flagged, no price comes back NaN, a bye-week player prices
+at zero, and my own fields pass through `Value.waiverContext` unchanged).
+Also verified live in a real headless-Chromium run of `app/assets/
+index.html` (not just Node script tests): the card renders on the Rosters
+tab, the button is correctly disabled with no API key configured, the
+export produces the real ~17KB briefing in a modal, and a pasted reply
+imports and renders the full results view — confirmed with a screenshot.
+
+Full suite (18 suites) + `node tools/check_es2018.js` all green.
