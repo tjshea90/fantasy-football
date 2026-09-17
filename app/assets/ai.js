@@ -1327,15 +1327,18 @@
   root.Ai = { ask: ask, test: test, recap: recap, depth: depth, CHEAP_MODEL: CHEAP_MODEL,
               cheapModel: cheapModel, listModels: listModels, cachedModels: cachedModels,
               askWaivers: askWaivers, buildWaiverPrompt: buildWaiverPrompt,
+              askTeamAnalysis: askTeamAnalysis, buildTeamAnalysisPrompt: buildTeamAnalysisPrompt,
               adviceSearchBudget: adviceSearchBudget, waiverSearchBudget: waiverSearchBudget,
               searchToolType: searchToolType,
               _waiverPrefix: waiverPrefix, _waiverBlock: waiverBlock,
+              _teamAnalysisPrefix: teamAnalysisPrefix, _teamAnalysisBlock: teamAnalysisBlock,
               FALLBACK_MODELS: FALLBACK,
               _staticPrefix: staticPrefix, _rosterBlock: rosterBlock, _parseSse: parseSse, configured: configured, model: model,
               DEFAULT_MODEL: DEFAULT_MODEL, buildPrompt: buildPrompt,
               /* shared with handoff.js so the offline round trip and the API
                  path can never disagree about what a reply means */
               normalizeAdvice: normalizeAdvice, normalizeWaivers: normalizeWaivers,
+              normalizeTeamAnalysis: normalizeTeamAnalysis,
               normalizeInjuries: normalizeInjuries, dropCandidateIndex: dropCandidateIndex,
               poolIndex: poolIndex, parseAnswer: jsonOf, rulesText: rulesText,
               _jsonOf: jsonOf, _textOf: textOf };
