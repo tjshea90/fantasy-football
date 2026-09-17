@@ -37,6 +37,7 @@
 
   var KIND_ADVICE = 'fftracker.advice';
   var KIND_WAIVER = 'fftracker.waivers';
+  var KIND_TEAM = 'fftracker.teamanalysis';
   var FORMAT = 1;
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
