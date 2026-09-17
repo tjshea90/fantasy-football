@@ -1620,3 +1620,62 @@ against the pre-fix code and pass against the fix. Full suite (17 suites) +
 `node tools/check_es2018.js` + `bash build.sh` all green.
 
 Shipped as v7.0.
+
+## 39. Ask Claude how my team stacks up against the whole league (Tj, 2026-09-17, v7.2)
+
+Tj: "add a feature where I can ask Claude its overall take on my team
+versus every other team in the league and recommendations on how to
+improve my team... similar to other sections of this app where I can
+export and import Claude replies from the Claude app." A third instance of
+the existing export → Claude app → import round trip (handoff.js already
+did this for lineup advice and the waiver wire) — same shape, a new
+subject: a season-long verdict against the whole league, not a per-player
+one.
+
+New file `teamreport.js` composes `Store.standings`, `Value.perGame` +
+`Recommend.health` (every roster, every team, priced and flagged the same
+way the Wire tab already does), and `Value.waiverContext` (my own
+starters/bench/needs/pool/dropCandidates/injuries) into one
+`TeamReport.context()` — no new scoring math anywhere. `handoff.js` gained
+`buildTeamAnalysis()` (the export briefing: standings, every roster, the
+free-agent shortlist, all grounding rules against inventing a player or a
+team) and a `teamanalysis` branch in `detect()`/`importReply()`.
+`ai.js` gained the live-API twin, `askTeamAnalysis` — deliberately with
+**no web_search tool**: every fact in the prompt is already fresh from the
+app's own feeds, so a search adds cost with nothing to improve; the value
+Claude adds here is judgment, not research. `normalizeTeamAnalysis` is
+shared by both paths, same reason `normalizeAdvice`/`normalizeWaivers`
+already are. Lives on the Rosters tab, between the roster he opens the tab
+to see and the trade evaluator (kept at the very bottom per Tj's
+2026-09-15c request) — an "Ask Claude" button with a cost estimate, and
+the free `handoffCard()` export/import pair beneath it.
+
+**Caught before it shipped:** `normalizeTeamAnalysis` originally matched
+team names with `Names.canon()` — built for PLAYER names, it folds a bare
+`jr`/`sr`/`ii`/`iii`/`iv`/`v` token to nothing. This league has a real team
+named "JR". Canonicalized, "JR" collided with the `''` key an empty
+`fromTeam` field also maps to — every recommendation naming no trade
+partner at all would have silently displayed as if it came from team JR.
+Found during manual round-trip testing against the real seed roster before
+any commit claimed the feature worked; fixed with a separate `teamKey()`
+(plain lowercase/trim, no suffix folding) for every team-name comparison,
+and locked in as a permanent regression case in `tools/test_ai.js`.
+
+DONE — `tools/test_teamreport.js` (new: context shape, no team missing or
+duplicated, no NaN price, a bye-week player prices at zero), `tools/
+test_ai.js` (normalizeTeamAnalysis: the JR regression above, an invented
+team dropped from `teamComparisons`, an invented `fromTeam` blanked,
+`giveUp` only ever resolving to my own roster), and `tools/test_handoff.js`
+(the briefing explains itself, every team's roster actually appears, the
+full round trip lands in `TeamReport`'s own cache, the same refusal
+properties advice/waivers already get, `detect()`'s exact-match safety
+extended, a "no drift" check). Also verified live in a real headless-
+Chromium run of `app/assets/index.html`: the card renders, the button is
+correctly disabled with no key configured, the export produces the real
+briefing, and a pasted reply imports and renders — confirmed with a
+screenshot. Full suite (18 suites) + `node tools/check_es2018.js` +
+`bash build.sh` all green.
+
+Shipped as v7.2 (v7.1 was a version-only ship that WARNed and skipped
+publishing — no `build/app-release.apk` existed yet in this fresh
+container; `bash build.sh` then a second `ship.sh` produced the real APK).
