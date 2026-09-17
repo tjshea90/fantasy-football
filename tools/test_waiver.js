@@ -213,6 +213,48 @@ var chain = (function () {
   });
 }());
 
+console.log('\n-- PlayerDB: a GENUINE partial refresh (one team fails, the rest succeed) still ' +
+            'prunes players whose OWN last-known team actually answered (2026-09-17) --');
+chain = chain.then(function () {
+  var W = freshWindow();
+  function fakeRoster(items) { return { athletes: [{ position: 'offense', items: items }] }; }
+  var goodRoster = fakeRoster([
+    { id: '301', fullName: 'Test KC Survivor', position: { abbreviation: 'RB' }, status: { type: 'active' } }
+  ]);
+  W.Espn._httpGet = function () { return Promise.resolve(goodRoster); };
+  return W.PlayerDB.refresh().then(function () {
+    /* one player whose last-known team (KC) is ABOUT to answer cleanly and
+       not include him — provably gone; one whose last-known team (WAS) is
+       ABOUT to fail every candidate this run — unproven, must survive */
+    W.PlayerDB.get().players.push(
+      { n: 'Test KC Gone Guy', p: 'RB', t: 'KC', b: 10, e: '', st: 'active' },
+      { n: 'Test WAS Unproven Guy', p: 'RB', t: 'WAS', b: 14, e: '', st: 'active' }
+    );
+    W.Espn._httpGet = function (url) {
+      if (/\/teams\/(wsh|28|WAS)(\/|\?)/.test(url)) return Promise.reject(new Error('offline'));
+      return Promise.resolve(goodRoster);
+    };
+    return W.PlayerDB.refresh().then(function (r) {
+      ok(r.failed.length === 1 && r.failed[0].indexOf('WAS') === 0,
+         'exactly WAS failed this run, no other team (got: ' + JSON.stringify(r.failed) + ')');
+      var players = W.PlayerDB.get().players;
+      function has(n) { return players.some(function (p) { return p.n === n; }); }
+      ok(has('Test KC Survivor'), 'a player really still on a team whose fetch succeeded survives');
+      ok(!has('Test KC Gone Guy'),
+         'a player whose OWN last-known team\'s fetch succeeded this run, and who was not found ' +
+         'on it, is pruned — even though one OTHER team (WAS) failed in the very same run. The ' +
+         'old rule required a flawless 32/32 sweep before removing ANYBODY, which real mobile ' +
+         'networks rarely deliver twice in a row — confirmed 2026-09-17 to be exactly how Nick ' +
+         'Chubb and Kareem Hunt (live-checked: on zero of the 32 current NFL rosters) kept sitting ' +
+         'in the database and reappearing on the Wire board after the 2026-09-16 fix that was ' +
+         'supposed to remove them for good');
+      ok(has('Test WAS Unproven Guy'),
+         'but a player whose own last-known team\'s fetch FAILED this run is left alone — ' +
+         'unproven, not assumed gone, because that one team never actually answered');
+    });
+  });
+});
+
 console.log('\n-- PlayerDB: a PARTIAL failure never prunes anybody --');
 chain = chain.then(function () {
   var W = freshWindow();
