@@ -1525,3 +1525,98 @@ px on a tab button as a swipe attempt instead of a plain press.
       `check_es2018.js` green.
 
 Shipped as v6.9. All 17 suites + the ES2018 gate green.
+
+## 38. The v6.9 fix wasn't holding — Chubb/Hunt still on the board (Tj, 2026-09-17, v7.0)
+
+> "The app is still recommending at least 3 players on the waiver wire that
+> recorded no stats at all in week one. Are these legitimate recommendations?
+> If not, figure out why it is recommending these players. It should only be
+> recommending active players with the goal of producing the best weekly
+> fantasy points output using this league scoring system"
+
+Tj's Wk2 screenshot showed Nick Chubb (tagged HOU), Trey Benson (ARI) and
+Kareem Hunt (tagged KC) all with "wk1 —" (zero recorded stats) ranked ABOVE
+several RBs who had actually played and scored. §37 (v6.9, the day before)
+was supposed to have already fixed exactly this — same two names, Chubb and
+Hunt, by ID.
+
+**Verified live, not assumed.** Before touching any code, fetched all 32
+current NFL team rosters directly from ESPN's own site API plus the
+`/injuries` feed. Confirmed: Nick Chubb and Kareem Hunt are on ZERO of the
+32 current rosters — not injured, not on any team at all, so the app's
+"HOU"/"KC" tags on them are simply stale. Trey Benson and Adam Randall (BAL)
+ARE on real rosters with no current ESPN injury-feed entry — legitimately
+speculative, no-data adds, just outranking real production for the wrong
+reason (see below).
+
+**Two real, independent root causes, both found in the actual code, not
+narrative:**
+
+1. **`value.js`'s `_faMemo` never noticed a background refresh.** The
+   free-agent board is memoised for performance (one Rosters render can
+   call it up to six times), keyed on `(week, Store.generation())`. But
+   `PlayerDB.ensureFresh()` (the player database, which prunes players off
+   every NFL roster) and `Recommend.loadNews()` (the injury feed, which
+   drives the OUT/IR/SUSPENDED exclusion §37 added) BOTH refresh
+   themselves asynchronously in the background and call `render()` once
+   they land — and NEITHER touches `Store.generation()`, which only bumps
+   when Tj adds, drops, or trades a player on his own roster. The Wire tab
+   always renders once immediately, before either background fetch can
+   possibly have landed yet. That first render computed and cached a board
+   from whatever was already on disk — in Tj's case, a player database that
+   hadn't yet pruned Chubb/Hunt and possibly an empty injury cache under
+   which `Recommend.health()` reports every player healthy by default.
+   Every subsequent render, including the one the completed background
+   fetch itself triggered, kept replaying that same first, incomplete
+   snapshot — the exclusion logic §37 added was correct and working, it
+   just never got handed the refreshed data, for the entire rest of the
+   session, until Tj happened to add or drop a player of his own.
+2. **`playerdb.js`'s prune required a flawless 32/32 team sweep.** §37's
+   prune (`doRefresh()`) only removed players who'd fallen off every
+   roster when ALL 32 team fetches succeeded in the very same pass — one
+   flaky team on a phone's cellular connection (common; `candidates()`
+   already has retry logic for exactly this) silently blocked every
+   removal for the whole run, with no partial credit. A player could be
+   confirmed gone from his own last-known team's roster and still never
+   get pruned because some unrelated team's fetch timed out in the same
+   pass.
+
+**Fixes, both in the real modules:**
+- `value.js`'s `freeAgents()` memo key now also folds in
+  `PlayerDB.meta().updated` and `Recommend.newsCache().at` — a landed
+  background refresh of either feed changes the key, so the very next call
+  recomputes with the current data instead of replaying stale rows.
+- `playerdb.js`'s `doRefresh()` now tracks which teams' fetches actually
+  succeeded this run (`teamOk`) and prunes a player only when HIS OWN
+  last-known team succeeded and came back without him in it — provable per
+  player, independent of whether some other team failed. A player whose
+  own team's fetch failed this run is left untouched either way (unproven,
+  not assumed gone) — the existing "a total failure prunes nobody"
+  guarantee from §37 still holds exactly as before.
+
+**Also fixed the ranking question Tj asked directly** ("are these legitimate
+recommendations?"). Independent of the two bugs above: `perGame()`'s lowest
+non-guess tier (ESPN's single-week projected line, used when a player has
+no measured games this season and no season-long model) was being compared
+numerically against real, measured production from other players — and
+because that tier can print a large generic number, an unconfirmed guess
+with zero track record could and did outrank someone who had actually played
+and scored. `freeAgents()` now tags each row `hasSignal` (true for any real
+measured game or an ESPN season-long model, false only for a bare
+single-week guess or the positional-floor blind guess) and sorts real signal
+ahead of guesses, before value. A speculative, unproven player can still
+appear on the board — nothing is hidden — he just can no longer crowd out
+someone with real production purely because ESPN's generic model guessed
+bigger.
+
+DONE — `tools/test_waiver.js` gained 4 new cases: a background injury-feed
+refresh actually changes the very next `freeAgents()` call with no roster
+change required; same for a background PlayerDB prune; a zero-signal ESPN
+guess never outranks real measured production however much bigger the
+guess is; and a GENUINE partial refresh (exactly one team fails, the other
+31 succeed) still prunes players whose own last-known team answered, while
+leaving alone a player whose own team was the one that failed. All 4 fail
+against the pre-fix code and pass against the fix. Full suite (17 suites) +
+`node tools/check_es2018.js` + `bash build.sh` all green.
+
+Shipped as v7.0.
