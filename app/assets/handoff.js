@@ -778,7 +778,7 @@
         throw new Error('Internal error: no league context to check this reply ' +
           'against. Nothing was changed.');
       }
-      var normT = root.Ai.normalizeTeamAnalysis(obj, ctxT, 'Claude app (handoff)');
+      var normT = root.Ai.normalizeTeamAnalysis(obj, ctxT);
       if (!normT.overall.verdict && !normT.recommendations.length && !normT.summary) {
         throw new Error('That reply has no verdict, no recommendations and no ' +
           'summary. Nothing was changed.');
