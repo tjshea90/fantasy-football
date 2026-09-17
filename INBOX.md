@@ -566,3 +566,8 @@ Finally sometimes when I open the app it is on the live tab and it won't let me 
 
 Only ship after the system is well made and the code is optimized and it didn't break any other features in the app.
 ```
+
+## 2026-09-17T00:12:44Z
+```
+The app is still recommending at least 3 players on the waiver wire that recorded no stats at all in week one. Are these legitimate recommendations? If not, figure out why it is recommending these players. It should only be recommending active players with the goal of producing the best weekly fantasy points output using this league scoring system
+```
