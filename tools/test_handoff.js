@@ -351,6 +351,81 @@ console.log('\n-- the waiver loop --');
   ok(back.model === 'Claude app (handoff)', 'and it says it came from the handoff');
 }());
 
+/* ---- 7c. the team analysis round trip (2026-09-17b) ---------------------- */
+console.log('\n-- the team analysis loop --');
+(function () {
+  /* a FRESH context, not the one the export built — same reasoning as the
+     waiver pool rebuild above: a player traded or signed since the export
+     must not read as still-verified */
+  var tctx = W.TeamReport.context(WEEK, me, null, 2026, '2026-09-07');
+  var otherTeam = tctx.rosters.filter(function (r) { return !r.mine; })[0];
+  var otherPlayer = otherTeam.players[0];
+  var myPlayer = tctx.rosters.filter(function (r) { return r.mine; })[0].players[0];
+
+  var replyObj = {
+    kind: 'fftracker.teamanalysis.reply', format: 1, week: WEEK, season: 2026,
+    overall: { rank: 3, of: tctx.rosters.length, verdict: 'Solid, thin at one spot.' },
+    teamComparisons: [
+      { team: otherTeam.name, note: 'They have the deeper bench.' },
+      { team: 'Team That Does Not Exist', note: 'should be dropped' }
+    ],
+    strengths: ['Quarterback play'], weaknesses: ['Depth at one position'],
+    recommendations: [
+      { type: 'trade', action: 'Trade for ' + otherPlayer.name, targetPlayer: otherPlayer.name,
+        fromTeam: otherTeam.name, giveUp: myPlayer.name, why: 'a fair depth swap' },
+      { type: 'trade', action: 'An invented deal', targetPlayer: 'Nobody Real',
+        fromTeam: 'Nowhere', why: 'should end up unverified' }
+    ],
+    summary: 'Make the trade first.'
+  };
+  var treply = '```json\n' + JSON.stringify(replyObj, null, 2) + '\n```';
+  var tr = W.Handoff.importReply(treply, { week: WEEK, ctx: tctx });
+  ok(tr.kind === 'teamanalysis', 'a team-analysis reply is recognised as teamanalysis');
+  ok(tr.applied === 2, 'both recommendations were applied (' + tr.applied + ')');
+  ok(tr.unverified === 1,
+     'the recommendation naming an invented player is counted as unverified');
+  ok(tr.result.overall.rank === 3 && tr.result.overall.of === tctx.rosters.length,
+     'the overall rank/of survive the round trip');
+  ok(tr.result.teamComparisons.length === 1 && tr.result.teamComparisons[0].team === otherTeam.name,
+     'the invented team comparison is dropped; the real one survives  <-- the closed-set safety property');
+  ok(tr.result.recommendations[0].fromTeam === otherTeam.name,
+     'a real trade partner team name survives the round trip');
+  ok(tr.result.recommendations[0].giveUp === myPlayer.name,
+     'giveUp naming a player genuinely on my own roster survives');
+  ok(tr.result.recommendations[1].fromTeam === '',
+     'an invented fromTeam is blanked, not shown as if real');
+
+  var tback = W.TeamReport.load();
+  ok(tback && tback.overall && tback.overall.rank === 3,
+     'the team-analysis result is in its own cache, where the Rosters tab reads it');
+  ok(tback.model === 'Claude app (handoff)', 'and it says it came from the handoff');
+  ok(tback.week === WEEK, 'it is filed against the right week');
+
+  /* the same refusal properties advice/waivers already get */
+  throws(function () {
+    W.Handoff.importReply(
+      '{"kind":"fftracker.teamanalysis.reply","week":' + (WEEK + 3) + ',"overall":{"verdict":"stale"}}',
+      { week: WEEK, ctx: tctx });
+  }, /for week \d+, but the app is on week/,
+     'a team-analysis reply for a DIFFERENT week is refused, same as advice/waivers');
+  throws(function () {
+    W.Handoff.importReply('{"kind":"fftracker.teamanalysis.reply","week":' + WEEK + ',"overall":{}}',
+      { week: WEEK, ctx: tctx });
+  }, /no verdict, no recommendations and no summary/,
+     'a reply with nothing usable at all is refused rather than filed as an empty report');
+  throws(function () {
+    W.Handoff.importReply('{"kind":"fftracker.teamanalysis.reply","week":' + WEEK + ',"overall":{"verdict":"x"}}',
+      { week: WEEK });
+  }, /no league context to check this reply against/,
+     'importing without a fresh ctx to verify against is refused, not silently trusted');
+
+  /* no "kind" at all, shape fallback via "overall" */
+  var noKindTA = JSON.stringify({ overall: { verdict: 'shape fallback works' } });
+  var trNoKind = W.Handoff.importReply(noKindTA, { week: WEEK, ctx: tctx });
+  ok(trNoKind.kind === 'teamanalysis',
+     'a reply with no "kind" field is still recognised by its "overall" shape');
+}());
+
 /* ---- 7b. detect() matches exactly, not by prefix (2026-09-15e sweep) -----
  * Used to be k.indexOf(KIND_ADVICE) === 0 — a prefix match that would accept
  * anything merely STARTING WITH "fftracker.advice", including a plausible
