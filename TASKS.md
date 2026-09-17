@@ -1,33 +1,25 @@
 # TASKS — the current job, in Tj's words
 
-> "When I imported it back into Claude it gave nonsense answers" (Tj,
-> 2026-09-17, with a screenshot of the Rosters tab showing "Rank 1 of 10.
-> <a few honest sentences: where this team really stands and why>" —
-> the app's own literal template text, unfilled)
+There is no active job right now. The most recent one (2026-09-17c: "When I
+imported it back into Claude it gave nonsense answers" — a screenshot
+showing the team-analysis card displaying its own literal unfilled
+template, "Rank 1 of 10. `<a few honest sentences...>`") is complete,
+shipped as v7.3, and archived at LADDER.md §40. Root cause, confirmed by
+reproducing it first: `Ai.parseAnswer` takes the widest valid JSON object
+in whatever text it is given, and every handoff export ALSO contains a
+JSON object in the reply's own shape (the worked skeleton under "## The
+file to give back") — so feeding the file exported FOR Claude back into
+the app, instead of what Claude actually sent, parsed cleanly and got
+silently imported as real. Predates the team-analysis feature — the
+identical thing reproduced on the older waiver handoff too. Fixed with one
+shared guard in `Handoff.importReply()`: `findPlaceholder()` refuses any
+reply still holding the literal `<...>` placeholder text every skeleton
+uses. Full write-up and the 5 new regression cases in LADDER.md §40.
+**Tell Tj plainly if he sees this again after v7.3** — that would mean a
+different, still-undiscovered gap, not a repeat of the exact bug already
+fixed.
 
-- [x] Diagnose and fix. Root cause confirmed reproducible:
-      `Ai.parseAnswer`/`jsonOf` takes the WIDEST valid JSON object in
-      whatever text it is handed, and the unfilled skeleton embedded in
-      every handoff's own "## The file to give back" section is a bigger,
-      equally shape-valid object than a short real answer — so feeding the
-      file exported FOR Claude back in (instead of what Claude actually
-      sent back) parses cleanly and gets silently imported as if it were
-      real. Confirmed this predates the team-analysis feature: the same
-      thing reproduces on the older waiver handoff too. Fixed with one
-      shared guard in `Handoff.importReply()` — a recursive
-      `findPlaceholder()` scan refuses any reply still holding the literal
-      `<...>` placeholder text every skeleton uses (and nothing else in
-      this app ever produces), with an error explaining the likely
-      mistake. Test: `tools/test_handoff.js`'s new "the unfilled-template
-      bug Tj actually hit" section — all three skeletons refused, a
-      placeholder nested inside an array element caught too, a genuinely
-      real reply confirmed to still import fine. All 18 suites + ES2018
-      gate green.
-- [ ] Ship it and send Tj the link.
-
-## Prior job, complete
-
-The one before this (2026-09-17b: "ask
+The job before that (2026-09-17b: "ask
 Claude its overall take on my team versus every other team in the league
 and recommendations on how to improve my team", via the same export/
 import Claude-app round trip the Advice and Wire tabs already use) is
@@ -44,13 +36,12 @@ Caught and fixed a real bug before it shipped: team-name matching was
 running through `Names.canon()` (built for player names, folds a bare
 "jr"/"sr"/"ii" token to nothing), which collided a real team named "JR"
 with "no team given" — every recommendation with no trade partner would
-have silently shown as coming from team JR. Full write-up, the exact fix,
-and the regression test that locks it in, all in LADDER.md §39 — narrative
-detail in STATE.md's 2026-09-17b entry. **Tell Tj plainly if he reports a
-recommendation crediting the wrong team, or naming a player who is not
-actually in this league and not flagged "unverified"** — either would mean
-a real gap this session's testing missed, not a repeat of the bug already
-fixed.
+have silently shown as coming from team JR. Full write-up in LADDER.md
+§39, narrative detail in STATE.md's 2026-09-17b entry. **Tell Tj plainly if
+he reports a recommendation crediting the wrong team, or naming a player
+who is not actually in this league and not flagged "unverified"** — either
+would mean a real gap this session's testing missed, not a repeat of the
+bug already fixed.
 
 ## Prior job, complete
 
