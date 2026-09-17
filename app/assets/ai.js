@@ -1175,7 +1175,12 @@
      A plain lowercase/trim is the whole normalization a team name needs. */
   function teamKey(s) { return String(s || '').toLowerCase().trim().replace(/\s+/g, ' '); }
 
-  function normalizeTeamAnalysis(parsed, ctx, mdl) {
+  /* No `mdl` parameter, unlike normalizeAdvice — that one stamps it onto
+     every per-player record, but a team-analysis reply has no per-item
+     provenance to carry; the caller stamps `model` once at the top level
+     instead (see askTeamAnalysis's return object and handoff.js's
+     savedT.model), so a parameter here would go unused. */
+  function normalizeTeamAnalysis(parsed, ctx) {
     var o = parsed || {};
     var overall = o.overall || {};
 
