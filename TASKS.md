@@ -37,7 +37,7 @@ speculative/no-data adds, just currently mis-ranked ahead of real production.
 - [ ] 1e. Run the full suite, `node tools/check_es2018.js`, and build.sh;
       only `ship.sh` once everything is green and nothing else broke.
 
-**There is no active job right now.** The most recent one (2026-09-16:
+The prior job (2026-09-16:
 rebuild the waiver-wire recommendation system to be season-smart and
 exclude inactive/injured players; diagnose the tab-lock bug) is
 complete, shipped as v6.9, and archived at LADDER.md §37 — full
