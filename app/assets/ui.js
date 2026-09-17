@@ -1883,6 +1883,165 @@
     return c;
   }
 
+  /* ---------- ROSTERS: how your team stacks up (2026-09-17b) ----------
+   * Tj: "ask Claude its overall take on my team versus every other team in
+   * the league and recommendations on how to improve my team... similar to
+   * other sections of this app where I can export and import Claude
+   * replies." Same two-path shape as the Wire tab's "Ask Claude about the
+   * wire" (see freeAgentCard above): a live-API button with a cost
+   * estimate, and a handoffCard() export/import pair beneath it that works
+   * with no key at all. TeamReport/Handoff/Ai own the data and the wording
+   * of what is safe to show (an unverified player is flagged, never
+   * hidden); this function only lays it out. */
+  var _taEstMemo = null;
+  function claudeTeamAnalysisEstimate() {
+    try {
+      var mdl = Ai.depth() === 'cheap' ? Ai.cheapModel() : Ai.model();
+      var gen = (window.Store && Store.generation) ? Store.generation() : 0;
+      var k = week + '|' + S.league.me + '|' + gen + '|' + mdl + '|' + JSON.stringify(Usage.rates(mdl));
+      if (_taEstMemo && _taEstMemo.k === k) return _taEstMemo.v;
+      var ctx = TeamReport.context(week, S.league.me, weekOpponents(), S.league.season,
+                                    new Date().toISOString().slice(0, 10));
+      var promptChars = Ai.buildTeamAnalysisPrompt(ctx).length;
+      /* no web_search on this call at all (see ai.js's own comment on
+         askTeamAnalysis) — output is the only variable cost, sized to one
+         verdict plus one line per other team plus a handful of
+         recommendations */
+      var outputTokens = 700 + ctx.rosters.length * 50;
+      var v = Usage.money(Usage.estimate(promptChars, 0, outputTokens, mdl));
+      _taEstMemo = { k: k, v: v };
+      return v;
+    } catch (e) { return null; }
+  }
+  function teamAnalysisCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'How your team stacks up'));
+    c.appendChild(el('p', 'hint',
+      'Claude\'s overall read on your team against every other roster in this ' +
+      'league this season — where you really stand, and concrete moves to get ' +
+      'better: a trade to explore, a waiver add, or a lineup fix.'));
+
+    var acard = el('div');
+    var abtn = el('button', 'btn pri', 'Ask Claude');
+    var anote = el('p', 'hint', '');
+    var aest = el('p', 'hint', '');
+    if (!Ai.configured()) {
+      abtn.disabled = true;
+      anote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". Everything ' +
+        'below works without one.';
+    } else {
+      anote.textContent = 'No web search on this one — every number here (prices, ' +
+        'injuries, standings) is already fresh from the app\'s own feeds, so this is ' +
+        'judgment, not research, and costs less than the Advice/Wire syncs.';
+    }
+    var aestText = claudeTeamAnalysisEstimate();
+    aest.textContent = aestText ? ('Estimated cost: ' + aestText +
+      ' on the Claude API, at current prices (see Data → Claude costs).') : '';
+    abtn.addEventListener('click', function () {
+      abtn.disabled = true; abtn.textContent = 'Comparing your team to the league…';
+      jobStart('teamanalysis', 'Comparing your team to the league…');
+      Promise.resolve().then(function () {
+        var ctx = TeamReport.context(week, S.league.me, weekOpponents(), S.league.season,
+                                      new Date().toISOString().slice(0, 10));
+        jobStep('Claude is judging the league…', 60);
+        return Ai.askTeamAnalysis(ctx, function (msg, pct) { jobStep(msg, pct); });
+      }).then(function (res) {
+        TeamReport.save(res);
+        jobEnd();
+        toast('Team analysis updated');
+        render();
+      })['catch'](function (e) {
+        jobEnd();
+        abtn.disabled = false; abtn.textContent = 'Ask Claude';
+        anote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
+          '  ·  the rest of the app is unaffected.';
+      });
+    });
+    var arow = el('div', 'dbrow'); arow.appendChild(abtn);
+    acard.appendChild(arow); acard.appendChild(anote); acard.appendChild(aest);
+    c.appendChild(acard);
+
+    try {
+      c.appendChild(handoffCard({
+        title: 'Or use the Claude app — no API key, no cost',
+        blurb: 'Makes a file with the standings and every roster in this league, ' +
+               'already priced in this league\'s scoring. Send it to the Claude app ' +
+               'with no message of your own; Claude gives its overall verdict and ' +
+               'concrete recommendations. Load the reply here and it shows below.',
+        build: function () {
+          return Handoff.buildTeamAnalysis(week, S.league.me, weekOpponents(),
+            S.league.season, new Date().toISOString().slice(0, 10));
+        },
+        apply: function (txt) {
+          /* a fresh context, not whatever the export built — a player traded
+             or signed since the export must not read as still-verified */
+          var ctx = TeamReport.context(week, S.league.me, weekOpponents(),
+            S.league.season, new Date().toISOString().slice(0, 10));
+          return Handoff.importReply(txt, { week: week, ctx: ctx });
+        },
+        status: function () {
+          var cch = TeamReport.load();
+          if (!cch) return '';
+          return 'Currently showing: rank ' + (cch.overall.rank || '?') + ' of ' +
+                 (cch.overall.of || '?') + ' from ' + (cch.model || 'Claude') +
+                 ', week ' + (cch.week || '?') + '.';
+        }
+      }));
+    } catch (e) { /* never take the Rosters tab down for this */ }
+
+    var cached = TeamReport.load();
+    if (cached && cached.overall &&
+        (cached.overall.verdict || (cached.recommendations && cached.recommendations.length))) {
+      var stale = (cached.week !== week);
+      c.appendChild(el('div', 'subhd', "Claude's take"));
+      if (stale) {
+        c.appendChild(el('p', 'warnText',
+          'FROM WEEK ' + cached.week + ' — re-sync for this week.'));
+      }
+      if (cached.overall.verdict) {
+        c.appendChild(el('p', null,
+          (cached.overall.rank ? 'Rank ' + cached.overall.rank + ' of ' +
+            cached.overall.of + '. ' : '') + cached.overall.verdict));
+      }
+      if (cached.strengths && cached.strengths.length) {
+        c.appendChild(el('p', 'hint', 'Strengths: ' + cached.strengths.join(', ')));
+      }
+      if (cached.weaknesses && cached.weaknesses.length) {
+        c.appendChild(el('p', 'hint', 'Weaknesses: ' + cached.weaknesses.join(', ')));
+      }
+      if (cached.teamComparisons && cached.teamComparisons.length) {
+        var td = el('details');
+        td.appendChild(el('summary', null, 'Team by team ▾'));
+        cached.teamComparisons.forEach(function (tc) {
+          var p = el('p', null);
+          p.appendChild(el('b', null, tc.team));
+          p.appendChild(document.createTextNode(' — ' + tc.note));
+          td.appendChild(p);
+        });
+        c.appendChild(td);
+      }
+      if (cached.recommendations && cached.recommendations.length) {
+        c.appendChild(el('div', 'subhd', 'Recommendations'));
+        cached.recommendations.forEach(function (r) {
+          var row = el('div', 'row');
+          var nm = el('div', 'nm');
+          nm.appendChild(document.createTextNode(r.action));
+          if (!r.verified) nm.appendChild(el('span', 'tag warn', 'unverified player'));
+          row.appendChild(nm);
+          c.appendChild(row);
+          if (r.why) {
+            var d = el('details');
+            d.appendChild(el('summary', null, 'why ▾'));
+            var kv = el('div', 'kv'); kv.appendChild(el('span', null, r.why)); d.appendChild(kv);
+            c.appendChild(d);
+          }
+        });
+      }
+      if (cached.summary) c.appendChild(el('p', 'muted', cached.summary));
+    }
+    return c;
+  }
+
   /* ---------- ROSTERS: trade evaluator (v2.6) ---------- */
   var faPos = 'ALL';   /* free-agent board filter (v3.2) */
   var tradeSel = { give: {}, get: {}, other: '' };
