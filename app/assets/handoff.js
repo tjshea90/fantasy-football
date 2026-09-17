@@ -459,6 +459,206 @@
     };
   }
 
+  /* ================= TEAM ANALYSIS (2026-09-17b) =========================
+   * Tj: "ask Claude its overall take on my team versus every other team in
+   * the league and recommendations on how to improve my team... similar to
+   * other sections of this app where I can export and import Claude
+   * replies." Same shape as buildAdvice/buildWaivers above — the context
+   * comes from TeamReport.context(), which is itself composed entirely from
+   * Value.waiverContext/perGame, Recommend.health and Store.standings (see
+   * teamreport.js's own header) — no scoring math lives in this file either.
+   *
+   * Deliberately no web-search instructions here, matching ai.js's own
+   * askTeamAnalysis: every number in this file (a price, a health tag, a
+   * record) is already fresh from the app's own feeds, so there is nothing
+   * for a search to improve — the ask is judgment over given facts. */
+  function buildTeamAnalysis(week, teamId, opponents, season, today) {
+    var ctx = root.TeamReport.context(week, teamId, opponents, season, today);
+    var lines = [], i, k;
+
+    lines.push(head({ title: 'team analysis — week ' + week + ' vs. the whole league' }));
+    lines.push('## What to do');
+    lines.push('');
+    lines.push('1. Read the standings and every roster in this league, below.');
+    lines.push('2. Form an honest overall verdict: where this team genuinely ranks in');
+    lines.push('   this specific league, and why — strengths, weaknesses, roster');
+    lines.push('   construction, not just the win/loss record (a team can be lucky or');
+    lines.push('   unlucky so far).');
+    lines.push('3. Compare it to each other team, briefly — one sentence per team naming');
+    lines.push('   the actual matchup, not a generic compliment.');
+    lines.push('4. Give concrete recommendations to improve it: a realistic trade to');
+    lines.push('   explore (naming a specific player on a specific other roster, and');
+    lines.push('   what to offer for him), a waiver add worth pursuing, or a lineup/');
+    lines.push('   roster-construction fix — whichever actually applies. Ground every');
+    lines.push('   player you name in the rosters or the AVAILABLE list below. Never');
+    lines.push('   invent a player or a team, and never claim to know what another owner');
+    lines.push('   would actually accept — frame a trade as worth OFFERING, never as');
+    lines.push('   something that will happen.');
+    lines.push('5. Write the answer as the JSON file described at the end.');
+    lines.push('');
+    lines.push('Today is **' + ctx.today + '**. This is **NFL week ' + week +
+               ' of the ' + ctx.season + ' season**.');
+    lines.push('');
+    lines.push(scoringSection());
+    lines.push('## Standings');
+    lines.push('');
+    lines.push('| rank | team | record | points |');
+    lines.push('|---|---|---|---|');
+    for (i = 0; i < ctx.rosters.length; i++) {
+      var s = ctx.rosters[i];
+      lines.push('| ' + s.rankWL + ' | ' + s.name + (s.mine ? ' **(you)**' : '') + ' | ' +
+                 s.w + '-' + s.l + (s.t ? '-' + s.t : '') + ' | ' + s.pts.toFixed(1) + ' |');
+    }
+    lines.push('');
+    lines.push('## Every roster in the league');
+    lines.push('');
+    lines.push('"pts/gm" is a rest-of-season per-game price, already converted to this');
+    lines.push('league\'s scoring — judge every player by this number, not by reputation.');
+    lines.push('"status" is a current injury/inactive designation from the app\'s own feed;');
+    lines.push('"—" means clear.');
+    lines.push('');
+    for (i = 0; i < ctx.rosters.length; i++) {
+      var t = ctx.rosters[i];
+      lines.push('### ' + t.name + (t.mine ? ' (you)' : '') + ' — ' +
+                 t.w + '-' + t.l + (t.t ? '-' + t.t : '') + ', ' + t.pts.toFixed(1) +
+                 ' pts, rank ' + t.rankWL + ' of ' + ctx.rosters.length);
+      lines.push('');
+      lines.push('| player | pos | NFL | pts/gm | status |');
+      lines.push('|---|---|---|---|---|');
+      for (k = 0; k < t.players.length; k++) {
+        var p = t.players[k];
+        lines.push('| ' + p.name + ' | ' + p.pos + ' | ' + (p.nfl || '?') + ' | ' +
+                   p.ros.toFixed(1) + ' | ' +
+                   (p.onBye ? 'bye wk ' + week : (p.health || '—')) + ' |');
+      }
+      lines.push('');
+    }
+    lines.push('**Your bench:** ' + (ctx.bench.length ? ctx.bench.join(', ') : '(empty)'));
+    lines.push('');
+    if (ctx.injuries && ctx.injuries.length) {
+      lines.push('### Your roster — injuries');
+      lines.push('');
+      for (i = 0; i < ctx.injuries.length; i++) {
+        var inj = ctx.injuries[i];
+        lines.push('- **' + inj.name + '** (' + inj.pos + ', ' + inj.nfl + ') — ' +
+                   inj.status + (inj.note ? ': ' + inj.note : ''));
+      }
+      lines.push('');
+    }
+    var anyDrop = false;
+    if (ctx.dropCandidates) {
+      for (k in ctx.dropCandidates) {
+        if (Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k) &&
+            ctx.dropCandidates[k].length) { anyDrop = true; break; }
+      }
+    }
+    if (anyDrop) {
+      lines.push('### Your drop candidates — weakest player at each position');
+      lines.push('');
+      lines.push('A waiver recommendation\'s `dropCandidate` **must** be chosen from here,');
+      lines.push('or left an empty string.');
+      lines.push('');
+      for (k in ctx.dropCandidates) {
+        if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
+        if (!ctx.dropCandidates[k].length) continue;
+        lines.push('- **' + k + '**: ' + ctx.dropCandidates[k].map(function (d) {
+          return d.name + ' (ROS value ' + d.ros.toFixed(1) + ')';
+        }).join(', '));
+      }
+      lines.push('');
+    }
+    if (ctx.needs && ctx.needs.length) {
+      lines.push('**Where your roster is thinnest**, weakest first:');
+      lines.push('');
+      for (i = 0; i < ctx.needs.length; i++) {
+        var n = ctx.needs[i];
+        lines.push('- **' + n.pos + '** — ' + n.name + ' (' +
+                   (typeof n.proj === 'number' ? n.proj.toFixed(1) : '?') + ')' +
+                   (n.note ? ' — ' + n.note : ''));
+      }
+      lines.push('');
+    }
+    lines.push('## AVAILABLE — nobody in this list is on any of the ' +
+               ctx.rosters.length + ' rosters');
+    lines.push('');
+    lines.push('A waiver-type recommendation\'s `targetPlayer` may come from here.');
+    lines.push('');
+    for (k in ctx.pool) {
+      if (!Object.prototype.hasOwnProperty.call(ctx.pool, k)) continue;
+      if (!ctx.pool[k].length) continue;
+      lines.push('### ' + k);
+      lines.push('');
+      lines.push('| player | NFL | pts/gm |');
+      lines.push('|---|---|---|');
+      for (i = 0; i < ctx.pool[k].length; i++) {
+        var f = ctx.pool[k][i];
+        lines.push('| ' + f.name + ' | ' + (f.nfl || '?') + ' | ' +
+                   (typeof f.v === 'number' ? f.v.toFixed(1) : '?') + ' |');
+      }
+      lines.push('');
+    }
+    lines.push(contractSection(
+      { filename: 'fftracker-teamanalysis-reply.json',
+        skeleton: {
+          kind: KIND_TEAM + '.reply', format: FORMAT,
+          week: week, season: ctx.season,
+          overall: { rank: 1, of: ctx.rosters.length,
+                     verdict: '<a few honest sentences: where this team really stands and why>' },
+          teamComparisons: [{
+            team: '<exact team name from the standings table>',
+            note: '<one or two sentences on that specific matchup>'
+          }],
+          strengths: ['<short phrase>'],
+          weaknesses: ['<short phrase>'],
+          recommendations: [{
+            type: 'trade | waiver | lineup | general',
+            action: '<one short imperative sentence>',
+            targetPlayer: '<exact name from a roster or AVAILABLE, or an empty string>',
+            fromTeam: '<exact team name, only when targetPlayer is a trade target on ' +
+                      'another roster, else an empty string>',
+            giveUp: '<exact name from YOUR OWN roster to offer, trade only, else an empty string>',
+            dropCandidate: '<exact name from your drop candidates, waiver only, else an empty string>',
+            why: '<the reasoning, one or two sentences>'
+          }],
+          summary: '<two or three sentences: the bottom line, what to do first>'
+        } },
+      [
+        '`rank`/`of` — your honest read of where this team truly stands among all the ' +
+        'teams in the league, 1 = best. Weigh roster strength and depth as given, not ' +
+        'only the standings.',
+        '`team` in `teamComparisons` — copy the name EXACTLY as given in the standings ' +
+        'table. Cover every other team once.',
+        '`targetPlayer`/`fromTeam`/`giveUp`/`dropCandidate` — copy names EXACTLY as ' +
+        'given. Never invent a player or a team; leave a field an empty string rather ' +
+        'than guess.',
+        'A trade recommendation needs both `targetPlayer` and `fromTeam`. A waiver ' +
+        'recommendation should set `dropCandidate` when there is a fair swap at the ' +
+        'same position.',
+        'Do not pad the list — 3 to 6 real recommendations beat 10 padded ones.'
+      ],
+      {
+        type: 'trade', action: 'Trade for Example Star',
+        targetPlayer: 'Example Star', fromTeam: 'Example Other Team',
+        giveUp: 'Example Bench Piece',
+        dropCandidate: '',
+        why: 'Their RB2 is stuck behind a healthy starter while your RB2 slot is your ' +
+             'clearest weakness — a fair change-of-scenery deal for both sides.'
+      }));
+    lines.push('---');
+    lines.push('');
+    lines.push('## Machine-readable copy of this request');
+    lines.push('');
+    lines.push('```json');
+    lines.push(j({ kind: KIND_TEAM, format: FORMAT, week: week,
+                   season: ctx.season, today: ctx.today, team: ctx.teamName }));
+    lines.push('```');
+    return {
+      filename: 'fftracker-teamanalysis-wk' + week + '-' + stamp() + '.md',
+      text: lines.join('\n') + '\n',
+      ctx: ctx
+    };
+  }
+
   /* ================= IMPORT ==============================================
    * Tolerant about the WRAPPER, strict about the CONTENT.
    *
