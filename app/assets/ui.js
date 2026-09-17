@@ -1836,6 +1836,10 @@
 
     var team = Store.team(rosterSel);
     if (team) addSafe(root, team.name + ' roster', function () { return teamRosterCard(team); });
+    /* Below the roster he opened this tab to see, above the trade evaluator
+       Tj asked to keep at the very bottom (2026-09-15c) — this card is about
+       comparing his own team to the league, not a tool he reaches for first. */
+    addSafe(root, 'How your team stacks up', teamAnalysisCard);
     addSafe(root, 'The trade evaluator', tradeCard);
   }
   function teamRosterCard(t) {
