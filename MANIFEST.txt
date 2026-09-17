@@ -69,6 +69,8 @@ tools/test_engine.js
 app/assets/usage.js
 app/assets/sim.js
 app/assets/value.js
+app/assets/teamreport.js
+tools/test_teamreport.js
 android/src/com/tj/fftracker/Alerts.java
 app/assets/recap.js
 RELEASE_NOTES.md
