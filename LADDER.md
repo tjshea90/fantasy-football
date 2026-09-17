@@ -1679,3 +1679,38 @@ screenshot. Full suite (18 suites) + `node tools/check_es2018.js` +
 Shipped as v7.2 (v7.1 was a version-only ship that WARNed and skipped
 publishing — no `build/app-release.apk` existed yet in this fresh
 container; `bash build.sh` then a second `ship.sh` produced the real APK).
+
+## 40. The unfilled-template bug: a handoff reply could be its own export, silently (Tj, 2026-09-17, v7.3)
+
+Minutes after §39 shipped, Tj's screenshot showed the team-analysis card
+displaying its own literal placeholder text — "Rank 1 of 10. `<a few
+honest sentences...>`" — meaning the app had imported the unfilled
+skeleton as if it were Claude's real answer.
+
+**Root cause, confirmed by reproducing it before touching any code:**
+`Ai.parseAnswer` takes the WIDEST valid JSON object in whatever text it is
+given, by design (it has to tolerate a whole chat message pasted in). But
+every handoff export ALSO contains a JSON object in the reply's own shape
+— the worked skeleton under "## The file to give back". Feed the export
+file back into `importReply` instead of what Claude actually sent, and it
+parses cleanly, passes `detect()`'s shape check, and silently "imports".
+Confirmed this predates the team-analysis feature — the identical thing
+reproduces on the waiver handoff and a hand-built advice skeleton — Tj's
+report on the newest feature is what surfaced a bug as old as the first
+one.
+
+**Fix:** one shared guard in `Handoff.importReply()`, ahead of every
+per-kind branch — `findPlaceholder()` recursively scans the parsed object
+for any string wrapped start-to-end in a single `<...>` pair, the exact
+and only shape every skeleton's placeholder text has ever used. A hit
+refuses the whole import with a message naming what it found and why (the
+wrong file, most likely), rather than silently accepting garbage.
+
+DONE — `tools/test_handoff.js`: the real waiver export fed back in is
+refused, a hand-built advice skeleton is refused, the real team-analysis
+export (the literal bug Tj hit) is refused, a placeholder nested inside an
+array element is caught too, and a genuinely real reply with no
+bracket-wrapped field anywhere still imports exactly as before. Full suite
+(18 suites) + `node tools/check_es2018.js` all green.
+
+Shipped as v7.3.
