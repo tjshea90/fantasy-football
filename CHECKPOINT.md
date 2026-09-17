@@ -1,12 +1,12 @@
-# CHECKPOINT 86 — read me first, then TASKS.md
+# CHECKPOINT 92 — read me first, then TASKS.md
 
-**Written:** 2026-09-17T22:19:35Z · **version:** 7.0 · **tests:** all 18 suites green
+**Written:** 2026-09-17T22:24:20Z · **version:** 7.0 · **tests:** all 18 suites green
 
 ## Just done
-1d/1e done: added the 'How your team stacks up' card to ui.js's Rosters tab (below the roster he opens the tab to see, above the trade evaluator he asked kept at the bottom) — an Ask Claude button + cost estimate (memoized, same pattern as claudeWireEstimate) gated on Ai.configured(), the handoffCard() export/import pair beneath it, and a results view (rank/verdict, strengths/weaknesses, team-by-team, recommendations with why/unverified tags). Verified in a real headless-Chromium run of app/assets/index.html (not just Node script tests): the card renders, the cost estimate computes, the export modal contains the real 17KB briefing, and a pasted reply imports and renders correctly end to end — screenshot confirms the layout. Also wrote automated regression coverage: extended tools/test_ai.js with a normalizeTeamAnalysis section (including the JR-team-name bugfix as a locked-in regression) and tools/test_handoff.js with the team-analysis briefing/round-trip/detect()/no-drift sections, mirroring the existing advice/waiver coverage exactly
+Sweep pass over the new feature: removed an unused mdl parameter from normalizeTeamAnalysis (normalizeWaivers has no such param either; a team-analysis reply has no per-item provenance to stamp, the caller already stamps model once at the top level), confirmed every CSS class the new card uses (warnText/subhd/dbrow/kv/tag/nm/row/card/hint) actually exists in app.css, confirmed no variable-name collisions with the existing _wireEstMemo/_adviceEstMemo pattern, and reasoned through the perf profile (TeamReport.context's per-player Value.perGame pass only ever runs inside a memoized estimate or a click handler, never on every render, same discipline as the existing Wire tab). No further bugs found
 
 ## Do this next
-1f: final full sweep + bash ship.sh, then trigger publish-release.yml and send Tj the link per CLAUDE.md's standing rule
+1f: bash ship.sh, then trigger publish-release.yml and send Tj the link per CLAUDE.md's standing rule
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  cb00bed ckpt 86: 1d/1e done: added the 'How your team stacks up' card to ui.js's Rosters tab (be
   31fec06 ckpt 77: 1b done: extended handoff.js with buildTeamAnalysis() (export markdown: standin
   fa76b5d ckpt 66: 1c done: added ai.js's live-API twin for team analysis — teamAnalysisPrefix/B
   db8bd64 ckpt 62: 1a wrapped up: added tools/test_teamreport.js (shape + bye-week-zero-price chec
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   3aa7ea7 ship v7.0: v7.0: fix the v6.9 waiver-wire regression Tj reported next day — two real b
   4fb1180 ckpt 64: Found and fixed two real root causes of Chubb/Hunt/off-roster players reappeari
   18e4662 ckpt 54: Recorded the new 2026-09-17 job in TASKS.md: Tj reports Wire tab still recommen
-  009de2b ckpt 80: Moved the completed 2026-09-16 waiver-wire/tab-lock job from TASKS.md to LADDER
 ```
 
-(8 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
