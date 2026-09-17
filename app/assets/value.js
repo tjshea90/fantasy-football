@@ -190,11 +190,24 @@
          upgrades() below), never whether he is shown at all; the full
          per-position list still lists everyone so nothing is hidden. */
       var confident = pg.n >= 2 || pg.src.indexOf('season pace') >= 0;
+      /* Separate from `confident` above: this is just "has he actually done
+         ANYTHING on an NFL field this season, ever, at all" — true for a
+         single measured game too, not just 2+. Tj, 2026-09-17, pointing at
+         Nick Chubb/Trey Benson/Kareem Hunt sitting ABOVE real one-game
+         producers on the board: "are these legitimate recommendations?"
+         They were ranked purely on ESPN's generic per-role week-line guess
+         (perGame()'s branch 4, `n === 0`) — a number with no season-long
+         signal behind it at all — which happened to be larger than what
+         several players ACTUALLY put up in a real game. A guess with zero
+         track record has no business outranking a measured result just
+         because the guess is a bigger number; see the sort below. */
+      var hasSignal = pg.n >= 1 || pg.src.indexOf('season pace') >= 0;
       /* usage was formatted for all ~785 players and read for about 36 of
          them. It is a getter now: same property name, built on first touch. */
       var row = { name: p.n, pos: p.p, nfl: p.t, bye: p.b, onBye: onBye,
                   v: onBye ? 0 : pg.v, raw: pg.v, src: pg.src,
-                  healthLabel: h.label, healthNote: h.note, confident: confident };
+                  healthLabel: h.label, healthNote: h.note, confident: confident,
+                  hasSignal: hasSignal };
       (function (r, nm) {
         var memo = null;
         Object.defineProperty(r, 'usage', { enumerable: true, get: function () {
