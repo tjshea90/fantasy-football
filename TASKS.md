@@ -1,6 +1,75 @@
-# TASKS — the current job, in Tj's words
+# TASKS — the 2026-09-17b request, in Tj's words
 
-There is no active job right now. The most recent one (2026-09-17: Tj
+> "For this app, add a feature where I can ask Claude its overall take on my
+> team versus every other team in the league and recommendations on how to
+> improve my team. Make the Claude prompt where I can export a file that will
+> let me import it into the Claude app and then the Claude app will know
+> exactly what it needs to make a file in order to import it back into the
+> fantasy app similar to other sections of this app where I can export and
+> import Claude replies from the Claude app"
+
+This is the third instance of the existing export→Claude-app→import round
+trip (handoff.js already does it for lineup advice and the waiver wire) —
+same shape, a new subject: an overall "how does my team stack up" verdict
+plus recommendations, not a per-player verdict. Reuse everything that
+already exists rather than re-deriving it: `Value.waiverContext` already
+gives my starters/bench/needs/pool/dropCandidates/injuries;
+`Value.perGame`/`Recommend.health` already price and flag any named player;
+`Store.standings`/`Store.team` already have every team's record and roster.
+The only genuinely new code is the composition of those into one
+cross-league context, the new prompt/reply contract, and the UI card.
+
+- [ ] 1a. New file `teamreport.js` — `TeamReport.context(week, teamId,
+      opponents, season, today)`: standings for all ten teams
+      (`Store.standings`), every team's roster with a rest-of-season
+      per-game value and health tag for each player (`Value.perGame`,
+      `Recommend.health`), plus my own `starters`/`bench`/`needs`/`pool`/
+      `dropCandidates`/`injuries` from `Value.waiverContext`. No new scoring
+      math — composition only. Registered in `index.html` after `value.js`.
+      Test: `tools/test_teamreport.js` — shape asserts every team appears
+      exactly once, my own team is flagged, values are numbers not NaN.
+- [ ] 1b. `handoff.js` — `buildTeamAnalysis(week, teamId, opponents, season,
+      today)`: the export file. States the task (overall verdict vs. the
+      league, team-by-team comparison, concrder improvement
+      recommendations), carries the scoring rules, standings table, every
+      team's roster, and my needs/pool/dropCandidates so a
+      recommendation can be checked against real, currently-free-or-mine
+      players rather than invented ones. Reply contract:
+      `kind: 'fftracker.teamanalysis.reply'` with `overall` (verdict +
+      a 1-10 rank guess), `teamComparisons` (one line per real team name),
+      `strengths`/`weaknesses`, and `recommendations` (`type`: trade/waiver/
+      lineup/general, naming only players from the lists given, a
+      `dropCandidate` only from MY drop-candidate list, a trade `giveUp`
+      only from MY own roster). Extend `detect()` and `importReply()` for
+      the new kind; store the parsed reply in its own cache (own load/save
+      function, same pattern as `Value.waiverLoad`/`waiverSave` — this is a
+      report, it does not mutate any roster).
+- [ ] 1c. `ai.js` — `askTeamAnalysis(ctx, onStep)`: the live-API twin, same
+      web_search/cache_control/SSE pattern as `askWaivers`, gated on
+      `Ai.configured()`. `normalizeTeamAnalysis(parsed, mdl)` shared by both
+      the live path and `Handoff.importReply` (same reason
+      `normalizeAdvice`/`normalizeWaivers` are shared, not duplicated).
+- [ ] 1d. `ui.js` — a "How my team stacks up" card at the top of the
+      Rosters tab (Tj already looks at that tab to see his own roster vs.
+      the league): "Ask Claude" button with the same cost-estimate pattern
+      as the Wire tab, the `handoffCard()` export/import pair beneath it
+      (works with no API key), and a results view — overall verdict,
+      per-team comparison lines, strengths/weaknesses, recommendations with
+      a "why ▾".
+- [ ] 1e. `tools/test_handoff.js` (or a new `tools/test_teamanalysis.js`) —
+      round-trip test: the exported briefing explains itself with no
+      message needed (same bar `test_handoff.js` already holds advice/
+      waivers to), `detect()` recognizes the new kind, and a full
+      build → answer → import lands in the new cache and reads back.
+- [ ] 1f. Every suite + the ES2018 gate green (`bash tools/ckpt.sh` proves
+      it, discovered not listed — see ckpt.sh's own comment); `bash
+      ship.sh`; trigger `publish-release.yml`; verify the Release has a
+      non-empty `assets` array; send Tj the release link per CLAUDE.md's
+      "After every ship" standing rule.
+
+## Prior job, complete
+
+The most recent one before this (2026-09-17: Tj
 reported the Wire tab still recommending Nick Chubb/Trey Benson/Kareem Hunt
 — all zero week-1 stats — even after v6.9's supposed fix) is complete,
 shipped as v7.0, and archived at LADDER.md §38. Live ESPN checks that
