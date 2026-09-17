@@ -767,6 +767,47 @@
                        ' updated from the Claude app' };
     }
 
+    if (kind === 'teamanalysis') {
+      /* Verified against a FRESH context, not whatever the export built —
+         same reasoning as the waiver pool rebuild just below: a player
+         traded or signed since the export must not read as still-verified,
+         and this is a report, not something that mutates a roster, so
+         there is no lineup/add to apply either way. */
+      var ctxT = opts.ctx;
+      if (!ctxT) {
+        throw new Error('Internal error: no league context to check this reply ' +
+          'against. Nothing was changed.');
+      }
+      var normT = root.Ai.normalizeTeamAnalysis(obj, ctxT, 'Claude app (handoff)');
+      if (!normT.overall.verdict && !normT.recommendations.length && !normT.summary) {
+        throw new Error('That reply has no verdict, no recommendations and no ' +
+          'summary. Nothing was changed.');
+      }
+      var savedT = {
+        at: Date.now(), week: useWeek, season: ctxT.season,
+        model: 'Claude app (handoff)',
+        overall: normT.overall, teamComparisons: normT.teamComparisons,
+        strengths: normT.strengths, weaknesses: normT.weaknesses,
+        recommendations: normT.recommendations, summary: normT.summary,
+        usage: null, spent: null
+      };
+      root.TeamReport.save(savedT);
+      var unverifiedT = 0, ri;
+      for (ri = 0; ri < normT.recommendations.length; ri++) {
+        if (!normT.recommendations[ri].verified) unverifiedT++;
+      }
+      return {
+        kind: 'teamanalysis', applied: normT.recommendations.length,
+        unverified: unverifiedT, summary: normT.summary, result: savedT,
+        detail: 'Team analysis updated from the Claude app' +
+          (normT.recommendations.length
+            ? ' — ' + normT.recommendations.length + ' recommendation' +
+              (normT.recommendations.length === 1 ? '' : 's')
+            : '') +
+          (unverifiedT ? ' (' + unverifiedT + ' naming a player not in the lists sent)' : '')
+      };
+    }
+
     /* waivers */
     var pool = opts.pool || {};
     var res = root.Ai.normalizeWaivers(obj, root.Ai.poolIndex(pool),
