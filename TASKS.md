@@ -14,28 +14,50 @@ already fixed once. Trey Benson and Adam Randall ARE on real rosters (ARI,
 BAL) with no current ESPN injury-feed entry — legitimate to show as
 speculative/no-data adds, just currently mis-ranked ahead of real production.
 
-- [ ] 1a. Diagnose why the v6.9 OUT/off-roster exclusion isn't holding —
-      confirm the root cause with a runnable repro, not just narrative
-      (candidates so far: `value.js`'s `_faMemo` free-agent-board memo key
-      never changes when `PlayerDB` or the injury feed refresh in the
-      background, so the board can get stuck on the first, incomplete
-      snapshot for the rest of the session; and `playerdb.js`'s prune only
-      runs when all 32 team fetches succeed in the same pass, which a phone
-      network may rarely deliver cleanly).
-- [ ] 1b. Fix the real root cause(s) found in 1a in the actual source files —
-      no source-text pins, drive the real modules, matching this suite's
-      existing test style (`tools/test_waiver.js`).
-- [ ] 1c. Also address the ranking question Tj asked directly ("are these
-      legitimate?") — a pure ESPN week-line guess for a player with ZERO
-      measured usage this season should not be able to outrank a player with
-      real, if thin, observed production, which is what the screenshot shows
-      happening (Chubb 11.5 / Benson 9.9 / Hunt 9.1 all ranked ABOVE Kendre
-      Meller/Emmett Johnson/Kaelon Black/Samaje Perine, all of whom actually
-      played and produced 8.0-9.0 in their one game).
-- [ ] 1d. Write/extend automated tests proving each fix (name the test file
-      and case when ticking this).
-- [ ] 1e. Run the full suite, `node tools/check_es2018.js`, and build.sh;
-      only `ship.sh` once everything is green and nothing else broke.
+- [x] 1a. Diagnose why the v6.9 OUT/off-roster exclusion isn't holding —
+      confirmed with a runnable repro (tools/test_waiver.js, the two new
+      "not stuck behind the memo" cases), not just narrative. TWO real,
+      independent root causes found, both confirmed in code, not guessed:
+      (i) `value.js`'s `_faMemo` free-agent-board memo keyed only on
+      (week, Store roster generation) — `PlayerDB.ensureFresh()` and
+      `Recommend.loadNews()` both refresh in the BACKGROUND and call
+      render() when they land, but neither touches roster generation, so
+      the very first render (which always happens before either async
+      fetch lands) got memoized and then replayed for the rest of the
+      session no matter what fresh data arrived later; (ii)
+      `playerdb.js`'s prune of players who fell off every roster only ran
+      when ALL 32 team fetches succeeded in the same pass — one flaky team
+      on a phone network silently blocked every removal, forever, even for
+      players whose own last-known team answered cleanly. Live ESPN check
+      this session (all 32 rosters + the /injuries feed, fetched directly)
+      confirms Nick Chubb and Kareem Hunt are on zero of the 32 current NFL
+      rosters — same two names the 2026-09-16 fix already targeted once.
+- [x] 1b. Fixed both in the actual source files, no source-text pins:
+      `value.js`'s `freeAgents()` memo key now also folds in
+      `PlayerDB.meta().updated` and `Recommend.newsCache().at`, so a
+      landed background refresh actually changes the next call's answer;
+      `playerdb.js`'s `doRefresh()` now prunes a player only when HIS OWN
+      last-known team's fetch succeeded this run and came back without
+      him — provable per-player, no longer gated on a flawless 32/32
+      sweep — while a player whose own team's fetch failed this run is
+      left untouched either way.
+- [x] 1c. Addressed the ranking question directly: `freeAgents()` now
+      tags each row `hasSignal` (has he recorded ANY real usage this
+      season, even one game, or does ESPN have a season-long model on
+      him — vs. a bare single-week guess with zero track record) and
+      sorts real-signal rows ahead of zero-signal guesses before value,
+      so an ESPN week-line guess can no longer outrank a player who
+      actually played and produced just because the guess happens to be
+      a bigger number.
+- [x] 1d. Tests: `tools/test_waiver.js` — "a background injury-feed
+      refresh is not stuck behind the memo", "same, for a background
+      PlayerDB refresh/prune", "a zero-signal ESPN guess never outranks
+      real measured production", and "a GENUINE partial refresh (one
+      team fails, the rest succeed) still prunes players whose OWN
+      last-known team actually answered". All 4 fail on the pre-fix code
+      and pass on the fix.
+- [x] 1e. Full suite (all 17 suites), `node tools/check_es2018.js`, and
+      `build.sh` all green; nothing else broke.
 
 The prior job (2026-09-16:
 rebuild the waiver-wire recommendation system to be season-smart and
