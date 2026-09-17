@@ -217,7 +217,15 @@
       }(row, p.n));
       out.push(row);
     }
-    out.sort(function (a, b) { return b.v - a.v; });
+    /* Real production first, unconfirmed guesses after — see `hasSignal`
+       above. Without this, a player with literally zero measured games
+       could still rank #1 at his position purely because ESPN's own
+       generic weekly model happened to print a bigger number than what
+       someone else actually scored. Within each tier, still by value. */
+    out.sort(function (a, b) {
+      if (a.hasSignal !== b.hasSignal) return a.hasSignal ? -1 : 1;
+      return b.v - a.v;
+    });
     _faMemo = { k: k, rows: out };
     return limit ? out.slice(0, limit) : out;
   }
