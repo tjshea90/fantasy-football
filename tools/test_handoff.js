@@ -231,6 +231,55 @@ ok(W.Handoff.importReply(noKind, { week: WEEK }).applied === 1,
 
 /* ---- 5. refusals: it must never half-apply ------------------------------- */
 console.log('\n-- refusals --');
+
+/* THE BUG TJ ACTUALLY HIT (2026-09-17): the Rosters tab showed his own
+ * app's literal template text back at him — "Rank 1 of 10. <a few honest
+ * sentences: where this team really stands and why>" — because
+ * jsonOf/parseAnswer takes the WIDEST valid JSON object in whatever text it
+ * is handed, and the unfilled skeleton embedded in "## The file to give
+ * back" is a bigger, equally shape-valid object than a short real answer.
+ * Feeding an export straight back into importReply (the exact shape of
+ * pasting the file MADE FOR Claude instead of what Claude sent BACK)
+ * reproduces it for every one of the three kinds, not just team analysis —
+ * this bug predates the feature Tj was reporting it on. */
+console.log('\n-- the unfilled-template bug Tj actually hit --');
+throws(function () {
+  var exp = W.Handoff.buildAdvice(WEEK, me, null);
+  W.Handoff.importReply(exp.text, { week: WEEK });
+}, /still has the template's own placeholder text/,
+   'pasting the ADVICE export back as if it were the reply is refused, not silently accepted');
+throws(function () {
+  var wexp = W.Handoff.buildWaivers(WEEK, me, null, 2026, '2026-09-07');
+  var wc = W.Value.waiverContext(WEEK, me, null, 2026, '2026-09-07');
+  W.Handoff.importReply(wexp.text, { week: WEEK, pool: wc.pool,
+    dropCandidates: wc.dropCandidates, kdefNeed: wc.kdefNeed, injuries: wc.injuries });
+}, /still has the template's own placeholder text/,
+   'same for the WAIVERS export  <-- reproduced exactly as Tj described it, just a ' +
+   'different tab');
+throws(function () {
+  var texp = W.Handoff.buildTeamAnalysis(WEEK, me, null, 2026, '2026-09-07');
+  var tctx0 = W.TeamReport.context(WEEK, me, null, 2026, '2026-09-07');
+  W.Handoff.importReply(texp.text, { week: WEEK, ctx: tctx0 });
+}, /still has the template's own placeholder text/,
+   'same for the TEAM ANALYSIS export  <-- the exact screen Tj screenshotted');
+/* a placeholder nested inside an array element, not just a top-level field */
+throws(function () {
+  W.Handoff.importReply(JSON.stringify({ overall: { verdict: 'a real verdict here' },
+    recommendations: [{ action: '<one short imperative sentence>', why: 'x' }] }),
+    { week: WEEK, ctx: W.TeamReport.context(WEEK, me, null, 2026, '2026-09-07') });
+}, /still has the template's own placeholder text/,
+   'a placeholder nested inside an array element is caught too, not just a top-level field');
+/* a legitimate reply must never be mistaken for the template */
+(function () {
+  var legit = JSON.stringify({ overall: { rank: 2, of: 10, verdict: 'A real, honest verdict.' },
+    recommendations: [{ type: 'lineup', action: 'Start the flex play this week.', why: 'Real reasoning.' }],
+    summary: 'Real summary.' });
+  var r = W.Handoff.importReply(legit, { week: WEEK,
+    ctx: W.TeamReport.context(WEEK, me, null, 2026, '2026-09-07') });
+  ok(r.kind === 'teamanalysis' && r.applied === 1,
+     'a genuinely real reply — no angle-bracket-wrapped field anywhere — still imports fine');
+}());
+
 throws(function () { W.Handoff.importReply('', { week: WEEK }); },
        /empty/i, 'an empty file is refused');
 throws(function () { W.Handoff.importReply('just some notes I wrote', { week: WEEK }); },
