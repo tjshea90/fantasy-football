@@ -40,8 +40,8 @@ function load(f) {
   new Function('window', fs.readFileSync(path.join(__dirname, '..', 'app/assets', f), 'utf8'))(W);
 }
 ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
- 'projections.js', 'usage.js', 'ai.js', 'recommend.js', 'sim.js', 'value.js', 'recap.js',
- 'handoff.js'].forEach(load);
+ 'projections.js', 'usage.js', 'ai.js', 'recommend.js', 'sim.js', 'value.js', 'teamreport.js',
+ 'recap.js', 'handoff.js'].forEach(load);
 ok(!!W.SEED, 'the seed loaded');
 W.Store.init(W.SEED);
 W.PlayerDB.init();
