@@ -1,6 +1,33 @@
 # TASKS — the current job, in Tj's words
 
-There is no active job right now. The most recent one (2026-09-17b: "ask
+> "When I imported it back into Claude it gave nonsense answers" (Tj,
+> 2026-09-17, with a screenshot of the Rosters tab showing "Rank 1 of 10.
+> <a few honest sentences: where this team really stands and why>" —
+> the app's own literal template text, unfilled)
+
+- [x] Diagnose and fix. Root cause confirmed reproducible:
+      `Ai.parseAnswer`/`jsonOf` takes the WIDEST valid JSON object in
+      whatever text it is handed, and the unfilled skeleton embedded in
+      every handoff's own "## The file to give back" section is a bigger,
+      equally shape-valid object than a short real answer — so feeding the
+      file exported FOR Claude back in (instead of what Claude actually
+      sent back) parses cleanly and gets silently imported as if it were
+      real. Confirmed this predates the team-analysis feature: the same
+      thing reproduces on the older waiver handoff too. Fixed with one
+      shared guard in `Handoff.importReply()` — a recursive
+      `findPlaceholder()` scan refuses any reply still holding the literal
+      `<...>` placeholder text every skeleton uses (and nothing else in
+      this app ever produces), with an error explaining the likely
+      mistake. Test: `tools/test_handoff.js`'s new "the unfilled-template
+      bug Tj actually hit" section — all three skeletons refused, a
+      placeholder nested inside an array element caught too, a genuinely
+      real reply confirmed to still import fine. All 18 suites + ES2018
+      gate green.
+- [ ] Ship it and send Tj the link.
+
+## Prior job, complete
+
+The one before this (2026-09-17b: "ask
 Claude its overall take on my team versus every other team in the league
 and recommendations on how to improve my team", via the same export/
 import Claude-app round trip the Advice and Wire tabs already use) is
