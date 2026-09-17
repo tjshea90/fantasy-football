@@ -1,12 +1,12 @@
-# CHECKPOINT 55 — read me first, then TASKS.md
+# CHECKPOINT 58 — read me first, then TASKS.md
 
-**Written:** 2026-09-17T21:46:45Z · **version:** 7.0 · **tests:** all 17 suites green
+**Written:** 2026-09-17T21:49:25Z · **version:** 7.0 · **tests:** 1 RED: test_lifecycle (16 green)
 
 ## Just done
-Wrote the 2026-09-17b request (team-vs-league Claude analysis, export/import handoff) into TASKS.md as 1a-1f, planned to reuse Value.waiverContext/perGame, Recommend.health and Store.standings rather than re-deriving anything
+1a done: new teamreport.js composes Store.standings + every team's roster (priced via Value.perGame, flagged via Recommend.health) + my own Value.waiverContext fields into one TeamReport.context(); registered in index.html after value.js; smoke-tested against seed data (10 rosters, mine flagged, no NaN prices)
 
 ## Do this next
-Start 1a: new teamreport.js context module, registered in index.html after value.js
+1b: extend handoff.js with buildTeamAnalysis() (export prompt) and detect()/importReply() for the new 'fftracker.teamanalysis' kind, with its own load/save cache
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  d4193c9 ckpt 55: Wrote the 2026-09-17b request (team-vs-league Claude analysis, export/import ha
   1ffb347 ckpt 70: v7.0 shipped and verified: GitHub Release published (non-empty assets array, FF
   3aa7ea7 ship v7.0: v7.0: fix the v6.9 waiver-wire regression Tj reported next day — two real b
   4fb1180 ckpt 64: Found and fixed two real root causes of Chubb/Hunt/off-roster players reappeari
@@ -37,5 +38,5 @@ request in his own words and `git log` carries every step already taken.
   6a449a0 ckpt 55: Diagnosed the waiver wire recommendation bug and the tab-lock bug with live ESP
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
