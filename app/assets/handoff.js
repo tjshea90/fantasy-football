@@ -707,6 +707,49 @@
     return '';
   }
 
+  /* Every skeleton in contractSection() above wraps its placeholder text in
+   * a single pair of angle brackets, start to end — `'<copy the name EXACTLY
+   * ...>'`, `'<one short imperative sentence>'`, and so on — and NOTHING
+   * ELSE in this app writes a string shaped that way. That makes it a safe,
+   * specific signal for a real defect this file did not use to guard
+   * against: `Ai.parseAnswer`'s scanner takes the WIDEST valid JSON object
+   * in the text it is given (see jsonOf's own comment), and the skeleton
+   * embedded in "## The file to give back" is a bigger, equally-valid JSON
+   * object than a short real answer would be — so pasting the WHOLE
+   * exported file back in (the file made for Claude, not what Claude sent
+   * back) parses cleanly, matches the shape check, and gets happily
+   * "imported" as if it were a real, filled-in answer. Confirmed
+   * reproducible end to end (2026-09-17): Tj reported the team-analysis
+   * screen showing his own app's literal template text back at him
+   * ("Rank 1 of 10. <a few honest sentences...>"); feeding
+   * buildTeamAnalysis()'s own export straight back into importReply()
+   * reproduces it exactly, and the same is true of the older waiver
+   * handoff — this bug predates the team-analysis feature, it was just the
+   * report that surfaced it. Checked recursively so it also catches a
+   * placeholder nested inside an array (a `recommendations[].action`, a
+   * `players[].reason`), not just a top-level field. */
+  function findPlaceholder(v) {
+    if (typeof v === 'string') {
+      var s = v.trim();
+      return (/^<[\s\S]*>$/.test(s) && s.length < 400) ? s : null;
+    }
+    if (Array.isArray(v)) {
+      for (var i = 0; i < v.length; i++) {
+        var hit = findPlaceholder(v[i]);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    if (v && typeof v === 'object') {
+      for (var k in v) {
+        if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
+        var hit2 = findPlaceholder(v[k]);
+        if (hit2) return hit2;
+      }
+    }
+    return null;
+  }
+
   function importReply(text, opts) {
     opts = opts || {};
     var raw = String(text || '').trim();
@@ -728,6 +771,20 @@
         'It needs a "players" list (lineup advice), an "adds" list (the ' +
         'waiver wire), or an "overall" verdict (the team analysis). It has: ' +
         Object.keys(obj).slice(0, 6).join(', ') + '.');
+    }
+
+    /* THE DANGEROUS CASE THIS CATCHES: it parses, it matches the shape, and
+       it would otherwise apply — but it is the unfilled TEMPLATE, not an
+       answer. See findPlaceholder's own comment for exactly how this
+       happens and how it was confirmed. */
+    var placeholder = findPlaceholder(obj);
+    if (placeholder) {
+      throw new Error('That still has the template\'s own placeholder text in it ' +
+        '("' + placeholder.slice(0, 70) + (placeholder.length > 70 ? '…' : '') + '"), ' +
+        'not a real answer. Nothing was changed.\n\nThis usually means the file that ' +
+        'was pasted or loaded is the one exported FOR Claude, not the one Claude sent ' +
+        'BACK. Send the exported file to a Claude chat with no message, then load or ' +
+        'paste what Claude replies with — not the file you just made.');
     }
 
     /* A reply for another week is the dangerous case: it parses, it applies,
