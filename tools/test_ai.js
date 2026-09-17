@@ -363,7 +363,7 @@ ok(taNorm.recommendations[2].verified === true,
 const taNoTeam = Ai.normalizeTeamAnalysis({
   overall: {}, recommendations: [{ type: 'waiver', action: 'Add Free Back',
     targetPlayer: 'Free Back', why: 'x' }]
-}, taCtx, 'test-model');
+}, taCtx);
 ok(taNoTeam.recommendations[0].fromTeam === '',
    'no fromTeam given resolves to empty, never to a real team by accident');
 
