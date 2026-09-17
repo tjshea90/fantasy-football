@@ -658,3 +658,14 @@ When I imported it back into Claude it gave nonsense answers
 <summary>Background command "Ship the placeholder-guard bugfix" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-17T23:43:35Z
+```
+<task-notification>
+<task-id>bcy933jw6</task-id>
+<tool-use-id>toolu_01AoLTNkCJrfdEKWMoA2ZDyP</tool-use-id>
+<output-file>/tmp/claude-0/-home-user-fantasy-football/4b864064-cc1c-5a1d-8b61-c8a4b38ce26e/tasks/bcy933jw6.output</output-file>
+<status>completed</status>
+<summary>Background command "Re-run ship.sh now that the APK is rebuilt" completed (exit code 0)</summary>
+</task-notification>
+```
