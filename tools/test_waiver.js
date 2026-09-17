@@ -92,6 +92,90 @@ console.log('\n-- Value.freeAgents(): DOUBTFUL/QUESTIONABLE still shown, just ta
      'and the row carries the tag so freeAgentCard() can show it rather than presenting him as healthy');
 })();
 
+console.log('\n-- Value.freeAgents(): a background injury-feed refresh is not stuck behind the ' +
+            'memo — the very next call sees it, without needing a roster change (2026-09-17) --');
+(function () {
+  var W = freshWindow();
+  var nm = 'Zzz Now Injured Guy';
+  W.PlayerDB.get().players.push({ n: nm, p: 'RB', t: 'KC', b: 10, e: '', st: 'active' });
+  var currentHealth = { f: 1, label: '', note: '' };
+  W.Recommend.health = function (p) {
+    return p.name === nm ? currentHealth : { f: 1, label: '', note: '' };
+  };
+  var fa1 = W.Value.freeAgents(1, 0);
+  ok(fa1.some(function (r) { return r.name === nm; }),
+     'sanity: before the injury feed has him, he is shown — nothing wrongly excludes him yet');
+  /* the injury feed lands in the background (Recommend.loadNews landing,
+     same as ui.js's freshenInjuries triggers): health() now reports him
+     OUT, and the feed's own freshness stamp moves — but nothing about MY
+     roster changed, so Store.generation() is exactly what it was */
+  currentHealth = { f: 0, label: 'OUT', note: 'Injured Reserve' };
+  var genBefore = W.Store.generation();
+  W.Recommend.newsCache = function () { return { at: Date.now(), byName: {}, count: 1 }; };
+  var fa2 = W.Value.freeAgents(1, 0);
+  ok(W.Store.generation() === genBefore, 'sanity: no roster change happened, generation is unchanged');
+  ok(!fa2.some(function (r) { return r.name === nm; }),
+     'yet the very next freeAgents() call excludes him — before this fix the free-agent-board ' +
+     'memo keyed only on (week, roster generation), so it never noticed the injury feed had ' +
+     'refreshed and kept replaying the FIRST call\'s stale "healthy" snapshot for the rest of the ' +
+     'session. This is exactly how OUT/IR players kept reappearing on the Wire tab even after ' +
+     'the exclusion code itself was correct and working');
+})();
+
+console.log('\n-- Value.freeAgents(): same, for a background PlayerDB refresh/prune --');
+(function () {
+  var W = freshWindow();
+  var nm = 'Zzz About To Be Pruned Guy';
+  W.PlayerDB.get().players.push({ n: nm, p: 'RB', t: 'KC', b: 10, e: '', st: 'active' });
+  var fa1 = W.Value.freeAgents(1, 0);
+  ok(fa1.some(function (r) { return r.name === nm; }), 'sanity: present before the prune');
+  /* what a real PlayerDB.refresh() does on a successful prune: remove him
+     from the underlying database and move PlayerDB's own updated stamp */
+  var db = W.PlayerDB.get();
+  db.players = db.players.filter(function (p) { return p.n !== nm; });
+  db.updated = new Date().toISOString();
+  var genBefore = W.Store.generation();
+  var fa2 = W.Value.freeAgents(1, 0);
+  ok(W.Store.generation() === genBefore, 'sanity: no roster change happened, generation is unchanged');
+  ok(!fa2.some(function (r) { return r.name === nm; }),
+     'and the very next call reflects the prune immediately — not only after Tj happens to add ' +
+     'or drop a player of his own, which is what used to be the only thing that invalidated ' +
+     'this cache');
+})();
+
+console.log('\n-- Value.freeAgents(): a zero-signal ESPN guess never outranks real measured ' +
+            'production, however much bigger the guess is (2026-09-17) --');
+(function () {
+  var W = freshWindow();
+  var real = 'Zzz Real One Game Producer';
+  var guess = 'Zzz Big Guess No Track Record';
+  W.PlayerDB.get().players.push({ n: real, p: 'RB', t: 'KC', b: 10, e: '', st: 'active' });
+  W.PlayerDB.get().players.push({ n: guess, p: 'RB', t: 'KC', b: 10, e: '', st: 'active' });
+  /* the real producer actually played and scored, in week 1 */
+  W.Store.setBook(1, { 'zzz real one game producer':
+    { n: real, t: 'KC', p: 9.0, pa: 0, cr: 12, tg: 2 } });
+  /* the guess has never recorded a single stat — just ESPN's generic
+     per-role weekly model, and it happens to print a much bigger number */
+  W.Projections.find = function (player) {
+    return player.name === guess ? { week: 50 } : null;
+  };
+  var rows = W.Value.freeAgents(2, 0);
+  var byName = {};
+  rows.forEach(function (r) { byName[r.name] = r; });
+  ok(byName[real] && byName[guess], 'sanity: both are on the board');
+  ok(byName[guess].v > byName[real].v,
+     'sanity: the guess really is the bigger raw number (' + byName[guess].v +
+     ' vs ' + byName[real].v + ')');
+  var ranked = rows.filter(function (r) { return r.pos === 'RB'; });
+  var iReal = ranked.indexOf(byName[real]), iGuess = ranked.indexOf(byName[guess]);
+  ok(iReal >= 0 && iGuess >= 0 && iReal < iGuess,
+     'yet the real producer still ranks ABOVE the unconfirmed guess — a number with zero track ' +
+     'record behind it must never outrank a measured result just because ESPN\'s generic model ' +
+     'printed something bigger (Tj, 2026-09-17: "are these legitimate recommendations?" — Nick ' +
+     'Chubb/Trey Benson/Kareem Hunt, all zero measured games this season, were ranked above four ' +
+     'players who had actually played and scored)');
+})();
+
 console.log('\n-- Value.perGame(): ESPN season pace is a per-game rate, not a raw season total --');
 (function () {
   var W = freshWindow();
