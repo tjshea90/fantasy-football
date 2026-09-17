@@ -1145,7 +1145,7 @@
       }
       var j = parseSse(rawText);
       var parsed = jsonOf(textOf(j), { want: 'overall', stop: j.stop_reason });
-      var norm = normalizeTeamAnalysis(parsed, ctx, mdl);
+      var norm = normalizeTeamAnalysis(parsed, ctx);
       var spent = null;
       if (root.Usage) spent = root.Usage.record('team analysis', mdl, j.usage);
       return {
