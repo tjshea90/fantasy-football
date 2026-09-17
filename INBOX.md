@@ -571,3 +571,8 @@ Only ship after the system is well made and the code is optimized and it didn't 
 ```
 The app is still recommending at least 3 players on the waiver wire that recorded no stats at all in week one. Are these legitimate recommendations? If not, figure out why it is recommending these players. It should only be recommending active players with the goal of producing the best weekly fantasy points output using this league scoring system
 ```
+
+## 2026-09-17T21:40:48Z
+```
+For this app, add a feature where I can ask Claude its overall take on my team versus every other team in the league and recommendations on how to improve my team. Make the Claude prompt where I can export a file that will let me import it into the Claude app and then the Claude app will know exactly what it needs to make a file in order to import it back into the fantasy app similar to other sections of this app where I can export and import Claude replies from the Claude app
+```
