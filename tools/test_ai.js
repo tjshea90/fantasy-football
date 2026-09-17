@@ -292,6 +292,95 @@ ok(/dropCandidate/.test(wp) && /DROP CANDIDATES/.test(wp),
 ok(/recentStat/.test(wp), 'the recentStat contract field is described');
 ok(/"injuries"/.test(wp), 'the injuries research task and contract field are described');
 
+/* ---- 8. normalizeTeamAnalysis: the safety properties (2026-09-17b) ------- */
+console.log('\n-- normalizeTeamAnalysis --');
+/* a hand-built ctx in the exact shape TeamReport.context() produces — this
+   file unit-tests ai.js's pure functions against a shape, the same way the
+   normalizeWaivers section above does not need a real Store boot either.
+   Deliberately includes a team named "JR" — see the regression below. */
+const taCtx = {
+  rosters: [
+    { id: 'me', name: 'My Team', mine: true,
+      players: [{ name: 'Chris Olave', pos: 'WR' }, { name: 'Bench Guy', pos: 'WR' }] },
+    { id: 'jr', name: 'JR', mine: false,
+      players: [{ name: 'Some Star', pos: 'RB' }] },
+    { id: 'tim', name: 'Tim', mine: false,
+      players: [{ name: 'Other Guy', pos: 'QB' }] }
+  ],
+  pool: { RB: [{ name: 'Free Back', pos: 'RB', nfl: 'CHI', v: 9.1 }] },
+  dropCandidates: { WR: [{ name: 'Bench Guy', pos: 'WR', ros: 3.2 }] }
+};
+
+const taReply = {
+  overall: { rank: 2, of: 3, verdict: 'Strong at WR, thin at RB.' },
+  teamComparisons: [
+    { team: 'JR', note: 'They have the better RB1.' },
+    { team: 'Invented Team', note: 'should be dropped' }
+  ],
+  strengths: ['WR depth'], weaknesses: ['RB depth'],
+  recommendations: [
+    { type: 'trade', action: 'Trade for Some Star', targetPlayer: 'Some Star',
+      fromTeam: 'JR', giveUp: 'Bench Guy', why: 'addresses the RB need' },
+    { type: 'trade', action: 'Invented deal', targetPlayer: 'Nobody Real',
+      fromTeam: 'Nowhere', giveUp: 'Other Guy', why: 'should be stripped down' },
+    { type: 'waiver', action: 'Add Free Back', targetPlayer: 'Free Back',
+      dropCandidate: 'Bench Guy', why: 'best available at need' }
+  ],
+  summary: 'Make the trade, then the waiver add.'
+};
+const taNorm = Ai.normalizeTeamAnalysis(taReply, taCtx, 'test-model');
+
+ok(taNorm.overall.rank === 2 && taNorm.overall.of === 3 && taNorm.overall.verdict === taReply.overall.verdict,
+   'overall rank/of/verdict pass through');
+
+/* THE REGRESSION THIS LOCKS IN (found during manual testing, 2026-09-17b):
+   Names.canon() is built for PLAYER names and folds a standalone "jr"/"sr"/
+   "ii"/"iii"/"iv"/"v" token to nothing (so "Odell Beckham Jr." canonicalizes
+   to "Odell Beckham") — exactly wrong for a TEAM literally named "JR", which
+   collided with the '' key an empty/no-team field also maps to. A separate,
+   non-suffix-folding key must be used for every team-name comparison. */
+ok(taNorm.teamComparisons.length === 1 && taNorm.teamComparisons[0].team === 'JR',
+   'a real team named "JR" matches correctly  <-- the exact regression this locks in');
+ok(taNorm.recommendations[0].fromTeam === 'JR',
+   'a trade recommendation naming team "JR" resolves correctly, not to empty/invented');
+ok(!taNorm.teamComparisons.some(function (c) { return c.team === 'Invented Team'; }),
+   'a team name that does not exist in the league is dropped, not shown');
+ok(taNorm.recommendations[1].fromTeam === '',
+   'an invented fromTeam ("Nowhere") is blanked, never shown as if real');
+ok(taNorm.recommendations[1].verified === false,
+   'a recommendation naming an invented player is flagged unverified, not dropped');
+ok(taNorm.recommendations[1].giveUp === '',
+   'giveUp naming a player who is NOT on my own roster (Other Guy is on Tim\'s) is cleared');
+ok(taNorm.recommendations[0].giveUp === 'Bench Guy',
+   'giveUp naming a player who genuinely IS on my own roster survives');
+ok(taNorm.recommendations[2].dropCandidate === 'Bench Guy',
+   'a dropCandidate at the matching position survives');
+ok(taNorm.recommendations[2].verified === true,
+   'a waiver target actually in the AVAILABLE pool is verified');
+
+/* an empty fromTeam must never accidentally match team "JR" (the exact shape
+   of the bug: '' canonicalizing the same way "JR" used to) */
+const taNoTeam = Ai.normalizeTeamAnalysis({
+  overall: {}, recommendations: [{ type: 'waiver', action: 'Add Free Back',
+    targetPlayer: 'Free Back', why: 'x' }]
+}, taCtx, 'test-model');
+ok(taNoTeam.recommendations[0].fromTeam === '',
+   'no fromTeam given resolves to empty, never to a real team by accident');
+
+console.log('\n-- the team-analysis prompt states the new task --');
+const tap = Ai._teamAnalysisPrefix();
+ok(/TASK\./.test(tap) && /overall verdict/.test(tap),
+   'the task is stated: an overall verdict, not a per-player one');
+ok(!/web_search|"web_search"/.test(tap),
+   'no web-search instructions — this call is judgment over given facts, not research');
+ok(/"overall"/.test(tap) && /"teamComparisons"/.test(tap) && /"recommendations"/.test(tap),
+   'the reply contract names overall/teamComparisons/recommendations');
+ok(/"targetPlayer"/.test(tap) && /"fromTeam"/.test(tap) && /"giveUp"/.test(tap) &&
+   /"dropCandidate"/.test(tap),
+   'the recommendation contract fields are all documented');
+ok(/Never invent a player or a team/.test(tap),
+   'inventing a player or a team is explicitly forbidden');
+
 console.log('\n' + (fail ? '  ' + fail + ' FAILED, ' : '  ') + pass + ' assertions pass');
 if (fail) process.exit(1);
 console.log('  ai + note checks pass');
