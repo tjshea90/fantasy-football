@@ -642,3 +642,8 @@ For this app, add a feature where I can ask Claude its overall take on my team v
 <summary>Background command "Brief wait before re-checking the release workflow status" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-17T23:27:56Z
+```
+When I imported it back into Claude it gave nonsense answers
+```
