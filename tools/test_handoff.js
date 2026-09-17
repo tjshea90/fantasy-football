@@ -243,11 +243,25 @@ console.log('\n-- refusals --');
  * reproduces it for every one of the three kinds, not just team analysis —
  * this bug predates the feature Tj was reporting it on. */
 console.log('\n-- the unfilled-template bug Tj actually hit --');
+/* the advice skeleton, hand-built rather than parsed out of the exported
+   text: that export's own "machine-readable copy of this request" block
+   (real player names, no placeholders) happens to be textually WIDER than
+   the one-example advice skeleton, so jsonOf's widest-span-first scan picks
+   THAT block instead when fed the whole file — a different, already-safe
+   refusal ("no entry had a name"), not a silent misimport either way, but
+   not this specific defence. This tests the skeleton shape directly, the
+   same way it genuinely arrives when Claude's own reply echoes it. */
 throws(function () {
-  var exp = W.Handoff.buildAdvice(WEEK, me, null);
-  W.Handoff.importReply(exp.text, { week: WEEK });
+  W.Handoff.importReply(JSON.stringify({
+    kind: 'fftracker.advice.reply', format: 1, week: WEEK, season: 2026,
+    players: [{ name: '<copy the name EXACTLY as it appears in the roster table>',
+      status: 'clear | questionable | limited | out', willPlay: true, adjust: 1.0,
+      confidence: 'high | medium | low',
+      reason: '<what you found, with the outlet named and the date>' }],
+    summary: '<two sentences on the lineup as a whole>'
+  }), { week: WEEK });
 }, /still has the template's own placeholder text/,
-   'pasting the ADVICE export back as if it were the reply is refused, not silently accepted');
+   'the ADVICE skeleton, unfilled, is refused rather than silently accepted');
 throws(function () {
   var wexp = W.Handoff.buildWaivers(WEEK, me, null, 2026, '2026-09-07');
   var wc = W.Value.waiverContext(WEEK, me, null, 2026, '2026-09-07');
