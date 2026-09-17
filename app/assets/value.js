@@ -131,11 +131,33 @@
    * byPos(), and replacement() once per player in a selected trade. Each call
    * walks all ~785 database rows doing a Projections lookup and a book trend
    * per player. The key includes the store's roster generation, so adding or
-   * dropping anybody invalidates it immediately. */
+   * dropping anybody invalidates it immediately.
+   *
+   * 2026-09-17: that was NOT enough. PlayerDB.ensureFresh() and
+   * Recommend.loadNews() both refresh themselves in the BACKGROUND (on tab
+   * open, on the live poll) and call render() when they land — but neither
+   * one touches Store's roster generation, so this memo never noticed either
+   * had happened. The Wire tab always renders once, immediately, before
+   * those two async fetches land; that first call computed and cached a
+   * board from whatever was ALREADY on disk (possibly a stale player
+   * database still carrying someone who has since fallen off every NFL
+   * roster, or an empty injury cache under which nobody can ever be OUT).
+   * Every render after that — including the one the completed background
+   * fetch itself triggers — kept replaying that same first, incomplete
+   * snapshot until Tj added or dropped a player of his own. This is why
+   * Nick Chubb and Kareem Hunt (confirmed live, 2026-09-17: on zero of the
+   * 32 current NFL rosters) kept reappearing on the board even after the
+   * v6.9 fix that was supposed to remove them — the exclusion code was
+   * correct, it just never got handed the refreshed data. Folding both
+   * feeds' own freshness stamps into the key makes a completed background
+   * refresh actually take effect on the very next render, same as a roster
+   * change always has. */
   var _faMemo = null;
   function freeAgents(week, limit) {
     var gen = (root.Store && root.Store.generation) ? root.Store.generation() : 0;
-    var k = String(week) + '|' + gen;
+    var dbAt = (root.PlayerDB && root.PlayerDB.meta) ? (root.PlayerDB.meta().updated || '') : '';
+    var newsAt = (root.Recommend && root.Recommend.newsCache) ? (root.Recommend.newsCache().at || 0) : 0;
+    var k = String(week) + '|' + gen + '|' + dbAt + '|' + newsAt;
     if (_faMemo && _faMemo.k === k) {
       return limit ? _faMemo.rows.slice(0, limit) : _faMemo.rows;
     }
