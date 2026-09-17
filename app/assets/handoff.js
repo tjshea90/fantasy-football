@@ -688,6 +688,7 @@
      * entirely must never be half-applied"). */
     if (k === KIND_ADVICE || k === KIND_ADVICE + '.reply') return 'advice';
     if (k === KIND_WAIVER || k === KIND_WAIVER + '.reply') return 'waivers';
+    if (k === KIND_TEAM || k === KIND_TEAM + '.reply') return 'teamanalysis';
     /* no kind field — fall back to shape, because a model that rewrote the
        skeleton by hand is still giving a usable answer */
     /* Array.isArray, not a truthy `.length` — a STRING has a length, so
@@ -695,6 +696,14 @@
        and then quietly apply nothing. */
     if (Array.isArray(obj.players)) return 'advice';
     if (Array.isArray(obj.adds)) return 'waivers';
+    /* teamanalysis's own shape check comes last and is deliberately narrower
+       than a single field name: "recommendations" alone is too generic a
+       word to trust on its own, but paired with "overall" (an object, not
+       a list — Array.isArray would wrongly reject it) it is specific enough
+       to this reply's contract that a hand-rewritten skeleton still matches. */
+    if (obj.overall && typeof obj.overall === 'object' && !Array.isArray(obj.overall)) {
+      return 'teamanalysis';
+    }
     return '';
   }
 
