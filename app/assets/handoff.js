@@ -257,6 +257,130 @@
   }
 
   /* ================= WAIVER WIRE ========================================= */
+  /* ---- the sections the waiver file is built from (2026-09-18) -----------
+   * Pulled out of buildWaivers so each one is a thing with a name rather
+   * than another fifty lines of push() in an already long function. */
+
+  /* MY WHOLE ROSTER, priced the same way the wire is — which is the point.
+     Rule 4 asks for one-for-one pairs, and a pair needs both halves in the
+     same currency or the "expected point edge" is a comparison of two
+     different questions. Every number here comes from ros.js, exactly as the
+     AVAILABLE table below does. */
+  function rosterSection(ctx) {
+    var lines = [], i;
+    lines.push('## MY ROSTER — every player, in rest-of-season points');
+    lines.push('');
+    lines.push('This is the other half of every swap. `ROS` is expected points from now to');
+    lines.push('the end of the regular season in this league\'s scoring; `gms` is games left');
+    lines.push('after his bye. Starters are marked. Anybody here may be dropped.');
+    lines.push('');
+    lines.push('| player | pos | NFL | ROS | per gm | gms | role | basis |');
+    lines.push('|---|---|---|---|---|---|---|---|');
+    var rows = (ctx.roster || []).slice();
+    rows.sort(function (a, b) {
+      if (a.pos !== b.pos) return a.pos < b.pos ? -1 : 1;
+      return b.ros - a.ros;
+    });
+    for (i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      lines.push('| ' + r.name + ' | ' + r.pos + ' | ' + (r.nfl || '?') + ' | ' +
+                 r.ros.toFixed(0) + ' | ' + r.perGame.toFixed(1) + ' | ' + r.games + ' | ' +
+                 (r.outForSeason ? '**OUT FOR SEASON**' : (r.bench ? 'bench' : 'starter')) +
+                 ' | ' + (r.src || '?') + ' |');
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  /* Rule 6's override, stated as a fact rather than left for Claude to infer
+     from an injury table: these men are finished for the year, so replacing
+     them is not an optional upgrade and is not subject to the low-priority
+     rule for their positions. */
+  function mandatedSection(ctx) {
+    var lines = [], k, i, any = false;
+    if (ctx.mandated) {
+      for (k in ctx.mandated) {
+        if (Object.prototype.hasOwnProperty.call(ctx.mandated, k) &&
+            ctx.mandated[k].length) { any = true; break; }
+      }
+    }
+    if (!any) return '';
+    lines.push('## MUST BE REPLACED — done for the season');
+    lines.push('');
+    lines.push('These players on my roster are out for the year, so they are worth zero');
+    lines.push('from here on and the roster spot is dead. **Pair each of them with the best');
+    lines.push('available replacement at his position, whatever the position** — rule 6\'s');
+    lines.push('low-priority rule for QB, K and DEF does not apply to a forced replacement.');
+    lines.push('');
+    for (k in ctx.mandated) {
+      if (!Object.prototype.hasOwnProperty.call(ctx.mandated, k)) continue;
+      for (i = 0; i < ctx.mandated[k].length; i++) {
+        var m = ctx.mandated[k][i];
+        lines.push('- **' + m.name + '** (' + m.pos + ') — ' + (m.outWhy || 'out for the season'));
+      }
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  /* The app's own deterministic answer, handed over so Claude does not spend
+     its effort re-deriving arithmetic it has already been given — and so a
+     disagreement is visible rather than silent. It is explicitly NOT binding:
+     the whole reason for asking is that news beats a projection. */
+  function swapsSection(ctx) {
+    var lines = [], i;
+    lines.push('## The app\'s own answer, before any news');
+    lines.push('');
+    if (!ctx.swaps || !ctx.swaps.length) {
+      lines.push('The app finds **no swap worth making** on the numbers alone — nobody');
+      lines.push('available clears a meaningful rest-of-season margin over anybody on my');
+      lines.push('roster. That is a real answer, not an empty one: if the news does not');
+      lines.push('change it, say so and recommend nothing.');
+      lines.push('');
+      return lines.join('\n');
+    }
+    lines.push('Pure arithmetic, no news in it at all — that is what you are adding.');
+    lines.push('Confirm, reorder or overrule these, and add any the numbers could not see');
+    lines.push('(a player whose role changed this week will not show up here yet).');
+    lines.push('');
+    lines.push('| drop | add | pos | season edge | why the app thinks so |');
+    lines.push('|---|---|---|---|---|');
+    for (i = 0; i < ctx.swaps.length; i++) {
+      var sw = ctx.swaps[i];
+      lines.push('| ' + sw.drop.name + ' | ' + sw.fa.name + ' | ' + sw.fa.pos + ' | +' +
+                 sw.gain.toFixed(0) + ' pts' + (sw.mandated ? ' **(forced)**' : '') +
+                 ' | ' + sw.why.replace(/\|/g, '/') + ' |');
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  /* EVERY player owned in this league (Tj, 2026-09-18, rule 5: the prompt
+     "should be able to see all taken players in the league so it doesn't
+     recommend them"). This is the single thing the app knows that no source
+     on the internet does, and handing over the whole map is what turns "do
+     not recommend a rostered player" from a hope into something checkable. */
+  function takenSection(ctx) {
+    var lines = [], i, j2;
+    if (!ctx.taken || !ctx.taken.length) return '';
+    lines.push('## OWNED — every player already on a roster in this league');
+    lines.push('');
+    lines.push('All ten teams, mine included. **Nobody in this list can be added.** It is');
+    lines.push('here so you can rule them out without guessing, and so you can see what the');
+    lines.push('rest of the league is holding.');
+    lines.push('');
+    for (i = 0; i < ctx.taken.length; i++) {
+      var t = ctx.taken[i];
+      var men = [];
+      for (j2 = 0; j2 < t.players.length; j2++) {
+        men.push(t.players[j2].name + ' (' + t.players[j2].pos + ')');
+      }
+      lines.push('- **' + t.name + '**: ' + (men.length ? men.join(', ') : '(empty)'));
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
   function buildWaivers(week, teamId, opp, season, today) {
     var ctx = root.Value.waiverContext(week, teamId, opp, season, today);
     var lines = [], k, i;
