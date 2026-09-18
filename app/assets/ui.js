@@ -2528,8 +2528,21 @@
               (u.fa.games === 1 ? '' : 's')
             : '+' + fmt0(u.gain) + ' pts the rest of the season over ' + u.drop.name +
               ' (' + fmt(u.perGame) + '/gm across ' + u.fa.games + ' game' +
-              (u.fa.games === 1 ? '' : 's') + ')')));
+              (u.fa.games === 1 ? '' : 's') + ')') +
+          /* An IR man who is COMING BACK is not "out for the season" and the
+             row must not imply he is — the whole point of the 2026-09-18d
+             split. Say the true, more useful thing instead: when he is back,
+             and how few games that leaves him. */
+          (u.drop.longTermOut
+            ? ' · ' + u.drop.name + ' is ' + (u.drop.outLabel || 'out') +
+              (u.drop.backAround ? ' until ' + u.drop.backAround : '') +
+              ' (' + u.drop.games + ' game' + (u.drop.games === 1 ? '' : 's') + ' left)'
+            : '')));
         if (u.mandated) nm.appendChild(el('span', 'tag warn', 'REPLACE'));
+        /* Tj, 2026-09-18d: same position is the default, so the exceptions are
+           worth flagging on the row rather than only in the "why". */
+        if (u.crossPos) nm.appendChild(el('span', 'tag', u.fa.pos + ' for ' + u.drop.pos));
+        if (u.drop.longTermOut) nm.appendChild(el('span', 'tag', 'IR'));
         if (u.fa.healthLabel) nm.appendChild(el('span', 'tag warn', u.fa.healthLabel));
         r.appendChild(nm);
         var b = el('button', 'btn sm', 'Add + drop ' + u.drop.name);
