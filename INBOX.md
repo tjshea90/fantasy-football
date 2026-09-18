@@ -687,3 +687,10 @@ When you have made all changes, make sure all functions work well and are logica
 <summary>Background command "for i in 1 2; do fail=0; for f in tools/test_*.js; do out=$(node "$f" 2&gt;&amp;1); rc=$?; if [ $rc -ne 0 ]; then fail=1; echo "=== $f exited $rc (run $i) ==="; echo "$out" | tail -40; fi; if echo "$out" | grep -qE "^\s*FAIL "; then fail=1; echo "=== $f has FAIL lines (run $i) ==="; echo "$out" | grep -E "^\s*FAIL "; fi; done; if [ $fail -eq 0 ]; then echo "RUN $i: ALL SUITES GREEN"; fi; done" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-18T16:56:13Z
+```
+For this app, there is still the glitch where it opens on the live tab (which is fine) but if I press the waiver wire tab the tab blinks to show that I pressed it, but it doesn't go to the waiver wire tab. It is stuck on the live tab. I can press on other tabs and they open and then go back to the live tab and after that the waiver wire tab works normally. 
+
+Fix this and look for other possible improvements in code and ui for the app. Do all of this on sonnet
+```
