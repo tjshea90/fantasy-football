@@ -976,8 +976,8 @@
          suggestion the app cannot verify is free in this league, and it is
          labelled that way rather than quietly presented as equivalent. */
       var adds = normalizeWaivers(parsed, poolIndex(ctx.pool),
-                                   dropCandidateIndex(ctx.dropCandidates),
-                                   ctx.kdefNeed).adds;
+                                   rosterIndex(ctx.roster),
+                                   ctx.kdefNeed, ctx.mandated).adds;
       var injuries = normalizeInjuries(parsed, ctx.injuries);
       var spent = null;
       if (root.Usage) spent = root.Usage.record('waiver sync', mdl, j.usage);
@@ -1021,44 +1021,105 @@
      cannot quietly drift apart. An unverified QB suggestion (a name Claude
      added that was not in the pool sent) cannot be checked this way and is
      left to its own "confidence" field, same as before. */
-  function normalizeWaivers(parsed, known, dropIdx, kdefNeed) {
-    dropIdx = dropIdx || {};
+  /* Reads BOTH shapes, and prefers `swaps`.
+   *
+   * Tj, 2026-09-18, rule 4: the answer he wants is one-for-one pairs — "drop
+   * Michael Wilson and add D. Wicks ... expected to produce 54 more fantasy
+   * points over the season". The old contract asked for a ranked `adds` list
+   * with an optional `dropCandidate` hung off each entry, which made the
+   * pairing an afterthought and the point edge unrepresentable. The new
+   * contract leads with `swaps`, each carrying `drop`, `add`, `edge` and
+   * `mandated`.
+   *
+   * `adds` is still read, for two reasons: a reply written against the older
+   * contract (Tj has files on his phone) must not become unreadable, and the
+   * new contract still allows `adds` for a watch-list name that is not part
+   * of a recommended swap. Everything ends up in ONE list in the `adds`
+   * shape, because that is what the Wire tab renders and what the waiver
+   * cache stores — a swap is just an add that knows exactly who it replaces.
+   *
+   * `rosterIdx` is now MY WHOLE ROSTER rather than the three-deep drop
+   * shortlist. Rule 5 removed the fence: Claude may propose dropping anybody
+   * it can justify, so the app's job here is to confirm the man named is
+   * really mine, not to restrict which of mine may be named. Cross-position
+   * swaps are allowed for the same reason — dropping a spare receiver for a
+   * starting running back is an ordinary, correct fantasy move, and the old
+   * same-position rule rejected it outright. */
+  function normalizeWaivers(parsed, known, rosterIdx, kdefNeed, mandated) {
+    rosterIdx = rosterIdx || {};
+    mandated = mandated || {};
     var qbMinMeasured = (root.Value && typeof root.Value.QB_MIN_MEASURED === 'number')
       ? root.Value.QB_MIN_MEASURED : 3;
-    var adds = [], arr = (parsed && parsed.adds) || [], i;
-    for (i = 0; i < arr.length; i++) {
-      var a = arr[i];
-      if (!a || !a.name) continue;
-      var src = known[root.Names.canon(a.name)] || null;
+    var adds = [], seen = {}, i;
+
+    function mandatedAt(pos) {
+      return !!(mandated[pos] && mandated[pos].length);
+    }
+
+    function push(a, swap) {
+      if (!a || !a.name) return;
+      var key = root.Names.canon(a.name);
+      if (seen[key]) return;
+      var src = known[key] || null;
       var pos = String(a.pos || (src ? src.pos : '')).toUpperCase();
-      if ((pos === 'K' || pos === 'DEF') && kdefNeed && !kdefNeed[pos]) continue;
-      if (pos === 'QB' && src && typeof src.n === 'number' && src.n < qbMinMeasured) continue;
-      var dcName = String(a.dropCandidate || '').trim();
-      var dcRec = dcName ? dropIdx[root.Names.canon(dcName)] : null;
-      var dropCandidate = (dcRec && dcRec.pos === pos) ? dcRec.name : '';
+      var forced = !!(swap && swap.mandated);
+      /* rule 6, applied to whatever Claude sent back rather than trusted:
+         a K or DEF only counts when mine is genuinely unavailable, when
+         mine is finished for the year, or when Claude itself flagged the
+         swap as forced. */
+      if ((pos === 'K' || pos === 'DEF') && kdefNeed && !kdefNeed[pos] &&
+          !mandatedAt(pos) && !forced) return;
+      /* and the same skepticism the deterministic board applies to a QB:
+         real games behind him, unless the man he replaces is done. */
+      if (pos === 'QB' && src && typeof src.n === 'number' && src.n < qbMinMeasured &&
+          !mandatedAt(pos) && !forced) return;
+      var dcName = String((swap && swap.drop) || a.dropCandidate || '').trim();
+      var dcRec = dcName ? rosterIdx[root.Names.canon(dcName)] : null;
+      seen[key] = 1;
       adds.push({
         name: String(a.name),
         pos: pos,
         nfl: String(a.nfl || (src ? src.nfl : '')),
         rank: (typeof a.rank === 'number' && isFinite(a.rank)) ? a.rank : 99,
         overStarter: String(a.overStarter || ''),
-        priority: (a.priority === 'season') ? 'season' : 'week',
+        /* a swap is a season-long move by construction — that is the only
+           kind rule 3 lets through — so it is never filed as a week-only one */
+        priority: (swap || a.priority === 'season') ? 'season' : 'week',
         recentStat: String(a.recentStat || ''),
-        dropCandidate: dropCandidate,
+        dropCandidate: dcRec ? dcRec.name : '',
+        /* the expected rest-of-season point edge over that exact man, which
+           is the number Tj asked every recommendation to carry */
+        edge: (swap && typeof swap.edge === 'number' && isFinite(swap.edge))
+                ? swap.edge : null,
+        mandated: forced,
         confidence: String(a.confidence || 'low').toLowerCase(),
         why: String(a.why || ''),
         verified: !!src,                 /* was he in the block we sent? */
+        dropVerified: !!dcRec,           /* is the man to drop really mine? */
         proj: src ? src.v : null,
+        ros: src ? src.ros : null,
         vor: src ? src.vor : null,
         bye: src ? src.bye : null,
         onBye: src ? !!src.onBye : false
       });
     }
+
+    var sw = (parsed && parsed.swaps) || [];
+    for (i = 0; i < sw.length; i++) {
+      var s2 = sw[i];
+      if (!s2 || !s2.add) continue;
+      push({ name: s2.add, pos: s2.pos, nfl: s2.nfl, rank: s2.rank,
+             confidence: s2.confidence, why: s2.why }, s2);
+    }
+    var arr = (parsed && parsed.adds) || [];
+    for (i = 0; i < arr.length; i++) push(arr[i], null);
+
     adds.sort(function (x, y) {
-      /* season-priority first, so "entire season over small weekly changes"
-         holds even where the model's own rank numbers do not fully reflect
-         it — this is also what puts season-priority adds ahead of week-only
-         ones once the UI groups the flat list back out by position. */
+      /* A forced replacement first — a dead roster spot is a problem you
+         already have. Then season-priority over week-only, so "entire season
+         over small weekly changes" holds even where the model's own rank
+         numbers do not fully reflect it. */
+      if (x.mandated !== y.mandated) return x.mandated ? -1 : 1;
       var pa = x.priority === 'season' ? 0 : 1, pb = y.priority === 'season' ? 0 : 1;
       if (pa !== pb) return pa - pb;
       return x.rank - y.rank;
@@ -1392,6 +1453,20 @@
     return known;
   }
 
+  /* MY whole roster, canonical name -> the row. Replaces dropCandidateIndex
+     as the validator for a waiver reply's `drop`: rule 5 lets Claude name
+     anybody of mine, so the check is "is he really mine", not "is he one of
+     the three the app pre-selected". dropCandidateIndex is kept below — the
+     team-analysis reply still uses it for its own, narrower contract. */
+  function rosterIndex(roster) {
+    var idx = {}, i;
+    if (!roster) return idx;
+    for (i = 0; i < roster.length; i++) {
+      idx[root.Names.canon(roster[i].name)] = roster[i];
+    }
+    return idx;
+  }
+
   /* Same idea, for Value.dropCandidates: {POS:[{name,pos,ros},...]} ->
      canonical name -> {name, pos}. */
   function dropCandidateIndex(dropCandidates) {
@@ -1493,6 +1568,7 @@
               normalizeAdvice: normalizeAdvice, normalizeWaivers: normalizeWaivers,
               normalizeTeamAnalysis: normalizeTeamAnalysis,
               normalizeInjuries: normalizeInjuries, dropCandidateIndex: dropCandidateIndex,
-              poolIndex: poolIndex, parseAnswer: jsonOf, rulesText: rulesText,
+              poolIndex: poolIndex, rosterIndex: rosterIndex,
+              parseAnswer: jsonOf, rulesText: rulesText,
               _jsonOf: jsonOf, _textOf: textOf };
 })(typeof window !== 'undefined' ? window : this);
