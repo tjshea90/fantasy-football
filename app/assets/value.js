@@ -637,7 +637,7 @@
       week: week, season: season || (new Date()).getFullYear(),
       today: today || (new Date()).toISOString().slice(0, 10),
       starters: starters, bench: bench,
-      needs: needs(week, teamId, opponents),
+      needs: needs(week, teamId, opponents, starters),
       pool: g,
       injuries: myInjuries(week, allProj),
       kdefNeed: kdefNeedFrom(allProj),
