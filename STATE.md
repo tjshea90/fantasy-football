@@ -3296,3 +3296,136 @@ bracket-wrapped field anywhere still imports exactly as before. Full suite
 (18 suites) + `node tools/check_es2018.js` all green.
 
 Shipped as v7.3.
+
+## 2026-09-18: the wire kept pushing QB swaps off Stafford/Bo Nix; K/DEF deprioritized; the Wire-tab tab-highlight glitch investigated (v7.4)
+
+Tj: "right now it always recommends qb switch from the QBs I already have,
+Stafford and bo nix. Keep in mind I drafted these QBs because they had
+excellent stats last quarter and they are pass heavy, in this league the
+scoring is one point for every completed pass. Only recommend a
+replacement qb if it is truly a season edge over the high completion QBs I
+already have. Focus waiver wire more on my roster weaknesses, usually rb
+and wr... defense and kicker are not priorities." Plus: make sure the
+Claude-app handoff follows the same rules, and investigate (carefully) a
+"the tab I press doesn't light up, usually Wire" glitch.
+
+### Root cause of the QB-swap complaint
+`Value.upgrades()` — the deterministic, no-API-key "beats a starter" board
+on the Wire tab — already excluded one-week spikes (the 2026-09-16 fix,
+§37), but held EVERY position to the same flat "1 more point per game"
+margin. That is real signal at running back and pure rounding noise at
+quarterback: a completion pays a full point here, so a good starting QB
+already outscores a good RB/WR by 3-4x per game, and the `confident` gate
+let ESPN's generic rest-of-season MODEL alone (never a measured game) count
+the same as a QB who has actually gone out and posted the numbers. With a
+single starting QB slot and no bench QB depth to speak of, ANY free-agent
+QB whose bigger, unproven projection cleared that tiny 1-point bar got
+paired with Tj's own starter as a "drop him" suggestion — exactly the
+complaint, and exactly the mechanism the 2026-09-16 fix did not reach.
+
+Separately, the SAME deterministic board never gated K/DEF at all — the
+Claude-driven board (`ai.js normalizeWaivers`) already only ranks a K/DEF
+add when `kdefNeed` says mine is genuinely unavailable, but the no-cost
+board had no such check, so a streamable kicker or defense could out-rank
+an actual RB/WR need just by clearing the same flat 1-point bar.
+
+### Fix
+`value.js`'s `upgrades()`: QB now needs BOTH a much larger minimum edge
+(`QB_MIN_GAIN = 6` points/game, not 1) AND real measured production behind
+the free agent (`QB_MIN_MEASURED = 3` scored games — a projection, however
+confident, does not qualify on its own). K/DEF now check `kdefNeedFrom()`
+the same way the Claude path already did, so they only ever appear when
+mine is genuinely unavailable. Both thresholds are exported
+(`Value.QB_MIN_GAIN`/`Value.QB_MIN_MEASURED`) so `ai.js`'s
+`normalizeWaivers()` can hold a CLAUDE-SUGGESTED QB swap to the identical
+bar rather than a second, hand-copied number — one source of truth for
+both the deterministic board and the AI-assisted one. The live-API waiver
+prompt (`Ai.waiverPrefix`) and the offline Claude-app handoff
+(`Handoff.buildWaivers`) both now carry the same QB-skepticism paragraph,
+written once (`Ai.qbSkepticismText`) and read by both, so "also make the
+export/import system follow these rules" cannot drift from the live path
+the next time either is edited. The Wire tab also now states the roster's
+actual thinnest starting spots (K/DEF excluded — "not priorities") up
+front, above the ranked list, so the RB/WR focus Tj asked for is visible,
+not just implicit in what got filtered out.
+
+**Researched before picking the thresholds, not just guessed**: web search
+on point-per-completion fantasy scoring strategy confirms the direction
+independently — accurate, high-volume passers are specifically named as
+the archetype that "gets thrust to the top of their tiers" in this exact
+scoring shape, Stafford named by name, which is precisely why Tj drafted
+him and Bo Nix and precisely why a marginal, unproven free agent should
+not be recommended over either of them.
+
+Also found and fixed, in the same area: `Value.waiverContext()` computed
+`myStarters()` (a `bestLineup()`/`projectAll()` pass over the roster)
+THREE separate times in one call — once directly, once via `needs()`,
+once via the `needs()` call buried inside its own return statement.
+`needs()` now takes an optional precomputed `starters` array;
+`waiverContext()` passes the one it already has, cutting that to two
+passes (one of which — `allProj` — genuinely needs its own separate call
+shape). Not the dominant cost on this screen (the real one, the ~785-
+player free-agent scan, was already properly memoized by the 2026-09-17
+fix, §38), but real, free, and in the exact file this job was already
+touching.
+
+### The Wire-tab tab-highlight glitch: investigated, not blindly patched
+Tj: "when I first open the app it is on the live page... when I press
+another tab that tab doesn't light up on the bottom, like I never selected
+it. Usually when I try to press the waiver wire tab... only investigate
+this if you are sure it won't affect or break anything else."
+
+Traced the whole path end to end rather than guessing:
+- The tab-lock class of bug (`wire()` never running if startup threw) was
+  already found and fixed in v6.9 (§37) — confirmed still fixed, still
+  covered by `tools/test_tabsafety.js`.
+- A tap drifting on the tab bar being misread as a swipe attempt (which
+  WOULD swallow the click via `preventDefault`) was already excluded via
+  `data-nogesture` on `<nav id="tabs">` — confirmed still present, still
+  tested, and confirmed in `gestures.js` itself that `ownedBySomethingElse`
+  backs off before ever calling `preventDefault` for anything under that
+  attribute.
+- `goTab()` itself toggles the `.on` class and calls `Store.save()`
+  synchronously, then `render()` — no `busy` guard, no code path that could
+  silently no-op a click that actually reached the handler.
+- Chased down whether `Store.save()` on a plain tab switch could itself be
+  the "hang": store.js's own header documents that it WAS a 1.9 MB
+  synchronous blocking write through v-something, but that was already
+  fixed (book/stats split into their own archive file, written only on a
+  real sync) — a plain tab switch now writes roughly 25 KB, not 1.9 MB.
+  Already fixed, not a live lead.
+- Traced the actual cost of the Wire tab's first render per session: the
+  785-player free-agent scan is memoized (§38), and the per-player cost
+  inside it (`Store.bookWeek`, `Names.hit`) is a handful of cheap hash
+  lookups, not a hidden O(n²) — not the multi-second freeze the symptom
+  first suggested.
+
+**Conclusion, stated plainly rather than left unwritten**: no reproducible
+defect was found in the click-handling or gesture-recognition code itself
+— every previously-identified cause of exactly this symptom is confirmed
+still fixed and still under test. The one remaining, unverifiable
+possibility is ordinary perceived latency: `render()` is and must stay
+fully synchronous (the ENTIRE test suite — `test_lifecycle.js` especially —
+asserts DOM content immediately after a simulated tab click, with no event-
+loop flush; making any tab's render asynchronous to fix a paint-timing
+question would require rewriting that assumption across three test files
+with no way to confirm the actual real-device symptom improved, which is
+exactly the "only if you are sure it won't break anything else" line Tj
+drew). Not fixed, on purpose, for lack of a concrete, safely-verifiable
+lead — see TASKS.md's "Waiting on Tj" for the specific follow-up question
+that would actually narrow this down next time it happens.
+
+DONE — `tools/test_waiver.js` gained 6 new cases: a QB with a big edge but
+zero measured games (excluded), a QB with real games but only a small edge
+(excluded), a QB with real games and a large edge (included, with the
+reason naming why QB is held to a higher bar), a K/DEF that would clear
+the old flat bar but is not needed (excluded), and the same free agent
+once mine is genuinely OUT (included). `tools/test_handoff.js`'s generic
+waiver-round-trip test was updated to exercise RB/WR instead of whichever
+position happened to sort first (previously QB, which now — correctly —
+never survives a synthetic pool entry with no measured games; that test is
+about the round-trip plumbing, not QB gating, so it now picks a position
+this change does not touch). Full suite (18 suites) +
+`node tools/check_es2018.js` all green.
+
+Shipped as v7.4.
