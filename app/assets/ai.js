@@ -832,11 +832,22 @@
     return lines.join('\n');
   }
 
+  /* Safe number formatting for the prompt builders. A pool row can reach here
+     from a CACHE written by an older version of the app (Value.waiverLoad
+     survives upgrades), so a field this version expects may simply not be
+     there. Before this, one missing number threw a TypeError out of prompt
+     construction, which on the Wire tab means the whole screen fails rather
+     than one cell reading "?". */
+  function nf(x, d) {
+    return (typeof x === 'number' && isFinite(x)) ? x.toFixed(d) : '?';
+  }
+
   function waiverBlock(ctx) {
     var lines = [], i, k;
     lines.push('NFL week ' + ctx.week + ' of the ' + ctx.season + ' season. Today is ' +
-               ctx.today + '. ' + ctx.weeksLeft + ' week' +
-               (ctx.weeksLeft === 1 ? '' : 's') + ' left in the regular season.');
+               ctx.today + '.' +
+               (ctx.weeksLeft ? ' ' + ctx.weeksLeft + ' week' +
+                 (ctx.weeksLeft === 1 ? '' : 's') + ' left in the regular season.' : ''));
     lines.push('');
     /* MY WHOLE ROSTER, in the same currency as the wire — the other half of
        every pair rule 4 asks for. The old block sent only the nine starting
@@ -854,7 +865,8 @@
     for (i = 0; i < roster.length; i++) {
       var r = roster[i];
       lines.push('- ' + r.name + ' (' + r.pos + ', ' + (r.nfl || '?') + ') ros ' +
-                 r.ros.toFixed(0) + ' | ' + r.perGame.toFixed(1) + '/gm | ' + r.games + ' gms | ' +
+                 nf(r.ros, 0) + ' | ' + nf(r.perGame, 1) + '/gm | ' +
+                 (r.games === undefined ? '?' : r.games) + ' gms | ' +
                  (r.outForSeason ? 'OUT FOR SEASON' : (r.bench ? 'bench' : 'starter')));
     }
     lines.push('');
@@ -909,7 +921,7 @@
           if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
           if (!ctx.dropCandidates[k].length) continue;
           lines.push('  ' + k + ': ' + ctx.dropCandidates[k].map(function (d) {
-            return d.name + ' (' + d.ros.toFixed(0) + ' ros' +
+            return d.name + ' (' + nf(d.ros, 0) + ' ros' +
                    (d.outForSeason ? ', OUT FOR SEASON' : '') + ')';
           }).join(', '));
         }
@@ -922,7 +934,7 @@
       for (i = 0; i < ctx.swaps.length; i++) {
         var sw = ctx.swaps[i];
         lines.push('  drop ' + sw.drop.name + ' -> add ' + sw.fa.name + ' (' + sw.fa.pos +
-                   '), +' + sw.gain.toFixed(0) + ' pts rest-of-season' +
+                   '), +' + nf(sw.gain, 0) + ' pts rest-of-season' +
                    (sw.mandated ? ' (FORCED)' : ''));
       }
       lines.push('');
@@ -937,7 +949,7 @@
       lines.push('replaced and the app\'s projection for him:');
       for (i = 0; i < ctx.needs.length; i++) {
         lines.push('- ' + ctx.needs[i].pos + ': ' + ctx.needs[i].name + ' proj ' +
-                   ctx.needs[i].proj.toFixed(1) +
+                   nf(ctx.needs[i].proj, 1) +
                    (ctx.needs[i].note ? ' — ' + ctx.needs[i].note : ''));
       }
       lines.push('');
@@ -953,9 +965,9 @@
       lines.push('  ' + k + ':');
       for (i = 0; i < ctx.pool[k].length; i++) {
         var f = ctx.pool[k][i];
-        lines.push('   - ' + f.name + ' | ' + f.nfl + ' | ros ' +
-                   (typeof f.ros === 'number' ? f.ros.toFixed(0) : '?') +
-                   ' | ' + f.raw.toFixed(1) + '/gm | ' + f.games + ' gms' +
+        lines.push('   - ' + f.name + ' | ' + f.nfl + ' | ros ' + nf(f.ros, 0) +
+                   ' | ' + nf(f.raw === undefined ? f.v : f.raw, 1) + '/gm | ' +
+                   (f.games === undefined ? '?' : f.games) + ' gms' +
                    ' | vor ' + (typeof f.vor === 'number' ? f.vor.toFixed(0) : '0') +
                    (f.onBye ? ' | ON BYE THIS WEEK' : '') +
                    ' | basis: ' + f.src +
