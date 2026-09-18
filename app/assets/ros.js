@@ -102,6 +102,50 @@
     return Math.max(0, left);
   }
 
+  /* ---- a man who is parked, but coming back ----------------------------
+   * Tj, 2026-09-18d: the app called Dalton Schultz "out for the season" when
+   * he was playing. Fixing that (recommend.js seasonOutlook) split one crude
+   * boolean into two honest facts — FINISHED for the year, and PARKED on IR
+   * with a return date — and the second needs a price. Zero is wrong (he
+   * plays again in October and this league runs to week 14) and his full
+   * remaining total is wrong too (he cannot play the weeks he is sitting).
+   * The right answer is the one this file already computes for everybody
+   * else, started later: his per-game rate times the games he can still
+   * actually appear in.
+   *
+   * WHICH WEEK IS A DATE? Anchored on the week the caller is already looking
+   * at rather than on a stored schedule, because a return is months out and
+   * weekMeta only carries kickoff times for weeks that have been synced —
+   * there is nothing on disk to look a November Sunday up in. Counting seven
+   * days to the week off the current week needs no table, cannot go stale,
+   * and is exact to the day either side of a Sunday, which is far finer than
+   * "back around week 6" needs to be. */
+  function weekOfDate(iso, week) {
+    var t = Date.parse(iso);
+    if (!isFinite(t)) return null;
+    var wait = Math.ceil((t - Date.now()) / (7 * 24 * 60 * 60 * 1000));
+    if (!(wait > 0)) wait = 0;
+    return (Number(week) || 1) + wait;
+  }
+
+  /* Games still playable by someone not eligible until `returnIso`. Zero is a
+     legitimate answer here — he is back after the regular season, or has no
+     return date at all — so this deliberately does NOT inherit weeksLeft()'s
+     Math.max(1, n) floor, which exists to stop a season-total division by
+     zero and would silently credit a man who cannot play again with a game. */
+  function gamesLeftFrom(returnIso, week, bye) {
+    var back = weekOfDate(returnIso, week);
+    if (back === null) return 0;
+    var S = root.Store.get(), reg = S.league.regularSeasonWeeks, n = 0, w;
+    var b = Number(bye), from = Math.max(Number(week) || 1, back);
+    for (w = from; w <= reg; w++) {
+      if (root.Store.weekIsScored(w)) continue;
+      if (isFinite(b) && b === w) continue;
+      n++;
+    }
+    return n;
+  }
+
   /* A player's bye week, with the league's own bye table as the fallback when
      his record carries none — the same resolution Store.isOnBye does, kept
      here so a free agent straight out of the player database (whose `b` may
@@ -305,6 +349,7 @@
   root.Ros = {
     estimate: estimate, baseline: baseline, observed: observed,
     rates: rates, gamesLeft: gamesLeft, weeksLeft: weeksLeft, byeOf: byeOf,
+    weekOfDate: weekOfDate, gamesLeftFrom: gamesLeftFrom,
     PRIOR_GAMES: PRIOR_GAMES, USAGE_SHARE: USAGE_SHARE
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Ros;

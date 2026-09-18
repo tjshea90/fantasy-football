@@ -764,9 +764,7 @@
       if (so.seasonEnding) {
         games = 0; perGame = 0;
       } else if (so.longTermOut) {
-        var back = root.Ros.weekOfDate(so.returnDate);
-        var playable = (back === null) ? 0 : root.Ros.gamesLeftFrom(back, week,
-                                                                   root.Ros.byeOf(p));
+        var playable = root.Ros.gamesLeftFrom(so.returnDate, week, root.Ros.byeOf(p));
         missed = Math.max(0, games - playable);
         games = playable;
       }
