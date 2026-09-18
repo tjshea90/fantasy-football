@@ -64,7 +64,7 @@ function makeEl(tag) {
   return e;
 }
 
-function buildHarness() {
+function buildHarness(sharedDisk) {
   var ids = {};
   var W = {}; W.window = W;
   W.setTimeout = function (fn, ms) { return setTimeout(fn, ms); };
