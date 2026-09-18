@@ -342,8 +342,44 @@
       src('Sleeper week ' + week + ' projection', pr.sleeperWeek, W.sleeperWeek,
           'their projected stat line, re-scored under our rules');
     }
-    if (pr && pr.season !== undefined) {
-      src('ESPN season pace', pr.season / 17, W.espnSeason, 'their full-season projection / 17');
+    /* SOURCE 4, RECONNECTED (2026-09-18). The file header above has always
+       listed a full-season projection as the fourth input to this blend —
+       "this updates through the season, unlike a number frozen at draft
+       time". It has never actually fired. This used to read `pr.season` off
+       the WEEKLY projection record, and the weekly fetch pins a scoring
+       period, which makes ESPN return weekly splits only (proved against the
+       live endpoint on 2026-09-18 while overhauling the wire). So the field
+       was essentially never set, and the Advice tab's own documented
+       season-long anchor silently contributed nothing to any projection,
+       ever. projections.js now fetches the season split separately, under
+       its own key and its own freshness, and findSeason() is how you read
+       it. Both feeds' season numbers count, averaged, exactly as their
+       weekly ones already do — where they disagree, the average is better
+       than either.
+
+       `pr.season` is still honoured when it happens to be there: an older
+       cache on disk may carry it, and a response shape that DOES return a
+       season split alongside the week is not something to throw away. */
+    var sr = (root.Projections && root.Projections.findSeason)
+      ? root.Projections.findSeason(p) : null;
+    var seaVals = [], seaNames = [];
+    if (sr && typeof sr.season === 'number' && sr.season > 0) {
+      seaVals.push(sr.season / Math.max(1, Number(sr.gp) || 17)); seaNames.push('ESPN');
+    }
+    if (sr && typeof sr.sleeperSeason === 'number' && sr.sleeperSeason > 0) {
+      seaVals.push(sr.sleeperSeason / Math.max(1, Number(sr.sleeperGp) || 17));
+      seaNames.push('Sleeper');
+    }
+    if (!seaVals.length && pr && typeof pr.season === 'number' && pr.season > 0) {
+      seaVals.push(pr.season / 17); seaNames.push('ESPN');
+    }
+    if (seaVals.length) {
+      var seaSum = 0, si;
+      for (si = 0; si < seaVals.length; si++) seaSum += seaVals[si];
+      src(seaNames.join(' + ') + ' full-season pace', seaSum / seaVals.length, W.espnSeason,
+          seaNames.length > 1
+            ? 'their full-season projections, averaged, per game'
+            : 'their full-season projection, per game');
     }
 
     var log = gameLog(p.id, week), i, tot = 0;
