@@ -431,7 +431,8 @@ var me = S.league.me;
 (function () {
   var ctx2 = W.Value.waiverContext(6, me, null, 2026, '2026-09-10');
   var prompt = W.Ai.buildWaiverPrompt(ctx2);
-  ok(prompt.indexOf('KDEF NEED') >= 0, 'the KDEF NEED line is rendered into the live prompt');
+  ok(prompt.indexOf('KDEF AVAILABILITY') >= 0,
+     'the kicker/defense availability line is rendered into the live prompt');
   if (ctx2.injuries.length) {
     ok(prompt.indexOf('MY ROSTER — INJURIES') >= 0,
        'the injuries block is rendered when the roster actually has one');

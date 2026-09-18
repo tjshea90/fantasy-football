@@ -380,12 +380,21 @@ console.log('\n-- the waiver prompt states the new rules --');
 const wp = Ai._waiverPrefix();
 ok(/FRESHNESS/.test(wp) && /STALE/.test(wp),
    'the freshness rule is stated, not just "prefer the last 7 days"');
-ok(/PRIORITY: SEASON OVER WEEK/.test(wp),
+/* 2026-09-18: these three rules survive, under the headings Tj's six criteria
+   gave them — the criteria block is the single place they are written now
+   (Ai.waiverCriteriaText), shared with the offline handoff file. */
+ok(/RANK ON THE WHOLE REST OF THE SEASON, NOT NEXT WEEK/.test(wp),
    'season-over-week priority is stated as an explicit rule');
-ok(/K\/DEF: LOW PRIORITY/.test(wp) && /KDEF\s*NEED/.test(wp),
-   'the K/DEF gating rule references the KDEF NEED line the app supplies');
-ok(/dropCandidate/.test(wp) && /DROP CANDIDATES/.test(wp),
-   'the dropCandidate contract field is described');
+ok(/QUARTERBACK, KICKER AND DEFENSE ARE LOW PRIORITY/.test(wp) && /KDEF\s*AVAILABILITY/.test(Ai._waiverBlock({
+     week: 1, season: 2026, today: '2026-09-10', pool: {}, kdefNeed: { K: false, DEF: false }
+   })),
+   'the K/DEF gating rule references the availability line the app supplies');
+ok(/dropCandidate/.test(wp) && /"swaps"/.test(wp) && /"edge"/.test(wp),
+   'the drop half of every recommendation is described, and the swap contract carries the point edge');
+ok(/CURRENT SEASON, CURRENT NEWS, REPUTABLE SOURCES/.test(wp) &&
+   /ONLY RECOMMEND A MOVE THAT IS A MEANINGFUL SEASON-LONG UPGRADE/.test(wp) &&
+   /NOTHING IS OFF LIMITS TO YOU/.test(wp),
+   'and all six of Tj\'s 2026-09-18 criteria are in the paid-API prompt too, not just the export file');
 ok(/recentStat/.test(wp), 'the recentStat contract field is described');
 ok(/"injuries"/.test(wp), 'the injuries research task and contract field are described');
 
