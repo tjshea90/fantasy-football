@@ -1948,10 +1948,15 @@
       'better: a trade to explore, a waiver add, or a lineup fix.'));
 
     var acard = el('div');
-    var abtn = el('button', 'btn pri', 'Ask Claude');
+    /* jobRunning('teamanalysis') guard — same gap and same fix as the Wire
+       tab's identical button, see its own comment (freeAgentCard, ui.js). */
+    var abtn = el('button', 'btn pri',
+      jobRunning('teamanalysis') ? 'Comparing your team to the league…' : 'Ask Claude');
     var anote = el('p', 'hint', '');
     var aest = el('p', 'hint', '');
-    if (!Ai.configured()) {
+    if (jobRunning('teamanalysis')) {
+      abtn.disabled = true;
+    } else if (!Ai.configured()) {
       abtn.disabled = true;
       anote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". Everything ' +
         'below works without one.';
