@@ -135,6 +135,25 @@ console.log('\n-- seasonOutlook(): a genuinely finished player is still caught -
   ok(o.mustReplace === true, 'and he is flagged as a roster spot that must be replaced');
 })();
 
+console.log('\n-- seasonOutlook(): a report written in the POSSESSIVE is still his own report --');
+(function () {
+  var W = freshWindow();
+  /* live, 2026-09-18. The only mention of him in the sentence that carries the
+     news is "Hand's" — strip the 's and the subject is him; keep it and his
+     own report reads as somebody else's and is discarded. Found re-reading
+     this change rather than by a failing test, which is why it has one now. */
+  news(W, { name: "Da'Shawn Hand", status: 'INJURED RESERVE', fantasyStatus: 'IR',
+            returnDate: '2027-02-15',
+            note: "Hand's move to injured reserve comes as no surprise since it was " +
+                  "previously announced that he'd miss the remainder of the season due to a " +
+                  "torn quadriceps suffered during the team's Week 1 loss to the Steelers." });
+  var o = W.Recommend.seasonOutlook({ name: "Da'Shawn Hand" });
+  ok(o.seasonEnding === true, 'he is still correctly season-ending');
+  ok(/miss the remainder of the season/.test(o.why),
+     'and the reason is HIS OWN sentence — a possessive ("Hand\'s move...") names him just ' +
+     'as much as a bare surname does (got: "' + String(o.why).slice(0, 50) + '...")');
+})();
+
 console.log('\n-- seasonOutlook(): on IR but COMING BACK is a different fact, and the app now says which --');
 (function () {
   var W = freshWindow();
