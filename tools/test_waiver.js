@@ -601,6 +601,65 @@ console.log('\n-- Value.upgrades(): the K/DEF exception needs a STRONG season ed
      'explicitly allows for ("a strong, clear, season long edge")');
 })();
 
+console.log('\n-- the free-agent memo notices a completed SEASON-PROJECTION refresh (2026-09-18) --');
+/* The third instance of a trap this file has now been caught by twice before
+ * (see freeAgents()' own comment on the PlayerDB and injury-feed refreshes).
+ * The Wire tab fires Projections.refreshSeason() in the background on open and
+ * re-renders when it lands — but that fetch touches neither the roster
+ * generation, the player database nor the injury feed. If the memo does not
+ * key on it, the completed refresh replays the board computed from an EMPTY
+ * season cache and the whole rest-of-season overhaul looks like it never ran. */
+(function () {
+  var W = freshWindow();
+  var nm = 'Zzz Late Projection WR';
+  W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'KC', b: 1, e: '', st: 'active' });
+
+  /* first render: nothing has been fetched yet */
+  W.Projections.findSeason = function () { return null; };
+  var before = W.Value.freeAgents(5, 0).filter(function (r) { return r.name === nm; })[0];
+  ok(!!before && before.baselineKind === 'floor',
+     'sanity: with no season projection on file he sits on a positional floor');
+
+  /* the background fetch lands — same shape as projections.js's own cache */
+  W.Projections.findSeason = function (player) {
+    return player.name === nm ? { pos: 'WR', season: 17 * 18, gp: 17, src: 'espn' } : null;
+  };
+  var stale = W.Value.freeAgents(5, 0).filter(function (r) { return r.name === nm; })[0];
+  ok(stale && stale.baselineKind === 'floor',
+     'sanity: the memo is still warm at this point — nothing else has changed');
+
+  /* and now the cache stamp moves, exactly as a real refresh moves it */
+  W.Projections.seasonMeta = function () { return { at: Date.now(), count: 1 }; };
+  var after = W.Value.freeAgents(5, 0).filter(function (r) { return r.name === nm; })[0];
+  ok(after && after.baselineKind === 'season' && Math.abs(after.v - 18) < 0.01,
+     'the very next call after the refresh lands uses it (got ' +
+     (after ? after.baselineKind + ', ' + after.v.toFixed(1) + '/gm' : 'nothing') +
+     ') — not only after Tj happens to add or drop a player');
+})();
+
+console.log('\n-- a synced week of stats invalidates the board immediately (2026-09-18) --');
+/* Store.setBook did not bump the store generation, so the free-agent memo and
+ * ros.js's per-opportunity rate table both kept serving numbers computed
+ * before the sync. Survivable while the board leaned on projections; not once
+ * a player's own scored games are half the estimate. */
+(function () {
+  var W = freshWindow();
+  var nm = 'Zzz Just Scored WR';
+  W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'KC', b: 1, e: '', st: 'active' });
+  W.Projections.findSeason = function (player) {
+    return player.name === nm ? { pos: 'WR', season: 17 * 5, gp: 17, src: 'espn' } : null;
+  };
+  var before = W.Value.freeAgents(3, 0).filter(function (r) { return r.name === nm; })[0];
+  ok(before && before.n === 0, 'sanity: no scored games for him yet');
+
+  /* a sync lands a big week for him — nothing else about the league changes */
+  W.Store.setBook(2, { 'zzz just scored wr': { n: nm, t: 'KC', p: 30, pa: 0, cr: 0, tg: 12 } });
+  var after = W.Value.freeAgents(3, 0).filter(function (r) { return r.name === nm; })[0];
+  ok(after && after.n === 1 && after.v > before.v,
+     'the board reflects it on the very next render (' + before.v.toFixed(2) + ' -> ' +
+     (after ? after.v.toFixed(2) : '?') + ') rather than waiting for a roster change');
+})();
+
 console.log('\n-- PlayerDB: roster status is captured, and practice-squad is distinguished from active --');
 var chain = (function () {
   var W = freshWindow();
