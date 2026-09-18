@@ -1,1 +1,1 @@
-window.APP_VERSION="7.4";
+window.APP_VERSION="7.5";
