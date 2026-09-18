@@ -1,12 +1,12 @@
-# CHECKPOINT 66 — read me first, then TASKS.md
+# CHECKPOINT 87 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T17:24:34Z · **version:** 7.4 · **tests:** all 18 suites green
+**Written:** 2026-09-18T17:36:08Z · **version:** 7.4 · **tests:** all 19 suites green
 
 ## Just done
-Broader code/UI review pass (Tj's same 2026-09-18 message): delegated a research-only audit of app/assets/*.js and app.css. Fixed two real findings: (1) the Wire tab's 'Ask Claude about the wire' button and the Rosters tab's 'How your team stacks up' Ask-Claude button never checked jobRunning() when rebuilt, unlike every sibling Ask-Claude/refresh button in the file -- switching tabs away and back while either 5-minute Claude call was in flight rebuilt the card with a fresh, enabled button, letting a second concurrent paid API call fire and whichever response landed last silently overwrite the cache. Fixed with the same jobRunning('waivers')/jobRunning('teamanalysis') guard the db-refresh and news-sync buttons already use. Verified with a throwaway harness script (not committed) reproducing the exact re-render-while-job-running scenario for both buttons -- confirmed disabled after the fix. (2) value.js's upgrades() and waiverContext() each ran Recommend.projectAll() twice per call (once directly, once again inside myStarters()->bestLineup()) even though needs() already had the fix for this via an optional starters param -- threaded an optional allProj through bestLineup()/myStarters() the same way, so a free-agent-board render or position-filter click no longer triples the roster-wide projection pass. Also surfaced but NOT changed: app/assets/sim.js's season()/power()/allPlay()/bracket() are fully implemented, tested, and never called from any production tab -- looks like orphaned surface from a feature that was never wired in or was removed on a divergent branch; needs a product decision from Tj, not a unilateral delete. All 18 suites + ES2018 gate green throughout.
+Fixed the doSync() week-capture race a subagent audit flagged: doSync read the shared module-level 'week' variable throughout its whole async chain (Espn.weekGames call, Store.getStats/setBook, S.weekMeta writes, autoFillWeek, the completion toast) instead of snapshotting it once at entry. week can be mutated mid-flight by the NFL-week auto-advance (applyCurrentWeek, reachable from syncCurrentWeek at boot/appResume) or simply by tapping the week-next arrow while a sync is still in flight -- neither path checks the busy flag. Without a capture, a sync that started for week N could finish after week had moved to N+1 and file its results (book, weekMeta, the scored-players toast) under week N+1 instead of the week it actually fetched, silently corrupting the wrong week's stats. Fixed by capturing syncedWeek=week once at doSync's top and using it for every 'week this sync is for' reference from then on (render()/renderHeader() still read the live view/week, since the SCREEN should track the current week regardless of which week just finished syncing). Named syncedWeek, not syncWeek, to avoid colliding with the existing top-level syncWeek() button-handler function. New tools/test_synccapture.js reproduces the exact race (stalls Espn.weekGames, advances week via the real wkNext button mid-flight, then resolves) -- confirmed it fails against the pre-fix code (results leaked into week 2) and passes against the fix. Updated test_boot.js's source-text pin for the renamed variable. Registered the new test in MANIFEST.txt. All 19 suites + ES2018 gate green.
 
 ## Do this next
-Continue the improvement pass: look at the doSync() week-capture race a subagent audit flagged (ui.js ~3847-4056 reads the shared module-level 'week' variable throughout its async chain instead of snapshotting it at entry, so a concurrent NFL-week auto-advance mid-sync could write box scores into the wrong week's weekMeta/book/stats) -- read doSync fully, decide on a safe fix (snapshot the week being synced and write results under THAT week regardless of what the display week has moved to by completion), fix it carefully since it touches the core sync pipeline, add/extend a regression test, then ask Tj about the sim.js dead code before touching it. Keep running the full suite after each change.
+Keep going on the improvement pass: ask Tj about the sim.js dead code (season()/power()/allPlay()/bracket() -- fully implemented and tested but never called from any production tab, per the earlier audit) rather than touching it unilaterally. Otherwise consider the core round of fixes from this pass complete (tab-highlight bug, two duplicate-Claude-call job guards, redundant projectAll computation, doSync week-capture race, all with regression tests and all suites green) -- a good point to run ship.sh and publish a release, then ask Tj if he wants a deeper pass on any specific area (UI polish, more efficiency work) or considers this done for now.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  4b82a38 ckpt 66: Broader code/UI review pass (Tj's same 2026-09-18 message): delegated a researc
   58affc7 ckpt 57: Fixed the real waiver-wire tab-highlight bug: boot() restores view from lastTab
   a68ed9a ckpt 78: Shipped v7.4: QB waiver-swap threshold fix (QB_MIN_GAIN=6, QB_MIN_MEASURED=3, s
   6a50a4e ship v7.4: waiver-wire QB season-edge fix (Stafford/Bo Nix no longer swapped for a margi
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   23dc5d1 ckpt 123: v7.3 shipped and verified: GitHub Release published (non-empty assets array, F
   f49cf4c ship v7.3: Fixed a bug in all three Claude-handoff features (advice/waivers/team-analysi
   8ba6db4 ckpt 119: Archived the unfilled-template bugfix to LADDER.md §40, added the STATE.md na
-  0884569 ckpt 114: Wrote Tj's bug report ('gave nonsense answers', the unfilled-template screensh
 ```
 
-(8 automatic checkpoint(s) since the last deliberate one — the
+(20 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
