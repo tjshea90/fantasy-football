@@ -1,6 +1,101 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-18b)
+## Current job (2026-09-18c) — WAIVER WIRE RANKING OVERHAUL
+
+Tj, 2026-09-18 (with a screenshot of the Wire tab showing every WR annotated
+"16.4 proj (1 scored week in this app — thin sample) / wk1 9 tgt -> 16.4"):
+
+> "Review the attached screenshot of this app. Notice the wire tab is only
+> making recommendations and projecting scores based on prior weeks actual
+> stats. This is a broken system. The wire section needs to be overhauled.
+> Research and find a logical, reasonable way to rank players available on the
+> waiver wire that are not already taken by a team in the league. The ranking
+> should give logical results of the best available players in each position,
+> maybe based on a blend of prior weeks stats, information gathered online,
+> news and injury updates, projected stat lines for the current/upcoming weeks
+> from multiple reputable sources online averaged and then recalculated based
+> on this league scoring system, and any other relevant information you can
+> think of. The following are strict rules for the system:
+> 1) it must pull data from current season and current news using reputable
+>    sources.
+> 2) it must rank available players based on expected full season performance,
+>    not just the next NFL week, and calculated for this league scoring system
+> 3) it must only recommend I drop and add a player or players if they are a
+>    meaningful improvement for the rest of the season over the player it
+>    recommends I drop, and making sure to calculate the player value using
+>    this specific league scoring system.
+> 4) for the Claude prompt, overhaul it so that when it makes the ask Claude
+>    file, it has all the criteria I mentioned, plus it explicitly recommends
+>    which player or players to drop and replace on a one to one basis with
+>    explicit reasoning and expected fantasy point edge (e.g. drop Michael
+>    wilson and add d. Wicks because he is the new #1 receiver for the team and
+>    expected to produce 54 more fantasy points over the season than Michael
+>    Wilson, or, drop bo nix due to season ending injury and add j. Hurts
+>    because he is the best available qb).
+> 5) the Claude prompt should have no restrictions. It should be able to see
+>    all taken players in the league so it doesn't recommend them, it should
+>    know the league scoring system, it should search online for current injury
+>    news, NFL News, waiver wire advice websites, projected stats websites, it
+>    can consider prior weeks stats, or anything else that will allow it to
+>    make good, data backed recommendations for specific players to add and
+>    drop for my roster, with reasons for each recommendation.
+> 6) the recommendation system should still give lower priority to qb kicker
+>    and defense unless there is a strong, clear, season long edge for any of
+>    its recommendations on these positions, or if there is a season ending
+>    injury or anything else that mandates the player be replaced.
+>
+> Make sure the new recommendation system is smart and uses this league scoring
+> system.
+>
+> When finished, check for bugs and ui improvements. Make sure the improvements
+> did not break anything else in the app. Then ship."
+
+### Steps
+
+- [ ] **A. Read the existing wire stack before changing anything.**
+      `app/assets/recommend.js` (the ranking), `app/assets/value.js` (season
+      value math), `app/assets/projections.js` (multi-source blend),
+      `app/assets/ai.js` (the ask-Claude file builder), the Wire tab render in
+      `app/assets/ui.js`, and `tools/test_waiver.js`. Write down what actually
+      produces the "16.4 proj (1 scored week — thin sample)" line in the
+      screenshot, so the fix targets the real code path.
+- [ ] **B. Research the ranking method** (rule 1): how reputable public sources
+      rank rest-of-season waiver value — opportunity/usage share, target and
+      carry share, expected points per game vs replacement level, games
+      remaining, injury/role news. Record the sources used.
+- [ ] **C. Rest-of-season value engine** (rules 2 + 3): rank every available
+      player by EXPECTED FULL-SEASON points in THIS league's scoring, not next
+      week's. Blend prior-season/current-season baseline, current-season
+      per-game production, usage/opportunity, and a games-remaining term.
+      Shrink toward baseline when the in-app sample is thin (the screenshot's
+      exact failure) rather than extrapolating one week.
+- [ ] **D. Drop/add must clear a meaningful season-long bar** (rule 3): a swap
+      is only surfaced when the add beats the drop by a real rest-of-season
+      margin in league points, computed against the worst droppable player on
+      the roster, never a roster-slot coincidence.
+- [ ] **E. QB/K/DEF stay de-prioritised** (rule 6): keep the existing
+      QB_MIN_GAIN-style gating, extend the same idea to K and DEF, and add the
+      mandated-replacement override (season-ending injury / out for year /
+      no longer starting) that bypasses the de-prioritisation.
+- [ ] **F. Overhaul the ask-Claude prompt** (rules 4 + 5): the generated file
+      must carry the full league scoring system, EVERY taken player in the
+      league (so Claude cannot recommend one), the full roster with each
+      player's league-scored season value, the available pool, and an explicit
+      instruction to return one-to-one drop/add pairs with reasoning and an
+      expected season-long fantasy point edge per pair. No restrictions on what
+      Claude may search: injury news, NFL news, waiver advice sites, projection
+      sites, prior weeks' stats.
+- [ ] **G. Wire tab UI** shows the new season-long basis honestly — no more
+      "1 scored week in this app — thin sample" as the headline rationale.
+- [ ] **H. Tests**: extend `tools/test_waiver.js` (and add suites as needed) to
+      pin each rule: season-long ranking, the meaningful-improvement bar, the
+      QB/K/DEF gate plus its injury override, and the prompt's required
+      sections. Every suite green.
+- [ ] **I. Bug + UI sweep** across the app afterwards; confirm nothing else
+      broke.
+- [ ] **J. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
+
+## Prior job, complete (2026-09-18b)
 
 Tj, 2026-09-18T16:56:13Z: "For this app, there is still the glitch where it
 opens on the live tab (which is fine) but if I press the waiver wire tab the
