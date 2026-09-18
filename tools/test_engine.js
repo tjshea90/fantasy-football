@@ -575,9 +575,26 @@ return Espn.gameStats('test').then(function (r) {
                  { slot: 'TE', pos: 'TE', name: 'My TE', proj: 6.1 }],
       bench: ['Bench Guy (RB)'],
       needs: [{ pos: 'TE', name: 'My TE', proj: 6.1, note: 'the wire has someone better' }],
-      pool: { TE: [{ name: 'Wire TE', nfl: 'DEN', v: 9.4, vor: 2.1, bye: 9, onBye: false,
+      weeksLeft: 11,
+      /* 2026-09-18: the board is priced in REST-OF-SEASON points now, so a pool
+         row carries ros/raw/games/src as well as the per-game v. `vor` is a
+         season-long gap rather than a per-game one for the same reason. */
+      roster: [{ name: 'My QB', pos: 'QB', nfl: 'KC', ros: 365, perGame: 33.2, games: 11,
+                 bench: false, outForSeason: false, src: 'ESPN full-season projection' },
+               { name: 'My TE', pos: 'TE', nfl: 'DEN', ros: 67, perGame: 6.1, games: 11,
+                 bench: false, outForSeason: false, src: 'ESPN full-season projection' },
+               { name: 'Bench Guy', pos: 'RB', nfl: 'CHI', ros: 44, perGame: 4.0, games: 11,
+                 bench: true, outForSeason: false, src: 'ESPN full-season projection' }],
+      mandated: {},
+      swaps: [],
+      taken: [{ id: 'myteam', name: 'My Team', players: [{ name: 'My QB', pos: 'QB', nfl: 'KC' }] },
+              { id: 'other', name: 'Their Team', players: [{ name: 'Someone Else', pos: 'RB', nfl: 'SF' }] }],
+      pool: { TE: [{ name: 'Wire TE', nfl: 'DEN', v: 9.4, raw: 9.4, ros: 103, games: 11,
+                     vor: 21, bye: 9, onBye: false, src: 'ESPN full-season projection',
                      usage: 'wk3 5 tgt' }],
-              QB: [{ name: 'Wire QB', nfl: 'NYJ', v: 28.0, vor: 0, bye: 12, onBye: false, usage: '' }] }
+              QB: [{ name: 'Wire QB', nfl: 'NYJ', v: 28.0, raw: 28.0, ros: 308, games: 11,
+                     vor: 0, bye: 12, onBye: false, src: 'ESPN full-season projection',
+                     usage: '' }] }
     };
     var pre = A._waiverPrefix(), blk = A._waiverBlock(ctx);
   
@@ -585,8 +602,15 @@ return Espn.gameStats('test').then(function (r) {
        'the waiver prompt states the completion bonus, the whole reason public lists are wrong here');
     ok(/Never use their rankings as VALUE/i.test(pre),
        'it explicitly forbids importing outside rankings as value');
-    ok(/not a single global list/i.test(pre) || /at EACH position/i.test(pre),
-       'it demands a per-position answer, not one global list');
+    /* 2026-09-18: the prompt no longer asks for "the best few at each position"
+       as its primary output — Tj's rule 4 replaced a ranked list with explicit
+       one-for-one drop/add pairs, which is a stronger requirement and makes a
+       per-position list beside the point. What must still hold is that the
+       answer is FOR THIS ROSTER and names both halves of every move. */
+    ok(/one-for-one|one for one|ONE FOR ONE/i.test(pre) && /"swaps"/.test(pre),
+       'it demands explicit one-for-one drop/add pairs, not a bare ranked list');
+    ok(/NEVER propose adding anybody in the OWNED block/i.test(pre),
+       'and forbids recommending a player already rostered in this league');
     ok(pre.indexOf('week 4') < 0 && pre.indexOf('2026-09-24') < 0,
        'the cacheable prefix carries no week or date, or the cache would never hit');
     ok(blk.indexOf('week 4') >= 0 && blk.indexOf('Wire TE') >= 0,
@@ -595,8 +619,14 @@ return Espn.gameStats('test').then(function (r) {
        'the roster weakness is stated so the ranking is for THIS team');
     ok(blk.indexOf('nobody in this list is on any of the ten rosters') >= 0,
        'availability is asserted as settled fact so no search is spent rediscovering it');
-    ok(blk.indexOf('vor 2.1') >= 0,
+    ok(blk.indexOf('vor 21') >= 0,
        'value over replacement is supplied, the only cross-position comparison that works');
+    ok(blk.indexOf('ros 103') >= 0 && blk.indexOf('11 gms') >= 0,
+       'and it leads with REST-OF-SEASON points and games remaining, not a one-week number');
+    ok(blk.indexOf('MY ROSTER — every player') >= 0 && blk.indexOf('Bench Guy') >= 0,
+       'my whole roster is priced in the same currency, bench included, so a pair can be compared');
+    ok(blk.indexOf('OWNED') >= 0 && blk.indexOf('Someone Else') >= 0,
+       'every player owned in the league is listed by name, so none can be recommended (rule 5)');
     ok(/rules of this league|Passing yards|completion/i.test(pre), 'the scoring table is in the prompt');
   
     /* the prefix must be byte-identical between calls or prompt caching is moot */
