@@ -660,6 +660,32 @@ console.log('\n-- a synced week of stats invalidates the board immediately (2026
      (after ? after.v.toFixed(2) : '?') + ') rather than waiting for a roster change');
 })();
 
+console.log('\n-- recommend.js: the Advice tab\'s own full-season blend source actually fires now (2026-09-18) --');
+/* recommend.js's file header has listed a full-season projection as the fourth
+ * input to every lineup projection since v5.8 — and it had never once fired,
+ * because it read `pr.season` off the WEEKLY projection record and the weekly
+ * fetch pins a scoring period, which makes ESPN return weekly splits only.
+ * Found while overhauling the wire; the same dead branch, in a second file. */
+(function () {
+  var W = freshWindow();
+  var p = { id: 'x1', name: 'Zzz Advice Guy', pos: 'WR', nfl: 'KC', bye: 0 };
+  W.Projections.find = function () { return null; };       /* no weekly line at all */
+  W.Projections.findSeason = function (pl) {
+    return pl.name === p.name
+      ? { pos: 'WR', season: 17 * 14, gp: 17, sleeperSeason: 17 * 10, sleeperGp: 17 }
+      : null;
+  };
+  var out = W.Recommend.projectOne(p, 3, null, null);
+  var names = out.srcs.map(function (x) { return x.name; }).join(' / ');
+  ok(/full-season pace/.test(names),
+     'a full-season projection is a real, named source in the blend (sources: ' + names + ')');
+  ok(/ESPN \+ Sleeper/.test(names),
+     'and BOTH feeds count, not just ESPN — where they disagree the average beats either');
+  ok(Math.abs(out.base - 12) < 0.01,
+     'it is averaged and expressed per game (14 and 10 a game -> ' + out.base.toFixed(2) +
+     '), never used as a raw season total');
+})();
+
 console.log('\n-- PlayerDB: roster status is captured, and practice-squad is distinguished from active --');
 var chain = (function () {
   var W = freshWindow();
