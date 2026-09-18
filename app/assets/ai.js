@@ -1064,8 +1064,14 @@
     function canSpare(dropRec, addPos) {
       var dpos = dropRec.pos;
       if (!dpos) return true;
-      var slots = (root.Store && root.Store.get)
-        ? (root.Store.get().league.slots || []) : [];
+      /* Store.get() is null before init (and in a unit test that exercises
+         this normaliser on its own), so the league's own slot list is used
+         when it is there and this league's actual shape is the fallback.
+         Falling back to "no slots at all" would quietly turn the guard off
+         in exactly the context where nothing else is checking. */
+      var S2 = (root.Store && root.Store.get) ? root.Store.get() : null;
+      var slots = (S2 && S2.league && S2.league.slots) ? S2.league.slots
+        : ['QB', 'RB', 'RB', 'WR', 'WR', 'WR', 'TE', 'FLEX', 'K', 'DEF'];
       var needed = 0, i2;
       for (i2 = 0; i2 < slots.length; i2++) if (slots[i2] === dpos) needed++;
       if (!needed) return true;              /* not a starting position here */
