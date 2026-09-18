@@ -309,8 +309,8 @@
    * was using the slot label as if it were a position and hardcoding FLEX
    * to RB's replacement level regardless of who was actually starting
    * there — wrong for the common case of a WR or TE in flex. */
-  function myStarters(week, teamId, opponents) {
-    var picks = root.Recommend.bestLineup(week, teamId, opponents);
+  function myStarters(week, teamId, opponents, allProj) {
+    var picks = root.Recommend.bestLineup(week, teamId, opponents, allProj);
     var out = [];
     picks.forEach(function (k) {
       if (!k || !k.pick) return;
