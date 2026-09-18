@@ -3935,11 +3935,11 @@
              session-only cache for scoring rostered players; this feeds the
              SAME fetch into gamelog.js's separate, persistent, any-player
              cache, so neither has to know about the other's shape. */
-          if (window.Gamelog) { try { Gamelog.ingestEvent(syncWeek, g, r); } catch (e) { } }
+          if (window.Gamelog) { try { Gamelog.ingestEvent(syncedWeek, g, r); } catch (e) { } }
           return r;
         });
       }, function (n, total) {
-        step('Week ' + syncWeek + ': box score ' + n + ' of ' + total +
+        step('Week ' + syncedWeek + ': box score ' + n + ' of ' + total +
              (reused ? ' · ' + reused + ' final reused' : ''),
              Math.round(n * 100 / Math.max(1, total)));
       }).then(function () {
