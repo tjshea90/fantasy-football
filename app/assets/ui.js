@@ -2476,22 +2476,38 @@
     if (ups.length) {
       /* A forced replacement is not the same kind of thing as an upgrade and
          must not be presented as one: one is a hole in the roster, the other
-         is an option. upgrades() already sorts the forced ones first, so
-         counting them is enough to headline them separately (Tj, 2026-09-18,
-         rule 6: a season-ending injury "mandates the player be replaced"). */
-      var forced = ups.filter(function (u) { return u.mandated; });
+         is an option (Tj, 2026-09-18, rule 6: a season-ending injury
+         "mandates the player be replaced").
+ 
+         COUNTED OFF THE ROSTER, NOT OFF THIS LIST (Tj, 2026-09-18d: "it says
+         36 players on my roster are out for the season. My roster is only 17
+         players"). This used to be ups.filter(u => u.mandated).length — the
+         number of SUGGESTION ROWS whose drop was a dead man. One falsely
+         season-ended tight end was priced at zero, which made him the weakest
+         droppable player at his position and the weakest flex-eligible player
+         overall, so the old pairing loop offered him to every free agent that
+         cleared the gates: 36 rows, one player, and a sentence that could not
+         have been true of a 17-man roster under any circumstances. A hole in
+         the roster is a fact about the ROSTER — it is there whether or not
+         the wire happens to have somebody to put in it — so the count and the
+         names now come from Value.mustReplace(), and the men are named rather
+         than merely tallied, which is the other thing a number alone could
+         never get wrong quietly. */
+      var forced = Value.mustReplace(week, S.league.me, opp);
       if (forced.length) {
+        var names = forced.map(function (m) { return m.name + ' (' + m.pos + ')'; });
         /* warnText, not warn: `.warn` is only defined for a CARD and a TAG in
            app.css (.card.warn, .tag.warn) — a bare <p class="warn"> would have
            styled as nothing at all and the line would have read as ordinary
            body text. */
         c.appendChild(el('p', 'warnText', forced.length === 1
-          ? 'One player on your roster is out for the season — that spot is doing ' +
+          ? names[0] + ' is out for the season — that roster spot is doing ' +
             'nothing until you replace him:'
-          : forced.length + ' players on your roster are out for the season — those ' +
-            'spots are doing nothing until you replace them:'));
+          : forced.length + ' players on your roster are out for the season — ' +
+            names.join(', ') + '. Those spots are doing nothing until you ' +
+            'replace them:'));
       }
-      var optional = ups.length - forced.length;
+      var optional = ups.filter(function (u) { return !u.mandated; }).length;
       if (optional > 0) {
         c.appendChild(el('p', null, optional + ' available player' +
           (optional === 1 ? '' : 's') + ' project better than someone on your roster ' +
