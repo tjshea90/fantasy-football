@@ -174,52 +174,40 @@ console.log('\n-- seasonOutlook(): a plain weekly OUT, and an unexplained design
      'a six-game suspension and a torn Achilles arrive here looking identical');
 })();
 
-/* ============================================================ BUG 2 ======= */
-console.log('\n-- Value.upgrades(): ONE roster spot cannot be offered to the whole wire --');
-/* The disease behind "36 players on my roster are out for the season". */
-(function () {
-  var W = freshWindow();
-  var meId = W.Store.get().league.me;
-  var me = W.Store.team(meId);
-  /* a realistic roster: enough bodies that dropping one never breaks the lineup */
-  var roster = [
-    { id: 'r1', name: 'My QB', pos: 'QB', nfl: 'LAR' },
-    { id: 'r2', name: 'My RB1', pos: 'RB', nfl: 'DET' },
-    { id: 'r3', name: 'My RB2', pos: 'RB', nfl: 'BAL' },
-    { id: 'r4', name: 'My RB3', pos: 'RB', nfl: 'NYJ' },
-    { id: 'r5', name: 'My WR1', pos: 'WR', nfl: 'MIN' },
-    { id: 'r6', name: 'My WR2', pos: 'WR', nfl: 'CIN' },
-    { id: 'r7', name: 'My WR3', pos: 'WR', nfl: 'SEA' },
-    { id: 'r8', name: 'My WR4', pos: 'WR', nfl: 'TB' },
-    { id: 'r9', name: 'My TE1', pos: 'TE', nfl: 'HOU' },
-    { id: 'r10', name: 'My TE2', pos: 'TE', nfl: 'NO' },
-    { id: 'r11', name: 'My K', pos: 'K', nfl: 'BUF' },
-    { id: 'r12', name: 'My DEF', pos: 'DEF', nfl: 'PIT' }
-  ];
+/* ---- a whole, realistic scenario -----------------------------------------
+ * Every test below needs the same thing: a full roster, a wire with real
+ * numbers on it, and control over who is hurt. Free agents are only
+ * considered when they are `confident`, which in practice means a full-season
+ * projection exists for them — so both sides are stubbed through
+ * Projections.findSeason, the one input ros.js prices everybody from.
+ */
+function scenario(W, spec) {
+  var roster = spec.roster, wire = spec.wire || [], perGame = {};
+  roster.forEach(function (p) { perGame[p.name] = p.pg; });
+  wire.forEach(function (p) {
+    perGame[p.name] = p.pg;
+    W.PlayerDB.get().players.push({ n: p.name, p: p.pos, t: p.nfl || 'KC',
+                                    b: 0, e: '', st: 'active' });
+  });
+  W.Projections.findSeason = function (player) {
+    var v = perGame[player.name];
+    if (v === undefined) return null;
+    return { pos: player.pos, season: v * 17, gp: 17, src: 'espn' };
+  };
   W.Recommend.projectAll = function () {
     return roster.map(function (p) {
-      return { p: p, base: 10, onBye: false, h: { label: '' } };
+      return { p: p, base: p.pg, onBye: false, h: { label: '' } };
     });
   };
   W.Recommend.bestLineup = function () {
-    return [
-      { key: 'QB', pos: 'QB', pick: { p: roster[0], proj: 10, base: 10 } },
-      { key: 'RB1', pos: 'RB', pick: { p: roster[1], proj: 10, base: 10 } },
-      { key: 'RB2', pos: 'RB', pick: { p: roster[2], proj: 10, base: 10 } },
-      { key: 'WR1', pos: 'WR', pick: { p: roster[4], proj: 10, base: 10 } },
-      { key: 'WR2', pos: 'WR', pick: { p: roster[5], proj: 10, base: 10 } },
-      { key: 'WR3', pos: 'WR', pick: { p: roster[6], proj: 10, base: 10 } },
-      { key: 'TE', pos: 'TE', pick: { p: roster[8], proj: 10, base: 10 } },
-      { key: 'FLEX', pos: 'FLEX', pick: { p: roster[3], proj: 10, base: 10 } },
-      { key: 'K', pos: 'K', pick: { p: roster[10], proj: 10, base: 10 } },
-      { key: 'DEF', pos: 'DEF', pick: { p: roster[11], proj: 10, base: 10 } }
-    ];
+    return (spec.starters || []).map(function (n) {
+      var p = roster.filter(function (r) { return r.name === n; })[0];
+      return { key: p.pos, pos: p.pos, pick: { p: p, proj: p.pg, base: p.pg } };
+    });
   };
-  /* My TE2 is finished for the year — the Dalton Schultz slot in the screenshot,
-     except that here it is actually true. */
-  var realOutlook = W.Recommend.seasonOutlook;
+  var dead = spec.outForSeason || [];
   W.Recommend.seasonOutlook = function (pl) {
-    if (pl.name === 'My TE2') {
+    if (dead.indexOf(pl.name) >= 0) {
       return { seasonEnding: true, longTermOut: false, mustReplace: true,
                why: 'INJURED RESERVE — torn Achilles', label: 'on injured reserve',
                returnDate: '', returnAround: '' };
@@ -227,8 +215,57 @@ console.log('\n-- Value.upgrades(): ONE roster spot cannot be offered to the who
     return { seasonEnding: false, longTermOut: false, mustReplace: false,
              why: '', label: '', returnDate: '', returnAround: '' };
   };
+  return W.Store.get().league.me;
+}
+
+/* A roster with real depth at every position: 3 RB, 4 WR, 2 TE, and the
+   starters named, so dropping any one bench man is legal by itself. */
+function fullRoster(over) {
+  over = over || {};
+  function pg(n, d) { return over[n] === undefined ? d : over[n]; }
+  return [
+    { id: 'r1', name: 'My QB', pos: 'QB', nfl: 'LAR', pg: pg('My QB', 22) },
+    { id: 'r2', name: 'My RB1', pos: 'RB', nfl: 'DET', pg: pg('My RB1', 14) },
+    { id: 'r3', name: 'My RB2', pos: 'RB', nfl: 'BAL', pg: pg('My RB2', 12) },
+    { id: 'r4', name: 'My RB3', pos: 'RB', nfl: 'NYJ', pg: pg('My RB3', 9) },
+    { id: 'r5', name: 'My WR1', pos: 'WR', nfl: 'MIN', pg: pg('My WR1', 14) },
+    { id: 'r6', name: 'My WR2', pos: 'WR', nfl: 'CIN', pg: pg('My WR2', 12) },
+    { id: 'r7', name: 'My WR3', pos: 'WR', nfl: 'SEA', pg: pg('My WR3', 11) },
+    { id: 'r8', name: 'My WR4', pos: 'WR', nfl: 'TB', pg: pg('My WR4', 8) },
+    { id: 'r9', name: 'My TE1', pos: 'TE', nfl: 'HOU', pg: pg('My TE1', 9) },
+    { id: 'r10', name: 'My TE2', pos: 'TE', nfl: 'NO', pg: pg('My TE2', 5) },
+    { id: 'r11', name: 'My K', pos: 'K', nfl: 'BUF', pg: pg('My K', 8) },
+    { id: 'r12', name: 'My DEF', pos: 'DEF', nfl: 'PIT', pg: pg('My DEF', 7) }
+  ];
+}
+var STARTERS = ['My QB', 'My RB1', 'My RB2', 'My WR1', 'My WR2', 'My WR3',
+                'My TE1', 'My K', 'My DEF'];
+
+/* ============================================================ BUG 2 ======= */
+console.log('\n-- Value.upgrades(): ONE roster spot cannot be offered to the whole wire --');
+/* The disease behind "36 players on my roster are out for the season". */
+(function () {
+  var W = freshWindow();
+  var meId = scenario(W, {
+    roster: fullRoster(),
+    starters: STARTERS,
+    /* a deep wire — under the old pairing loop every one of these would have
+       been paired with the same single weakest man */
+    wire: [
+      { name: 'Wire TE A', pos: 'TE', pg: 13 }, { name: 'Wire TE B', pos: 'TE', pg: 12 },
+      { name: 'Wire TE C', pos: 'TE', pg: 11 }, { name: 'Wire WR A', pos: 'WR', pg: 16 },
+      { name: 'Wire WR B', pos: 'WR', pg: 15 }, { name: 'Wire WR C', pos: 'WR', pg: 14 },
+      { name: 'Wire RB A', pos: 'RB', pg: 15 }, { name: 'Wire RB B', pos: 'RB', pg: 14 },
+      { name: 'Wire RB C', pos: 'RB', pg: 13 }
+    ],
+    outForSeason: ['My TE2']        /* the Dalton Schultz slot, butreal this time */
+  });
 
   var ups = W.Value.upgrades(2, meId, null, 200);
+  ok(ups.length >= 3,
+     'sanity: this wire really does produce several suggestions to assign (' +
+     ups.length + ')');
+
   var drops = ups.map(function (u) { return u.drop.name; });
   var dupes = drops.filter(function (n, i) { return drops.indexOf(n) !== i; });
   ok(dupes.length === 0,
@@ -241,127 +278,139 @@ console.log('\n-- Value.upgrades(): ONE roster spot cannot be offered to the who
      'and no free agent is offered as the add more than once either');
 
   var forcedRows = ups.filter(function (u) { return u.mandated; });
-  ok(forcedRows.length <= 1,
-     'one dead roster spot produces AT MOST one forced-replacement row, not one per ' +
+  ok(forcedRows.length === 1,
+     'one dead roster spot produces EXACTLY one forced-replacement row, not one per ' +
      'free agent on the wire (got ' + forcedRows.length + ')');
+  ok(forcedRows[0] && forcedRows[0].drop.name === 'My TE2' && ups.indexOf(forcedRows[0]) === 0,
+     'and it names the man who is actually finished, ranked first');
+  ok(forcedRows[0] && forcedRows[0].fa.pos === 'TE',
+     'and it replaces a tight end with a TIGHT END — "if I drop a te, I should have a ' +
+     'backup te to replace him" (got ' + (forcedRows[0] ? forcedRows[0].fa.pos : '-') + ')');
 
   /* ...and the count the headline reads comes off the ROSTER, not off this list */
   var must = W.Value.mustReplace(2, meId, null);
   ok(must.length === 1 && must[0].name === 'My TE2',
      'Value.mustReplace() names the one actual man, from the roster itself — this is ' +
-     'what the Wire tab headline counts now, and it cannot exceed the roster size ' +
-     '(got ' + must.length + ': ' + must.map(function (m) { return m.name; }).join(', ') + ')');
-  ok(must.length <= roster.length,
+     'what the Wire tab headline counts now (got ' + must.length + ': ' +
+     must.map(function (m) { return m.name; }).join(', ') + ')');
+  ok(must.length <= 12,
      'the number of men out for the season can never exceed the number of men on the ' +
      'roster — the literal impossibility Tj reported ("36 ... my roster is only 17")');
-  W.Recommend.seasonOutlook = realOutlook;
 })();
 
 /* ============================================================ BUG 3 ======= */
 console.log('\n-- Value.upgrades(): same position by default, cross-position only for a clear gap (Tj, 2026-09-18d) --');
+
+/* --- THE TE CASE, IN TJ'S OWN WORDS ------------------------------------
+ * "if I drop a te, I should have a backup te to replace him". Here he has
+ * ONE tight end and the league starts one, so no swap may take him to zero,
+ * however good the receiver on offer is. */
 (function () {
-  function build(W, opts) {
-    var meId = W.Store.get().league.me;
-    var roster = opts.roster;
-    W.Recommend.projectAll = function () {
-      return roster.map(function (p) {
-        return { p: p, base: p.base === undefined ? 10 : p.base, onBye: false, h: { label: '' } };
-      });
-    };
-    W.Recommend.bestLineup = function () { return opts.lineup(roster); };
-    return meId;
-  }
-  var baseRoster = [
-    { id: 'r1', name: 'My QB', pos: 'QB', nfl: 'LAR' },
-    { id: 'r2', name: 'My RB1', pos: 'RB', nfl: 'DET' },
-    { id: 'r3', name: 'My RB2', pos: 'RB', nfl: 'BAL' },
-    { id: 'r4', name: 'My RB3', pos: 'RB', nfl: 'NYJ' },
-    { id: 'r5', name: 'My WR1', pos: 'WR', nfl: 'MIN' },
-    { id: 'r6', name: 'My WR2', pos: 'WR', nfl: 'CIN' },
-    { id: 'r7', name: 'My WR3', pos: 'WR', nfl: 'SEA' },
-    { id: 'r8', name: 'My WR4', pos: 'WR', nfl: 'TB' },
-    { id: 'r9', name: 'My Only TE', pos: 'TE', nfl: 'HOU' },
-    { id: 'r11', name: 'My K', pos: 'K', nfl: 'BUF' },
-    { id: 'r12', name: 'My DEF', pos: 'DEF', nfl: 'PIT' }
-  ];
-  function lineupOf(roster) {
-    function find(n) { return roster.filter(function (p) { return p.name === n; })[0]; }
-    return [
-      { key: 'QB', pos: 'QB', pick: { p: find('My QB'), proj: 10, base: 10 } },
-      { key: 'RB1', pos: 'RB', pick: { p: find('My RB1'), proj: 10, base: 10 } },
-      { key: 'RB2', pos: 'RB', pick: { p: find('My RB2'), proj: 10, base: 10 } },
-      { key: 'WR1', pos: 'WR', pick: { p: find('My WR1'), proj: 10, base: 10 } },
-      { key: 'WR2', pos: 'WR', pick: { p: find('My WR2'), proj: 10, base: 10 } },
-      { key: 'WR3', pos: 'WR', pick: { p: find('My WR3'), proj: 10, base: 10 } },
-      { key: 'TE', pos: 'TE', pick: { p: find('My Only TE'), proj: 10, base: 10 } },
-      { key: 'FLEX', pos: 'FLEX', pick: { p: find('My RB3'), proj: 10, base: 10 } },
-      { key: 'K', pos: 'K', pick: { p: find('My K'), proj: 10, base: 10 } },
-      { key: 'DEF', pos: 'DEF', pick: { p: find('My DEF'), proj: 10, base: 10 } }
-    ];
-  }
+  var W = freshWindow();
+  var roster = fullRoster().filter(function (p) { return p.name !== 'My TE2'; });
+  var meId = scenario(W, {
+    roster: roster, starters: STARTERS,
+    wire: [{ name: 'Wire Superstar WR', pos: 'WR', pg: 30 },
+           { name: 'Wire Good RB', pos: 'RB', pg: 20 }]
+  });
+  var ups = W.Value.upgrades(2, meId, null, 200);
+  ok(ups.length >= 1, 'sanity: a 30-a-game receiver on the wire does produce suggestions');
+  var emptiesTE = ups.filter(function (u) {
+    return u.drop.pos === 'TE' && u.fa.pos !== 'TE';
+  });
+  ok(emptiesTE.length === 0,
+     'with exactly one tight end on the roster and one TE slot to fill, NO suggestion ' +
+     'drops him for a player at another position — not even for the best player on the ' +
+     'wire. Checked against the roster, not hoped for in the ranking (offending rows: ' +
+     (emptiesTE.map(function (u) { return u.fa.pos + ' for ' + u.drop.name; }).join(', ') ||
+      'none') + ')');
+  var need = W.Value.slotNeeds();
+  ok(ups.every(function (u) {
+    var counts = {};
+    roster.forEach(function (p) { counts[p.pos] = (counts[p.pos] || 0) + 1; });
+    counts[u.drop.pos]--; counts[u.fa.pos] = (counts[u.fa.pos] || 0) + 1;
+    return W.Value.lineupFillable(counts, need);
+  }), 'and EVERY suggestion, at every position, still leaves a roster that can field a ' +
+      'legal starting lineup');
+})();
 
-  /* --- THE TE CASE, IN TJ'S OWN WORDS ---------------------------------
-   * "if I drop a te, I should have a backup te to replace him". He has ONE
-   * tight end and the league starts one, so no swap may take him to zero. */
-  (function () {
-    var W = freshWindow();
-    var meId = build(W, { roster: baseRoster, lineup: lineupOf });
-    var ups = W.Value.upgrades(2, meId, null, 200);
-    var emptiesTE = ups.filter(function (u) {
-      return u.drop.pos === 'TE' && u.fa.pos !== 'TE';
-    });
-    ok(emptiesTE.length === 0,
-       'with exactly one tight end on the roster and one TE slot to fill, NO suggestion ' +
-       'drops him for a player at another position — that is the rule Tj stated, checked ' +
-       'against the roster rather than hoped for (offending rows: ' +
-       emptiesTE.map(function (u) { return u.fa.pos + ' for ' + u.drop.name; }).join(', ') + ')');
+/* --- LIKE FOR LIKE WINS WHEN BOTH ARE AVAILABLE ------------------------ */
+(function () {
+  var W = freshWindow();
+  /* My WR4 and My TE2 are equally weak. A big receiver is on the wire. The
+     same-position drop must be the one chosen. */
+  var meId = scenario(W, {
+    roster: fullRoster({ 'My WR4': 5, 'My TE2': 5 }), starters: STARTERS,
+    wire: [{ name: 'Wire Big WR', pos: 'WR', pg: 20 }]
+  });
+  var ups = W.Value.upgrades(2, meId, null, 200);
+  var hit = ups.filter(function (u) { return u.fa.name === 'Wire Big WR'; })[0];
+  ok(!!hit, 'sanity: the receiver is suggested');
+  ok(hit && hit.drop.name === 'My WR4' && hit.crossPos === false,
+     'with two equally weak men to choose between, the RECEIVER is dropped for the ' +
+     'receiver — same position is the default (got: ' +
+     (hit ? hit.drop.name + '/' + hit.drop.pos : 'nothing') + ')');
+})();
 
-    var legal = ups.every(function (u) {
-      var counts = {};
-      baseRoster.forEach(function (p) { counts[p.pos] = (counts[p.pos] || 0) + 1; });
-      counts[u.drop.pos]--; counts[u.fa.pos] = (counts[u.fa.pos] || 0) + 1;
-      return W.Value.lineupFillable(counts, W.Value.slotNeeds());
-    });
-    ok(legal,
-       'and EVERY suggestion, at every position, still leaves a roster that can field a ' +
-       'legal starting lineup');
-  })();
+/* --- ...BUT THE RULE IS NOT ABSOLUTE ----------------------------------- */
+(function () {
+  var W = freshWindow();
+  /* Tj: "if a star player with high output is available, it would make sense
+     to drop a low output player even if he is in a different position." Here
+     every receiver he owns is good and only the spare tight end is weak. */
+  var meId = scenario(W, {
+    roster: fullRoster({ 'My WR4': 15, 'My TE2': 3 }), starters: STARTERS,
+    wire: [{ name: 'Wire Superstar WR', pos: 'WR', pg: 28 },
+           { name: 'Wire Poor TE', pos: 'TE', pg: 4 }]
+  });
+  var ups = W.Value.upgrades(2, meId, null, 200);
+  var hit = ups.filter(function (u) { return u.fa.name === 'Wire Superstar WR'; })[0];
+  ok(hit && hit.drop.name === 'My TE2' && hit.crossPos === true,
+     'when the only weak man is at ANOTHER position and the player available is a star, ' +
+     'the cross-position swap IS made — the rule is a default, not a prohibition (got: ' +
+     (hit ? 'drop ' + hit.drop.name + ' cross=' + hit.crossPos : 'no suggestion') + ')');
+  ok(hit && /rather than a like-for-like one/.test(hit.why),
+     'and the row says so, and says it had to clear a bigger margin to get there');
+  ok(hit && /still be filled/.test(hit.why),
+     'and that the lineup still fills afterwards — the thing the screenshot got wrong');
+})();
 
-  /* --- THE CARVE-OUT: "if a star player with high output is available" ---- */
-  (function () {
-    var W = freshWindow();
-    /* a second tight end, so dropping one is allowed at all */
-    var roster = baseRoster.concat([{ id: 'r10', name: 'My Spare TE', pos: 'TE', nfl: 'NO' }]);
-    var meId = build(W, { roster: roster, lineup: lineupOf });
-    var ups = W.Value.upgrades(2, meId, null, 200);
-    /* every cross-position row must carry the flag and the explanation */
-    var cross = ups.filter(function (u) { return u.crossPos; });
-    ok(cross.every(function (u) { return u.drop.pos !== u.fa.pos; }),
-       'a row flagged crossPos really is one, so the UI badge cannot lie');
-    ok(cross.every(function (u) { return /rather than a like-for-like|rather than a /.test(u.why); }),
-       'and every cross-position row says in the "why" that it is one and had to clear a ' +
-       'bigger margin for it (' + cross.length + ' cross-position row(s))');
-    ok(ups.every(function (u) { return u.crossPos || u.drop.pos === u.fa.pos; }),
-       'and every row that is NOT flagged is genuinely like-for-like');
-  })();
+/* --- a cross-position swap must clear DOUBLE the bar ------------------- */
+(function () {
+  var W = freshWindow();
+  /* An edge that is comfortably enough for a like-for-like swap and NOT
+     enough to justify breaking the shape of the roster. MIN_SEASON for WR is
+     15 points, so a cross-position WR-for-TE needs more than 30. */
+  var meId = scenario(W, {
+    roster: fullRoster({ 'My WR4': 14, 'My TE2': 9.2 }), starters: STARTERS,
+    wire: [{ name: 'Wire Slightly Better WR', pos: 'WR', pg: 11.5 }]
+  });
+  var ups = W.Value.upgrades(2, meId, null, 200);
+  var cross = ups.filter(function (u) { return u.crossPos; });
+  ok(cross.length === 0,
+     'a real but ordinary edge over a player at ANOTHER position is not enough to break ' +
+     'the roster shape for — it has to clear double the season bar (got ' + cross.length +
+     ' cross-position row(s): ' +
+     cross.map(function (u) { return u.fa.name + ' for ' + u.drop.name +
+       ' +' + u.gain.toFixed(0); }).join(', ') + ')');
+})();
 
-  /* --- the cross-position BAR is really higher than the same-position one - */
-  (function () {
-    var W = freshWindow();
-    ok(typeof W.Value.slotNeeds === 'function' && typeof W.Value.lineupFillable === 'function',
-       'the roster-shape helpers are exported so this rule is testable at all');
-    var need = W.Value.slotNeeds();
-    ok(need.fixed.WR === 3 && need.fixed.RB === 2 && need.fixed.TE === 1 && need.flex === 1,
-       'slotNeeds() reads this league\'s real shape off S.league.slots rather than ' +
-       'hardcoding it (QB/RB/RB/WR/WR/WR/TE/FLEX/K/DEF)');
-    ok(W.Value.lineupFillable({ QB: 1, RB: 2, WR: 3, TE: 1, K: 1, DEF: 1 }, need) === false,
-       'exactly the starters and nobody spare cannot fill the FLEX slot');
-    ok(W.Value.lineupFillable({ QB: 1, RB: 3, WR: 3, TE: 1, K: 1, DEF: 1 }, need) === true,
-       'one spare flex-eligible body makes it legal');
-    ok(W.Value.lineupFillable({ QB: 1, RB: 4, WR: 3, TE: 0, K: 1, DEF: 1 }, need) === false,
-       'and no amount of running backs covers an empty TE slot — the exact thing the ' +
-       'screenshot was about');
-  })();
+/* --- the roster-shape helpers, directly -------------------------------- */
+(function () {
+  var W = freshWindow();
+  ok(typeof W.Value.slotNeeds === 'function' && typeof W.Value.lineupFillable === 'function',
+     'the roster-shape helpers are exported so this rule is testable at all');
+  var need = W.Value.slotNeeds();
+  ok(need.fixed.WR === 3 && need.fixed.RB === 2 && need.fixed.TE === 1 && need.flex === 1,
+     'slotNeeds() reads this league\'s real shape off S.league.slots rather than ' +
+     'hardcoding it (QB/RB/RB/WR/WR/WR/TE/FLEX/K/DEF)');
+  ok(W.Value.lineupFillable({ QB: 1, RB: 2, WR: 3, TE: 1, K: 1, DEF: 1 }, need) === false,
+     'exactly the starters and nobody spare cannot fill the FLEX slot');
+  ok(W.Value.lineupFillable({ QB: 1, RB: 3, WR: 3, TE: 1, K: 1, DEF: 1 }, need) === true,
+     'one spare flex-eligible body makes it legal');
+  ok(W.Value.lineupFillable({ QB: 1, RB: 4, WR: 3, TE: 0, K: 1, DEF: 1 }, need) === false,
+     'and no amount of running backs covers an empty TE slot — the exact thing the ' +
+     'screenshot was about');
 })();
 
 /* ========================================== the IR-but-returning price ==== */
