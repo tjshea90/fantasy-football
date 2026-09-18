@@ -436,20 +436,37 @@
     return best;
   }
 
+  /* Split a blurb into sentences, keeping each one's offset in the original
+     text so a look-backwards for the subject can cross a sentence boundary.
+     Written as a scan rather than a lookbehind split: lookbehind is ES2018 and
+     would pass the gate, but there is no reason to require it of a WebView for
+     something this simple. */
+  function sentencesOf(text) {
+    var out = [], start = 0, i;
+    for (i = 0; i < text.length; i++) {
+      var c = text.charAt(i);
+      if (c !== '.' && c !== '!' && c !== '?') continue;
+      /* not an initial ("B.J."), not a decimal, not an abbreviation run */
+      var next = text.charAt(i + 1);
+      if (next && next !== ' ' && next !== '\n') continue;
+      out.push({ at: start, text: text.slice(start, i + 1) });
+      while (text.charAt(i + 1) === ' ' || text.charAt(i + 1) === '\n') i++;
+      start = i + 1;
+    }
+    if (start < text.length) out.push({ at: start, text: text.slice(start) });
+    return out;
+  }
+
   /* Does this note say THIS player is finished — about him, and about NOW?
      Returns the matched sentence when it does, '' otherwise. */
   function noteSaysDone(note, playerName) {
     var text = String(note || '');
     if (!text) return '';
     var surname = lastNameOf(playerName).toLowerCase();
-    /* one sentence at a time: a blurb routinely covers three players */
-    var sentences = text.split(/(?<=[.!?])\s+/);
-    var i, offset = 0;
-    for (i = 0; i < sentences.length; i++) {
-      var sent = sentences[i];
-      offset += 0;
+    var sents = sentencesOf(text), i;
+    for (i = 0; i < sents.length; i++) {
+      var sent = sents[i].text;
       var m = SE_NOTE.exec(sent);
-      SE_NOTE.lastIndex = 0;
       if (!m) continue;
       /* a past injury he has already come back from is not news */
       if (PAST_NOTE.test(sent)) continue;
@@ -457,13 +474,13 @@
       var yr = sent.match(/\b(20\d\d)\b/);
       if (yr && Number(yr[1]) < seasonYear()) continue;
       var subj = subjectBefore(sent, m.index).toLowerCase();
-      /* nobody named in this sentence — look back through the blurb */
-      if (!subj) subj = subjectBefore(text.slice(0, text.indexOf(sent) + m.index),
-                                      text.indexOf(sent) + m.index).toLowerCase();
-      /* no name anywhere: the blurb is about its own subject, i.e. him */
+      /* nobody named in this sentence — look back through the whole blurb */
+      if (!subj) subj = subjectBefore(text, sents[i].at + m.index).toLowerCase();
+      /* no name anywhere: the blurb has only one subject, and it is him */
       if (!subj) return sent;
       if (surname && subj === surname) return sent;
-      /* somebody else's injury, in his write-up — the Schultz/Higgins case */
+      /* otherwise it is somebody else's injury in his write-up — the exact
+         Schultz/Higgins case — and it says nothing about him at all. */
     }
     return '';
   }
