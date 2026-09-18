@@ -1,12 +1,12 @@
-# CHECKPOINT 110 — read me first, then TASKS.md
+# CHECKPOINT 115 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T19:33:40Z · **version:** 7.6 · **tests:** all 20 suites green
+**Written:** 2026-09-18T19:38:27Z · **version:** 7.6 · **tests:** all 20 suites green
 
 ## Just done
-Step I sweep, part 1. Found and fixed a THIRD instance of the same dead-code class: recommend.js's projectOne -- the Advice tab's lineup projection -- lists a full-season projection as source 4 in its own file header ('this updates through the season, unlike a number frozen at draft time') and it had never once fired, for exactly the same reason the wire's had not: it read pr.season off the WEEKLY cache, which the scoring-period-pinned fetch never populates. Now reads Projections.findSeason(), and averages ESPN's and Sleeper's season numbers rather than taking one. Pinned with a test that drives the real projectAll path. Also verified: build.sh stages app/assets/* wholesale so ros.js ships without a build change; manifest and disk agree (97 files); performance measured -- freeAgents cold 24ms over 613 free agents, warm 0ms via the memo, waiverContext 7ms, upgrades 1ms; smoke-tested the whole board end to end against the screenshot's exact scenario (a single 16.4-point week now prices at 8.6/gm with the basis printed, instead of 16.4). Ask-Claude file is 31.8k chars, API prompt ~6.8k tokens. All 19 suites green.
+Step I sweep, part 2 -- caught a severe bug in THIS job's own change by reviewing the diff adversarially. upgrades() searched freeAgents(week, 60): the best 60 free agents by ONE global sort. Ranking on season totals multiplies quarterback's structural scoring advantage in this league (a completion pays a full point) by the games remaining, and measured against a realistic spread of league-scored projections ALL SIXTY slots came back QB -- the function meant to find Tj a running back was searching a pool with no running backs in it. It would have surfaced as the exact complaint he has already made twice, 'it always recommends qb switch', arriving by a brand new route. Fixed: upgrades() now pulls a fixed depth from byPos() per position (10 each at the default poolSize) and lets the per-game/season/QB/KDEF gates decide who survives, which is where that judgement belongs. Test pins both halves -- that a global top-60 of this board really is all quarterbacks (the trap), and that every position is represented in what upgrades() actually searches. All 19 suites green.
 
 ## Do this next
-Finish the sweep: re-read the whole diff adversarially for anything the changed field meanings could have broken elsewhere, then build the APK (bash build.sh), then ship.sh, publish the Release via mcp__github__actions_run_trigger publish-release.yml, verify it, and send Tj the plain-text tappable link.
+Build the APK (bash build.sh), confirm it, then ship.sh, then publish the Release via mcp__github__actions_run_trigger (publish-release.yml, ref main, inputs.version), verify with get_release_by_tag, and send Tj the plain-text tappable release link per CLAUDE.md.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  8647e0a ckpt 110: Step I sweep, part 1. Found and fixed a THIRD instance of the same dead-code c
   c396c21 ckpt 106: Step G done plus two real staleness bugs found and fixed while doing it. UI: t
   6b0083a ckpt 96: Steps F done (rules 4+5). New Ai.waiverCriteriaText() states all six of Tj's cr
   3a24f65 ckpt 77: Step H part 1 done: tools/test_waiver.js rewritten against the new engine, and 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   07c0d36 ckpt 97: Shipped v7.6 and published the GitHub Release: triggered publish-release.yml, v
   5272367 ship v7.6: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
   d9d94d6 ship v7.5: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
-  f4dd6eb ckpt 90: Formalized the job-guard fix's verification (previously only a throwaway, uncom
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(4 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
