@@ -176,20 +176,147 @@ console.log('\n-- Value.freeAgents(): a zero-signal ESPN guess never outranks re
      'players who had actually played and scored)');
 })();
 
-console.log('\n-- Value.perGame(): ESPN season pace is a per-game rate, not a raw season total --');
+/* ==== THE 2026-09-18 REST-OF-SEASON OVERHAUL ============================
+ * Tj, with a screenshot of the Wire tab in which every available receiver
+ * was priced at exactly what he scored in week 1 and captioned "1 scored
+ * week in this app — thin sample": "the wire tab is only making
+ * recommendations and projecting scores based on prior weeks actual stats.
+ * This is a broken system."
+ *
+ * The tests below replace the ones that pinned the OLD five-branch ladder in
+ * value.js's perGame(). That ladder is gone on purpose — ros.js now blends a
+ * real full-season baseline with the measured sample instead of picking one
+ * branch and using it raw — so the old assertions ("season pace is divided
+ * by 17 before use", "the row says which source it used") were asserting the
+ * behaviour this job deliberately removed, not a contract worth keeping.
+ *
+ * `stubSeason` is how a test gives a player a full-season projection: ros.js
+ * reads Projections.findSeason(), which in the app is filled by a separate
+ * fetch (projections.js, FULL-SEASON PROJECTIONS) and here is simply handed
+ * over. The map is name -> points PER GAME, because that is what a test
+ * actually wants to say; the x17 to a season total is done here so the
+ * conversion itself stays under test.
+ */
+function stubSeason(W, perGameByName) {
+  W.Projections.findSeason = function (player) {
+    var v = perGameByName[player.name];
+    if (v === undefined) return null;
+    return { pos: player.pos, season: v * 17, gp: 17, src: 'espn' };
+  };
+}
+
+console.log('\n-- ros.js: a full-season projection becomes a per-game rate AND a season total --');
 (function () {
   var W = freshWindow();
-  var nm = 'Zzz Season Pace Guy';
-  W.Projections.find = function (player) {
-    return player.name === nm ? { season: 340 } : null;   /* no .week, no measured games */
-  };
-  var pg = W.Value.perGame(nm, 'RB', 5);
-  var want = 340 / 17;
-  ok(Math.abs(pg.v - want) < 0.01,
-     'season pace (a FULL-SEASON total from projections.js) is divided by 17 before use ' +
-     '(got ' + pg.v.toFixed(2) + ', want ' + want.toFixed(2) + ' — the old code returned 340 ' +
-     'itself, valuing him at roughly 17x his real rest-of-season rate)');
-  ok(pg.src.indexOf('season pace') >= 0, 'and the row says which source it used');
+  var nm = 'Zzz Season Projection Guy';
+  stubSeason(W, { 'Zzz Season Projection Guy': 20 });
+  var pg = W.Value.perGame(nm, 'RB', 5, 0);
+  ok(Math.abs(pg.v - 20) < 0.01,
+     'a FULL-SEASON total is divided by the games it covers before use (got ' +
+     pg.v.toFixed(2) + ', want 20.00 — valuing a 340-point season as 340 points a game ' +
+     'was the original form of this bug)');
+  ok(pg.games > 0 && Math.abs(pg.ros - pg.v * pg.games) < 0.01,
+     'and the number the board ranks on is that rate TIMES the games he has left (' +
+     pg.v.toFixed(1) + ' x ' + pg.games + ' = ' + pg.ros.toFixed(1) + ') — Tj, rule 2: ' +
+     '"expected full season performance, not just the next NFL week"');
+  ok(pg.src.indexOf('full-season') >= 0,
+     'and the row names the season-long source it came from (got "' + pg.src + '")');
+})();
+
+console.log('\n-- THE SCREENSHOT BUG: one big week is shrunk toward the baseline, never extrapolated --');
+(function () {
+  var W = freshWindow();
+  /* Kalif Raymond's actual row from Tj's screenshot: 9 targets, 16.4 points,
+     in the only week that had been scored. The old board printed "16.4 proj"
+     — his single game used verbatim as a rest-of-season rate. */
+  var nm = 'Zzz One Big Week WR';
+  W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'DET', b: 0, e: '', st: 'active' });
+  W.Store.setBook(1, { 'zzz one big week wr': { n: nm, t: 'DET', p: 16.4, pa: 0, cr: 0, tg: 9 } });
+  stubSeason(W, { 'Zzz One Big Week WR': 8 });     /* the season-long view of him */
+  var pg = W.Value.perGame(nm, 'WR', 2, 0);
+  ok(pg.n === 1, 'sanity: exactly one measured game, the same as the screenshot');
+  ok(pg.v < 16.4,
+     'his 16.4-point week is NOT what the board projects him at (got ' + pg.v.toFixed(2) +
+     ') — this is the exact number, and the exact failure, in Tj\'s screenshot');
+  ok(pg.v > 8,
+     'but it does move him above his 8-point baseline (got ' + pg.v.toFixed(2) +
+     ') — the week is real evidence, just not a season of it');
+  ok(Math.abs(pg.wObserved - 1 / (1 + W.Ros.PRIOR_GAMES)) < 1e-9,
+     'and the weight it carries is exactly the documented shrinkage, n/(n+' +
+     W.Ros.PRIOR_GAMES + ') = ' + pg.wObserved.toFixed(2) + ' — not 100%');
+})();
+
+console.log('\n-- ros.js: the sample takes over as it grows (one game vs eight) --');
+(function () {
+  function rate(games) {
+    var W = freshWindow();
+    var nm = 'Zzz Sample Guy';
+    W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'DET', b: 0, e: '', st: 'active' });
+    var w;
+    for (w = 1; w <= games; w++) {
+      var row = {}; row['zzz sample guy'] = { n: nm, t: 'DET', p: 20, pa: 0, cr: 0, tg: 10 };
+      W.Store.setBook(w, row);
+    }
+    stubSeason(W, { 'Zzz Sample Guy': 5 });
+    return W.Value.perGame(nm, 'WR', games + 1, 0);
+  }
+  var one = rate(1), eight = rate(8);
+  ok(eight.v > one.v,
+     'eight 20-point games pull the estimate further from a 5-point baseline than one does (' +
+     one.v.toFixed(2) + ' -> ' + eight.v.toFixed(2) + ')');
+  ok(eight.wObserved > 0.6 && one.wObserved < 0.25,
+     'by eight games his own season carries most of the weight (' +
+     eight.wObserved.toFixed(2) + '); at one game it carries very little (' +
+     one.wObserved.toFixed(2) + ') — the documented behaviour of a rest-of-season model');
+})();
+
+console.log('\n-- ros.js: efficiency is regressed toward the volume that produced it --');
+(function () {
+  /* Two receivers, identical usage, wildly different luck: one caught a long
+     touchdown, the other did not. A rest-of-season model must not project the
+     touchdown forward at face value. */
+  var W = freshWindow();
+  var lucky = 'Zzz Lucky WR', plain = 'Zzz Plain WR';
+  W.PlayerDB.get().players.push({ n: lucky, p: 'WR', t: 'KC', b: 0, e: '', st: 'active' });
+  W.PlayerDB.get().players.push({ n: plain, p: 'WR', t: 'KC', b: 0, e: '', st: 'active' });
+  var bk = {};
+  bk['zzz lucky wr'] = { n: lucky, t: 'KC', p: 28, pa: 0, cr: 0, tg: 8 };
+  bk['zzz plain wr'] = { n: plain, t: 'KC', p: 8, pa: 0, cr: 0, tg: 8 };
+  W.Store.setBook(1, bk);
+  W.Store.setBook(2, bk);
+  stubSeason(W, {}); /* no baseline for either — isolate the usage effect */
+  var l = W.Value.perGame(lucky, 'WR', 3, 0), p2 = W.Value.perGame(plain, 'WR', 3, 0);
+  ok(l.expectedPG !== null && Math.abs(l.expectedPG - p2.expectedPG) < 1e-9,
+     'identical targets produce an identical volume-implied expectation for both (' +
+     l.expectedPG.toFixed(2) + ')');
+  ok(l.v < 28 && l.v > p2.v,
+     'so the lucky one is still rated higher — he did score them — but pulled well below ' +
+     'his 28-point pace (got ' + l.v.toFixed(2) + '), which is the point: opportunity is ' +
+     'the stable part of a two-game sample and touchdowns are not');
+})();
+
+console.log('\n-- Value.freeAgents(): the board is ranked by REST-OF-SEASON points, not by a per-game rate --');
+(function () {
+  var W = freshWindow();
+  /* Same rate, different availability: one has his bye still ahead of him and
+     therefore one fewer game to give. On a per-game board they tie; on a
+     season board the one who can actually play more wins. */
+  var S = W.Store.get();
+  var wk = 5;
+  var full = 'Zzz Full Slate WR', bye = 'Zzz Bye Ahead WR';
+  W.PlayerDB.get().players.push({ n: full, p: 'WR', t: 'KC', b: 0, e: '', st: 'active' });
+  W.PlayerDB.get().players.push({ n: bye, p: 'WR', t: 'SF', b: S.league.regularSeasonWeeks, e: '', st: 'active' });
+  stubSeason(W, { 'Zzz Full Slate WR': 12, 'Zzz Bye Ahead WR': 12 });
+  var rows = W.Value.freeAgents(wk, 0);
+  function row(n) { return rows.filter(function (r) { return r.name === n; })[0]; }
+  var a = row(full), c = row(bye);
+  ok(a && c && Math.abs(a.raw - c.raw) < 1e-9,
+     'sanity: the two are identical per game (' + a.raw.toFixed(1) + ')');
+  ok(a.games === c.games + 1 && a.ros > c.ros,
+     'but the one with a bye still ahead has one fewer game left (' + c.games + ' vs ' +
+     a.games + ') and is correctly worth less for the season (' + c.ros.toFixed(1) +
+     ' vs ' + a.ros.toFixed(1) + ')');
+  ok(rows.indexOf(a) < rows.indexOf(c), 'and the board puts him first');
 })();
 
 console.log('\n-- Value.upgrades(): a one-week spike with no sustained signal never fires --');
@@ -198,12 +325,13 @@ console.log('\n-- Value.upgrades(): a one-week spike with no sustained signal ne
   var meId = W.Store.get().league.me;
   var nm = 'Zzz OneWeekWonder QB';
   W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
-  /* ESPN's week-specific line only (no season pace, no measured games) — the
-     exact shape of "one great matchup", and perGame()'s own lowest-priority
-     fallback before a blind guess, so it is real data but never `confident`. */
+  /* ESPN's week-specific line only — no full-season projection, no measured
+     games — which is the exact shape of "one great matchup" and ros.js's own
+     lowest-priority baseline before a blind guess. */
   W.Projections.find = function (player) {
     return player.name === nm ? { week: 45 } : null;
   };
+  stubSeason(W, { 'My Starting QB': 20 });
   W.Recommend.bestLineup = function () {
     return [{ key: 'QB', label: 'QB', pos: 'QB',
               pick: { p: { id: 'myqb1', name: 'My Starting QB', pos: 'QB' }, proj: 20, base: 20 } }];
@@ -218,16 +346,13 @@ console.log('\n-- Value.upgrades(): a one-week spike with no sustained signal ne
      'only considering week to week"');
 })();
 
-console.log('\n-- Value.upgrades(): a genuinely better, confident free agent IS suggested, paired with who to drop, with a reason --');
+console.log('\n-- Value.upgrades(): a genuinely better free agent IS suggested, paired with who to drop, with a reason --');
 (function () {
   var W = freshWindow();
   var meId = W.Store.get().league.me;
   var nm = 'Zzz Great WR';
-  W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'KC', b: 10, e: '', st: 'active' });
-  /* a season-long signal, not one week — this is what makes him `confident` */
-  W.Projections.find = function (player) {
-    return player.name === nm ? { season: 24 * 17 } : null;
-  };
+  W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'KC', b: 0, e: '', st: 'active' });
+  stubSeason(W, { 'Zzz Great WR': 24, 'My Starting WR': 12, 'My Weak Bench WR': 3 });
   W.Recommend.bestLineup = function () {
     return [{ key: 'WR1', label: 'WR', pos: 'WR',
               pick: { p: { id: 'mywr1', name: 'My Starting WR', pos: 'WR' }, proj: 12, base: 12 } }];
@@ -248,8 +373,35 @@ console.log('\n-- Value.upgrades(): a genuinely better, confident free agent IS 
      hit.why.indexOf('My Weak Bench WR') >= 0,
      'and comes with a plain-English reason naming both players (Tj: "it should explain why ' +
      'to drop the player I have in favor of the player it recommends")');
-  ok(hit && hit.weeks > 0 && hit.gain > 0,
-     'the gain is expressed over the actual weeks left in the season, not one week\'s points');
+  ok(hit && hit.gain > 0 && Math.abs(hit.gain - (hit.fa.ros - hit.drop.ros)) < 0.01,
+     'and the headline number is the REST-OF-SEASON point edge over that exact man (' +
+     (hit ? hit.gain.toFixed(0) : '?') + '), both sides priced by the same engine');
+  ok(hit && hit.why.indexOf('over the rest of the season') >= 0,
+     'which the reason states in those words, as rule 4 asks');
+})();
+
+console.log('\n-- Value.upgrades(): a marginal edge is NOT suggested, however real (rule 3) --');
+(function () {
+  var W = freshWindow();
+  var meId = W.Store.get().league.me;
+  var nm = 'Zzz Barely Better WR';
+  W.PlayerDB.get().players.push({ n: nm, p: 'WR', t: 'KC', b: 0, e: '', st: 'active' });
+  /* half a point a game better than the man he would replace: real, measurable,
+     and nowhere near worth a roster move for the rest of the year */
+  stubSeason(W, { 'Zzz Barely Better WR': 10.5, 'My Bench WR': 10 });
+  W.Recommend.bestLineup = function () {
+    return [{ key: 'WR1', label: 'WR', pos: 'WR',
+              pick: { p: { id: 'mywr1', name: 'My Starting WR', pos: 'WR' }, proj: 20, base: 20 } }];
+  };
+  W.Recommend.projectAll = function () {
+    return [{ p: { id: 'mywr1', name: 'My Starting WR', pos: 'WR' }, base: 20 },
+            { p: { id: 'mywr2', name: 'My Bench WR', pos: 'WR' }, base: 10 }];
+  };
+  var ups = W.Value.upgrades(5, meId, null, 200);
+  ok(!ups.some(function (u) { return u.fa.name === nm; }),
+     'Tj, rule 3: "only recommend I drop and add a player ... if they are a MEANINGFUL ' +
+     'improvement for the rest of the season" — half a point a game is not one, even though ' +
+     'it is a genuine edge and would have cleared the old flat 1-point bar over a full season');
 })();
 
 console.log('\n-- Value.upgrades(): QB needs a much bigger, better-proven edge than other ' +
@@ -259,11 +411,11 @@ console.log('\n-- Value.upgrades(): QB needs a much bigger, better-proven edge t
  * are pass heavy, in this league the scoring is one point for every completed pass.
  * Only recommend a replacement qb if it is truly a season edge over the high
  * completion QBs I already have." A completion pays a full point here, so a good QB
- * already outscores a good RB/WR by 3-4x per game — the flat "1 more point per game"
- * bar the WR test above uses is real signal at running back and pure noise at
- * quarterback. Three scenarios, same incumbent (a 20-point/game starting QB): a big
- * edge with no real games behind it, a real-games edge too small to matter, and a
- * real-games edge big enough to actually mean something. */
+ * already outscores a good RB/WR by 3-4x per game — the bar that is real signal at
+ * running back is pure noise at quarterback. Three scenarios, same incumbent (a
+ * 20-point/game starting QB): a big edge with no real games behind it, a real-games
+ * edge too small to matter, and a real-games edge big enough to actually mean
+ * something. */
 (function () {
   var meRoster = function () {
     return [{ p: { id: 'myqb1', name: 'My Starting QB', pos: 'QB' }, base: 20 }];
@@ -277,12 +429,10 @@ console.log('\n-- Value.upgrades(): QB needs a much bigger, better-proven edge t
     var W = freshWindow();
     var meId = W.Store.get().league.me;
     var nm = 'Zzz Unproven Season Model QB';
-    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
-    /* ESPN's rest-of-season MODEL only — no games actually played for this app to
-       measure — even though the raw gap (10/game) clears the old flat bar easily */
-    W.Projections.find = function (player) {
-      return player.name === nm ? { season: 30 * 17 } : null;
-    };
+    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 0, e: '', st: 'active' });
+    /* a rest-of-season MODEL only — no games actually played for this app to
+       measure — even though the raw gap (10/game) clears every other bar easily */
+    stubSeason(W, { 'Zzz Unproven Season Model QB': 30, 'My Starting QB': 20 });
     W.Recommend.bestLineup = meLineup; W.Recommend.projectAll = meRoster;
     var ups = W.Value.upgrades(5, meId, null, 200);
     ok(!ups.some(function (u) { return u.fa.name === nm; }),
@@ -294,29 +444,31 @@ console.log('\n-- Value.upgrades(): QB needs a much bigger, better-proven edge t
     var W = freshWindow();
     var meId = W.Store.get().league.me;
     var nm = 'Zzz Modest Real Edge QB';
-    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
-    /* three REAL scored weeks (clears the old "confident" bar with room to spare),
-       averaging 22 — only 2 more per game than my 20-point starter */
-    W.Store.setBook(1, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 22, tg: 0 } });
-    W.Store.setBook(2, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 22, tg: 0 } });
-    W.Store.setBook(3, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 22, tg: 0 } });
+    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 0, e: '', st: 'active' });
+    /* three REAL scored weeks at 22, and a season projection agreeing — only 2
+       more per game than my 20-point starter */
+    W.Store.setBook(1, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 0, tg: 0 } });
+    W.Store.setBook(2, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 0, tg: 0 } });
+    W.Store.setBook(3, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 0, tg: 0 } });
+    stubSeason(W, { 'Zzz Modest Real Edge QB': 22, 'My Starting QB': 20 });
     W.Recommend.bestLineup = meLineup; W.Recommend.projectAll = meRoster;
     var ups = W.Value.upgrades(5, meId, null, 200);
     ok(!ups.some(function (u) { return u.fa.name === nm; }),
-       'a QB with real games behind him but only a small per-game edge (2, above the ' +
-       'flat 1-point bar every other position uses) is STILL not suggested — this is ' +
-       'noise at quarterback\'s scale, not a season-defining edge');
+       'a QB with real games behind him but only a small per-game edge (2, well above the ' +
+       'bar every other position uses) is STILL not suggested — this is noise at ' +
+       'quarterback\'s scale, not a season-defining edge');
   })();
 
   (function () {
     var W = freshWindow();
     var meId = W.Store.get().league.me;
     var nm = 'Zzz Real Proven Edge QB';
-    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
-    /* three real scored weeks averaging 30 — a genuine, well-proven 10/game edge */
-    W.Store.setBook(1, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 30, tg: 0 } });
-    W.Store.setBook(2, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 30, tg: 0 } });
-    W.Store.setBook(3, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 30, tg: 0 } });
+    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 0, e: '', st: 'active' });
+    /* three real scored weeks at 30 — a genuine, well-proven 10/game edge */
+    W.Store.setBook(1, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 0, tg: 0 } });
+    W.Store.setBook(2, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 0, tg: 0 } });
+    W.Store.setBook(3, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 0, tg: 0 } });
+    stubSeason(W, { 'Zzz Real Proven Edge QB': 30, 'My Starting QB': 20 });
     W.Recommend.bestLineup = meLineup; W.Recommend.projectAll = meRoster;
     var ups = W.Value.upgrades(5, meId, null, 200);
     var hit = ups.filter(function (u) { return u.fa.name === nm; })[0];
@@ -327,8 +479,57 @@ console.log('\n-- Value.upgrades(): QB needs a much bigger, better-proven edge t
   })();
 })();
 
-console.log('\n-- Value.upgrades(): K/DEF never bump a real need, and only appear at all ' +
-            'when mine is genuinely unavailable (2026-09-18) --');
+console.log('\n-- Value.upgrades(): a season-ending injury MANDATES a replacement, overriding every de-prioritisation (rule 6) --');
+/* Tj, rule 6: K, DEF and QB stay low priority "unless there is a strong, clear,
+ * season long edge ... or if there is a season ending injury or anything else
+ * that mandates the player be replaced", and rule 4's own worked example is
+ * "drop bo nix due to season ending injury and add j. Hurts because he is the
+ * best available qb". A replacement QB who has not played three games — the
+ * bar that normally blocks him outright — must still be offered when the
+ * incumbent is finished for the year. */
+(function () {
+  var W = freshWindow();
+  var meId = W.Store.get().league.me;
+  var nm = 'Zzz Available Backup QB';
+  W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 0, e: '', st: 'active' });
+  stubSeason(W, { 'Zzz Available Backup QB': 22, 'My Broken QB': 26 });
+  W.Recommend.bestLineup = function () {
+    return [{ key: 'QB', label: 'QB', pos: 'QB',
+              pick: { p: { id: 'myqb1', name: 'My Broken QB', pos: 'QB' }, proj: 26, base: 26 } }];
+  };
+  W.Recommend.projectAll = function () {
+    return [{ p: { id: 'myqb1', name: 'My Broken QB', pos: 'QB' }, base: 26 }];
+  };
+
+  /* healthy first: the backup is WORSE than my starter, so nothing is offered */
+  var before = W.Value.upgrades(5, meId, null, 200);
+  ok(!before.some(function (u) { return u.fa.name === nm; }),
+     'sanity: while my quarterback is healthy, a worse free agent is not suggested');
+
+  /* now the season-ending designation lands */
+  var realOutlook = W.Recommend.seasonOutlook;
+  W.Recommend.seasonOutlook = function (pl) {
+    if (pl.name === 'My Broken QB') {
+      return { seasonEnding: true, why: 'INJURED RESERVE — torn ACL, out for the season' };
+    }
+    return realOutlook(pl);
+  };
+  var after = W.Value.upgrades(5, meId, null, 200);
+  var hit = after.filter(function (u) { return u.fa.name === nm; })[0];
+  ok(!!hit,
+     'once he is ruled out for the season the replacement IS offered, even though the ' +
+     'backup projects LOWER than the healthy incumbent did and has zero measured games — ' +
+     'the three-games-on-tape rule for QB cannot be allowed to leave the slot empty');
+  ok(hit && hit.mandated === true && hit.drop.name === 'My Broken QB',
+     'and it is flagged as a mandated replacement of that exact man, not an optional upgrade');
+  ok(hit && hit.why.indexOf('done for the season') >= 0 && hit.why.indexOf('torn ACL') >= 0,
+     'with the reason naming the season-ending cause rather than a point margin (got: ' +
+     (hit ? '"' + hit.why.slice(0, 70) + '..."' : 'nothing') + ')');
+  ok(hit && after.indexOf(hit) === 0,
+     'and a mandated replacement is ranked first, ahead of any optional upgrade');
+})();
+
+console.log('\n-- Value.upgrades(): K/DEF never bump a real need, and only appear on a genuine need or a strong season edge (rule 6) --');
 /* Tj, same message: "defense and kicker are not priorities." The Claude-driven board
  * (ai.js normalizeWaivers) already gated K/DEF on kdefNeed; this deterministic,
  * no-cost board — the one that needs no API key and is always on screen — never had
@@ -337,10 +538,8 @@ console.log('\n-- Value.upgrades(): K/DEF never bump a real need, and only appea
   var W = freshWindow();
   var meId = W.Store.get().league.me;
   var nm = 'Zzz Great Streaming DEF';
-  W.PlayerDB.get().players.push({ n: nm, p: 'DEF', t: 'SF', b: 10, e: '', st: 'active' });
-  W.Projections.find = function (player) {
-    return player.name === nm ? { season: 15 * 17 } : null;
-  };
+  W.PlayerDB.get().players.push({ n: nm, p: 'DEF', t: 'SF', b: 0, e: '', st: 'active' });
+  stubSeason(W, { 'Zzz Great Streaming DEF': 15, 'My Healthy DEF': 8 });
   W.Recommend.bestLineup = function () {
     return [{ key: 'DEF', label: 'DEF', pos: 'DEF',
               pick: { p: { id: 'mydef1', name: 'My Healthy DEF', pos: 'DEF' }, proj: 8, base: 8 } }];
@@ -363,6 +562,38 @@ console.log('\n-- Value.upgrades(): K/DEF never bump a real need, and only appea
   ok(ups2.some(function (u) { return u.fa.name === nm; }),
      'the SAME free agent IS suggested once my own DEF is ruled OUT — low priority, ' +
      'not a blanket ban when there is a genuine need');
+})();
+
+console.log('\n-- Value.upgrades(): the K/DEF exception needs a STRONG season edge, not merely a measured one --');
+(function () {
+  function build(faPerGame) {
+    var W = freshWindow();
+    var meId = W.Store.get().league.me;
+    var nm = 'Zzz Measured DEF';
+    W.PlayerDB.get().players.push({ n: nm, p: 'DEF', t: 'SF', b: 0, e: '', st: 'active' });
+    /* two measured games plus a season projection — 'high' confidence, which is
+       what lets a K/DEF be considered at all when mine is perfectly available */
+    W.Store.setBook(1, { 'zzz measured def': { n: nm, t: 'SF', p: faPerGame, pa: 0, cr: 0, tg: 0 } });
+    W.Store.setBook(2, { 'zzz measured def': { n: nm, t: 'SF', p: faPerGame, pa: 0, cr: 0, tg: 0 } });
+    stubSeason(W, { 'Zzz Measured DEF': faPerGame, 'My Healthy DEF': 8 });
+    W.Recommend.bestLineup = function () {
+      return [{ key: 'DEF', label: 'DEF', pos: 'DEF',
+                pick: { p: { id: 'mydef1', name: 'My Healthy DEF', pos: 'DEF' }, proj: 8, base: 8 } }];
+    };
+    W.Recommend.projectAll = function () {
+      return [{ p: { id: 'mydef1', name: 'My Healthy DEF', pos: 'DEF' }, base: 8,
+                onBye: false, h: { label: '' } }];
+    };
+    return { ups: W.Value.upgrades(3, meId, null, 200), nm: nm };
+  }
+  var weak = build(11);      /* 3/game better than mine */
+  ok(!weak.ups.some(function (u) { return u.fa.name === weak.nm; }),
+     'a measured, confident DEF that is merely better than mine is still not suggested — ' +
+     'rule 6 asks for a STRONG, CLEAR season-long edge at this position, not any edge');
+  var strong = build(20);    /* 12/game better, a season-defining gap */
+  ok(strong.ups.some(function (u) { return u.fa.name === strong.nm; }),
+     'but one that clears the much larger season-long bar IS — the exception rule 6 ' +
+     'explicitly allows for ("a strong, clear, season long edge")');
 })();
 
 console.log('\n-- PlayerDB: roster status is captured, and practice-squad is distinguished from active --');
