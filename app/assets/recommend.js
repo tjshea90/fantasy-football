@@ -331,30 +331,226 @@
    * one label 'OUT', which is right for "can he play SUNDAY" and useless for
    * "is he worth a roster spot in November".
    *
-   * A designation that parks a player for the season (IR, PUP, NFI, a
-   * suspension) is treated as season-ending, and so is a note that says so in
-   * words — the feed's status often lags the reporting on a torn ACL or
-   * Achilles by days, and the note is where that lands first.
+   * THE BUG THIS REPLACES (Tj, 2026-09-18d, with a screenshot of the Wire tab
+   * claiming 36 of his 17 players were out for the season, four rows of them
+   * all saying "replaces Dalton Schultz, who is out for the season"):
+   * "Dalton Schultz is not out for the season, but the app claimed he is. This
+   * is a major error. I don't know what happened, maybe it pulled old,
+   * outdated news."
    *
-   * Deliberately conservative. A plain weekly OUT is NOT season-ending; those
-   * players are already excluded from a single week's lineup by health(), and
-   * writing a roster off for the year on a one-week designation would be a far
-   * worse error than being slow to. */
-  var SE_STATUS = /INJURED RESERVE|\bI\.?R\.?\b|\bPUP\b|PHYSICALLY UNABLE|NON.?FOOTBALL|SEASON.?END/;
-  var SE_NOTE = /(out|done|lost)\s+for\s+the\s+(season|year)|season.?ending|miss(ing)?\s+the\s+(rest\s+of\s+the\s+)?season|torn\s+(acl|achilles|patellar|pectoral|quad)|ruptured\s+achilles|placed\s+on\s+(injured\s+reserve|ir)/i;
+   * The news was not old. The reading of it was illiterate. The previous
+   * version ran one regex over the whole free-text blurb and promoted ANY
+   * match to "done for the year", with no idea whose injury the sentence was
+   * about or when it happened. Pulled live from ESPN's /injuries feed on
+   * 2026-09-18 — the same endpoint loadNews() reads — Schultz's record is:
+   *
+   *     status: "ACTIVE"
+   *     note:   "...Schultz doesn't offer much big-play ability at 30 years
+   *              old, but he's a reliable target in the middle of the field
+   *              and saw his floor raise when JAYDEN HIGGINS went down with a
+   *              SEASON-ENDING torn ACL over the summer."
+   *
+   * Higgins' injury, Schultz's write-up. The regex saw "season-ending",
+   * ignored the word ACTIVE sitting right next to it, and wrote off a healthy
+   * starting tight end. Across the live 800-record feed that same regex fires
+   * on 14 players and THIRTEEN of them are status ACTIVE — Patrick Mahomes
+   * ("last December's season-ending knee injury") and Malik Nabers ("a torn
+   * ACL ... in Week 4 of last season") among them, both written off for
+   * injuries they have already come back from.
+   *
+   * So there are exactly two ways this function can be wrong, and the fix has
+   * to close both: the note can be about SOMEBODY ELSE, and it can be about a
+   * PAST SEASON. Neither is detectable by matching a phrase. What IS reliable
+   * is the structured half of the record, which was being discarded entirely:
+   *
+   *   1. STATUS IS AUTHORITATIVE ABOUT AVAILABILITY. A man ESPN lists ACTIVE
+   *      is playing this week. Whatever the prose says, he is not out for the
+   *      year, and no amount of matching may promote him. This alone kills 13
+   *      of the 14 live false positives.
+   *   2. returnDate SAYS WHEN. Every IR record in the live pull carries one.
+   *      October and November dates mean back this season; the finished carry
+   *      2027-02-15, past the end of the year. "On IR until week 6" and "done"
+   *      are different facts and the app now says which one it means.
+   *   3. A RETURN DESIGNATION MEANS HE IS COMING BACK. fantasyStatus IR-R and
+   *      PUP-R are, literally, "designated to return".
+   *
+   * The note is demoted to what it actually is: corroboration. It may only
+   * promote a player who is ALREADY parked by his designation, it must be
+   * about HIM (nearest name before the phrase), and it must not be describing
+   * a previous season. See noteSaysDone() below.
+   *
+   * Deliberately conservative, for the same reason as always: being slow to
+   * write a man off costs one sub-optimal roster spot, and writing off a
+   * healthy one costs you the player. */
+
+  /* Designations that PARK a player — he is not playing for weeks. Whether
+     that is the whole season is a separate question, answered by the dates
+     below, not by this list. */
+  var PARK_STATUS = /INJURED RESERVE|\bI\.?R\.?\b|\bPUP\b|PHYSICALLY UNABLE|NON.?FOOTBALL|SEASON.?END|SUSPEND/;
+  /* ...and the statuses that mean he is available, or merely in doubt, for a
+     SINGLE game. None of these can ever be season-ending. */
+  var PLAYING_STATUS = /^(ACTIVE|PROBABLE|QUESTIONABLE|DOUBTFUL)$/;
+  /* "designated to return" — the feed saying so in its own field. */
+  var RETURN_DESIGNATED = /-R$/;
+
+  var SE_NOTE = /(?:out|done|lost|sidelined)\s+for\s+the\s+(?:season|year)|season.?ending|miss(?:ing|ed)?\s+(?:at\s+least\s+)?(?:the\s+)?(?:rest\s+of\s+the\s+|remainder\s+of\s+the\s+|entire\s+|entirety\s+of\s+the\s+)?(?:season|year)|torn\s+(?:acl|achilles|patellar|pectoral|quad)|ruptured\s+achilles/i;
+
+  /* Phrases that mean the injury being described is HISTORY — he had it, he
+     came back from it. Every one of these is taken from a real live record
+     that the old regex misread. */
+  var PAST_NOTE = /\blast\s+(?:season|year|january|february|march|april|may|june|july|august|september|october|november|december)\b|\b(?:return|returned|returning|recover|recovered|recovering|back)\s+(?:from|to)\b|\bhis\s+return\b|\bsince\s+suffering\b|\ba\s+year\s+ago\b|\bpreviously\b|\bcareer\b/i;
+
+  /* Capitalised runs that are not people. Without this, "the Kansas City
+     Chiefs" or a sentence opening with "Meanwhile" reads as a player name and
+     a genuine report gets thrown away. */
+  var NOT_A_NAME = /^(?:The|A|An|His|He|She|They|It|That|This|With|After|Before|And|But|Or|So|Meanwhile|However|Although|Though|While|When|Since|Until|If|In|On|At|For|As|By|From|To|Of|Per|According|Head|Coach|General|Manager|Week|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|January|February|March|April|May|June|July|August|September|October|November|December|NFL|ESPN|IR|PUP|NFI|ACL|MCL|PCL|MRI|TD|Jr|Sr|II|III|IV)$/;
+
+  function lastNameOf(name) {
+    var parts = String(name || '').trim().split(/\s+/);
+    var i = parts.length - 1;
+    /* skip a generational suffix so "Michael Pittman Jr." keys on Pittman */
+    while (i > 0 && /^(jr|sr|ii|iii|iv|v)\.?$/i.test(parts[i])) i--;
+    return (parts[i] || '').replace(/[^A-Za-z'’-]/g, '');
+  }
+
+  /* Who is the nearest person named before `at` in `text`? Returns '' when
+     nobody is. This is the whole "whose injury is this" question: in
+     "...saw his floor raise when Jayden Higgins went down with a season-ending
+     torn ACL", the nearest name before the phrase is Higgins, not Schultz. */
+  function subjectBefore(text, at) {
+    var re = /([A-Z][A-Za-z'’]*\.?(?:\s*[A-Z][A-Za-z'’-]*\.?)*)/g;
+    var m, best = '';
+    while ((m = re.exec(text)) !== null) {
+      if (m.index >= at) break;
+      var run = m[1].trim();
+      /* trim trailing non-name words off a run like "Jayden Higgins Wednesday" */
+      var toks = run.split(/\s+/), keep = [];
+      for (var t = 0; t < toks.length; t++) {
+        if (NOT_A_NAME.test(toks[t].replace(/\.$/, ''))) { if (keep.length) break; continue; }
+        keep.push(toks[t]);
+      }
+      if (!keep.length) continue;
+      best = keep[keep.length - 1].replace(/[^A-Za-z'’-]/g, '');
+      if (re.lastIndex === m.index) re.lastIndex++;
+    }
+    return best;
+  }
+
+  /* Does this note say THIS player is finished — about him, and about NOW?
+     Returns the matched sentence when it does, '' otherwise. */
+  function noteSaysDone(note, playerName) {
+    var text = String(note || '');
+    if (!text) return '';
+    var surname = lastNameOf(playerName).toLowerCase();
+    /* one sentence at a time: a blurb routinely covers three players */
+    var sentences = text.split(/(?<=[.!?])\s+/);
+    var i, offset = 0;
+    for (i = 0; i < sentences.length; i++) {
+      var sent = sentences[i];
+      offset += 0;
+      var m = SE_NOTE.exec(sent);
+      SE_NOTE.lastIndex = 0;
+      if (!m) continue;
+      /* a past injury he has already come back from is not news */
+      if (PAST_NOTE.test(sent)) continue;
+      /* a year before this season, anywhere in the sentence, means history */
+      var yr = sent.match(/\b(20\d\d)\b/);
+      if (yr && Number(yr[1]) < seasonYear()) continue;
+      var subj = subjectBefore(sent, m.index).toLowerCase();
+      /* nobody named in this sentence — look back through the blurb */
+      if (!subj) subj = subjectBefore(text.slice(0, text.indexOf(sent) + m.index),
+                                      text.indexOf(sent) + m.index).toLowerCase();
+      /* no name anywhere: the blurb is about its own subject, i.e. him */
+      if (!subj) return sent;
+      if (surname && subj === surname) return sent;
+      /* somebody else's injury, in his write-up — the Schultz/Higgins case */
+    }
+    return '';
+  }
+
+  function seasonYear() {
+    var S = root.Store && root.Store.get ? root.Store.get() : null;
+    var y = S && S.league && S.league.season ? Number(S.league.season) : 0;
+    return y || new Date().getFullYear();
+  }
+
+  /* When does the regular season actually finish? Anything ESPN promises
+     after that is a return that never helps this team. */
+  function seasonEndsAt() {
+    /* The NFL regular season runs into the first week of January of the
+       following calendar year. A return date at or past that is "not this
+       season" — which is exactly how the 2027-02-15 sentinel reads. */
+    return Date.UTC(seasonYear() + 1, 0, 10);
+  }
+
   function seasonOutlook(player) {
     var rec = newsCache.byName ? root.Names.hit(newsCache.byName, player.name) : null;
-    if (!rec) return { seasonEnding: false, why: '' };
+    var none = { seasonEnding: false, longTermOut: false, mustReplace: false,
+                 why: '', label: '', returnDate: '', returnAround: '' };
+    if (!rec) return none;
     var st = String(rec.status || '').toUpperCase();
     var note = String(rec.note || '');
-    if (SE_STATUS.test(st)) {
-      return { seasonEnding: true,
-               why: rec.status + (note ? ' — ' + note : '') };
+    var fantasy = String(rec.fantasyStatus || '').toUpperCase();
+
+    /* (1) AVAILABILITY IS THE FEED'S TO STATE, NOT THE PROSE'S. This one line
+       is what a healthy Dalton Schultz needed. */
+    if (PLAYING_STATUS.test(st.trim())) {
+      return { seasonEnding: false, longTermOut: false, mustReplace: false,
+               why: '', label: '', returnDate: '', returnAround: '', note: note };
     }
-    if (SE_NOTE.test(note)) {
-      return { seasonEnding: true, why: note };
+
+    var parked = PARK_STATUS.test(st) || PARK_STATUS.test(fantasy);
+    if (!parked) {
+      /* A plain weekly OUT is NOT season-ending: he is already excluded from
+         this week's lineup by health(), and writing a roster off for the year
+         on a one-week designation is the worse error of the two. */
+      return { seasonEnding: false, longTermOut: false, mustReplace: false,
+               why: '', label: '', returnDate: '', returnAround: '', note: note };
     }
-    return { seasonEnding: false, why: note };
+
+    /* (2)+(3) WHEN IS HE BACK? The feed's own answer, in its own field. */
+    var ret = rec.returnDate ? Date.parse(rec.returnDate) : NaN;
+    var designatedBack = RETURN_DESIGNATED.test(fantasy);
+    var backThisSeason = isFinite(ret) && ret < seasonEndsAt();
+    var corroborated = noteSaysDone(note, player.name);
+
+    var label = /PUP|PHYSICALLY UNABLE/.test(st + ' ' + fantasy) ? 'on the PUP list'
+              : /SUSPEND/.test(st) ? 'suspended'
+              : 'on injured reserve';
+
+    if (backThisSeason || designatedBack) {
+      /* Parked, but coming back — and the app now says so in those words
+         instead of calling him finished. */
+      return { seasonEnding: false, longTermOut: true, mustReplace: false,
+               label: label, returnDate: rec.returnDate || '',
+               returnAround: prettyDate(rec.returnDate),
+               why: label + (rec.returnDate ? ', not eligible to return until ' +
+                    prettyDate(rec.returnDate) : '') + (note ? ' — ' + note : ''),
+               note: note };
+    }
+
+    /* Parked with no return inside this season: finished. Corroboration from
+       his own note is quoted when there is any, because "ESPN has him on IR
+       with no return date this season" is a weaker sentence than "he tore an
+       Achilles", and the reason is what Tj actually reads. */
+    return { seasonEnding: true, longTermOut: false, mustReplace: true,
+             label: label, returnDate: rec.returnDate || '',
+             returnAround: prettyDate(rec.returnDate),
+             why: corroborated
+               ? corroborated
+               : (rec.status || label) + ' with no return expected this season' +
+                 (note ? ' — ' + note : ''),
+             note: note };
+  }
+
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function prettyDate(iso) {
+    if (!iso) return '';
+    var t = Date.parse(iso);
+    if (!isFinite(t)) return '';
+    var d = new Date(t);
+    return MON[d.getUTCMonth()] + ' ' + d.getUTCDate();
   }
 
   /* ---- the projection -------------------------------------------------- */
