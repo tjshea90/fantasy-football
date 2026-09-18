@@ -1412,6 +1412,7 @@
               adviceSearchBudget: adviceSearchBudget, waiverSearchBudget: waiverSearchBudget,
               searchToolType: searchToolType,
               _waiverPrefix: waiverPrefix, _waiverBlock: waiverBlock,
+              qbSkepticismText: qbSkepticismText,
               _teamAnalysisPrefix: teamAnalysisPrefix, _teamAnalysisBlock: teamAnalysisBlock,
               FALLBACK_MODELS: FALLBACK,
               _staticPrefix: staticPrefix, _rosterBlock: rosterBlock, _parseSse: parseSse, configured: configured, model: model,
