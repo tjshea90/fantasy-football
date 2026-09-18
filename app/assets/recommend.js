@@ -395,9 +395,15 @@
 
   /* ---- best lineup ----------------------------------------------------- */
   /* Startable players first, always. A blocked player is only ever used when a
-     slot has literally nothing else, and the pick carries a flag saying so. */
-  function bestLineup(week, teamId, opponents) {
-    var all = projectAll(week, teamId, opponents);
+     slot has literally nothing else, and the pick carries a flag saying so.
+     `allProj` is optional — a caller that already ran projectAll for this
+     exact week/team/opponents (value.js's upgrades() and waiverContext() both
+     do, right before calling myStarters -> here) can pass it through instead
+     of paying for the same roster-wide projectOne pass a second time in one
+     call. Same shape of fix needs() already applies to its own `starters`
+     param, for the identical reason. */
+  function bestLineup(week, teamId, opponents, allProj) {
+    var all = allProj || projectAll(week, teamId, opponents);
     var byId = {}; all.forEach(function (x) { byId[x.p.id] = x; });
     var keys = root.Store.slotKeys(), used = {}, picks = [];
     /* tight slots before FLEX, or the flex steals a WR1 */
