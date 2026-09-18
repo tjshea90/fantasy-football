@@ -425,7 +425,9 @@ console.log('\n-- Value.upgrades(): same position by default, cross-position onl
      legal read that way, not merely pair by pair. */
   var meId = scenario(W, {
     roster: fullRoster({ 'My TE1': 3, 'My TE2': 3, 'My WR4': 14, 'My RB3': 14 }),
-    starters: STARTERS,
+    /* neither tight end is a locked starter here, so BOTH are droppable and
+       the two-swap interaction can actually arise */
+    starters: STARTERS.filter(function (n) { return n !== 'My TE1'; }),
     wire: [{ name: 'Wire Star WR', pos: 'WR', pg: 28 },
            { name: 'Wire Star RB', pos: 'RB', pg: 27 }]
   });
