@@ -830,7 +830,7 @@
        {"players":"none found"} would otherwise be accepted as an advice reply
        and then quietly apply nothing. */
     if (Array.isArray(obj.players)) return 'advice';
-    if (Array.isArray(obj.adds)) return 'waivers';
+    if (Array.isArray(obj.adds) || Array.isArray(obj.swaps)) return 'waivers';
     /* teamanalysis's own shape check comes last and is deliberately narrower
        than a single field name: "recommendations" alone is too generic a
        word to trust on its own, but paired with "overall" (an object, not
@@ -1003,11 +1003,11 @@
     /* waivers */
     var pool = opts.pool || {};
     var res = root.Ai.normalizeWaivers(obj, root.Ai.poolIndex(pool),
-                                        root.Ai.dropCandidateIndex(opts.dropCandidates),
-                                        opts.kdefNeed);
+                                        root.Ai.rosterIndex(opts.roster),
+                                        opts.kdefNeed, opts.mandated);
     if (!res.adds.length) {
-      throw new Error('That reply has an "adds" list, but no entry in it had a ' +
-        'name. Nothing was changed.');
+      throw new Error('That reply has a "swaps" or "adds" list, but no entry in it ' +
+        'named a player. Nothing was changed.');
     }
     var unverified = 0, i;
     for (i = 0; i < res.adds.length; i++) if (!res.adds[i].verified) unverified++;
