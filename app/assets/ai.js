@@ -835,19 +835,31 @@
   function waiverBlock(ctx) {
     var lines = [], i, k;
     lines.push('NFL week ' + ctx.week + ' of the ' + ctx.season + ' season. Today is ' +
-               ctx.today + '.');
+               ctx.today + '. ' + ctx.weeksLeft + ' week' +
+               (ctx.weeksLeft === 1 ? '' : 's') + ' left in the regular season.');
     lines.push('');
-    lines.push('MY STARTING LINEUP as the app currently projects it, in league points:');
-    for (i = 0; i < ctx.starters.length; i++) {
-      var s = ctx.starters[i];
-      lines.push('- ' + s.slot + ': ' + s.name + ' (' + s.pos + ') proj ' +
-                 (typeof s.proj === 'number' ? s.proj.toFixed(1) : '?'));
+    /* MY WHOLE ROSTER, in the same currency as the wire — the other half of
+       every pair rule 4 asks for. The old block sent only the nine starting
+       slots and a bare list of bench NAMES, which made "is this add better
+       than that man for the rest of the season" unanswerable for most of the
+       roster: the number simply was not there. */
+    lines.push('MY ROSTER — every player, in REST-OF-SEASON league points. Anybody here');
+    lines.push('may be dropped. "ros" is expected points from now to the end of the');
+    lines.push('regular season; "gms" is games left after his bye.');
+    var roster = (ctx.roster || []).slice();
+    roster.sort(function (a, b) {
+      if (a.pos !== b.pos) return a.pos < b.pos ? -1 : 1;
+      return b.ros - a.ros;
+    });
+    for (i = 0; i < roster.length; i++) {
+      var r = roster[i];
+      lines.push('- ' + r.name + ' (' + r.pos + ', ' + (r.nfl || '?') + ') ros ' +
+                 r.ros.toFixed(0) + ' | ' + r.perGame.toFixed(1) + '/gm | ' + r.games + ' gms | ' +
+                 (r.outForSeason ? 'OUT FOR SEASON' : (r.bench ? 'bench' : 'starter')));
     }
     lines.push('');
-    lines.push('MY BENCH: ' + (ctx.bench.length ? ctx.bench.join(', ') : '(empty)'));
-    lines.push('');
     if (ctx.injuries && ctx.injuries.length) {
-      lines.push('MY ROSTER — INJURIES (see TASK 3 above — research the non-bye ones):');
+      lines.push('MY ROSTER — INJURIES (research the non-bye ones, see above):');
       for (i = 0; i < ctx.injuries.length; i++) {
         var inj = ctx.injuries[i];
         lines.push('- ' + inj.name + ' (' + inj.pos + ', ' + inj.nfl + ') — ' + inj.status +
@@ -855,14 +867,33 @@
       }
       lines.push('');
     }
-    lines.push('KDEF NEED — whether a K or DEF add is worth ranking at all: K ' +
+    /* rule 6's override, stated rather than left to be inferred */
+    var mandAny = [];
+    if (ctx.mandated) {
+      for (k in ctx.mandated) {
+        if (!Object.prototype.hasOwnProperty.call(ctx.mandated, k)) continue;
+        for (i = 0; i < ctx.mandated[k].length; i++) mandAny.push(ctx.mandated[k][i]);
+      }
+    }
+    if (mandAny.length) {
+      lines.push('MUST BE REPLACED — out for the season, worth zero from here on. Pair each');
+      lines.push('with the best available replacement at his position; rule 6\'s low-priority');
+      lines.push('rule for QB/K/DEF does NOT apply to a forced replacement, and these get');
+      lines.push('"mandated":true:');
+      for (i = 0; i < mandAny.length; i++) {
+        lines.push('- ' + mandAny[i].name + ' (' + mandAny[i].pos + ') — ' +
+                   (mandAny[i].outWhy || 'out for the season'));
+      }
+      lines.push('');
+    }
+    lines.push('KDEF AVAILABILITY — whether my own are even startable this week: K ' +
                ((ctx.kdefNeed && ctx.kdefNeed.K)
-                 ? 'NEEDED — mine is unavailable this week'
-                 : 'not needed — my kicker is available') +
+                 ? 'UNAVAILABLE — mine is on bye or ruled out'
+                 : 'available') +
                '; DEF ' +
                ((ctx.kdefNeed && ctx.kdefNeed.DEF)
-                 ? 'NEEDED — mine is unavailable this week'
-                 : 'not needed — my defense is available') + '.');
+                 ? 'UNAVAILABLE — mine is on bye or ruled out'
+                 : 'available') + '. (Rule 6 still governs: low priority otherwise.)');
     lines.push('');
     if (ctx.dropCandidates) {
       var any = false;
@@ -871,18 +902,35 @@
             ctx.dropCandidates[k].length) { any = true; break; }
       }
       if (any) {
-        lines.push('DROP CANDIDATES — my own weakest player at each position, ranked by');
-        lines.push('rest-of-season value (worst first). "dropCandidate" on an add MUST be');
-        lines.push('chosen from the matching position\'s list here, or left an empty string:');
+        lines.push('EASIEST TO DROP — my weakest at each position by rest-of-season value.');
+        lines.push('A shortlist, not a fence: anybody on MY ROSTER above may be dropped if');
+        lines.push('the swap is a clear season-long gain.');
         for (k in ctx.dropCandidates) {
           if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
           if (!ctx.dropCandidates[k].length) continue;
           lines.push('  ' + k + ': ' + ctx.dropCandidates[k].map(function (d) {
-            return d.name + ' (ROS value ' + d.ros.toFixed(1) + ')';
+            return d.name + ' (' + d.ros.toFixed(0) + ' ros' +
+                   (d.outForSeason ? ', OUT FOR SEASON' : '') + ')';
           }).join(', '));
         }
         lines.push('');
       }
+    }
+    if (ctx.swaps && ctx.swaps.length) {
+      lines.push('THE APP\'S OWN ANSWER, before any news — pure arithmetic. Confirm,');
+      lines.push('reorder or overrule these, and add any the numbers could not see:');
+      for (i = 0; i < ctx.swaps.length; i++) {
+        var sw = ctx.swaps[i];
+        lines.push('  drop ' + sw.drop.name + ' -> add ' + sw.fa.name + ' (' + sw.fa.pos +
+                   '), +' + sw.gain.toFixed(0) + ' pts rest-of-season' +
+                   (sw.mandated ? ' (FORCED)' : ''));
+      }
+      lines.push('');
+    } else {
+      lines.push('THE APP\'S OWN ANSWER, before any news: no swap clears a meaningful');
+      lines.push('rest-of-season margin. If the news does not change that, say so and');
+      lines.push('recommend nothing.');
+      lines.push('');
     }
     if (ctx.needs && ctx.needs.length) {
       lines.push('POSITIONS OF NEED, weakest first, with the starter who would be');
@@ -894,9 +942,10 @@
       }
       lines.push('');
     }
-    lines.push('AVAILABLE — nobody in this list is on any of the ten rosters. "proj" is');
-    lines.push('this week in league points; "vor" is points above the next best free agent');
-    lines.push('at the same position, which is the only number here comparable ACROSS');
+    lines.push('AVAILABLE — nobody in this list is on any of the ten rosters. "ros" is');
+    lines.push('expected points for the REST OF THE SEASON in league scoring (rank on');
+    lines.push('this); "gms" is games left after his bye; "vor" is his ros above the next');
+    lines.push('best free agent at the same position, the only number comparable ACROSS');
     lines.push('positions. Grouped by position, best first.');
     for (k in ctx.pool) {
       if (!Object.prototype.hasOwnProperty.call(ctx.pool, k)) continue;
@@ -904,14 +953,30 @@
       lines.push('  ' + k + ':');
       for (i = 0; i < ctx.pool[k].length; i++) {
         var f = ctx.pool[k][i];
-        lines.push('   - ' + f.name + ' | ' + f.nfl + ' | proj ' + f.v.toFixed(1) +
-                   ' | vor ' + (typeof f.vor === 'number' ? f.vor.toFixed(1) : '0') +
-                   (f.onBye ? ' | ON BYE' : '') +
+        lines.push('   - ' + f.name + ' | ' + f.nfl + ' | ros ' +
+                   (typeof f.ros === 'number' ? f.ros.toFixed(0) : '?') +
+                   ' | ' + f.raw.toFixed(1) + '/gm | ' + f.games + ' gms' +
+                   ' | vor ' + (typeof f.vor === 'number' ? f.vor.toFixed(0) : '0') +
+                   (f.onBye ? ' | ON BYE THIS WEEK' : '') +
+                   ' | basis: ' + f.src +
                    (f.usage ? ' | recent usage: ' + f.usage : ''));
       }
     }
     lines.push('');
-    lines.push('Rank the best adds for THIS roster, by position, using the JSON shape above.');
+    /* rule 5: every owned player, so no rostered man can be recommended.
+       Names only here — the paid call pays by the token, and the position is
+       already implied by the roster he sits on. */
+    if (ctx.taken && ctx.taken.length) {
+      lines.push('OWNED — every player already on a roster in this league, mine included.');
+      lines.push('NOBODY in this list can be added, at any price.');
+      for (i = 0; i < ctx.taken.length; i++) {
+        var t = ctx.taken[i], men = [], j2;
+        for (j2 = 0; j2 < t.players.length; j2++) men.push(t.players[j2].name);
+        lines.push('  ' + t.name + ': ' + (men.length ? men.join(', ') : '(empty)'));
+      }
+      lines.push('');
+    }
+    lines.push('Give me the one-for-one swaps, using the JSON shape above.');
     return lines.join('\n');
   }
 
