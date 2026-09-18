@@ -477,6 +477,241 @@
     return { byName: byName, count: count, weekly: weekly };
   }
 
+  /* ==== FULL-SEASON PROJECTIONS (2026-09-18) ==============================
+   * Tj: "it must rank available players based on expected full season
+   * performance, not just the next NFL week" and "projected stat lines ...
+   * from multiple reputable sources online averaged and then recalculated
+   * based on this league scoring system."
+   *
+   * WHY THIS IS A SEPARATE FETCH AND A SEPARATE CACHE.
+   * The app already asked for a season split — `ingest()` above reads one —
+   * but it never actually got one. Confirmed against the live endpoint on
+   * 2026-09-18: the route that wins almost every sync ('week filter') pins
+   * filterStatsForScoringPeriodIds to the week, and ESPN then returns ONLY
+   * statSplitTypeId 1 rows. So `rec.season` was essentially never populated,
+   * which made value.js's "ESPN season pace" branch and recommend.js's
+   * espnSeason blend source dead code in practice, and dropped every free
+   * agent onto whatever single week he had actually played. That is exactly
+   * the screenshot Tj sent: every receiver on the wire priced at his week-1
+   * actual, captioned "1 scored week in this app — thin sample".
+   *
+   * A season projection is ALSO not a per-week answer, so it must not live in
+   * the weekly cache: find() deliberately withholds that whole record when
+   * the caller asks about a different week than the one last fetched (right
+   * for a weekly line, wrong for a season total, which is the same number
+   * whichever week you ask from). Hence its own key, its own freshness, and
+   * findSeason() with no week guard.
+   *
+   * SOURCES, BOTH RE-SCORED HERE. ESPN's season split and Sleeper's season
+   * projections. Neither one's own "projected points" is ever used — they are
+   * half-PPR and a completion pays nothing there — only the projected STAT
+   * LINE, run through scoring.js, exactly as the weekly path already does.
+   *
+   * NOT PRESEASON DATA. Tj, 2026-09-14: "remove all preseason consideration
+   * from any recommendations or advice from the entire app." These are not
+   * draft-time numbers frozen in August: both feeds recompute them through
+   * the season (Sleeper's season rows carried last_modified = that same day
+   * when this was written, and ESPN's move with depth charts and injuries).
+   * They are refetched, not bundled. The one genuinely frozen source — the
+   * seed-time draft projection — stays gone.
+   */
+  var SEASON_KEY = 'fftracker_seasonproj_v1';
+  /* Twelve hours: a season projection moves with depth charts and injuries,
+     which is a daily rhythm, not a per-tap one — and this is a multi-megabyte
+     fetch on a phone. The weekly feed keeps its own 20-minute window. */
+  var SEASON_FRESH_MS = 12 * 60 * 60 * 1000;
+  var seasonCache = { at: 0, season: 0, byName: {}, count: 0, error: '', route: '', notes: [] };
+
+  function loadSeasonCache() {
+    try {
+      var s = (root.Native && root.Native.load) ? root.Native.load(SEASON_KEY)
+              : root.localStorage.getItem(SEASON_KEY);
+      if (s) { var o = JSON.parse(s); if (o && o.byName) seasonCache = o; }
+    } catch (e) { /* cache is optional */ }
+    return seasonCache;
+  }
+  function saveSeasonCache() {
+    try {
+      var s = JSON.stringify(seasonCache);
+      if (root.Native && root.Native.save) root.Native.save(SEASON_KEY, s);
+      else if (root.localStorage) root.localStorage.setItem(SEASON_KEY, s);
+    } catch (e) { /* cache is optional */ }
+  }
+  function seasonFresh(season) {
+    return !!(seasonCache && seasonCache.at && Number(seasonCache.season) === Number(season) &&
+              (seasonCache.count || 0) > 0 && (Date.now() - seasonCache.at) < SEASON_FRESH_MS);
+  }
+
+  /* The season split, asked for on its own terms: no scoringPeriodIds filter
+     and no scoringPeriodId in the URL, because pinning either is precisely
+     what suppressed these rows in the weekly request. */
+  function seasonFilter() {
+    return { players: { filterSlotIds: { value: SLOTS },
+                        filterStatsForSourceIds: { value: [1] },
+                        filterStatsForSplitTypeIds: { value: [0] },
+                        limit: 400,
+                        sortPercOwned: { sortAsc: false, sortPriority: 1 } } };
+  }
+
+  function ingestSeasonEspn(j, season) {
+    var list = j.players || j.items || (j.player ? [j] : []);
+    var byName = {}, count = 0, i, k;
+    for (i = 0; i < list.length; i++) {
+      var wrap = list[i];
+      var p = wrap.player ? wrap.player : wrap;
+      if (!p || !p.fullName) continue;
+      var pos = POS_BY_ID[p.defaultPositionId];
+      if (!pos) continue;
+      var stats = p.stats || [], sea = null;
+      for (k = 0; k < stats.length; k++) {
+        var st = stats[k];
+        if (Number(st.statSourceId) !== 1) continue;
+        if (Number(st.statSplitTypeId) !== 0) continue;
+        if (!st.stats) continue;
+        /* the season being asked about, never the one beside it */
+        if (st.externalId !== undefined && st.externalId !== null &&
+            String(st.externalId) !== String(season)) continue;
+        sea = st.stats;
+      }
+      if (!sea) continue;
+      var a = scoreProjected(sea, pos);
+      if (!(a.pts > 0)) continue;
+      byName[root.Espn.normName(p.fullName)] = {
+        pos: pos, season: a.pts, seasonLine: a.line, gp: 17, src: 'espn'
+      };
+      count++;
+    }
+    return { byName: byName, count: count, note: count + ' season projections' };
+  }
+
+  function sleeperSeasonUrl(season) {
+    return 'https://api.sleeper.app/projections/nfl/' + season +
+           '?season_type=regular&position[]=QB&position[]=RB&position[]=WR' +
+           '&position[]=TE&order_by=pts_ppr';
+  }
+  function ingestSleeperSeason(j) {
+    var list = j;
+    if (!list || !(list instanceof Array)) {
+      return { byName: {}, count: 0, note: 'no usable body' };
+    }
+    var byName = {}, count = 0, i;
+    for (i = 0; i < list.length; i++) {
+      var row = list[i] || {};
+      var p = row.player || {};
+      /* Sleeper's SEASON rows carry no full_name — only first/last (confirmed
+         live 2026-09-18), unlike some weekly shapes. Build it either way. */
+      var nm = p.full_name ||
+               ((p.first_name || '') + ' ' + (p.last_name || '')).trim();
+      var pos = String(p.position || row.position || '').toUpperCase();
+      if (pos === 'DST' || pos === 'D/ST') pos = 'DEF';
+      if (!nm || !pos) continue;
+      if (pos !== 'QB' && pos !== 'RB' && pos !== 'WR' && pos !== 'TE') continue;
+      var stats = row.stats || {};
+      var L = sleeperLine(stats);
+      if (!L) continue;
+      var gp = Number(stats.gp);
+      if (!isFinite(gp) || gp <= 0) gp = 17;
+      byName[root.Espn.normName(nm)] = {
+        pos: pos, season: root.Scoring.score(L).total, seasonLine: L,
+        gp: gp, src: 'sleeper'
+      };
+      count++;
+    }
+    return { byName: byName, count: count, note: count + ' season projections' };
+  }
+
+  /* Both sources, merged, every number already in league points. Where both
+     have a man, BOTH are kept — averaging two independent professional
+     projections is the whole point of carrying two (same reasoning as the
+     weekly sleeperWeek second opinion), and ros.js does the averaging. */
+  function refreshSeason(season, onStep, opts) {
+    if (!(opts && opts.force) && seasonFresh(season)) {
+      var hrs = Math.max(1, Math.round((Date.now() - seasonCache.at) / 3600000));
+      if (onStep) onStep('Season projections: reusing the set from ' + hrs + 'h ago', 80);
+      return Promise.resolve(seasonCache);
+    }
+    var notes = [], merged = {}, count = 0, routes = [];
+    var url = HOST + season + '/segments/0/leaguedefaults/3?view=kona_player_info';
+
+    function finish() {
+      if (count > 0) {
+        seasonCache = { at: Date.now(), season: season, byName: merged, count: count,
+                        error: '', route: routes.join(' + '), notes: notes };
+      } else {
+        seasonCache = { at: Date.now(), season: season, byName: {}, count: 0,
+                        error: notes.join(' | '), route: '', notes: notes };
+      }
+      saveSeasonCache();
+      return seasonCache;
+    }
+
+    function trySleeperSeason() {
+      if (onStep) onStep('Season projections: Sleeper…', 88);
+      return root.Espn._httpGet(sleeperSeasonUrl(season), { timeout: 60000 })
+        .then(function (j) {
+          var got = ingestSleeperSeason(j);
+          notes.push('sleeper season: ' + got.note);
+          if (!got.count) return finish();
+          var added = 0, second = 0, k;
+          for (k in got.byName) {
+            if (!Object.prototype.hasOwnProperty.call(got.byName, k)) continue;
+            var hk = k;
+            if (merged[hk] === undefined && root.Names && root.Names.hitKey) {
+              var alt = root.Names.hitKey(merged, k);
+              if (alt) hk = alt;
+            }
+            if (merged[hk]) {
+              merged[hk].sleeperSeason = got.byName[k].season;
+              merged[hk].sleeperSeasonLine = got.byName[k].seasonLine;
+              merged[hk].sleeperGp = got.byName[k].gp;
+              second++;
+            } else {
+              merged[hk] = got.byName[k];
+              added++; count++;
+            }
+          }
+          routes.push('sleeper season (' + added + ' new, ' + second + ' second opinions)');
+          return finish();
+        })
+        .catch(function (e) {
+          notes.push('sleeper season: FAILED — ' + (e && e.message ? e.message : String(e)));
+          return finish();
+        });
+    }
+
+    if (onStep) onStep('Season projections: ESPN…', 82);
+    return root.Espn._httpGetH(url, { 'X-Fantasy-Filter': JSON.stringify(seasonFilter()) },
+                               { timeout: 90000 })
+      .then(function (j) {
+        var got = ingestSeasonEspn(j, season);
+        notes.push('espn season: ' + got.note);
+        merged = got.byName; count = got.count;
+        if (count) routes.push('espn season (' + count + ')');
+        return trySleeperSeason();
+      })
+      .catch(function (e) {
+        notes.push('espn season: FAILED — ' + (e && e.message ? e.message : String(e)));
+        return trySleeperSeason();
+      });
+  }
+
+  /* No week guard, deliberately — see the block comment above. */
+  function findSeason(player) {
+    if (!seasonCache.byName) return null;
+    var k = root.Espn.normName(player.name);
+    if (seasonCache.byName[k]) return seasonCache.byName[k];
+    if (root.Names && root.Names.hit) {
+      var v = root.Names.hit(seasonCache.byName, player.name);
+      if (v) return v;
+    }
+    return null;
+  }
+  function seasonMeta() {
+    return { at: seasonCache.at || 0, season: seasonCache.season || 0,
+             count: seasonCache.count || 0, error: seasonCache.error || '',
+             route: seasonCache.route || '', notes: seasonCache.notes || [] };
+  }
+
   /* ---- lookup --------------------------------------------------------- */
   /* D/ST entries come back as "Eagles D/ST" style names; roster DEFs are
      stored by NFL code, so match on the team nickname too.
@@ -564,7 +799,13 @@
     fresh: fresh, FRESH_MS: FRESH_MS,
     _ingestSleeper: ingestSleeper, _sleeperRoutes: sleeperRoutes,
     scoreProjected: scoreProjected, selfTest: selfTest, STAT_ID: ID,
-    _ingest: ingest
+    _ingest: ingest,
+    /* full-season projections — their own fetch and their own cache */
+    refreshSeason: refreshSeason, findSeason: findSeason, seasonMeta: seasonMeta,
+    loadSeasonCache: loadSeasonCache, seasonFresh: seasonFresh,
+    SEASON_FRESH_MS: SEASON_FRESH_MS,
+    _ingestSeasonEspn: ingestSeasonEspn, _ingestSleeperSeason: ingestSleeperSeason,
+    _seasonFilter: seasonFilter, _sleeperSeasonUrl: sleeperSeasonUrl
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Projections;
 })(typeof window !== 'undefined' ? window : this);
