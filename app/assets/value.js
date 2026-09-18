@@ -772,8 +772,34 @@
     return out;
   }
 
+  /* ---- EVERY player already owned in this league, grouped by team --------
+   * Tj, 2026-09-18, rule 5: the Claude prompt "should be able to see all taken
+   * players in the league so it doesn't recommend them". The app is the only
+   * thing on earth that knows this — no website has heard of this ten-team
+   * league — and handing Claude the whole ownership map is what turns "don't
+   * recommend a rostered player" from a hope into something it can check. */
+  function takenByTeam() {
+    var S = root.Store.get(), out = [], i, j;
+    for (i = 0; i < S.teams.length; i++) {
+      var t = S.teams[i], men = [];
+      for (j = 0; j < t.players.length; j++) {
+        men.push({ name: t.players[j].name, pos: t.players[j].pos,
+                   nfl: t.players[j].nfl });
+      }
+      men.sort(function (a, b) {
+        if (a.pos !== b.pos) return a.pos < b.pos ? -1 : 1;
+        return a.name < b.name ? -1 : 1;
+      });
+      out.push({ id: t.id, name: t.name, players: men });
+    }
+    return out;
+  }
+
   function waiverContext(week, teamId, opponents, season, today) {
-    var g = byPos(week, 6);
+    /* Ten deep per position, not six. The pool is the one thing Claude cannot
+       reconstruct — availability in THIS league — and a shortlist that stops
+       at six hides exactly the kind of player rule 4 asks it to find. */
+    var g = byPos(week, 10);
     var allProj = root.Recommend.projectAll(week, teamId, opponents);
     /* same reuse as upgrades() above — allProj already covers the whole
        roster, so myStarters() has no reason to run projectAll again. */
@@ -781,6 +807,7 @@
     var t = root.Store.team(teamId);
     var startIds = {}, i;
     for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
+    var roster = rosterValues(allProj, startIds, week);
     var bench = [];
     if (t) {
       for (i = 0; i < t.players.length; i++) {
@@ -789,16 +816,27 @@
         }
       }
     }
-    var repl = replacement(week), left = weeksLeft(week);
+    var left = weeksLeft(week);
     return {
       week: week, season: season || (new Date()).getFullYear(),
       today: today || (new Date()).toISOString().slice(0, 10),
       starters: starters, bench: bench,
+      /* MY whole roster in rest-of-season league points — the other half of
+         every one-to-one swap Claude is being asked to propose. */
+      roster: roster,
       needs: needs(week, teamId, opponents, starters),
       pool: g,
       injuries: myInjuries(week, allProj),
       kdefNeed: kdefNeedFrom(allProj),
-      dropCandidates: dropCandidatesFrom(allProj, startIds, repl, left, 3)
+      mandated: mandatedFrom(allProj, startIds, week),
+      dropCandidates: dropCandidatesFrom(allProj, startIds, week, 3),
+      /* the app's own deterministic answer, so Claude starts from arithmetic
+         it does not have to redo and spends its budget on the news instead */
+      swaps: upgrades(week, teamId, opponents, 60).slice(0, 8),
+      taken: takenByTeam(),
+      replacementRos: replacementRos(week),
+      weeksLeft: left,
+      scoring: root.Scoring && root.Scoring.RULES ? root.Scoring.RULES : null
     };
   }
 
@@ -811,6 +849,7 @@
                  valueOf: valueOf, trade: trade, weeksLeft: weeksLeft,
                  rosteredSet: rosteredSet, myInjuries: myInjuries,
                  rosterValues: rosterValues, mandatedFrom: mandatedFrom,
+                 takenByTeam: takenByTeam, dropCandidatesFrom: dropCandidatesFrom,
                  myStarters: myStarters,
                  /* the exact bar upgrades() itself holds a QB free agent to —
                     exported so ai.js's normalizeWaivers can hold a
