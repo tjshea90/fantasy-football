@@ -1,6 +1,109 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-18c) — WAIVER WIRE RANKING OVERHAUL
+## Current job (2026-09-18d) — THE WAIVER WIRE IS BROKEN: FALSE SEASON-ENDING FLAGS, A BOGUS COUNT, AND NO POSITION SENSE
+
+Tj, 2026-09-18T20:01:29Z (with a screenshot of the Wire tab in week 2: a red
+headline reading "36 players on your roster are out for the season — those
+spots are doing nothing until you replace them", followed by four rows —
+Wan'Dale Robinson WR, Juwan Johnson TE, Josh Jacobs RB, Brenton Strange TE —
+every one of them tagged REPLACE and every one of them saying "replaces Dalton
+Schultz, who is out for the season", with four identical "Add + drop Dalton
+Schultz" buttons):
+
+> "Look at the attached screenshot of the waiver wire engine. It is broken.
+> Notice it says 36 players on my roster are out for the season. My roster is
+> only 17 players. Also, generally it should recommend a same type player
+> position for the recommended drop and add, because if I drop a te, I should
+> have a backup te to replace him, but this rule is not absolute; for example
+> if a star player with high output is available, it would make sense to drop
+> a low output player even if he is in a different position. Finally, it seems
+> as though the engine hallucinated. Dalton Schultz is not out for the season,
+> but the app claimed he is. This is a major error. I don't know what
+> happened, maybe it pulled old, outdated news.
+>
+> Do a thorough overview of the waiver wire section while still keeping in
+> mind the prior request when you remade it for the newest app version. The
+> waiver wire should be a smart section for recommending good drops and adds.
+> Right now it is broken"
+
+"The prior request" is the 2026-09-18c job directly below — its six rules
+still stand in full and nothing here may quietly undo them.
+
+### What is actually wrong — proved, not guessed (2026-09-18, live feed)
+
+Fetched ESPN's real `/injuries` feed (800 records, the same endpoint
+`Recommend.loadNews` reads) and ran this app's own regexes over it:
+
+1. **THE HALLUCINATION IS A REGEX READING SOMEBODY ELSE'S INJURY.** Dalton
+   Schultz's live record has `status: "ACTIVE"`. His blurb reads: *"...saw his
+   floor raise when **Jayden Higgins** went down with a **season-ending torn
+   ACL** over the summer."* `Recommend.seasonOutlook`'s SE_NOTE regex matches
+   `season-ending` **anywhere in the free text** and does not look at `status`
+   at all — so Schultz is written off for the year because of a sentence about
+   a different man. 13 of the 14 players the note-regex flags are status
+   ACTIVE, i.e. certainly false. Among them: **Patrick Mahomes** ("last
+   December's season-ending knee injury") and **Malik Nabers** ("a torn ACL
+   ... in Week 4 of last season") — both flagged for injuries they have
+   already returned from, because the note has no sense of WHOSE injury it is
+   or WHEN it happened. Tj's guess ("maybe it pulled old, outdated news") is
+   half right: the feed is current, but the blurb inside it talks about last
+   season and about other players.
+2. **"36 PLAYERS" COUNTS SUGGESTION ROWS, NOT PLAYERS.** `ui.js`'s
+   `forced = ups.filter(u => u.mandated)` counts entries in `Value.upgrades()`,
+   and every entry is a *free agent paired with a drop*. One falsely-dead
+   roster player is worth ros 0, which makes him the weakest drop candidate at
+   his own position AND the weakest flex-eligible candidate overall, so he is
+   paired with every single free agent that clears the gates. 36 rows, one
+   player. The count must be over DISTINCT ROSTER PLAYERS.
+3. **THE SAME MAN IS OFFERED AS THE DROP OVER AND OVER.** You can only drop
+   Dalton Schultz once. `upgrades()` has no assignment step, so one roster hole
+   swallows the whole board and every genuine upgrade elsewhere is pushed off
+   the bottom of the list. Rule 4 of the prior job asked for pairs "on a one to
+   one basis" — the Claude prompt says it, the deterministic board never did it.
+4. **NO POSITION DISCIPLINE (Tj's new rule).** With `drop.outForSeason` the
+   gates are set to 0/0 and the flex branch picks the globally weakest
+   flex-eligible man, so a TE hole gets "filled" by a WR and an RB while the
+   roster is left with no tight end. Same position should be the default; a
+   genuinely bigger cross-position edge should still be allowed to win.
+
+### Steps
+
+- [ ] **A. Fix the false season-ending flag at its source** (`recommend.js`
+      `seasonOutlook`). The status field must be respected — an ACTIVE player is
+      not out for the year, full stop. A note may only promote when it is about
+      THIS player (his own surname near the phrase, no other player named in
+      between) and is not describing a PAST season. Distinguish IR/PUP (a
+      designation, long-term but returnable) from a genuinely season-ending
+      one, and never state more certainty than the feed supports.
+- [ ] **B. Count distinct roster players, not rows** (`ui.js` Wire tab). The
+      headline must say what is true of the roster: one line naming the actual
+      men, and never a number larger than the roster.
+- [ ] **C. One drop, one add — a real assignment** (`value.js` `upgrades()`).
+      Each roster player may be the drop in at most one suggestion; each free
+      agent may appear once. Best pairing first, then the next best over what
+      is left.
+- [ ] **D. Same-position first, not absolutely** (`value.js` `upgrades()`).
+      Prefer a replacement at the dropped player's own position; allow a
+      cross-position swap only when its edge is clearly bigger, and say so in
+      the row's reason. Must not re-open the QB/K/DEF or MIN_GAIN/MIN_SEASON
+      gates from the prior job.
+- [ ] **E. Positional depth must survive a drop.** Never recommend dropping a
+      man if it leaves the roster unable to fill his starting slot (the TE case
+      Tj names). This is the roster-integrity half of rule D.
+- [ ] **F. The same bad flag anywhere else it reaches** — `ai.js` (the Claude
+      prompt's MUST BE REPLACED block), `handoff.js` (the export's same block),
+      `value.js` `rosterValues` (zeroing a healthy player's value). One fix at
+      the source, verified not to leave a second copy behind.
+- [ ] **G. Thorough overview of the whole wire section**, as asked: re-read
+      ros.js, value.js, recommend.js, ai.js, handoff.js and the Wire tab
+      against the prior job's six rules, and fix what else is wrong.
+- [ ] **H. Tests.** A named test for each of the above, each one confirmed to
+      FAIL against the pre-fix code before it is accepted. Real feed text
+      (Schultz/Higgins, Mahomes, Nabers) pinned as fixtures so this exact
+      class of error cannot come back. Every suite green.
+- [ ] **I. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
+
+## Prior job, complete (2026-09-18c) — WAIVER WIRE RANKING OVERHAUL (shipped v7.7)
 
 Tj, 2026-09-18 (with a screenshot of the Wire tab showing every WR annotated
 "16.4 proj (1 scored week in this app — thin sample) / wk1 9 tgt -> 16.4"):
