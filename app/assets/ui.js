@@ -4087,13 +4087,13 @@
       /* only spend a Downloads write on a settled week — a live poll every 45s
          would otherwise fill the folder with near-identical copies */
       if (!quiet || meta.allFinal) Store.autoBackup(true);
-      autoFillWeek(syncWeek);
+      autoFillWeek(syncedWeek);
       /* projections and measured spread both just changed */
       if (window.Sim) Sim.invalidate();
       busy = false; if (!quiet) jobEnd();
       render();
       if (!quiet) {
-        toast('Week ' + syncWeek + ': ' + matched + ' players scored' +
+        toast('Week ' + syncedWeek + ': ' + matched + ' players scored' +
               (meta.allFinal ? ' (final)' : ' (live)'));
       }
       return meta;
