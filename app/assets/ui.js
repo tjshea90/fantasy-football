@@ -3879,15 +3879,18 @@
      * under Store.setBook(week,...)/S.weekMeta[week] for whatever week the
      * display had already moved on to — silently corrupting the WRONG week's
      * scored stats. Every reference below to "the week this sync is for"
-     * uses `syncWeek`; `render()`/`renderHeader()` still read the live
-     * `view`/`week` as always, because what the SCREEN shows should track
-     * the current week regardless of which week just finished syncing. */
-    var syncWeek = week;
-    if (!quiet) jobStart('sync', 'Week ' + syncWeek + ': loading schedule…');
+     * uses `syncedWeek` (named to avoid colliding with the unrelated
+     * top-level syncWeek() function just above, which only fires this whole
+     * thing from the Sync-week button); `render()`/`renderHeader()` still
+     * read the live `view`/`week` as always, because what the SCREEN shows
+     * should track the current week regardless of which week just finished
+     * syncing. */
+    var syncedWeek = week;
+    if (!quiet) jobStart('sync', 'Week ' + syncedWeek + ': loading schedule…');
     function step(t, p) { if (!quiet) jobStep(t, p); }
     var season = S.settings.season, allLines = [], oppMap = {}, twoPtSeen = 0, stSource = 'groups';
     var meta = { games: 0, allFinal: true, estFG: false, inProgress: 0 };
-    return Espn.weekGames(season, syncWeek, syncWeek > 18 ? 3 : 2).then(function (games) {
+    return Espn.weekGames(season, syncedWeek, syncedWeek > 18 ? 3 : 2).then(function (games) {
       meta.games = games.length;
       games.forEach(function (g) {
         /* who plays whom, recorded every sync: the advice engine's matchup term
