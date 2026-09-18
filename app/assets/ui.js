@@ -2462,15 +2462,29 @@
        up front, not to imply the list below is re-sorted by it (it stays
        ranked by rest-of-season points gained, which is the honest measure
        of how big a SPECIFIC swap is). */
+    /* QB LEFT OUT ALONGSIDE K AND DEF (2026-09-18d sweep). Tj's screenshot
+       carried this line reading "Your thinnest starting spots right now,
+       weakest first: QB, WR — a pickup there is more likely to actually move
+       your team", which is a direct contradiction of the rule sitting
+       underneath the same screen: rule 6 says quarterback is LOW priority
+       unless the edge is season-defining, and he has complained twice that
+       the app "always recommends qb switch". The gap arithmetic is not wrong
+       — replacement level at QB really is high in a league that pays a full
+       point per completion, which is exactly WHY his own starter looks close
+       to it — but "thin" here means "go fix this", and telling him to go fix
+       quarterback is the one thing the board below is built not to do. The
+       three de-prioritised positions are now treated alike in both places. */
     var thin = Value.needs(week, S.league.me, opp)
-      .filter(function (n) { return n.pos !== 'K' && n.pos !== 'DEF'; });
+      .filter(function (n) { return n.pos !== 'K' && n.pos !== 'DEF' && n.pos !== 'QB'; });
     if (thin.length) {
       var seenPos = {}, thinPos = [];
       thin.forEach(function (n) { if (!seenPos[n.pos]) { seenPos[n.pos] = 1; thinPos.push(n.pos); } });
       c.appendChild(el('p', 'hint', 'Your thinnest starting spot' +
         (thinPos.length === 1 ? '' : 's') + ' right now, weakest first: ' + thinPos.join(', ') +
         ' — a pickup there is more likely to actually move your team than one at a ' +
-        'position you are already strong at.'));
+        'position you are already strong at. Quarterback, kicker and defense are ' +
+        'deliberately left out: they only earn a move on a season-defining edge or an ' +
+        'injury that forces one.'));
     }
     var ups = Value.upgrades(week, S.league.me, opp, 80);
     /* OUTSIDE the `if (ups.length)` below, deliberately (found re-reading this
