@@ -377,7 +377,11 @@
   function upgrades(week, teamId, opponents, poolSize) {
     var fa = freeAgents(week, poolSize || 60);
     var allProj = root.Recommend.projectAll(week, teamId, opponents);
-    var starters = myStarters(week, teamId, opponents);
+    /* pass allProj through so myStarters()'s own bestLineup() call reuses it
+       instead of running the whole roster-wide projectAll pass a second time
+       (found in the 2026-09-18 review — same class of fix needs() already
+       gets via its own `starters` param). */
+    var starters = myStarters(week, teamId, opponents, allProj);
     var startIds = {}, i;
     for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
     var repl = replacement(week), left = weeksLeft(week);
