@@ -453,7 +453,33 @@
   var KDEF_STRONG_SEASON = 25;
 
   function upgrades(week, teamId, opponents, poolSize) {
-    var fa = freeAgents(week, poolSize || 60);
+    /* PER POSITION, NOT A GLOBAL TOP-N (2026-09-18, found reviewing this
+     * same day's own change).
+     *
+     * This used to take freeAgents(week, 60) — the best 60 free agents by the
+     * board's single global sort. That was already skewed when the sort was a
+     * per-game rate, because a completion pays a full point here and a
+     * startable quarterback's rate runs three or four times a good receiver's.
+     * Ranking on a SEASON TOTAL multiplies that same gap by the games
+     * remaining and turns a skew into a wipeout: measured against a realistic
+     * spread of league-scored projections, all sixty slots came back QB. The
+     * function that is supposed to find Tj a running back was searching a
+     * pool with no running backs in it — and the symptom would have been the
+     * one he has complained about twice, "it always recommends qb switch",
+     * arriving by a brand new route.
+     *
+     * byPos() already ranks each position separately, so taking a fixed depth
+     * from each makes every position competitive on its own merits. The gates
+     * below — the per-game bar, the season bar, QB's much larger one, K/DEF's
+     * larger one still — are what decide who actually survives, which is
+     * where that judgement belongs. `poolSize` keeps its old meaning of "look
+     * this deep", spread across the positions rather than spent on one. */
+    var perPos = Math.max(5, Math.round((poolSize || 60) / POS.length));
+    var grouped = byPos(week, perPos), fa = [], gk;
+    for (gk in grouped) {
+      if (Object.prototype.hasOwnProperty.call(grouped, gk)) fa = fa.concat(grouped[gk]);
+    }
+    fa.sort(function (a, b) { return b.ros - a.ros; });
     var allProj = root.Recommend.projectAll(week, teamId, opponents);
     /* pass allProj through so myStarters()'s own bestLineup() call reuses it
        instead of running the whole roster-wide projectAll pass a second time
