@@ -207,7 +207,7 @@
       var row = { name: p.n, pos: p.p, nfl: p.t, bye: p.b, onBye: onBye,
                   v: onBye ? 0 : pg.v, raw: pg.v, src: pg.src,
                   healthLabel: h.label, healthNote: h.note, confident: confident,
-                  hasSignal: hasSignal };
+                  hasSignal: hasSignal, n: pg.n };
       (function (r, nm) {
         var memo = null;
         Object.defineProperty(r, 'usage', { enumerable: true, get: function () {
