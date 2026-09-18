@@ -624,7 +624,9 @@
   function waiverContext(week, teamId, opponents, season, today) {
     var g = byPos(week, 6);
     var allProj = root.Recommend.projectAll(week, teamId, opponents);
-    var starters = myStarters(week, teamId, opponents);
+    /* same reuse as upgrades() above — allProj already covers the whole
+       roster, so myStarters() has no reason to run projectAll again. */
+    var starters = myStarters(week, teamId, opponents, allProj);
     var t = root.Store.team(teamId);
     var startIds = {}, i;
     for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
