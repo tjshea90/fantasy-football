@@ -773,3 +773,10 @@ When finished, check for bugs and ui improvements. Make sure the improvements di
 <summary>Background command "Pin the per-position pool" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-18T20:01:29Z
+```
+Look at the attached screenshot of the waiver wire engine. It is broken. Notice it says 36 players on my roster are out for the season. My roster is only 17 players. Also, generally it should recommend a same type player position for the recommended drop and add, because if I drop a te, I should have a backup te to replace him, but this rule is not absolute; for example if a star player with high output is available, it would make sense to drop a low output player even if he is in a different position. Finally, it seems as though the engine hallucinated. Dalton Schultz is not out for the season, but the app claimed he is. This is a major error. I don't know what happened, maybe it pulled old, outdated news. 
+
+Do a thorough overview of the waiver wire section while still keeping in mind the prior request when you remade it for the newest app version. The waiver wire should be a smart section for recommending good drops and adds. Right now it is broken
+```
