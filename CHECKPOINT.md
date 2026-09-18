@@ -1,12 +1,12 @@
-# CHECKPOINT 69 — read me first, then TASKS.md
+# CHECKPOINT 78 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T07:28:55Z · **version:** 7.3 · **tests:** all 18 suites green
+**Written:** 2026-09-18T07:39:28Z · **version:** 7.4 · **tests:** all 18 suites green
 
 ## Just done
-1f/tests done: web research confirmed the QB-skepticism direction (footballguys/4for4 analysis explicitly names Stafford as the archetype QB that gets 'thrust to the top of their tiers' in a 1-point-per-completion format — exactly Tj's read). Added 6 new regression tests to test_waiver.js locking in the QB season-edge gate (big edge + no real games = no; real games + small edge = no; real games + big edge = yes) and the K/DEF need-gate (not needed = no; genuinely needed = yes). All 18 suites + ES2018 gate green.
+Shipped v7.4: QB waiver-swap threshold fix (QB_MIN_GAIN=6, QB_MIN_MEASURED=3, shared with the Claude-suggestion path), K/DEF gated on kdefNeedFrom() in the deterministic board, shared QB-skepticism prompt text in both the live-API and offline-handoff Claude paths, 'thinnest starting spots' surfaced on the Wire tab, waiverContext() redundancy fix, 8 new regression tests, web-research validation. Tab-highlight glitch investigated end to end and documented honestly (no fix landed — no reproducible defect found, every previously-fixed cause confirmed still fixed/tested). GitHub Release v7.4 published and verified (FFTracker-v7.4.apk, 288987 bytes). TASKS.md/STATE.md/LADDER.md all archived and reset.
 
 ## Do this next
-1g: write up the tab-highlight investigation findings (no reproducible defect found in the click/gesture path itself; already-fixed protections confirmed still fixed and tested; Store.save()'s old full-1.9MB-blocking-write bug was already fixed by a prior session, not a live lead) into STATE.md and TASKS.md, then start 1h (general perf/code pass) and 1i (stability)
+Nothing in flight. Send Tj the v7.4 release link.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  6a50a4e ship v7.4: waiver-wire QB season-edge fix (Stafford/Bo Nix no longer swapped for a margi
+  87ff104 ckpt 69: 1f/tests done: web research confirmed the QB-skepticism direction (footballguys
   f8e561f ckpt 67: 1b/1c/1e done: QB waiver swaps now need a season-defining edge (6+ pts/gm, 3+ r
   db1b963 ckpt 53: Wrote the 2026-09-18 request into TASKS.md verbatim (waiver-wire QB/RB-WR smart
   23dc5d1 ckpt 123: v7.3 shipped and verified: GitHub Release published (non-empty assets array, F
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   0884569 ckpt 114: Wrote Tj's bug report ('gave nonsense answers', the unfilled-template screensh
   86a0848 ckpt 112: Fixed the bug Tj reported from the v7.2 screenshot: the team-analysis screen s
   367138e ckpt 107: Closed out the 2026-09-17b job: archived the team-analysis feature to LADDER.m
-  74ac8fe ship v7.2: Added the team analysis feature: ask Claude for its overall take on your team
-  e5d1ce7 ckpt 100: Noted in STATE.md why the first ship.sh call WARNed and skipped publishing (no
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
