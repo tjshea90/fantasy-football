@@ -304,7 +304,12 @@ console.log('\n-- Value.freeAgents(): the board is ranked by REST-OF-SEASON poin
   var S = W.Store.get();
   var wk = 5;
   var full = 'Zzz Full Slate WR', bye = 'Zzz Bye Ahead WR';
-  W.PlayerDB.get().players.push({ n: full, p: 'WR', t: 'KC', b: 0, e: '', st: 'active' });
+  /* `b: 0` would NOT mean "no bye" — Ros.byeOf falls back to the league's own
+     bye table by NFL team when a player's row carries none, exactly as
+     Store.isOnBye does, so both of these would have picked up KC's and SF's
+     real byes and the test would have compared two arbitrary numbers. Give
+     one a bye that has already passed and the other one still ahead. */
+  W.PlayerDB.get().players.push({ n: full, p: 'WR', t: 'KC', b: 1, e: '', st: 'active' });
   W.PlayerDB.get().players.push({ n: bye, p: 'WR', t: 'SF', b: S.league.regularSeasonWeeks, e: '', st: 'active' });
   stubSeason(W, { 'Zzz Full Slate WR': 12, 'Zzz Bye Ahead WR': 12 });
   var rows = W.Value.freeAgents(wk, 0);
