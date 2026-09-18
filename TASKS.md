@@ -101,7 +101,7 @@ Fetched ESPN's real `/injuries` feed (800 records, the same endpoint
       FAIL against the pre-fix code before it is accepted. Real feed text
       (Schultz/Higgins, Mahomes, Nabers) pinned as fixtures so this exact
       class of error cannot come back. Every suite green.
-- [ ] **I. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
+- [x] **I. Ship** Done: v7.9 shipped, ship.sh gate green (all 21 suites, ES2018, dex-completeness: every source file produced a class, 28 in total), APK built and signed, releases/FFTracker-v7.9.apk committed.
 
 ## Prior job, complete (2026-09-18c) — WAIVER WIRE RANKING OVERHAUL (shipped v7.7)
 

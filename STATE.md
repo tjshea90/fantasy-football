@@ -1,8 +1,14 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-18** · ladder 168/170 · **v7.8**, shipped · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-18** · ladder 168/170 · **v7.9**, shipped · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
 
-## v7.8 — the wire told him 36 of his 17 players were dead, and named a healthy man
+## v7.9 — the wire told him 36 of his 17 players were dead, and named a healthy man
+
+*(Shipped as v7.9: the first `ship.sh` run gated green but warned there was no
+APK in `build/` — this container was fresh and had never run `build.sh`. Rather
+than publish a release whose APK was the previous version's, the APK was built
+and `ship.sh` re-run, which bumped 7.8 -> 7.9. There is no v7.8 release; the
+change described below is v7.9.)*
 
 Tj, 2026-09-18, with a screenshot of the Wire tab in week 2. A red headline:
 *"36 players on your roster are out for the season — those spots are doing
