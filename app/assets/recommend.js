@@ -535,6 +535,20 @@
               : /SUSPEND/.test(st) ? 'suspended'
               : 'on injured reserve';
 
+    /* NO DATE AND NO CORROBORATION = NO CLAIM (2026-09-18d). Every IR record
+       in the live feed carries a returnDate, so this is a shape-change guard
+       rather than a live case — but it is the guard that keeps the Schultz
+       class of error from coming back by a new route. A designation on its own
+       says "parked", never "finished": a six-game suspension and a torn
+       Achilles arrive here looking identical, and only the date or his own
+       note can tell them apart. With neither, say the smaller true thing. */
+    if (!isFinite(ret) && !corroborated) {
+      return { seasonEnding: false, longTermOut: true, mustReplace: false,
+               label: label, returnDate: '', returnAround: '',
+               why: label + ', with no return date given' + (note ? ' — ' + note : ''),
+               note: note };
+    }
+
     if (backThisSeason || designatedBack) {
       /* Parked, but coming back — and the app now says so in those words
          instead of calling him finished. */
