@@ -2711,10 +2711,21 @@
       r2.appendChild(el('div', 'slot', showPos ? f.pos : (f.nfl || f.pos)));
       var nm2 = el('div', 'nm');
       nm2.appendChild(document.createTextNode(f.name));
-      var vor = (typeof f.vor === 'number' && f.vor > 0.05)
+      /* THE HEADLINE NUMBER IS THE SEASON, NOT THE WEEK (Tj, 2026-09-18).
+         The row used to read "16.4 proj (1 scored week in this app — thin
+         sample)" — a per-game rate extrapolated from one game, with the
+         caption admitting as much and the number printed anyway. It now
+         leads with expected points for the REST OF THE SEASON, says how
+         many games that is over, and keeps the per-game rate as the
+         secondary figure a human actually reads a player by. */
+      var vor = (typeof f.vor === 'number' && f.vor > 0.5)
         ? '  ·  +' + fmt(f.vor) + ' over the next ' + f.pos + ' on the wire' : '';
-      nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE' : '') +
-        ' · ' + fmt(f.v) + ' proj' + vor + '  (' + f.src + ')' +
+      var season = (typeof f.ros === 'number')
+        ? fmt0(f.ros) + ' pts rest of season (' + f.games + ' game' +
+          (f.games === 1 ? '' : 's') + ' left, ' + fmt(f.v) + '/gm)'
+        : fmt(f.v) + ' proj';
+      nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE this week' : '') +
+        ' · ' + season + vor + '\n' + f.src +
         (f.usage ? '\n' + f.usage : '')));
       /* OUT/IR/SUSPENDED/PUP never reach this row at all (Value.freeAgents
          excludes them entirely) — DOUBTFUL/QUESTIONABLE still show up here,
@@ -2729,9 +2740,10 @@
 
     if (faPos === 'VALUE') {
       c.appendChild(el('p', 'muted',
-        'Ranked by points above the best free agent at the same position. This ' +
-        'is the only ranking on this screen that compares a QB with a running ' +
-        'back honestly — raw points never can, because a completion pays 1 here.'));
+        'Ranked by REST-OF-SEASON points above the best free agent at the same ' +
+        'position. This is the only ranking on this screen that compares a QB ' +
+        'with a running back honestly — raw points never can, because a ' +
+        'completion pays 1 here.'));
       Value.byVor(week, 30).forEach(function (f) { c.appendChild(faRow(f, true)); });
     } else {
       var show = faPos === 'ALL' ? Value.POS : [faPos];
