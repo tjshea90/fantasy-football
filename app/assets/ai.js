@@ -1259,6 +1259,27 @@
       if (pa !== pb) return pa - pb;
       return x.rank - y.rank;
     });
+
+    /* ONE DROP, ONE ADD — CHECKED, NOT TRUSTED (2026-09-18d). Rule 8 of the
+       prompt asks Claude never to name the same man as the drop twice, and
+       the deterministic board now enforces the same thing by construction
+       (value.js upgrades()). A rule that only one of the two paths obeys is
+       the shape of bug Tj has just spent a screenshot on: his Wire tab
+       offered the same player as the drop in four consecutive rows. Claude
+       is a good deal more sensible than the old pairing loop was, but "the
+       model was asked nicely" is not a guarantee, and the cost of checking
+       is this loop. Highest-ranked pair keeps the man; the rest lose their
+       drop (and with it `dropVerified`, so the UI stops presenting them as
+       one-for-one swaps) rather than being deleted — the add itself may
+       still be a perfectly good call, just not against that man. */
+    var claimed = {}, ai2;
+    for (ai2 = 0; ai2 < adds.length; ai2++) {
+      var dn = adds[ai2].dropCandidate;
+      if (!dn) continue;
+      var ck = root.Names.canon(dn);
+      if (claimed[ck]) { adds[ai2].dropCandidate = ''; adds[ai2].dropVerified = false; }
+      else claimed[ck] = 1;
+    }
     return { adds: adds };
   }
 
