@@ -30,9 +30,57 @@ for the app. Do all of this on sonnet"
       scenario (session 1 ends on Wire, session 2 is a cold boot reading the
       same disk back) and was confirmed to FAIL against the pre-fix code and
       PASS against the fix. All 19 suites + ES2018 gate green.
-- [ ] Look for other possible improvements in code and UI for the app, and
-      keep checking/fixing until the app is very stable (Tj: "time and usage
-      it takes you to do this is no concern").
+- [x] Look for other possible improvements in code and UI for the app, and
+      keep checking/fixing until the app is very stable. Delegated a
+      research-only audit of app/assets/*.js and app.css (a subagent, so it
+      would read the whole codebase without bloating this session's own
+      context), then verified and fixed its highest-confidence findings —
+      each with its own committed regression test, confirmed to fail
+      pre-fix and pass post-fix, same rigor as the tab bug above:
+      - **Duplicate paid Claude calls.** The Wire tab's "Ask Claude about the
+        wire" button and the Rosters tab's "How your team stacks up"
+        Ask-Claude button only ever disabled THEMSELVES inside their own
+        click handler, unlike every sibling ask/refresh button in the file
+        (news-sync, player-db refresh) which also checks `jobRunning()` when
+        REBUILT. Switching tabs away and back while either 5-minute Claude
+        call was still in flight rebuilt the card with a fresh, enabled
+        button — a second tap fired a second concurrent paid API call, and
+        whichever response landed last silently overwrote the cache. Fixed
+        with the same `jobRunning('waivers')`/`jobRunning('teamanalysis')`
+        guard the other buttons already use. Test: `tools/test_jobguard.js`.
+      - **Redundant projection computation.** `value.js`'s `upgrades()` and
+        `waiverContext()` each ran `Recommend.projectAll()` twice per call —
+        once directly, once again inside `myStarters()` → `bestLineup()` —
+        even though `needs()` already avoided this via an optional
+        `starters` param. Threaded an optional `allProj` through
+        `bestLineup()`/`myStarters()` the same way, so a free-agent-board
+        render or a position-filter click no longer triples the roster-wide
+        projection pass. (No dedicated test — this is a pure performance
+        fix with no behavior change, verified by the existing suites still
+        passing with identical output.)
+      - **doSync() week-capture race.** `doSync` read the shared
+        module-level `week` variable throughout its whole async chain
+        (fetch, `Store.getStats`/`setBook`, `S.weekMeta` writes,
+        `autoFillWeek`, the completion toast) instead of snapshotting it
+        once at entry. `week` can be mutated mid-flight by the NFL-week
+        auto-advance or by tapping the week-next arrow while a sync is
+        running — neither checks the `busy` flag. A sync that started for
+        week N could finish after `week` moved to N+1 and file its results
+        under the WRONG week, silently corrupting that week's stats. Fixed
+        by capturing `syncedWeek = week` once at the top and using it for
+        every "week this sync is for" reference. Test:
+        `tools/test_synccapture.js` (stalls the fetch, advances the week
+        mid-flight via the real button, confirms results land under the
+        week that was actually fetched).
+      All 20 suites + ES2018 gate green throughout. **Surfaced but
+      deliberately NOT changed:** `app/assets/sim.js`'s `season()`/
+      `power()`/`allPlay()`/`bracket()` are fully implemented and covered by
+      three test files, but never called from any production tab — looks
+      like orphaned surface from a feature never wired in, or removed on a
+      divergent branch (see this file's own "Branches" story in CLAUDE.md).
+      **Ask Tj whether to wire it into a tab (playoff odds / power
+      rankings?) or delete it** — a product decision, not something to
+      guess at.
 
 ## Prior job, complete
 
