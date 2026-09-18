@@ -632,28 +632,39 @@
    * not be offered ahead of one who is dead weight all season. This is what
    * keeps "give more priority to entire season recommendations... over
    * small weekly changes" honest instead of just a sentence in the prompt. */
-  function dropCandidatesFrom(allProj, startIds, repl, left, perPos) {
+  function dropCandidatesFrom(allProj, startIds, week, perPos) {
+    var rows = rosterValues(allProj, startIds, week);
     var byPosAll = {}, i;
-    for (i = 0; i < allProj.length; i++) {
-      var x = allProj[i], p = x.p;
-      var r = repl[p.pos] || 0;
-      var ros = (x.base - r) * left;
-      if (!byPosAll[p.pos]) byPosAll[p.pos] = [];
-      /* `base` (the raw per-game rate, not yet above-replacement) rides
-         along so a caller comparing this player directly against a FREE
-         AGENT's own per-game rate (upgrades() below) does not have to
-         re-derive it from `ros` and repl separately. */
-      byPosAll[p.pos].push({ id: p.id, name: p.name, pos: p.pos, ros: ros,
-                              base: x.base, bench: !startIds[p.id] });
+    for (i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!byPosAll[r.pos]) byPosAll[r.pos] = [];
+      byPosAll[r.pos].push(r);
     }
     var out = {}, k;
     for (k in byPosAll) {
       if (!Object.prototype.hasOwnProperty.call(byPosAll, k)) continue;
       var list = byPosAll[k];
-      var bench = list.filter(function (x2) { return x2.bench; });
-      var pool = (bench.length ? bench : list).slice();
+      /* A man who is finished for the year is droppable whether he is
+         nominally a "starter" or not — that is the whole point of rule 6's
+         season-ending clause, and leaving him out of the bench pool would
+         hide the one swap that is not optional. */
+      var pool = list.filter(function (x2) { return x2.bench || x2.outForSeason; });
+      if (!pool.length) pool = list.slice();
       pool.sort(function (a, b) { return a.ros - b.ros; });
       out[k] = pool.slice(0, perPos || 3);
+    }
+    return out;
+  }
+
+  /* Which positions have somebody on my roster who is DONE for the year, and
+     therefore must be replaced regardless of how low a priority the position
+     normally is (Tj, 2026-09-18, rule 6). */
+  function mandatedFrom(allProj, startIds, week) {
+    var rows = rosterValues(allProj, startIds, week), out = {}, i;
+    for (i = 0; i < rows.length; i++) {
+      if (!rows[i].outForSeason) continue;
+      if (!out[rows[i].pos]) out[rows[i].pos] = [];
+      out[rows[i].pos].push(rows[i]);
     }
     return out;
   }
