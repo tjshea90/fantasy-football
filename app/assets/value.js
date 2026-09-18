@@ -347,7 +347,33 @@
    *     dropCandidatesFrom() already uses (falling back to the weakest
    *     starter only when the position has no bench depth at all) — plus a
    *     plain-English reason, so this is never a bare ranked list nobody can
-   *     act on without also opening the Rosters tab to guess who to cut. */
+   *     act on without also opening the Rosters tab to guess who to cut.
+   *
+   * QUARTERBACK, A SECOND TIME (Tj, 2026-09-18): "it always recommends qb
+   * switch from the QBs I already have, Stafford and bo nix... I drafted
+   * these QBs because they had excellent stats last quarter and they are
+   * pass heavy, in this league the scoring is one point for every completed
+   * pass. Only recommend a replacement qb if it is truly a season edge over
+   * the high completion QBs I already have." The 2026-09-16 fix above
+   * (`confident`, a flat 1-point margin) killed the one-week-spike case but
+   * left a real gap for QB specifically: a completion is worth a full point
+   * here, so a good starting QB's per-game rate already runs 3-4x a good
+   * RB/WR's — a "1 more point per game" margin is a real edge at running
+   * back and pure rounding noise at quarterback. And `confident` alone lets
+   * ESPN's generic rest-of-season MODEL (never having thrown a pass for
+   * this team) count the same as a QB who has actually gone out and posted
+   * the numbers — which is exactly backwards for a position this league
+   * pays for accuracy and volume, not upside. So QB gets both a much larger
+   * minimum gain AND a requirement for real measured games behind the free
+   * agent's number — a projection, however confident, is not "truly a
+   * season edge" on its own. K/DEF get the opposite treatment: Tj, same
+   * message, "defense and kicker are not priorities" — `kdefNeedFrom`
+   * already gates the Claude-driven board (ai.js normalizeWaivers) the same
+   * way; this deterministic, no-cost board never had that gate at all,
+   * so a streamable kicker or defense could out-rank an actual RB/WR need
+   * simply by clearing the flat 1-point bar every other position uses. */
+  var QB_MIN_GAIN = 6;        /* season-defining, not week-to-week noise */
+  var QB_MIN_MEASURED = 3;    /* real games played, not a projection alone */
   function upgrades(week, teamId, opponents, poolSize) {
     var fa = freeAgents(week, poolSize || 60);
     var allProj = root.Recommend.projectAll(week, teamId, opponents);
@@ -356,11 +382,17 @@
     for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
     var repl = replacement(week), left = weeksLeft(week);
     var dc = dropCandidatesFrom(allProj, startIds, repl, left, 1);
+    var kdefNeed = kdefNeedFrom(allProj);
     var flexOK = root.Store.get().league.flexEligible || ['RB', 'WR', 'TE'];
     var out = [];
     for (i = 0; i < fa.length; i++) {
       var f = fa[i];
       if (f.onBye || !f.confident) continue;
+      /* low priority, per Tj: never worth bumping an actual roster need,
+         and only even considered when mine is genuinely unavailable */
+      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos]) continue;
+      /* real production, not a model's opinion of him — see the header */
+      if (f.pos === 'QB' && f.n < QB_MIN_MEASURED) continue;
       var cands = dc[f.pos] || [];
       /* a FLEX-eligible free agent also competes with the weakest FLEX-
          eligible player on the roster, not just his own listed position */
@@ -377,15 +409,21 @@
       var perGameGain = f.v - drop.base;
       /* a full point of REAL rest-of-season signal per game, not a rounding
          margin — small enough to still catch a real upgrade, large enough
-         that ordinary week-to-week noise cannot trigger it on its own */
-      if (perGameGain <= 1) continue;
+         that ordinary week-to-week noise cannot trigger it on its own.
+         QB needs far more: see the header comment above. */
+      var minGain = f.pos === 'QB' ? QB_MIN_GAIN : 1;
+      if (perGameGain <= minGain) continue;
       var seasonGain = perGameGain * left;
       var why = f.name + ' projects about ' + perGameGain.toFixed(1) + ' more point' +
         (Math.abs(perGameGain - 1) < 0.05 ? '' : 's') + ' per game than ' + drop.name +
         ' for the rest of the season (' + left + ' week' + (left === 1 ? '' : 's') +
         ' left) — roughly ' + seasonGain.toFixed(1) + ' points of season-long swing. ' +
         f.name + '’s number: ' + f.src + '. ' + drop.name +
-        (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.');
+        (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.') +
+        (f.pos === 'QB' ? ' A quarterback swap only shows up here when the edge is large and ' +
+          'backed by real games played — a completion pays a full point in this league, so a ' +
+          'proven, high-completion starter is not worth benching for a smaller or unproven edge.'
+          : '');
       out.push({ fa: f, drop: drop, over: drop, perGame: perGameGain, gain: seasonGain,
                  weeks: left, why: why });
     }
