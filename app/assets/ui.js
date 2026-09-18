@@ -2392,6 +2392,24 @@
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Free agents · week ' + week));
     var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+    /* Tj, 2026-09-18: "focus waiver wire more on my roster weaknesses,
+       usually rb and wr." Value.needs() already ranks starting slots
+       weakest-first against the wire's own replacement level; K/DEF are
+       left out here specifically because Tj also said those "are not
+       priorities" — this line exists to make the actual thin spots visible
+       up front, not to imply the list below is re-sorted by it (it stays
+       ranked by rest-of-season points gained, which is the honest measure
+       of how big a SPECIFIC swap is). */
+    var thin = Value.needs(week, S.league.me, opp)
+      .filter(function (n) { return n.pos !== 'K' && n.pos !== 'DEF'; });
+    if (thin.length) {
+      var seenPos = {}, thinPos = [];
+      thin.forEach(function (n) { if (!seenPos[n.pos]) { seenPos[n.pos] = 1; thinPos.push(n.pos); } });
+      c.appendChild(el('p', 'hint', 'Your thinnest starting spot' +
+        (thinPos.length === 1 ? '' : 's') + ' right now, weakest first: ' + thinPos.join(', ') +
+        ' — a pickup there is more likely to actually move your team than one at a ' +
+        'position you are already strong at.'));
+    }
     var ups = Value.upgrades(week, S.league.me, opp, 80);
     if (ups.length) {
       c.appendChild(el('p', null, ups.length + ' available player' + (ups.length === 1 ? '' : 's') +
