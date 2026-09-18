@@ -44,59 +44,47 @@
     return out;
   }
 
-  /* ---- what one player is worth per game, REST OF SEASON -----------------
-   * Tj, 2026-09-16: "I want it to suggest waiver wire drops and adds that
-   * will increase my team output for the entire season... it is only
-   * considering week to week." This used to lead with ESPN's THIS-WEEK
-   * projected stat line — a single game's specific matchup — ahead of even
-   * a real measured sample, which is exactly why one good matchup could
-   * outrank a player who is actually better for the rest of the season.
-   * Re-ordered toward what predicts the REST of the season, most reliable
-   * first, and the row always SAYS which one it used:
-   *   1. what he has actually scored in this league this season (the book),
-   *      last 4 weeks — but only once there is enough of it (2+ games) to
-   *      not be one lucky/unlucky week wearing a season's clothing
-   *   2. ESPN's full-SEASON (rest-of-season) projection, per game — this
-   *      updates through the season and is not tied to one week's opponent
-   *   3. a single measured game — thin, but still real, and better than a
-   *      blind guess
-   *   4. ESPN's projected stat line for THIS week only — last resort before
-   *      the guess, since by itself it says nothing about the other 16
-   *   5. nothing — a positional floor, clearly labelled as a guess
-   * `n` (the measured-game count) rides along on the result so callers can
-   * gate "is this a confident-enough signal to actively recommend" separate
-   * from "what number do we show" — see freeAgents()' `confident` below.
+  /* ---- what one player is worth, REST OF SEASON -------------------------
+   * Tj, 2026-09-18, with a screenshot of the Wire tab: "the wire tab is only
+   * making recommendations and projecting scores based on prior weeks actual
+   * stats. This is a broken system... it must rank available players based on
+   * expected full season performance, not just the next NFL week, and
+   * calculated for this league scoring system."
    *
-   * Found in this same pass: step 2 (ESPN season pace) used to return
-   * `rec.season` directly as if it were ALREADY a per-game rate. It is not
-   * — projections.js's `ingest()` stores the FULL-SEASON total there (the
-   * same field recommend.js's projectOne divides by 17 before using), so
-   * any player who fell through to that branch was valued at roughly 17x
-   * his real rest-of-season rate. Fixed here alongside the reordering. */
-  function perGame(name, pos, week) {
-    var rec = root.Projections ? root.Projections.find({ name: name, pos: pos }, week) : null;
-    /* the raw name, not norm(name) — bookTrend resolves it tolerantly
-       against however ESPN actually spelled the box score (see its own
-       comment in store.js); pre-normalising here bought nothing and, before
-       that fix, was the reason a "Kenny"-vs-"Kenneth" spelling gap silently
-       lost real recent production for this exact class of player. */
-    var t = root.Store.bookTrend ? root.Store.bookTrend(name, week - 1, 4) : [];
-    var sum = 0, n = 0, i;
-    for (i = 0; i < t.length; i++) if (t[i].row) { sum += t[i].row.p; n++; }
-    if (n >= 2) {
-      return { v: sum / n, src: n + ' scored weeks in this app (season average)', n: n };
-    }
-    if (rec && typeof rec.season === 'number' && rec.season > 0) {
-      return { v: rec.season / 17, src: 'ESPN season pace (rest-of-season projection)', n: n };
-    }
-    if (n === 1) {
-      return { v: sum, src: '1 scored week in this app — thin sample', n: n };
-    }
-    if (rec && typeof rec.week === 'number' && isFinite(rec.week) && rec.week > 0) {
-      return { v: rec.week, src: 'ESPN week ' + week + ' line only — no season-long signal yet', n: 0 };
-    }
-    var pri = (root.Recommend && root.Recommend.PRIOR) ? root.Recommend.PRIOR[pos] : 10;
-    return { v: (pri || 10) * 0.55, src: 'no data — positional floor, treat as a guess', n: 0 };
+   * THE WHOLE BODY OF THIS FUNCTION IS NOW ONE CALL to ros.js, and that is
+   * the point. What used to live here was a five-branch preference ladder:
+   * measured weeks if there were 2+, else ESPN's season pace, else a SINGLE
+   * measured week used raw, else this week's ESPN line, else a floor. Two
+   * things were wrong with it, and together they produced exactly the board
+   * in his screenshot:
+   *
+   *   - the season-pace branch never fired. Proved against the live endpoint
+   *     on 2026-09-18: the projections route that wins nearly every sync asks
+   *     for a specific scoring period, and ESPN then returns weekly splits
+   *     only, so `rec.season` was essentially never set. The one branch that
+   *     looked at the whole season was dead code.
+   *   - so in week 2, with one week scored, EVERY free agent landed on the
+   *     single-measured-week branch and was priced at that one game, forever,
+   *     labelled "1 scored week in this app — thin sample". The label was
+   *     honest; using the number anyway was not.
+   *
+   * ros.js replaces the ladder with a blend that always has a season-long
+   * spine: real full-season projections from ESPN and Sleeper (both re-scored
+   * into league points), with this season's measured games shrunk in as the
+   * sample grows, efficiency regressed toward the player's own volume, and
+   * the result multiplied by the games he actually has left. See its header
+   * for the method and the sources.
+   *
+   * `bye` is optional and only affects the TOTAL, never the per-game rate.
+   * The shape returned still carries `v`, `src` and `n` because callers all
+   * over this file and the Wire tab read those three by name; everything the
+   * new engine knows rides alongside them. */
+  function perGame(name, pos, week, bye) {
+    var e = root.Ros.estimate({ name: name, pos: pos, bye: bye }, week);
+    return { v: e.perGame, src: e.src, n: e.n, ros: e.total, games: e.games,
+             conf: e.conf, baseline: e.baseline, baselineKind: e.baselineKind,
+             baselineSrc: e.baselineSrc, wObserved: e.wObserved,
+             observedPG: e.observedPG, expectedPG: e.expectedPG };
   }
 
   /* opportunity, not points: what actually predicts next week */
