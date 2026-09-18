@@ -80,7 +80,13 @@
   function loadCaches() {
     newsCache = cacheLoad(NEWSKEY, newsCache);
     aiCache = cacheLoad(AIKEY, aiCache);
-    if (root.Projections) root.Projections.loadCache();
+    if (root.Projections) {
+      root.Projections.loadCache();
+      /* the full-season set lives in its own key and its own freshness window
+         (projections.js, FULL-SEASON PROJECTIONS) — it has to be loaded too,
+         or the rest-of-season engine starts every launch with nothing */
+      if (root.Projections.loadSeasonCache) root.Projections.loadSeasonCache();
+    }
   }
 
   function norm(s) { return root.Espn.normName(s); }
@@ -535,7 +541,27 @@
           report.steps.push(c.error ? ('projections FAILED: ' + c.error)
                                     : ((c.weekly || 0) + ' week-' + week +
                                        ' projections via ' + c.route));
-          return opp;
+          /* Then the FULL-SEASON set, which is what the waiver board actually
+             ranks on (Tj, 2026-09-18: "expected full season performance, not
+             just the next NFL week"). Separate fetch, separate 12-hour cache,
+             so this costs nothing on most syncs. It must never be able to fail
+             the sync: the weekly work above already succeeded by this point,
+             and a season-projection outage should degrade the ranking, not
+             take the whole advice run down with it. */
+          if (!root.Projections.refreshSeason) return opp;
+          return root.Projections.refreshSeason(S.settings.season,
+                                                function (t, p) { step(t, p); })
+            .then(function (sc) {
+              report.steps.push(sc.error
+                ? ('season projections FAILED: ' + sc.error)
+                : ((sc.count || 0) + ' full-season projections via ' + sc.route));
+              return opp;
+            })
+            .catch(function (e) {
+              report.steps.push('season projections FAILED: ' +
+                                (e && e.message ? e.message : String(e)));
+              return opp;
+            });
         });
     }).then(function (opp) {
       if (!root.Ai || !root.Ai.configured()) {
