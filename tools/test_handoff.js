@@ -104,19 +104,66 @@ var V = wav.text;
 ok(/handed this file with no other instructions/i.test(V), 'same self-explaining opening');
 ok(/## AVAILABLE — nobody in this list is on any of the ten rosters/.test(V),
    'it asserts availability so no effort is spent rediscovering it');
-ok(/division of labour/.test(V),
+ok(/What the app has already worked out, and what it has not/.test(V),
    'it explains what the app already did, so the answer adds news rather than repeating maths');
 ok(/fftracker-waivers-reply\.json/.test(V), 'it names the reply file');
 ok(/at most \*\*2\*\*/.test(V), 'it caps unverifiable suggestions at two');
-ok(V.length > 2000 && V.length < 200000,
+ok(V.length > 2000 && V.length < 400000,
    'the briefing is a sane size (' + V.length + ' chars)');
-ok(/Kicker \/ defense — do I actually need one\?/.test(V),
+ok(/Kicker \/ defense \/ quarterback — the low-priority positions/.test(V),
    'the K/DEF need section is included, so the offline path gates it too');
 ok(/priority/.test(V) && /season/.test(V) && /"week"|`"week"`/.test(V),
    'the season/week priority contract field is documented');
 ok(/recentStat/.test(V), 'the recentStat contract field is documented');
-ok(/dropCandidate/.test(V) && /DROP CANDIDATES|Drop candidates/.test(V),
+ok(/dropCandidate/.test(V) && /Easiest players to drop/.test(V),
    'the dropCandidate contract field and its source list are documented');
+
+/* ---- 2a. the 2026-09-18 overhaul: the six criteria, and one-for-one pairs.
+ * Tj: "for the Claude prompt, overhaul it so that when it makes the ask
+ * Claude file, it has all the criteria I mentioned, plus it explicitly
+ * recommends which player or players to drop and replace on a one to one
+ * basis with explicit reasoning and expected fantasy point edge". Each of his
+ * six rules is pinned here, because a prompt is the one artifact in this repo
+ * with no runtime behaviour to catch a regression — if a future edit drops a
+ * rule, only a test like this notices. */
+console.log('\n-- the waiver briefing: Tj\'s six criteria (2026-09-18) --');
+ok(/CURRENT SEASON, CURRENT NEWS, REPUTABLE SOURCES/.test(V),
+   'rule 1: current season and current news from reputable sources');
+ok(/RANK ON THE WHOLE REST OF THE SEASON, NOT NEXT WEEK/.test(V),
+   'rule 2: ranked on expected full-season performance, not next week');
+ok(/ONLY RECOMMEND A MOVE THAT IS A MEANINGFUL SEASON-LONG UPGRADE/.test(V),
+   'rule 3: only a meaningful season-long improvement is worth a move');
+ok(/ONE FOR ONE, NAMED, WITH THE EDGE IN POINTS/.test(V) &&
+   /Michael Wilson/.test(V) && /Bo Nix/.test(V),
+   'rule 4: one-for-one, named, with the point edge — including his own two worked examples');
+ok(/NOTHING IS OFF LIMITS TO YOU/.test(V),
+   'rule 5: no restrictions on what Claude may search or weigh');
+ok(/QUARTERBACK, KICKER AND DEFENSE ARE LOW PRIORITY/.test(V),
+   'rule 6: QB/K/DEF stay low priority absent a strong season edge or a forced replacement');
+
+ok(/## OWNED — every player already on a roster in this league/.test(V),
+   'rule 5: EVERY taken player in the league is listed, so no rostered player can be recommended');
+(function () {
+  /* not just the heading — the actual names. Pick a player off another
+     team's roster and prove he is in the file. */
+  var teams = W.Store.get().teams, other = null, i;
+  for (i = 0; i < teams.length; i++) if (teams[i].id !== me && teams[i].players.length) other = teams[i];
+  ok(!!other && V.indexOf(other.players[0].name) >= 0,
+     'and by name — "' + (other ? other.players[0].name : '?') +
+     '" from another team is actually in the file, not just a heading promising him');
+}());
+ok(/## MY ROSTER — every player, in rest-of-season points/.test(V),
+   'my whole roster is priced in the same currency, so a pair can be compared at all');
+ok(/\| player \| NFL \| ROS \| per gm \| gms \| vor \| basis \|/.test(V),
+   'the AVAILABLE table leads with REST-OF-SEASON points rather than a one-week projection');
+ok(/"swaps"/.test(V) && /"edge"/.test(V) && /"mandated"/.test(V),
+   'the reply contract asks for swaps with an explicit point edge and a mandated flag');
+ok(/54/.test(V),
+   'and the worked example carries a concrete point edge, as his own example does');
+ok(/## The app's own answer, before any news/.test(V),
+   'the app hands over its own deterministic answer rather than making Claude re-derive it');
+ok(/\bthe scoring table\b|SCORING|scoring/.test(V) && /completion/i.test(V),
+   'the full league scoring system is in the file, including the completion rule that makes it unusual');
 (function () {
   var wc = W.Value.waiverContext(WEEK, me, null, 2026, '2026-09-07');
   if (wc.injuries.length) {
