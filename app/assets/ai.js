@@ -1056,6 +1056,29 @@
       return !!(mandated[pos] && mandated[pos].length);
     }
 
+    /* Would dropping `dropRec` to add a player at `addPos` leave a starting
+       slot that nothing on the roster can fill? Counts what is left at the
+       dropped man's own position, the incoming player included when he plays
+       it. A position the league never starts (there is no such slot) can
+       always be emptied. */
+    function canSpare(dropRec, addPos) {
+      var dpos = dropRec.pos;
+      if (!dpos) return true;
+      var slots = (root.Store && root.Store.get)
+        ? (root.Store.get().league.slots || []) : [];
+      var needed = 0, i2;
+      for (i2 = 0; i2 < slots.length; i2++) if (slots[i2] === dpos) needed++;
+      if (!needed) return true;              /* not a starting position here */
+      var left = 0, k2;
+      for (k2 in rosterIdx) {
+        if (!Object.prototype.hasOwnProperty.call(rosterIdx, k2)) continue;
+        if (rosterIdx[k2] === dropRec) continue;
+        if (rosterIdx[k2].pos === dpos) left++;
+      }
+      if (addPos === dpos) left++;           /* the incoming man fills it */
+      return left >= needed;
+    }
+
     function push(a, swap) {
       if (!a || !a.name) return;
       var key = root.Names.canon(a.name);
@@ -1075,6 +1098,23 @@
           !mandatedAt(pos) && !forced) return;
       var dcName = String((swap && swap.drop) || a.dropCandidate || '').trim();
       var dcRec = dcName ? rosterIdx[root.Names.canon(dcName)] : null;
+      /* THE GUARD THAT REPLACED "SAME POSITION ONLY" (2026-09-18).
+       *
+       * The old rule cleared any dropCandidate whose position differed from
+       * the add's, to make "don't drop a kicker to add a receiver" a
+       * guarantee rather than a hope. It did work, but it was the wrong
+       * shape of rule and rule 5 ("the Claude prompt should have no
+       * restrictions") made that visible: dropping a SECOND kicker, or a
+       * fourth running back, to add a startable receiver is an ordinary,
+       * correct fantasy move, and the old rule rejected every one of them
+       * while a same-position swap that empties a slot sailed through.
+       *
+       * What actually has to be guaranteed is narrower and stronger: a swap
+       * must never leave a required starting slot with nobody in it. So the
+       * check is on the hole it would leave, not on the labels matching —
+       * dropping one of two kickers is fine, dropping the only one is not
+       * unless the add is himself a kicker. */
+      if (dcRec && !canSpare(dcRec, pos)) dcRec = null;
       seen[key] = 1;
       adds.push({
         name: String(a.name),
