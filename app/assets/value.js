@@ -452,6 +452,85 @@
      MIN_SEASON — a streamer's good matchup must never reach it. */
   var KDEF_STRONG_SEASON = 25;
 
+  /* ---- how thin can a position get? ------------------------------------
+   * Tj, 2026-09-18d: "generally it should recommend a same type player
+   * position for the recommended drop and add, because if I drop a te, I
+   * should have a backup te to replace him, but this rule is not absolute;
+   * for example if a star player with high output is available, it would make
+   * sense to drop a low output player even if he is in a different position."
+   *
+   * The screenshot is what that sentence is about: a TE was (wrongly) marked
+   * dead, and the board's answer was to fill his slot with a WR, an RB and
+   * two other TEs — four rows, four different positions, all dropping the
+   * same man. Even with the flag fixed, a swap that leaves the roster unable
+   * to field a legal lineup is not an upgrade, so the rule is enforced on the
+   * ROSTER rather than on the recommendation text: count the bodies, and
+   * refuse any swap that leaves a slot with nobody to put in it.
+   *
+   * Read off S.league.slots, never hardcoded — this league starts QB/RB/RB/
+   * WR/WR/WR/TE/FLEX/K/DEF today, and a settings change must move this with
+   * it rather than silently keeping a stale shape. */
+  function slotNeeds() {
+    var S = root.Store.get(), slots = S.league.slots || [], need = {}, flex = 0, i;
+    for (i = 0; i < slots.length; i++) {
+      var sl = String(slots[i]).toUpperCase();
+      if (sl === 'FLEX') { flex++; continue; }
+      need[sl] = (need[sl] || 0) + 1;
+    }
+    return { fixed: need, flex: flex,
+             flexOK: S.league.flexEligible || ['RB', 'WR', 'TE'] };
+  }
+
+  /* Can a lineup still be filled from these bodies? `counts` is pos -> how
+     many men you own there who can actually play. */
+  function lineupFillable(counts, need) {
+    var k, spare = 0;
+    for (k in need.fixed) {
+      if (!Object.prototype.hasOwnProperty.call(need.fixed, k)) continue;
+      if ((counts[k] || 0) < need.fixed[k]) return false;
+    }
+    for (var i = 0; i < need.flexOK.length; i++) {
+      var fp = need.flexOK[i];
+      spare += Math.max(0, (counts[fp] || 0) - (need.fixed[fp] || 0));
+    }
+    return spare >= need.flex;
+  }
+
+  /* Bodies per position: a man who is finished for the year is not one. */
+  function bodyCounts(rows) {
+    var c = {}, i;
+    for (i = 0; i < rows.length; i++) {
+      if (rows[i].outForSeason) continue;
+      c[rows[i].pos] = (c[rows[i].pos] || 0) + 1;
+    }
+    return c;
+  }
+
+  /* Would dropping `drop` and adding a player at `addPos` still leave a legal
+     lineup? Same position is always safe by construction and skips the work. */
+  function swapKeepsLineupLegal(counts, need, dropPos, addPos) {
+    if (dropPos === addPos) return true;
+    var c = {}, k;
+    for (k in counts) {
+      if (Object.prototype.hasOwnProperty.call(counts, k)) c[k] = counts[k];
+    }
+    c[dropPos] = (c[dropPos] || 0) - 1;
+    c[addPos] = (c[addPos] || 0) + 1;
+    return lineupFillable(c, need);
+  }
+
+  /* A cross-position swap is allowed — Tj's "star player" carve-out — but it
+     has to be worth breaking the shape of the roster for, so it clears double
+     the ordinary season bar. Below that, the same-position move is the one
+     worth making and this is the margin that says so. */
+  var CROSS_POS_MULT = 2;
+  /* ...and when two swaps are close, the same-position one wins the ranking.
+     A cross-position pair is ordered as if it were worth three-quarters of
+     its real edge, so it has to be about a third bigger to appear above an
+     equivalent like-for-like move. The number REPORTED is always the true
+     one; this discount only decides who is listed first. */
+  var CROSS_POS_RANK = 0.75;
+
   function upgrades(week, teamId, opponents, poolSize) {
     /* PER POSITION, NOT A GLOBAL TOP-N (2026-09-18, found reviewing this
      * same day's own change).
@@ -486,14 +565,44 @@
        (found in the 2026-09-18 review — same class of fix needs() already
        gets via its own `starters` param). */
     var starters = myStarters(week, teamId, opponents, allProj);
-    var startIds = {}, i;
+    var startIds = {}, i, j;
     for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
     var left = weeksLeft(week);
-    var dc = dropCandidatesFrom(allProj, startIds, week, 1);
+    /* THREE drop candidates per position, not one (2026-09-18d). With one,
+       every free agent in the league was paired against the same single
+       weakest man — which is how one bad season-ending flag produced 36
+       identical "drop Dalton Schultz" rows. The assignment pass below needs
+       alternatives to hand out once he is spoken for. */
+    var dc = dropCandidatesFrom(allProj, startIds, week, 3);
     var kdefNeed = kdefNeedFrom(allProj);
-    var mandated = mandatedFrom(allProj, startIds, week);
-    var flexOK = root.Store.get().league.flexEligible || ['RB', 'WR', 'TE'];
-    var out = [];
+    var rows = rosterValues(allProj, startIds, week);
+    var need = slotNeeds();
+    var counts = bodyCounts(rows);
+    var flexOK = need.flexOK;
+
+    /* The best free agent at each position, for the cross-position test on a
+       forced replacement: filling a dead TE slot with a WR is only defensible
+       when the WR is a lot better than the best TE actually available. */
+    var bestAt = {};
+    for (i = 0; i < fa.length; i++) {
+      if (!fa[i].confident) continue;
+      if (bestAt[fa[i].pos] === undefined || fa[i].ros > bestAt[fa[i].pos]) {
+        bestAt[fa[i].pos] = fa[i].ros;
+      }
+    }
+
+    /* ---- every pair worth considering, then ONE assignment --------------
+     * Tj, 2026-09-18d: "it says 36 players on my roster are out for the
+     * season. My roster is only 17 players." The count was a symptom; this is
+     * the disease. upgrades() paired each free agent with the single weakest
+     * droppable man and stopped, so one roster hole was offered to the entire
+     * wire at once and every genuine upgrade elsewhere was pushed off the
+     * bottom of the list. You can only drop a man once. The board now builds
+     * every plausible pair, ranks them, and hands out each roster spot and
+     * each free agent exactly once — which is what "on a one to one basis"
+     * (rule 4 of the 2026-09-18c job) has always asked for and what only the
+     * Claude prompt was doing. */
+    var pairs = [];
     for (i = 0; i < fa.length; i++) {
       var f = fa[i];
       /* NOT skipped for a bye any more. A bye is a one-week fact and this
@@ -501,82 +610,171 @@
          game (ros.js's gamesLeft), so a man on bye this week competes on
          honest terms instead of vanishing. */
       if (!f.confident) continue;
-      var mand = !!(mandated[f.pos] && mandated[f.pos].length);
-      /* low priority, per Tj (rule 6): a K or DEF is only worth a swap when
-         mine is genuinely unavailable, when mine is finished for the year, or
-         on a strong, clear season-long edge — checked below once the gain is
-         known, since "strong and clear" is a statement about the margin. */
-      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos] && !mand &&
-          f.conf !== 'high') continue;
-      /* real production, not a model's opinion of him — see the header. The
-         one exception is rule 6's own: if my quarterback is done for the
-         year somebody has to play the position, and holding the replacement
-         to "three games on tape first" would leave the slot empty. */
-      if (f.pos === 'QB' && f.n < QB_MIN_MEASURED && !mand) continue;
-      var cands = dc[f.pos] || [];
-      /* a FLEX-eligible free agent also competes with the weakest FLEX-
-         eligible player on the roster, not just his own listed position */
-      if (flexOK.indexOf(f.pos) >= 0) {
-        var flexAll = [];
-        flexOK.forEach(function (fp) { flexAll = flexAll.concat(dc[fp] || []); });
-        flexAll.sort(function (a, b) { return a.ros - b.ros; });
-        if (flexAll.length && (!cands.length || flexAll[0].ros < cands[0].ros)) {
-          cands = flexAll;
+
+      /* Who could he replace? His own position first, and — because the
+         cross-position carve-out is real — the weakest men at the other
+         positions too, each of which has to clear a much higher bar below. */
+      var cands = (dc[f.pos] || []).slice();
+      var seen = {};
+      for (j = 0; j < cands.length; j++) seen[cands[j].id] = 1;
+      var pk;
+      for (pk in dc) {
+        if (!Object.prototype.hasOwnProperty.call(dc, pk)) continue;
+        if (pk === f.pos) continue;
+        for (j = 0; j < dc[pk].length; j++) {
+          if (!seen[dc[pk][j].id]) { seen[dc[pk][j].id] = 1; cands.push(dc[pk][j]); }
         }
       }
-      if (!cands.length) continue;
-      var drop = cands[0];
-      /* BOTH sides of this subtraction now come from ros.js — see
-         rosterValues(). The season gain is the headline number because the
-         season is what Tj asked to rank on; the per-game gain is kept
-         because it is how a human reads "is this actually better". */
-      var seasonGain = f.ros - drop.ros;
-      var perGameGain = f.raw - drop.perGame;
-      var minGain = MIN_GAIN[f.pos] === undefined ? 1.5 : MIN_GAIN[f.pos];
-      var minSeason = MIN_SEASON[f.pos] === undefined ? 15 : MIN_SEASON[f.pos];
-      /* Replacing a man who is finished for the year is not optional and is
-         not held to the ordinary "is this worth the churn" bar — anyone who
-         can still play beats somebody who cannot. */
-      if (drop.outForSeason) { minGain = 0; minSeason = 0; }
-      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos] && !drop.outForSeason) {
-        minSeason = Math.max(minSeason, KDEF_STRONG_SEASON);
-      }
-      if (perGameGain <= minGain) continue;
-      if (seasonGain <= minSeason) continue;
 
-      var why;
-      if (drop.outForSeason) {
-        why = drop.name + ' is done for the season' +
-          (drop.outWhy ? ' (' + drop.outWhy + ')' : '') +
-          ' and is worth nothing from here on, so this slot has to be replaced. ' +
-          f.name + ' projects about ' + f.ros.toFixed(0) + ' points over his remaining ' +
-          f.games + ' game' + (f.games === 1 ? '' : 's') + ' in this league’s scoring. ' +
-          f.name + '’s number: ' + f.src + '.';
-      } else {
-        why = f.name + ' projects about ' + seasonGain.toFixed(0) +
-          ' more points than ' + drop.name + ' over the rest of the season (' +
-          perGameGain.toFixed(1) + ' per game across ' + f.games + ' remaining game' +
-          (f.games === 1 ? '' : 's') + '), in this league’s scoring. ' +
-          f.name + '’s number: ' + f.src + '. ' + drop.name +
-          (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.') +
-          (f.pos === 'QB' ? ' A quarterback swap only shows up here when the edge is large and ' +
-            'backed by real games played — a completion pays a full point in this league, so a ' +
-            'proven, high-completion starter is not worth benching for a smaller or unproven edge.'
-            : '') +
-          ((f.pos === 'K' || f.pos === 'DEF')
-            ? ' Kicker and defense are low priority here, so this one had to clear a much ' +
-              'larger season-long margin than any other position to be shown at all.' : '');
+      for (j = 0; j < cands.length; j++) {
+        var drop = cands[j];
+        var cross = drop.pos !== f.pos;
+        /* RULE E: never leave a slot with nobody to fill it. This is the TE
+           case in Tj's own words, checked against the roster rather than
+           hoped for in the ranking. */
+        if (!swapKeepsLineupLegal(counts, need, drop.pos, f.pos)) continue;
+
+        var mand = !!drop.outForSeason;
+        /* low priority, per Tj (rule 6): a K or DEF is only worth a swap when
+           mine is genuinely unavailable, when mine is finished for the year, or
+           on a strong, clear season-long edge — checked below once the gain is
+           known, since "strong and clear" is a statement about the margin. */
+        if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos] && !mand &&
+            f.conf !== 'high') continue;
+        /* real production, not a model's opinion of him — see the header. The
+           one exception is rule 6's own: if my quarterback is done for the
+           year somebody has to play the position, and holding the replacement
+           to "three games on tape first" would leave the slot empty. */
+        if (f.pos === 'QB' && f.n < QB_MIN_MEASURED && !(mand && !cross)) continue;
+
+        /* BOTH sides of this subtraction now come from ros.js — see
+           rosterValues(). The season gain is the headline number because the
+           season is what Tj asked to rank on; the per-game gain is kept
+           because it is how a human reads "is this actually better". */
+        var seasonGain = f.ros - drop.ros;
+        var perGameGain = f.raw - drop.perGame;
+        var minGain = MIN_GAIN[f.pos] === undefined ? 1.5 : MIN_GAIN[f.pos];
+        var minSeason = MIN_SEASON[f.pos] === undefined ? 15 : MIN_SEASON[f.pos];
+
+        if (mand && !cross) {
+          /* Replacing a man who is finished for the year, like for like, is
+             not optional and is not held to the ordinary "is this worth the
+             churn" bar — anyone who can still play beats somebody who cannot. */
+          minGain = 0; minSeason = 0;
+        } else if (mand && cross) {
+          /* A dead TE is a reason to sign a TE. Signing a WR instead is only
+             right when he is far better than the best TE on the wire, which is
+             the comparison this makes — against the alternative, not against
+             the corpse. */
+          var alt = bestAt[drop.pos];
+          if (alt !== undefined && (f.ros - alt) <= minSeason) continue;
+        } else if (cross) {
+          minGain *= CROSS_POS_MULT;
+          minSeason *= CROSS_POS_MULT;
+        }
+        if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos] && !mand) {
+          minSeason = Math.max(minSeason, KDEF_STRONG_SEASON);
+        }
+        if (perGameGain <= minGain) continue;
+        if (seasonGain <= minSeason) continue;
+
+        pairs.push({ f: f, drop: drop, cross: cross, mandated: mand,
+                     seasonGain: seasonGain, perGameGain: perGameGain,
+                     rank: seasonGain * (cross ? CROSS_POS_RANK : 1) });
       }
-      out.push({ fa: f, drop: drop, over: drop, perGame: perGameGain, gain: seasonGain,
-                 weeks: left, games: f.games, mandated: !!drop.outForSeason, why: why });
     }
-    /* A mandated replacement outranks any optional upgrade, however large:
-       an empty or dead roster slot is a problem you have this week, and an
-       upgrade is one you merely benefit from. */
-    out.sort(function (a, b) {
+
+    /* Forced replacements first — a dead roster spot is a problem you have
+       this week and an upgrade is one you merely benefit from — then by the
+       same-position-preferring rank. */
+    pairs.sort(function (a, b) {
       if (a.mandated !== b.mandated) return a.mandated ? -1 : 1;
-      return b.gain - a.gain;
+      return b.rank - a.rank;
     });
+
+    var usedDrop = {}, usedFa = {}, out = [];
+    for (i = 0; i < pairs.length; i++) {
+      var pr = pairs[i];
+      if (usedDrop[pr.drop.id]) continue;
+      if (usedFa[pr.f.name]) continue;
+      usedDrop[pr.drop.id] = 1;
+      usedFa[pr.f.name] = 1;
+      out.push(describeSwap(pr, left, kdefNeed));
+    }
+    return out;
+  }
+
+  /* The sentence under a row. Split out of upgrades() when the assignment
+     pass went in — it is presentation, and keeping it inline made the loop
+     that decides WHICH swaps exist twice as long as the logic in it. */
+  function describeSwap(pr, left, kdefNeed) {
+    var f = pr.f, drop = pr.drop, why;
+    if (pr.mandated) {
+      why = drop.name + ' is done for the season' +
+        (drop.outWhy ? ' (' + drop.outWhy + ')' : '') +
+        ' and is worth nothing from here on, so this slot has to be replaced. ' +
+        f.name + ' projects about ' + f.ros.toFixed(0) + ' points over his remaining ' +
+        f.games + ' game' + (f.games === 1 ? '' : 's') + ' in this league’s scoring. ' +
+        f.name + '’s number: ' + f.src + '.';
+      if (pr.cross) {
+        why += ' He is a ' + f.pos + ' rather than a ' + drop.pos + ': your lineup can ' +
+          'still be filled without ' + drop.name + ', and no ' + drop.pos +
+          ' on the wire is close to this.';
+      }
+    } else {
+      why = f.name + ' projects about ' + pr.seasonGain.toFixed(0) +
+        ' more points than ' + drop.name + ' over the rest of the season (' +
+        pr.perGameGain.toFixed(1) + ' per game across ' + f.games + ' remaining game' +
+        (f.games === 1 ? '' : 's') + '), in this league’s scoring. ' +
+        f.name + '’s number: ' + f.src + '. ' + drop.name +
+        (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.');
+      if (drop.longTermOut) {
+        why += ' ' + drop.name + ' is ' + (drop.outLabel || 'out') +
+          (drop.backAround ? ' and is not eligible to return until ' + drop.backAround : '') +
+          ', so he can only play ' + drop.games + ' more game' +
+          (drop.games === 1 ? '' : 's') + ' this season — that is already priced in above.';
+      }
+      if (pr.cross) {
+        why += ' This is a ' + f.pos + '-for-' + drop.pos + ' swap rather than a ' +
+          'like-for-like one, so it had to clear double the usual season-long ' +
+          'margin, and your lineup can still be filled after it.';
+      }
+      if (f.pos === 'QB') {
+        why += ' A quarterback swap only shows up here when the edge is large and ' +
+          'backed by real games played — a completion pays a full point in this league, so a ' +
+          'proven, high-completion starter is not worth benching for a smaller or unproven edge.';
+      }
+      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos]) {
+        why += ' Kicker and defense are low priority here, so this one had to clear a much ' +
+          'larger season-long margin than any other position to be shown at all.';
+      }
+    }
+    return { fa: f, drop: drop, over: drop, perGame: pr.perGameGain, gain: pr.seasonGain,
+             weeks: left, games: f.games, mandated: pr.mandated, crossPos: pr.cross,
+             why: why };
+  }
+
+  /* Who on MY ROSTER must be replaced — distinct men, straight off the
+   * roster, with no reference to who is available to replace them.
+   *
+   * Tj, 2026-09-18d: "it says 36 players on my roster are out for the season.
+   * My roster is only 17 players." The Wire tab was counting SUGGESTION ROWS
+   * and calling them players. One falsely-dead tight end priced at zero was
+   * the weakest droppable man at his own position and the weakest flex-
+   * eligible man overall, so he was paired with every free agent that cleared
+   * the gates — 36 rows, one player, and a headline that could not have been
+   * true of a 17-man roster under any circumstances.
+   *
+   * The count now comes from the only place it can be right: the roster
+   * itself. A hole is a hole whether or not the wire has anything to put in
+   * it, which the row-counting version could not represent either. */
+  function mustReplace(week, teamId, opponents) {
+    var allProj = root.Recommend.projectAll(week, teamId, opponents);
+    var starters = myStarters(week, teamId, opponents, allProj), startIds = {}, i;
+    for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
+    var rows = rosterValues(allProj, startIds, week), out = [];
+    for (i = 0; i < rows.length; i++) if (rows[i].outForSeason) out.push(rows[i]);
+    out.sort(function (a, b) { return a.pos < b.pos ? -1 : a.pos > b.pos ? 1 : 0; });
     return out;
   }
 
