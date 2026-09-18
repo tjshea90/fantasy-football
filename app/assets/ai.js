@@ -657,6 +657,76 @@
     ].join('\n');
   }
 
+  /* ==== THE CRITERIA, WRITTEN ONCE (Tj, 2026-09-18) ======================
+   * His six rules for the overhauled wire, in his own terms. Shared by the
+   * paid API call (waiverPrefix below) and the export-to-a-chat file
+   * (handoff.js buildWaivers) for the same reason rulesText() and
+   * qbSkepticismText() already are: two hand-copied paragraphs drift, and
+   * the next edit only ever lands on one of them.
+   *
+   * Rule 5 is the one worth reading twice — "the Claude prompt should have
+   * no restrictions" — because it inverts the old design. The old prompt
+   * told Claude its job was NEWS ONLY and that the app had already done the
+   * valuation; it was explicitly fenced off from ranking. Tj wants the fence
+   * gone: search anything, weigh anything, and come back with specific
+   * one-for-one moves. What the app still supplies is the two things no
+   * website can know — who is actually free in this ten-team league, and
+   * what anybody is worth under this scoring — and those stay as FACTS to
+   * build on, not as a ceiling on what may be considered. */
+  function waiverCriteriaText() {
+    return [
+      'HOW TO RANK — the criteria, all six of them.',
+      '',
+      '1. CURRENT SEASON, CURRENT NEWS, REPUTABLE SOURCES. Use this season and',
+      '   what is being reported right now. Search the web: injury reports, NFL',
+      '   news, beat writers, depth charts, waiver-wire columns, projection',
+      '   sites, snap and target shares. Prefer the last seven days and say so',
+      '   if the best you found is older. Do not rank anybody on last season.',
+      '',
+      '2. RANK ON THE WHOLE REST OF THE SEASON, NOT NEXT WEEK. Every judgement',
+      '   here is "what is this player worth from now until the end of the',
+      '   regular season, in THIS league\'s points". A great one-week matchup is',
+      '   worth almost nothing in that frame; a permanent role change is worth a',
+      '   great deal. The app has done this arithmetic for you already and shows',
+      '   its answer below as REST-OF-SEASON points — take it as the starting',
+      '   line and move it where the news justifies moving it.',
+      '',
+      '3. ONLY RECOMMEND A MOVE THAT IS A MEANINGFUL SEASON-LONG UPGRADE. Every',
+      '   add costs a drop: the roster is full. Do not propose a swap unless the',
+      '   man coming in is clearly better FOR THE REST OF THE SEASON than the',
+      '   specific man going out, priced in this scoring. A couple of points of',
+      '   difference over two months is not worth a roster move — say so and',
+      '   recommend nothing rather than padding the list.',
+      '',
+      '4. ONE FOR ONE, NAMED, WITH THE EDGE IN POINTS. Every recommendation is a',
+      '   PAIR: exactly one player to drop and exactly one to add, each named',
+      '   exactly as spelled below, with the reasoning and the expected',
+      '   rest-of-season point edge in this league\'s scoring. Tj\'s own examples',
+      '   of the form he wants:',
+      '     "drop Michael Wilson and add D. Wicks because he is the new #1',
+      '      receiver for the team and expected to produce 54 more fantasy',
+      '      points over the season than Michael Wilson"',
+      '     "drop Bo Nix due to season ending injury and add J. Hurts because he',
+      '      is the best available QB"',
+      '   Never a bare ranked list. Never "consider someone at receiver".',
+      '',
+      '5. NOTHING IS OFF LIMITS TO YOU. Search whatever helps. Weigh prior weeks',
+      '   this season, usage trends, role changes, schedule, coaching comments,',
+      '   anything. Two things below are FACTS rather than suggestions, because',
+      '   they are the two things no website on earth knows about this league:',
+      '   who is already owned here (never recommend adding one of them), and',
+      '   what a player is worth under this scoring table. Everything else is',
+      '   yours to judge.',
+      '',
+      '6. QUARTERBACK, KICKER AND DEFENSE ARE LOW PRIORITY. Do not propose a',
+      '   swap at these positions for an ordinary improvement. Only propose one',
+      '   when there is a strong, clear, SEASON-LONG edge, or when the player I',
+      '   have must be replaced anyway — a season-ending injury, an indefinite',
+      '   suspension, losing the starting job for good. Otherwise spend your',
+      '   recommendations on running back, receiver and tight end.'
+    ].join('\n');
+  }
+
   function waiverPrefix() {
     var lines = [];
     lines.push('You are advising on fantasy football waiver-wire pickups.');
@@ -1412,6 +1482,7 @@
               adviceSearchBudget: adviceSearchBudget, waiverSearchBudget: waiverSearchBudget,
               searchToolType: searchToolType,
               _waiverPrefix: waiverPrefix, _waiverBlock: waiverBlock,
+              waiverCriteriaText: waiverCriteriaText,
               qbSkepticismText: qbSkepticismText,
               _teamAnalysisPrefix: teamAnalysisPrefix, _teamAnalysisBlock: teamAnalysisBlock,
               FALLBACK_MODELS: FALLBACK,
