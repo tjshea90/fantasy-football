@@ -657,6 +657,31 @@
       if (p && p.then) p.then(function (r) { if (r) render(); })['catch'](function () { /* offline is fine */ });
     } catch (e) { /* never block startup, resume or a tab render for a background refresh */ }
   }
+  /* THE SEASON PROJECTIONS THE WIRE IS NOW RANKED ON (2026-09-18).
+   *
+   * Same quiet, only-if-stale shape as refreshPlayerDBIfStale above, and it
+   * exists for the same reason: the Wire tab is where this data is READ, so
+   * the Wire tab has to be able to fetch it. Before this, the only thing that
+   * ever called Projections.refreshSeason was the Advice tab's full sync — so
+   * a phone that opened the Wire tab without running that sync first had an
+   * empty season cache, every free agent fell back to a weekly line or a
+   * positional floor, and the board would have looked broken in a brand new
+   * way rather than the old one. Twelve-hour freshness (projections.js's
+   * SEASON_FRESH_MS) means this is at most two fetches a day, not a poll.
+   *
+   * Deliberately never awaited and never fatal: the board renders immediately
+   * from whatever is on disk and re-renders when this lands, exactly as the
+   * player database and injury feed already do. */
+  function refreshSeasonProjIfStale() {
+    if (!window.Projections || !Projections.refreshSeason) return;
+    try {
+      if (Projections.seasonFresh && Projections.seasonFresh(S.settings.season)) return;
+      var p = Projections.refreshSeason(S.settings.season);
+      if (p && p.then) {
+        p.then(function () { render(); })['catch'](function () { /* offline is fine */ });
+      }
+    } catch (e) { /* never block a tab render for a background refresh */ }
+  }
   function freshenSchedule() {
     if (!window.Schedule) return;
     try {
@@ -2274,6 +2299,9 @@
      * a no-op unless the database has actually gone stale (see
      * refreshPlayerDBIfStale above). */
     refreshPlayerDBIfStale();
+    /* the full-season projections the board is ranked on — see its own
+       comment above for why this has to happen here and not only on a sync */
+    refreshSeasonProjIfStale();
     addSafe(root, 'Your roster — injuries', rosterInjuryCard);
     addSafe(root, 'The free-agent board', freeAgentCard);
   }
