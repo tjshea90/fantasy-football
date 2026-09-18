@@ -212,5 +212,47 @@ console.log('\n-- index.html: the tab bar is excluded from the swipe gesture rec
      'ownedBySomethingElse() already honours this attribute everywhere else)');
 })();
 
+console.log('\n-- THE REAL BUG (2026-09-18): a cold relaunch restores lastTab but never' +
+            ' repainted the highlight to match --');
+(function () {
+  /* Tj: "it opens on the live tab (which is fine) but if I press the waiver
+   * wire tab the tab blinks...but it doesn't go to the waiver wire tab. It is
+   * stuck on the live tab...after that the waiver wire tab works normally."
+   *
+   * Reproduced here exactly as it happens on his phone: session 1 ends on the
+   * Wire tab (a plausible, ordinary thing to have open last — and CLAUDE.md
+   * already documents Android killing the backgrounded process far more
+   * often than a "resume" implies, so the NEXT open is a real boot(), not a
+   * live process continuing). Session 2 is a fresh harness reading the SAME
+   * disk back, which is what a cold relaunch actually is. */
+  var disk = {};
+  var h1 = buildHarness(disk);
+  h1.docHandlers.DOMContentLoaded();
+  h1.clickTab('wire');
+  ok(h1.W.Store.get().settings.lastTab === 'wire', 'session 1 ended on the wire tab');
+
+  var h2 = buildHarness(disk);
+  h2.docHandlers.DOMContentLoaded();
+  var wireBtn = h2.tabEls.filter(function (e) { return e.getAttribute('data-v') === 'wire'; })[0];
+  var liveBtn = h2.tabEls.filter(function (e) { return e.getAttribute('data-v') === 'live'; })[0];
+  ok(h2.W.Store.get().settings.lastTab === 'wire',
+     'session 2 restored lastTab from disk — internal view is already "wire"');
+  ok(wireBtn.classList.contains('on'),
+     'THE FIX: the Wire button is highlighted on boot to match the restored view' +
+     (wireBtn.classList.contains('on') ? '' : '  <-- this is "stuck on the live tab"'));
+  ok(!liveBtn.classList.contains('on'),
+     'and Live is NOT left highlighted from the static HTML default');
+  ok(wireBtn.getAttribute('aria-selected') === 'true' && liveBtn.getAttribute('aria-selected') === 'false',
+     'aria-selected agrees with the class, so a screen reader and a sighted user see the same tab');
+
+  /* The other half of the bug: pressing Wire again from here must be a
+   * legitimate no-op (you are already there), not evidence anything is
+   * broken — the fix is the PAINT at boot, not a change to this guard. */
+  var before = h2.W.Store.get().settings.saveCount;
+  h2.clickTab('wire');
+  ok(h2.W.Store.get().settings.saveCount === before,
+     'pressing the tab you are already on still correctly does nothing');
+})();
+
 console.log(fails ? ('\n  ' + fails + ' tab-safety check(s) FAILED') : '\n  tab-safety checks pass');
 process.exit(fails ? 1 : 0);
