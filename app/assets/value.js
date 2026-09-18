@@ -506,17 +506,25 @@
     return c;
   }
 
+  /* Apply a swap to a body count. A man who is finished for the year was never
+     counted as a body (bodyCounts skips him), so dropping him removes nothing
+     — getting that backwards would charge the roster for a player it has
+     already lost and block the very replacement it needs. */
+  function applySwap(counts, drop, addPos) {
+    if (!drop.outForSeason) counts[drop.pos] = (counts[drop.pos] || 0) - 1;
+    counts[addPos] = (counts[addPos] || 0) + 1;
+    return counts;
+  }
+
   /* Would dropping `drop` and adding a player at `addPos` still leave a legal
      lineup? Same position is always safe by construction and skips the work. */
-  function swapKeepsLineupLegal(counts, need, dropPos, addPos) {
-    if (dropPos === addPos) return true;
+  function swapKeepsLineupLegal(counts, need, drop, addPos) {
+    if (drop.pos === addPos) return true;
     var c = {}, k;
     for (k in counts) {
       if (Object.prototype.hasOwnProperty.call(counts, k)) c[k] = counts[k];
     }
-    c[dropPos] = (c[dropPos] || 0) - 1;
-    c[addPos] = (c[addPos] || 0) + 1;
-    return lineupFillable(c, need);
+    return lineupFillable(applySwap(c, drop, addPos), need);
   }
 
   /* A cross-position swap is allowed — Tj's "star player" carve-out — but it
@@ -578,7 +586,6 @@
     var rows = rosterValues(allProj, startIds, week);
     var need = slotNeeds();
     var counts = bodyCounts(rows);
-    var flexOK = need.flexOK;
 
     /* The best free agent at each position, for the cross-position test on a
        forced replacement: filling a dead TE slot with a WR is only defensible
@@ -632,7 +639,7 @@
         /* RULE E: never leave a slot with nobody to fill it. This is the TE
            case in Tj's own words, checked against the roster rather than
            hoped for in the ranking. */
-        if (!swapKeepsLineupLegal(counts, need, drop.pos, f.pos)) continue;
+        if (!swapKeepsLineupLegal(counts, need, drop, f.pos)) continue;
 
         var mand = !!drop.outForSeason;
         /* low priority, per Tj (rule 6): a K or DEF is only worth a swap when
@@ -692,11 +699,26 @@
       return b.rank - a.rank;
     });
 
+    /* THE ROSTER MOVES AS THE LIST IS BUILT (found re-reading this change).
+       Legality was checked once per pair against the ORIGINAL body counts,
+       which is right for any single swap and wrong for a list of them: two
+       cross-position swaps that are each perfectly legal on their own — drop
+       a tight end for a receiver, twice — are illegal together the moment
+       they take the last tight end between them. The board is a list Tj can
+       act on top-to-bottom, so it has to stay legal read that way: every
+       accepted swap is applied to a running count, and the next pair is
+       measured against the roster that would then exist. */
+    var live = {}, lk;
+    for (lk in counts) {
+      if (Object.prototype.hasOwnProperty.call(counts, lk)) live[lk] = counts[lk];
+    }
     var usedDrop = {}, usedFa = {}, out = [];
     for (i = 0; i < pairs.length; i++) {
       var pr = pairs[i];
       if (usedDrop[pr.drop.id]) continue;
       if (usedFa[pr.f.name]) continue;
+      if (!swapKeepsLineupLegal(live, need, pr.drop, pr.f.pos)) continue;
+      applySwap(live, pr.drop, pr.f.pos);
       usedDrop[pr.drop.id] = 1;
       usedFa[pr.f.name] = 1;
       out.push(describeSwap(pr, left, kdefNeed));
