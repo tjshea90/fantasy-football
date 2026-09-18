@@ -172,12 +172,22 @@
         ? root.Recommend.health({ name: p.n }) : { f: 1, label: '', note: '' };
       if (h.label === 'OUT') continue;
       var onBye = Number(p.b) === Number(week);
-      var pg = perGame(p.n, p.p, week);
+      var pg = perGame(p.n, p.p, week, root.Ros.byeOf(p));
       /* A real signal, not one lucky/unlucky week — gates whether he can be
          a TOP recommendation (freeAgentCard's "beats a starter" list and
          upgrades() below), never whether he is shown at all; the full
          per-position list still lists everyone so nothing is hidden. */
-      var confident = pg.n >= 2 || pg.src.indexOf('season pace') >= 0;
+      /* Now a property of the ESTIMATE rather than a string match on its
+         label: ros.js grades every estimate 'high' (a real full-season
+         projection AND games behind it), 'medium' (one or the other) or
+         'low' (a bare positional floor with nothing measured). Only a 'low'
+         one is barred from being an active recommendation, because a floor
+         is a guess and nothing else here is. This is deliberately more
+         permissive than the old 2-measured-games rule, and it can be: the
+         old rule existed to stop a one-week sample being extrapolated, and
+         that is now handled where it belongs — inside the blend, by
+         weighting one game at 20% instead of 100%. */
+      var confident = pg.conf !== 'low';
       /* Separate from `confident` above: this is just "has he actually done
          ANYTHING on an NFL field this season, ever, at all" — true for a
          single measured game too, not just 2+. Tj, 2026-09-17, pointing at
@@ -189,11 +199,22 @@
          several players ACTUALLY put up in a real game. A guess with zero
          track record has no business outranking a measured result just
          because the guess is a bigger number; see the sort below. */
-      var hasSignal = pg.n >= 1 || pg.src.indexOf('season pace') >= 0;
+      var hasSignal = pg.n >= 1 || pg.baselineKind === 'season';
       /* usage was formatted for all ~785 players and read for about 36 of
          them. It is a getter now: same property name, built on first touch. */
+      /* `ros` — expected points for the REST OF THE SEASON — is the number
+         this board ranks on now. `v`/`raw` stay per-game because the Wire
+         tab, the trade screen and every prompt read them by name, but they
+         are no longer what decides an order. A bye costs a game inside
+         `ros` already (ros.js's gamesLeft), so unlike `v` it is NOT zeroed
+         out for a bye week: a man on bye this week is still worth his
+         remaining season, which is exactly the distinction Tj asked for
+         between a one-week view and a season-long one. */
       var row = { name: p.n, pos: p.p, nfl: p.t, bye: p.b, onBye: onBye,
-                  v: onBye ? 0 : pg.v, raw: pg.v, src: pg.src,
+                  v: onBye ? 0 : pg.v, raw: pg.v, ros: pg.ros, games: pg.games,
+                  src: pg.src, conf: pg.conf,
+                  baselineKind: pg.baselineKind, baselineSrc: pg.baselineSrc,
+                  wObserved: pg.wObserved, observedPG: pg.observedPG,
                   healthLabel: h.label, healthNote: h.note, confident: confident,
                   hasSignal: hasSignal, n: pg.n };
       (function (r, nm) {
@@ -210,8 +231,15 @@
        could still rank #1 at his position purely because ESPN's own
        generic weekly model happened to print a bigger number than what
        someone else actually scored. Within each tier, still by value. */
+    /* Real production or a real season-long projection first, bare guesses
+       after — see `hasSignal` above. Within each tier, by EXPECTED REST-OF-
+       SEASON POINTS, not by this week's rate: that is the ranking Tj asked
+       for ("expected full season performance, not just the next NFL week"),
+       and it is what makes a player with eleven games left correctly worth
+       more than an equal one with six. */
     out.sort(function (a, b) {
       if (a.hasSignal !== b.hasSignal) return a.hasSignal ? -1 : 1;
+      if (Math.abs(b.ros - a.ros) > 1e-9) return b.ros - a.ros;
       return b.v - a.v;
     });
     _faMemo = { k: k, rows: out };
