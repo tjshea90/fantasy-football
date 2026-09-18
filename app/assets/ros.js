@@ -102,6 +102,20 @@
     return Math.max(0, left);
   }
 
+  /* A player's bye week, with the league's own bye table as the fallback when
+     his record carries none — the same resolution Store.isOnBye does, kept
+     here so a free agent straight out of the player database (whose `b` may
+     be 0) and a rostered player are treated identically. */
+  function byeOf(p) {
+    var b = Number(p.bye !== undefined ? p.bye : p.b);
+    if (!b) {
+      var S = root.Store.get();
+      var abbr = p.nfl || p.t;
+      if (S.byes && abbr) b = Number(S.byes[String(abbr).toUpperCase()]) || 0;
+    }
+    return isFinite(b) ? b : 0;
+  }
+
   /* ---- per-opportunity rates, measured from this league's own book -------
    * points per carry-or-target (skill positions) and per pass attempt (QB),
    * aggregated across every scored week, in league points. Memoised on the
@@ -281,7 +295,7 @@
 
   root.Ros = {
     estimate: estimate, baseline: baseline, observed: observed,
-    rates: rates, gamesLeft: gamesLeft, weeksLeft: weeksLeft,
+    rates: rates, gamesLeft: gamesLeft, weeksLeft: weeksLeft, byeOf: byeOf,
     PRIOR_GAMES: PRIOR_GAMES, USAGE_SHARE: USAGE_SHARE
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Ros;
