@@ -1,12 +1,12 @@
-# CHECKPOINT 97 — read me first, then TASKS.md
+# CHECKPOINT 53 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T17:46:36Z · **version:** 7.6 · **tests:** all 20 suites green
+**Written:** 2026-09-18T18:31:00Z · **version:** 7.6 · **tests:** all 20 suites green
 
 ## Just done
-Shipped v7.6 and published the GitHub Release: triggered publish-release.yml, verified via get_release_by_tag (FFTracker-v7.6.apk, 288987 bytes, non-empty assets array). Every fix from this job's improvement pass (tab-highlight bug, two duplicate-paid-Claude job guards, redundant projectAll computation, doSync week-capture race) is now in a real, tested, shipped release, not just committed source.
+Wrote Tj's 2026-09-18c waiver-wire overhaul request into TASKS.md verbatim (his 6 strict rules) and broke it into steps A-J, before touching any code, per CLAUDE.md.
 
 ## Do this next
-Send Tj the v7.6 release link per CLAUDE.md's standing instruction, and ask him separately whether he wants app/assets/sim.js's unused season()/power()/allPlay()/bracket() wired into a tab (playoff odds / power rankings) or deleted -- a product decision surfaced by this session's audit, not something to decide unilaterally. Nothing else in flight; this job is done pending his answer.
+Step A: read app/assets/recommend.js, value.js, projections.js, ai.js, the Wire render in ui.js and tools/test_waiver.js, and identify exactly which code path produces the screenshot's '16.4 proj (1 scored week in this app - thin sample)' line.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  07c0d36 ckpt 97: Shipped v7.6 and published the GitHub Release: triggered publish-release.yml, v
   5272367 ship v7.6: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
   d9d94d6 ship v7.5: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
   f4dd6eb ckpt 90: Formalized the job-guard fix's verification (previously only a throwaway, uncom
@@ -33,7 +34,7 @@ request in his own words and `git log` carries every step already taken.
   4b82a38 ckpt 66: Broader code/UI review pass (Tj's same 2026-09-18 message): delegated a researc
   58affc7 ckpt 57: Fixed the real waiver-wire tab-highlight bug: boot() restores view from lastTab
   a68ed9a ckpt 78: Shipped v7.4: QB waiver-swap threshold fix (QB_MIN_GAIN=6, QB_MIN_MEASURED=3, s
-  6a50a4e ship v7.4: waiver-wire QB season-edge fix (Stafford/Bo Nix no longer swapped for a margi
-  87ff104 ckpt 69: 1f/tests done: web research confirmed the QB-skepticism direction (footballguys
-  f8e561f ckpt 67: 1b/1c/1e done: QB waiver swaps now need a season-defining edge (6+ pts/gm, 3+ r
 ```
+
+(2 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)
