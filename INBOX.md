@@ -669,3 +669,10 @@ When I imported it back into Claude it gave nonsense answers
 <summary>Background command "Re-run ship.sh now that the APK is rebuilt" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-18T07:04:20Z
+```
+Continue on sonnet and look for ways to improve the ui, code, and efficiency of this app and make it perform better. Think of ways and research online to see if you can make the waiver wire section smarter but staying well tuned to the scoring system of this league. Defense and kicker are not priorities, and right now it always recommends qb switch from the QBs I already have, Stafford and bo nix. Keep in mind I drafted these QBs because they had excellent stats last quarter and they are pass heavy, in this league the scoring is one point for every completed pass. Only recommend a replacement qb if it is truly a season edge over the high completion QBs I already have. Focus waiver wire more on my roster weaknesses, usually rb and wr. Make sure the claude chat export and import system to ask Claude for advice also follows these rules. When I first open the app it is on the live page, but it still glitches and when I press another tab that tab doesn't light up on the bottom, like I never selected it. Usually when I try to press the waiver wire tab. It is possibly hanging on load time but I'm not sure. Only investigate this if you are sure it won't affect or break anything else in the app. 
+
+When you have made all changes, make sure all functions work well and are logically sound. Make sure everything is optimized and well coded. Check for errors and continue checking and fixing errors until the app is very stable. The time and usage is takes you to do this is no concern
+```
