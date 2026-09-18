@@ -3869,11 +3869,25 @@
     var quiet = !!(opts && opts.quiet);
     if (busy) return Promise.resolve(null);
     busy = true; renderHeader();
-    if (!quiet) jobStart('sync', 'Week ' + week + ': loading schedule…');
+    /* Captured once, here — NOT read live off the module-level `week` for the
+     * rest of this function (2026-09-18 review finding). `week` can be
+     * mutated mid-flight by applyCurrentWeek() (the NFL-week auto-advance,
+     * reachable from syncCurrentWeek() at boot and appResume — neither of
+     * which checks `busy` before moving it), and this chain runs several real
+     * network round trips. Without a capture, a week-advance landing between
+     * two of those awaits would fetch week N's box scores and then file them
+     * under Store.setBook(week,...)/S.weekMeta[week] for whatever week the
+     * display had already moved on to — silently corrupting the WRONG week's
+     * scored stats. Every reference below to "the week this sync is for"
+     * uses `syncWeek`; `render()`/`renderHeader()` still read the live
+     * `view`/`week` as always, because what the SCREEN shows should track
+     * the current week regardless of which week just finished syncing. */
+    var syncWeek = week;
+    if (!quiet) jobStart('sync', 'Week ' + syncWeek + ': loading schedule…');
     function step(t, p) { if (!quiet) jobStep(t, p); }
     var season = S.settings.season, allLines = [], oppMap = {}, twoPtSeen = 0, stSource = 'groups';
     var meta = { games: 0, allFinal: true, estFG: false, inProgress: 0 };
-    return Espn.weekGames(season, week, week > 18 ? 3 : 2).then(function (games) {
+    return Espn.weekGames(season, syncWeek, syncWeek > 18 ? 3 : 2).then(function (games) {
       meta.games = games.length;
       games.forEach(function (g) {
         /* who plays whom, recorded every sync: the advice engine's matchup term
