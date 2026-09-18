@@ -337,6 +337,14 @@
                  ? '**NEEDED** — mine is on bye or ruled out this week'
                  : 'not needed — my defense is available'));
     lines.push('');
+    lines.push('## ' + (root.Ai && root.Ai.qbSkepticismText
+      ? root.Ai.qbSkepticismText().split('\n')[0].replace(/^QUARTERBACK SWAPS: /, 'Quarterback swaps: ')
+      : 'Quarterback swaps — be skeptical'));
+    lines.push('');
+    lines.push((root.Ai && root.Ai.qbSkepticismText
+      ? root.Ai.qbSkepticismText().split('\n').slice(1).join('\n')
+      : ''));
+    lines.push('');
     var anyDrop = false;
     if (ctx.dropCandidates) {
       for (k in ctx.dropCandidates) {
