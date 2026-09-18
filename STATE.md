@@ -1,6 +1,138 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-18** · ladder 168/170 · **v7.7**, shipped · APK builds, signed, all 19 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-18** · ladder 168/170 · **v7.8**, shipped · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
+
+## v7.8 — the wire told him 36 of his 17 players were dead, and named a healthy man
+
+Tj, 2026-09-18, with a screenshot of the Wire tab in week 2. A red headline:
+*"36 players on your roster are out for the season — those spots are doing
+nothing until you replace them"*, and under it four rows — a WR, a TE, an RB
+and another TE — every one tagged REPLACE, every one reading *"replaces Dalton
+Schultz, who is out for the season"*, with four identical **Add + drop Dalton
+Schultz** buttons.
+
+> "It is broken. Notice it says 36 players on my roster are out for the season.
+> My roster is only 17 players... Finally, it seems as though the engine
+> hallucinated. Dalton Schultz is not out for the season, but the app claimed
+> he is. This is a major error."
+
+Three separate defects, and the one he called a hallucination was the worst.
+
+### 1. The app was reading somebody else's injury
+
+`Recommend.seasonOutlook` decided "done for the year" by running one regex over
+the free-text news blurb attached to a player. Pulled live from ESPN's
+`/injuries` feed — the same endpoint `loadNews` reads — Dalton Schultz's actual
+record is:
+
+    status: "ACTIVE"
+    note:   "...Schultz doesn't offer much big-play ability at 30 years old,
+             but he's a reliable target in the middle of the field and saw his
+             floor raise when JAYDEN HIGGINS went down with a SEASON-ENDING
+             torn ACL over the summer."
+
+Higgins' injury, Schultz's write-up. The regex matched `season-ending`, ignored
+the word ACTIVE sitting in the same record, and wrote off a healthy starting
+tight end. Run over all 800 live records, that regex fires on fourteen players
+and **thirteen of them are status ACTIVE** — among them **Patrick Mahomes**
+("last December's season-ending knee injury") and **Malik Nabers** ("a torn ACL
+... in Week 4 of last season"), both written off for injuries they had already
+come back from. Tj's guess — "maybe it pulled old, outdated news" — was half
+right: the feed was current to the minute, but the prose inside it talks about
+last season and about other people.
+
+Two failure modes, neither detectable by matching a phrase: the note can be
+about **somebody else**, and it can be about a **past season**. What was
+reliable was the structured half of the record, all of which was being thrown
+away by the parser:
+
+| field | what it settles |
+|---|---|
+| `status` | Availability. ACTIVE means he is playing. Kills 13 of the 14. |
+| `details.returnDate` | *When* he is back. Present on all 39 live IR records — October and November dates mean back this season, `2027-02-15` is ESPN's "not this year" sentinel. |
+| `details.fantasyStatus` | `IR-R` / `PUP-R`: literally "designated to return". |
+| `date` | How old the record is. |
+
+So `seasonOutlook` now answers two questions instead of one crude boolean:
+**finished for the year**, and **parked but coming back**. The note is demoted
+to corroboration — it may only promote a player already parked by his
+designation, it must be about *him* (nearest name before the phrase, possessives
+included), and it must not be describing a previous season. Against the live
+feed: 12 players correctly finished, 30 correctly reading *"on IR, back Oct 18"*
+instead of *"out for the season"*, and Schultz, Mahomes, Nabers, Skattebo and
+Demercado all clear.
+
+A man on IR who is coming back is now also **priced**, rather than being either
+written off or ignored: his per-game rate times the games he can actually still
+appear in (new `Ros.weekOfDate` / `Ros.gamesLeftFrom`). Zero was wrong and full
+was wrong.
+
+### 2. "36" was counting rows, not players
+
+`ui.js` counted `ups.filter(u => u.mandated).length` — suggestion rows whose
+drop happened to be a dead man. One player priced at zero is the weakest
+droppable man at his own position *and* the weakest flex-eligible man overall,
+so `upgrades()` paired him with every free agent that cleared the gates. 36
+rows, one player, and a sentence that could not have been true of a 17-man
+roster under any circumstances.
+
+The row count was the symptom; the disease was that `upgrades()` had no
+assignment step at all. **You can only drop a man once.** It now builds every
+plausible (free agent × drop candidate) pair, ranks them, and hands out each
+roster spot and each free agent exactly once — which is what "on a one to one
+basis" (rule 4 of the v7.7 job) always asked for and which only the Claude
+prompt was doing. The same rule is now *enforced* on the Claude path too
+(`normalizeWaivers`), not merely requested of it. And the headline count comes
+off `Value.mustReplace()` — the roster itself — so it names the actual men and
+cannot exceed the roster size. It also moved out of `if (ups.length)`: a dead
+spot with nothing startable on the wire is precisely when he needs telling.
+
+### 3. Same position by default — Tj's new rule
+
+> "generally it should recommend a same type player position for the
+> recommended drop and add, because if I drop a te, I should have a backup te
+> to replace him, but this rule is not absolute; for example if a star player
+> with high output is available, it would make sense to drop a low output
+> player even if he is in a different position."
+
+Enforced on the roster rather than hoped for in the ranking. `slotNeeds()`
+reads the league's real starting shape off `S.league.slots`; no swap may leave
+a slot with nobody to fill it. Beyond that, like-for-like is the default: a
+cross-position swap must clear **double** both bars and is ranked at 0.75× so
+it has to be about a third bigger to outrank an equivalent same-position move,
+and a forced replacement crossing positions must additionally beat the best
+player actually available at the position it empties. Rules **7** and **8**
+were added to both Claude prompts in Tj's own words.
+
+### Three more bugs, all found re-reading this job's own diff
+
+The ckpt-115 discipline earned its keep again:
+
+- Lineup legality was checked per pair against the **original** body counts.
+  Two cross-position swaps that are each legal alone can take the last tight
+  end between them — and this board is a list Tj reads top-to-bottom and acts
+  on, so it has to be legal read that way. Every accepted swap now updates a
+  running count. The test produces `TE:0` against the pre-fix code.
+- `subjectBefore()` did not strip possessives, so *"Hand's move to injured
+  reserve ... he'd miss the remainder of the season"* read as somebody else's
+  report and a genuinely finished player's own words were discarded.
+- Two past-markers (`previously`, `career`) were over-broad enough to suppress
+  real reports — *"it was previously announced that he'd miss the remainder of
+  the season"* is a current fact told backwards.
+
+Plus one inconsistency in the screenshot nobody had flagged: the tab's own
+"thinnest starting spots" line read **"QB, WR — a pickup there is more likely
+to actually move your team"**, while the board directly underneath is built to
+refuse ordinary QB swaps and Tj has twice complained it "always recommends qb
+switch". Quarterback now sits alongside kicker and defense in that line too.
+
+### Tests
+
+New suite `tools/test_wire.js`, with ESPN's live 2026-09-18 blurbs as verbatim
+fixtures. Checked out against the true pre-fix commit, **32 of its assertions
+fail there and pass now** — and the pre-fix run reproduces the screenshot
+exactly: one dead roster spot producing nine forced-replacement rows, eight of
+them duplicate drops, the top row replacing a tight end with a wide receiver.
 
 ## v7.7 — the waiver wire, rebuilt on the season instead of on last Sunday
 
