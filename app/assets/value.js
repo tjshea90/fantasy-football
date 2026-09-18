@@ -622,6 +622,42 @@
     return out;
   }
 
+  /* ---- MY OWN players, priced by the SAME engine as the wire ------------
+   * This is what makes rule 3 ("only recommend I drop and add a player ... if
+   * they are a meaningful improvement for the rest of the season over the
+   * player it recommends I drop") actually checkable rather than a sentence
+   * in a prompt. Before this, the two sides of a swap were measured
+   * differently: a free agent by value.js's own per-game rate, a rostered
+   * player by recommend.js's `base` — a blend built for THIS WEEK's lineup
+   * decision, weighted toward this week's ESPN line. Comparing them and
+   * calling the difference a season-long edge was comparing two different
+   * questions. Both sides now go through ros.js.
+   *
+   * A player who is done for the year is worth ZERO for the rest of the
+   * season, not his historical rate, and saying so here is what lets the
+   * "drop Bo Nix due to season ending injury" case fall out of the ordinary
+   * arithmetic instead of needing a special rule of its own. */
+  function rosterValues(allProj, startIds, week) {
+    var out = [], i;
+    for (i = 0; i < allProj.length; i++) {
+      var x = allProj[i], p = x.p;
+      var so = (root.Recommend && root.Recommend.seasonOutlook)
+        ? root.Recommend.seasonOutlook({ name: p.name }) : { seasonEnding: false, why: '' };
+      var e = root.Ros.estimate({ name: p.name, pos: p.pos, bye: root.Ros.byeOf(p) }, week);
+      out.push({
+        id: p.id, name: p.name, pos: p.pos, nfl: p.nfl,
+        ros: so.seasonEnding ? 0 : e.total,
+        base: so.seasonEnding ? 0 : e.perGame,
+        perGame: so.seasonEnding ? 0 : e.perGame,
+        games: e.games, n: e.n, conf: e.conf, src: e.src,
+        outForSeason: !!so.seasonEnding,
+        outWhy: so.why || '',
+        bench: !startIds[p.id]
+      });
+    }
+    return out;
+  }
+
   /* ---- drop candidates, per position, weakest REST-OF-SEASON value first -
    * Bench players only, when there are any — a starter is offered only as a
    * last resort when the position has no bench depth at all, so Claude
@@ -707,6 +743,7 @@
                  perGame: perGame, usage: usage, usageText: usageText,
                  valueOf: valueOf, trade: trade, weeksLeft: weeksLeft,
                  rosteredSet: rosteredSet, myInjuries: myInjuries,
+                 rosterValues: rosterValues, mandatedFrom: mandatedFrom,
                  myStarters: myStarters,
                  /* the exact bar upgrades() itself holds a QB free agent to —
                     exported so ai.js's normalizeWaivers can hold a
