@@ -515,9 +515,12 @@
 
   /* Which starting slots are actually weak, weakest first. "Weak" is measured
      against the best free agent at that position, not against some absolute —
-     a 9-point tight end is only a problem if the wire has a better one. */
-  function needs(week, teamId, opponents) {
-    var starters = myStarters(week, teamId, opponents);
+     a 9-point tight end is only a problem if the wire has a better one.
+     `starters` is optional — waiverContext() below already has its own copy
+     from myStarters() and passes it through so this does not recompute the
+     same bestLineup()/projectAll() pass a second time in the same call. */
+  function needs(week, teamId, opponents, starters) {
+    starters = starters || myStarters(week, teamId, opponents);
     var rep = replacement(week), out = [], i;
     for (i = 0; i < starters.length; i++) {
       var s = starters[i];
