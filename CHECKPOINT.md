@@ -1,12 +1,12 @@
-# CHECKPOINT 67 — read me first, then TASKS.md
+# CHECKPOINT 70 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T20:23:09Z · **version:** 7.7 · **tests:** all 20 suites green
+**Written:** 2026-09-18T20:30:44Z · **version:** 7.7 · **tests:** all 21 suites green
 
 ## Just done
-Steps B/C/D/E/F built. value.js upgrades() rewritten: it now builds EVERY plausible (free agent x drop candidate) pair, ranks them, and greedily assigns so each roster player is the drop in at most one suggestion and each free agent the add in at most one -- the actual disease behind '36 rows, one player'. Same-position is the default (a cross-position swap must clear DOUBLE both bars, and is ranked at 0.75x so it has to be about a third bigger to outrank a like-for-like move); a forced replacement crossing positions must additionally beat the best available player at the emptied position. New slotNeeds/lineupFillable/bodyCounts enforce Tj's TE rule on the ROSTER: no swap may leave a starting slot nobody can fill. New Value.mustReplace() counts holes off the roster, and ui.js's headline now names the actual men instead of counting suggestion rows. rosterValues prices an IR-but-returning player at his rate times the games he can still play (new Ros.weekOfDate/gamesLeftFrom) instead of zero or full. ai.js + handoff.js prompts carry new rules 7 (like-for-like unless the gap is big) and 8 (never name the same man twice), and normalizeWaivers now ENFORCES the one-to-one drop rather than trusting it. All 19 suites still green.
+Step H done. New suite tools/test_wire.js (20 suites now, all green) pins every part of this repair, with ESPN's live 2026-09-18 blurbs as verbatim fixtures: Schultz/Higgins, Mahomes' 'last December's season-ending knee injury', Nabers' 'torn ACL in Week 4 of last season', Demercado/Malik Davis, Skattebo's 'in his return from'. PROVED THE TESTS BITE: checked the suite out against the true pre-fix commit a401373 and 32 assertions FAIL there and pass now. The pre-fix run reproduces Tj's screenshot exactly -- one dead roster spot producing NINE forced-replacement rows, eight of them duplicate 'drop My TE2', and the top row replacing a tight end with a wide receiver. ES2018 gate green.
 
 ## Do this next
-Step H: write the tests. Each must be confirmed to FAIL against the pre-fix code before being accepted, and the live feed text (Schultz/Higgins, Mahomes, Nabers) must be pinned as fixtures. Then G (full sweep of the wire section), then I (ship + release + link).
+Step G: the thorough overview Tj asked for -- re-read the whole wire section (ros.js, value.js, recommend.js, ai.js, handoff.js, the Wire tab) against the prior job's six rules plus his two new ones, looking for anything else wrong, and re-read THIS job's own diff adversarially the way ckpt 115 did (that is how the last severe bug was caught). Then I: ship, publish the Release, send Tj the link.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  e0dc8a2 ckpt 67: Steps B/C/D/E/F built. value.js upgrades() rewritten: it now builds EVERY plaus
   f1c2810 ckpt 58: Step A done — the hallucination is fixed at its source. recommend.js: loadNew
   2e1c0d9 ckpt 53: Wrote Tj's 2026-09-18d 'the wire is broken' request into TASKS.md verbatim, and
   837c56c ckpt 118: Shipped v7.7 and published the GitHub Release: triggered publish-release.yml, 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   c396c21 ckpt 106: Step G done plus two real staleness bugs found and fixed while doing it. UI: t
   6b0083a ckpt 96: Steps F done (rules 4+5). New Ai.waiverCriteriaText() states all six of Tj's cr
   3a24f65 ckpt 77: Step H part 1 done: tools/test_waiver.js rewritten against the new engine, and 
-  4799ecb ckpt 72: Steps C/D/E built. New app/assets/ros.js is the rest-of-season engine: full-sea
 ```
 
-(8 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
