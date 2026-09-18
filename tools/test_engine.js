@@ -408,6 +408,7 @@ return Espn.gameStats('test').then(function (r) {
      points says a fourth running back and a startable tight end are the same
      asset, and that is how you lose a trade politely. */
   load('players.js'); load('playerdb.js'); root.PlayerDB.init();
+  load('ros.js');
   load('value.js');
   (function () {
     var V = root.Value;
@@ -520,6 +521,7 @@ return Espn.gameStats('test').then(function (r) {
     stub.Projections = { find: function (q) {
       return byName[q.name] !== undefined ? { week: byName[q.name] } : null; } };
     stub.Recommend = { PRIOR: { QB: 30, RB: 14, WR: 13, TE: 9, K: 8, DEF: 7 } };
+    load2('ros.js', stub);
     load2('value.js', stub);
     var V = stub.Value;
   

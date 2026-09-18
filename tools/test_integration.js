@@ -38,7 +38,7 @@ function load(f) {
 }
 /* the same order as index.html */
 ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
- 'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'value.js', 'recap.js',
+ 'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'ros.js', 'value.js', 'recap.js',
  'ai.js'].forEach(load);
 
 ok(!!W.SEED, 'the seed loaded');
@@ -190,7 +190,7 @@ var me = S.league.me;
   fresh.Native = { save: function (k, v) { d2[k] = v; return true; },
                    load: function (k) { return d2[k] === undefined ? null : d2[k]; } };
   ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
-   'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'value.js', 'recap.js',
+   'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'ros.js', 'value.js', 'recap.js',
    'ai.js'].forEach(function (f) {
     new Function('window', fs.readFileSync(path.join(__dirname, '..', 'app/assets', f), 'utf8'))(fresh);
   });

@@ -113,7 +113,7 @@ function buildHarness() {
   function load(f) { vm.runInContext(fs.readFileSync(A(f), 'utf8'), W, { filename: f }); }
   var order = ['version.js', 'seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js',
                'store.js', 'playerdb.js', 'gamelog.js', 'projections.js', 'usage.js', 'ai.js',
-               'recommend.js', 'sim.js', 'value.js', 'teamreport.js', 'recap.js', 'schedule.js',
+               'recommend.js', 'sim.js', 'ros.js', 'value.js', 'teamreport.js', 'recap.js', 'schedule.js',
                'handoff.js', 'stats.js', 'gestures.js', 'ui.js'];
   order.forEach(load);
   return { W: W, ids: ids, docHandlers: docHandlers, clickTab: clickTab, tabEls: tabEls };
