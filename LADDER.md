@@ -1714,3 +1714,64 @@ bracket-wrapped field anywhere still imports exactly as before. Full suite
 (18 suites) + `node tools/check_es2018.js` all green.
 
 Shipped as v7.3.
+
+## 41. Stop pushing QB swaps off Stafford/Bo Nix; deprioritize K/DEF; investigate the Wire-tab tab-highlight glitch (Tj, 2026-09-18, v7.4)
+
+"it always recommends qb switch from the QBs I already have, Stafford and
+bo nix... Only recommend a replacement qb if it is truly a season edge
+over the high completion QBs I already have. Focus waiver wire more on my
+roster weaknesses, usually rb and wr... defense and kicker are not
+priorities." Plus: the Claude-app handoff has to follow the same rules,
+and a careful, don't-break-anything look at "the tab I press doesn't
+light up, usually Wire."
+
+`Value.upgrades()` — the free, no-API-key "beats a starter" board — held
+every position to the same flat "1 more point per game" margin, which is
+real signal at RB/WR and pure noise at QB: a completion pays a full point
+here, so a good starting QB already outscores a good RB/WR 3-4x per game,
+and `confident` let ESPN's generic season MODEL alone count the same as a
+QB with actual measured production. With one starting QB slot and no real
+bench depth, any free-agent QB clearing that tiny bar got paired with
+Tj's own starter as a "drop him" suggestion. The same board never gated
+K/DEF at all, unlike the Claude-driven one.
+
+Fixed with two new thresholds in `value.js` — `QB_MIN_GAIN` (6 points/
+game, not 1) and `QB_MIN_MEASURED` (3 real scored games, not a projection
+alone) — both exported so `ai.js`'s `normalizeWaivers()` holds a Claude-
+suggested QB swap to the identical bar rather than a second, drifting
+copy. K/DEF now check `kdefNeedFrom()` the same way the Claude path
+already did. One QB-skepticism paragraph (`Ai.qbSkepticismText`) is now
+read by BOTH the live-API waiver prompt and the offline Claude-app
+handoff export, so the two paths cannot quietly diverge. The Wire tab
+states the roster's actual thinnest spots (K/DEF excluded) up front.
+Web research independently confirmed the direction: point-per-completion
+scoring analysis names accurate, high-volume passers — Stafford by name —
+as the archetype that gets "thrust to the top of their tiers" in exactly
+this scoring shape.
+
+Also fixed in the same file: `Value.waiverContext()` computed
+`myStarters()` three separate times in one call; `needs()` now accepts an
+optional precomputed `starters` so `waiverContext()` only computes it
+once more than strictly necessary instead of twice.
+
+The tab-highlight glitch was investigated end to end — the already-fixed
+tab-lock bug (§37) and the already-fixed swipe-swallow risk are both
+confirmed still fixed and still tested; `Store.save()`'s old 1.9 MB
+blocking-write bug was already fixed by an earlier session, not a live
+lead; the Wire tab's real per-render cost was traced and found to be
+cheap, memoized hash lookups, not a hidden freeze. No reproducible defect
+was found, so nothing was changed here — see STATE.md's 2026-09-18 entry
+for the full trace and TASKS.md's "Waiting on Tj" for the specific
+follow-up question that would actually narrow this down if it recurs.
+
+DONE — `tools/test_waiver.js` gained 6 new cases covering the QB
+season-edge gate (big edge + no games = no; real games + small edge = no;
+real games + big edge = yes) and the K/DEF need-gate (not needed = no;
+genuinely needed = yes). `tools/test_handoff.js`'s generic waiver round-
+trip test now exercises RB/WR instead of whichever position happened to
+sort first (previously QB, which a synthetic zero-games pool entry can no
+longer clear — correctly, since that test is about round-trip plumbing,
+not QB gating). Full suite (18 suites) + `node tools/check_es2018.js` all
+green.
+
+Shipped as v7.4.
