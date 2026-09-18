@@ -721,6 +721,8 @@
     lines.push('or DEF add that is not actually needed, so ranking one you were not asked');
     lines.push('for wastes your own search budget.');
     lines.push('');
+    lines.push(qbSkepticismText());
+    lines.push('');
     lines.push('Answer with JSON ONLY, no prose outside it, in exactly this shape:');
     lines.push('{"adds":[{"name":"<exact name>","pos":"QB|RB|WR|TE|K|DEF",');
     lines.push('  "nfl":"<team abbr>","rank":1,');
