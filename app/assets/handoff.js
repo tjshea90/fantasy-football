@@ -262,59 +262,44 @@
     var lines = [], k, i;
 
     lines.push(head({ title: 'week ' + week + ' waiver wire' }));
-    lines.push('## What to do');
+    lines.push('## What I want back');
     lines.push('');
-    lines.push('1. Read **this week\'s** waiver-wire and injury news for the players in');
-    lines.push('   the **AVAILABLE** list below. Use only news dated this week — an article');
-    lines.push('   or ranking that reads like it describes an earlier week (a designation');
-    lines.push('   that would already have resolved, a page published before this week\'s');
-    lines.push('   injury news broke) is stale; search again rather than rely on it.');
-    lines.push('2. Re-rank them **for this specific roster** and this specific scoring.');
-    lines.push('   Weight a season-long role change (the starter ahead of him is out for');
-    lines.push('   multiple weeks, a permanent depth-chart move) above a one-week-only edge');
-    lines.push('   (a bye fill-in, a single good matchup) — see **priority** below.');
-    lines.push('3. Say plainly which of them, if any, beats a player currently being');
-    lines.push('   started — naming the starter — and, where it makes sense, which of MY');
-    lines.push('   OWN players at that position I should drop to make room (see **DROP');
-    lines.push('   CANDIDATES** below; never suggest a swap across positions).');
-    lines.push('4. For each player in **MY ROSTER — INJURIES** below who is not on a bye,');
-    lines.push('   research his rest-of-season outlook and report it in the `injuries`');
-    lines.push('   list, even if you conclude he does not need replacing.');
-    lines.push('5. Write the answer as the JSON file described at the end.');
+    lines.push('**Specific one-for-one drop/add pairs for my roster, ranked, each with the');
+    lines.push('reasoning and the expected rest-of-season point edge in this league\'s');
+    lines.push('scoring** — or, if nothing on the wire is a meaningful season-long upgrade,');
+    lines.push('a plain statement that I should stand pat.');
     lines.push('');
     lines.push('Today is **' + ctx.today + '**. This is **NFL week ' + week +
-               ' of the ' + ctx.season + ' season**.');
+               ' of the ' + ctx.season + ' season**, with **' + ctx.weeksLeft +
+               ' week' + (ctx.weeksLeft === 1 ? '' : 's') + ' left** in the regular season.');
     lines.push('');
-    lines.push('### The division of labour, so you do not redo work');
+    lines.push(root.Ai && root.Ai.waiverCriteriaText ? root.Ai.waiverCriteriaText() : '');
     lines.push('');
-    lines.push('**The app has already done the part you cannot.** It is the only thing');
-    lines.push('that knows who is genuinely unrostered in this particular ten-team');
-    lines.push('league, and the only thing that prices a player in this particular');
-    lines.push('scoring. Every name in the AVAILABLE list is confirmed free, and every');
-    lines.push('number beside it is already in league points.');
+    lines.push('### What the app has already worked out, and what it has not');
     lines.push('');
-    lines.push('**What you add is what a stat line cannot show**: the starter ahead of a');
-    lines.push('backup got hurt on Sunday, a rookie just took the third-down role, a');
-    lines.push('coach named a closer, a snap share moved. That is the whole job.');
+    lines.push('**Settled fact, not opinion:** who is unrostered in this ten-team league,');
+    lines.push('and what every player is worth in this scoring. No public list knows either.');
+    lines.push('Every REST-OF-SEASON number below is expected points from now to the end of');
+    lines.push('the regular season, computed from full-season projections (ESPN and Sleeper,');
+    lines.push('re-scored under the table below), blended with this season\'s measured games,');
+    lines.push('and multiplied by the games each man actually has left after his bye.');
+    lines.push('');
+    lines.push('**Open to you, and the reason you are being asked at all:** whether those');
+    lines.push('numbers still describe reality. A depth chart moved, a starter tore an ACL,');
+    lines.push('a rookie took the third-down role, a coach named a closer — none of that is');
+    lines.push('in a projection yet. Move a player up or down, and say why.');
     lines.push('');
     lines.push(scoringSection());
-    lines.push('## My current starting lineup, as the app projects it');
-    lines.push('');
-    lines.push('| slot | player | pos | projection |');
-    lines.push('|---|---|---|---|');
-    for (i = 0; i < ctx.starters.length; i++) {
-      var s = ctx.starters[i];
-      lines.push('| ' + s.slot + ' | ' + s.name + ' | ' + s.pos + ' | ' +
-                 (typeof s.proj === 'number' ? s.proj.toFixed(1) : '?') + ' |');
-    }
-    lines.push('');
+    lines.push(rosterSection(ctx));
     if (ctx.injuries && ctx.injuries.length) {
-      lines.push('## My roster — injuries');
+      lines.push('## My roster — injuries and byes');
       lines.push('');
-      lines.push('Research the rest-of-season outlook for each of these NOT on a bye —');
+      lines.push('For each of these NOT on a bye, research the rest-of-season outlook —');
       lines.push('severity, body part, expected timeline — and report it in the `injuries`');
-      lines.push('list at the end even if he does not need replacing. The bye ones need no');
-      lines.push('research; just echo the reason already given.');
+      lines.push('list at the end even if he does not need replacing. **If any of them is out');
+      lines.push('for the season, that is a mandated replacement under rule 6: pair him with');
+      lines.push('the best available player at his position regardless of how low a priority');
+      lines.push('that position normally is.** The bye ones need no research.');
       lines.push('');
       for (i = 0; i < ctx.injuries.length; i++) {
         var inj = ctx.injuries[i];
@@ -323,28 +308,28 @@
       }
       lines.push('');
     }
-    lines.push('## Kicker / defense — do I actually need one?');
+    lines.push(mandatedSection(ctx));
+    lines.push('## Kicker / defense / quarterback — the low-priority positions');
     lines.push('');
-    lines.push('A streamed kicker or D/ST for one good matchup is exactly the kind of');
-    lines.push('small weekly change that matters least in this league — see **priority**');
-    lines.push('below. Only rank a K or DEF add when the matching line here says NEEDED;');
-    lines.push('otherwise omit K and DEF from your answer entirely.');
+    lines.push('Rule 6 above governs these. For reference, the app\'s own read of whether my');
+    lines.push('kicker and defense are even available this week:');
     lines.push('');
     lines.push('- K: ' + ((ctx.kdefNeed && ctx.kdefNeed.K)
-                 ? '**NEEDED** — mine is on bye or ruled out this week'
-                 : 'not needed — my kicker is available'));
+                 ? '**mine is on bye or ruled out this week**'
+                 : 'mine is available'));
     lines.push('- DEF: ' + ((ctx.kdefNeed && ctx.kdefNeed.DEF)
-                 ? '**NEEDED** — mine is on bye or ruled out this week'
-                 : 'not needed — my defense is available'));
+                 ? '**mine is on bye or ruled out this week**'
+                 : 'mine is available'));
     lines.push('');
     /* Same text ai.js's live-API waiver call uses (Ai.qbSkepticismText) —
        shared rather than duplicated so the two Claude paths can never
        quietly drift apart (Tj, 2026-09-18: this rule has to apply "also"
        to this offline round trip, not just the paid API call). */
-    lines.push('## Quarterback swaps — be skeptical');
+    lines.push('### Quarterback, specifically');
     lines.push('');
     lines.push(root.Ai && root.Ai.qbSkepticismText ? root.Ai.qbSkepticismText() : '');
     lines.push('');
+    lines.push(swapsSection(ctx));
     var anyDrop = false;
     if (ctx.dropCandidates) {
       for (k in ctx.dropCandidates) {
@@ -353,18 +338,19 @@
       }
     }
     if (anyDrop) {
-      lines.push('## Drop candidates — my own weakest player at each position');
+      lines.push('## Easiest players to drop, by position');
       lines.push('');
-      lines.push('Ranked by rest-of-season value, worst first. A `dropCandidate` on an add');
-      lines.push('**must** be chosen from the matching position\'s list here, or left an');
-      lines.push('empty string — never a name at a different position, and never one you');
-      lines.push('invented.');
+      lines.push('My own weakest at each position by rest-of-season value, worst first.');
+      lines.push('These are the natural `drop` half of a pair — but they are a shortlist,');
+      lines.push('not a fence: anybody on my roster above may be dropped if you can show');
+      lines.push('the swap is a clear season-long gain.');
       lines.push('');
       for (k in ctx.dropCandidates) {
         if (!Object.prototype.hasOwnProperty.call(ctx.dropCandidates, k)) continue;
         if (!ctx.dropCandidates[k].length) continue;
         lines.push('- **' + k + '**: ' + ctx.dropCandidates[k].map(function (d) {
-          return d.name + ' (ROS value ' + d.ros.toFixed(1) + ')';
+          return d.name + ' (' + d.ros.toFixed(0) + ' pts rest-of-season' +
+                 (d.outForSeason ? ', **OUT FOR THE SEASON**' : '') + ')';
         }).join(', '));
       }
       lines.push('');
@@ -386,38 +372,55 @@
     }
     lines.push('## AVAILABLE — nobody in this list is on any of the ten rosters');
     lines.push('');
-    lines.push('`proj` is this week in league points. `vor` is points above the next');
-    lines.push('best free agent at the same position, which is the honest way to compare');
-    lines.push('across positions when a quarterback outscores a running back by default.');
+    lines.push('`ROS` is expected points for the rest of the season in this league\'s');
+    lines.push('scoring — the number to rank on. `per gm` is that rate per game and `gms`');
+    lines.push('is how many he has left after his bye. `vor` is his ROS above the next best');
+    lines.push('free agent at the same position, which is the honest way to compare across');
+    lines.push('positions when a quarterback outscores a running back by default. `basis`');
+    lines.push('says what the number is built from, so you can see where it is thin.');
     lines.push('');
     for (k in ctx.pool) {
       if (!Object.prototype.hasOwnProperty.call(ctx.pool, k)) continue;
       if (!ctx.pool[k].length) continue;
       lines.push('### ' + k);
       lines.push('');
-      lines.push('| player | NFL | proj | vor | bye |');
-      lines.push('|---|---|---|---|---|');
+      lines.push('| player | NFL | ROS | per gm | gms | vor | basis |');
+      lines.push('|---|---|---|---|---|---|---|');
       for (i = 0; i < ctx.pool[k].length; i++) {
         var f = ctx.pool[k][i];
         lines.push('| ' + f.name + ' | ' + (f.nfl || '?') + ' | ' +
-                   (typeof f.v === 'number' ? f.v.toFixed(1) : '?') + ' | ' +
-                   (typeof f.vor === 'number' ? f.vor.toFixed(1) : '?') + ' | ' +
-                   (f.bye || '—') + (f.onBye ? ' **ON BYE**' : '') + ' |');
+                   (typeof f.ros === 'number' ? f.ros.toFixed(0) : '?') + ' | ' +
+                   (typeof f.raw === 'number' ? f.raw.toFixed(1) : '?') + ' | ' +
+                   (f.games === undefined ? '?' : f.games) + ' | ' +
+                   (typeof f.vor === 'number' ? f.vor.toFixed(0) : '0') + ' | ' +
+                   (f.src || '?') + (f.onBye ? ' **(on bye this week)**' : '') + ' |');
       }
       lines.push('');
     }
+    lines.push(takenSection(ctx));
     lines.push(contractSection(
       { filename: 'fftracker-waivers-reply.json',
         skeleton: {
           kind: KIND_WAIVER + '.reply', format: FORMAT,
           week: week, season: ctx.season,
+          swaps: [{
+            drop: '<exact name of ONE player on MY roster>',
+            add: '<exact name of ONE player from AVAILABLE>',
+            pos: 'QB|RB|WR|TE|K|DEF',
+            nfl: '<team abbr of the player being added>',
+            rank: 1,
+            edge: 0,
+            mandated: false,
+            confidence: 'high | medium | low',
+            why: '<why this exact swap, for the rest of the season>'
+          }],
           adds: [{
             name: '<exact name>', pos: 'QB|RB|WR|TE|K|DEF', nfl: '<team abbr>',
             rank: 1,
             overStarter: '<name of the starter he beats, or an empty string>',
             priority: 'season | week',
             recentStat: '<his exact stat line from his most recent game, dated>',
-            dropCandidate: '<exact name from the matching position in DROP CANDIDATES, or an empty string>',
+            dropCandidate: '<exact name of the player on my roster to drop for him>',
             confidence: 'high | medium | low',
             why: '<the news or role reason, dated, with the outlet named>'
           }],
@@ -431,26 +434,26 @@
           summary: '<two sentences: what to do first>'
         } },
       [
-        '`rank` — 1 is the best add overall. Also rank within each position by listing that position\'s players in order.',
-        'Return the best few at **each** position that has a credible option, not one global list. A list of nothing but quarterbacks is useless here even though quarterbacks score most.',
-        '`overStarter` — fill it in **only** when you actually believe he beats that named starter this week under this scoring. Empty string otherwise. Do not guess.',
-        '`priority` — `"season"` when the opportunity should last (an injury/benching ahead of him that will keep him out multiple weeks, a permanent role change); `"week"` for a one-off (bye fill-in, single-week matchup). Rank season-priority adds ahead of week-only ones within the same position.',
-        '`recentStat` — his exact stat line from his most recent game, dated (e.g. "3 rec, 34 yds vs DAL (Wk 2)"). Empty string if you found no box score.',
-        '`dropCandidate` — **only** a name copied exactly from that position\'s entry in **Drop candidates** above, or an empty string if there is no fair swap (e.g. an open bench spot). Never a name at a different position, never one you invented — the app discards anything else.',
-        'Kickers and defenses — only include a K or DEF add when **Kicker / defense — do I actually need one?** above says NEEDED for that position. Otherwise leave K and DEF out of `adds` entirely.',
+        '`swaps` is the answer. Each entry is ONE player off my roster and ONE off the AVAILABLE list, both named exactly as spelled above.',
+        '`edge` — the expected REST-OF-SEASON point difference in this league\'s scoring, `add` minus `drop`, as a number. Tj\'s example reads "expected to produce 54 more fantasy points over the season", so that would be `54`. Be honest: if it is 8 points, write 8 — and then ask yourself whether it is worth recommending at all.',
+        '`why` — the reasoning in his words\' shape: why this man is better than that man for the rest of the season, what changed (role, injury ahead of him, usage), dated, with the outlet named. Two or three sentences.',
+        '`mandated` — `true` only when the drop is forced (season-ending injury, indefinite suspension, permanently lost the job), which is also what lets a QB/K/DEF swap through rule 6.',
+        '`rank` — 1 is the move to make first. Rank mandated replacements above optional upgrades.',
+        'Return NO swap rather than a weak one. An empty `swaps` list with a `summary` explaining that my roster is already better than the wire is a correct and useful answer.',
+        'Never propose adding anybody in the OWNED list — they are not available, at any price.',
+        '`adds` is optional and secondary: use it only for a player worth watching who is not part of a swap you are recommending yet. The app reads `swaps` first.',
         'Prefer players from the AVAILABLE list. You may name at most **2** who are not in it, if the news is strong — mark those `"confidence": "low"`. The app flags them as unverified and will not offer an Add button, because it cannot confirm they are free in this league.',
-        'If a position has no credible add, omit it rather than padding the list.',
         '`injuries` — one entry per name in **My roster — injuries** that is not on a bye. If you found nothing beyond the app\'s own designation, say so plainly in `timeline` rather than inventing a timetable.',
-        'Never invent news. If you found nothing on a player, do not rank him.'
+        'Never invent news, a stat line, or a point edge. If you found nothing on a player, do not recommend him.'
       ],
       {
-        name: 'Example Back', pos: 'RB', nfl: 'CHI', rank: 1,
-        overStarter: 'Example Starter', priority: 'season',
-        recentStat: '3 rec, 34 yds vs DAL (Wk 2)',
-        dropCandidate: 'Example Bench Back', confidence: 'high',
-        why: 'The new starter after Example Starter\'s hamstring injury Sunday and IR ' +
-             'placement Tuesday (NFL.com, 2026-09-08); took every first-team rep ' +
-             'Wednesday and is the early-down and goal-line back going forward.'
+        drop: 'Example Bench Back', add: 'Example Back', pos: 'RB', nfl: 'CHI',
+        rank: 1, edge: 54, mandated: false, confidence: 'high',
+        why: 'Example Back is the new starter after Example Starter\'s hamstring injury ' +
+             'Sunday and IR placement Tuesday (NFL.com, 2026-09-08); he took every ' +
+             'first-team rep Wednesday and is the early-down and goal-line back the rest ' +
+             'of the way. Example Bench Back is the fourth back on his own depth chart ' +
+             'and has had six touches all season, so the roster spot is doing nothing.'
       }));
     lines.push('---');
     lines.push('');
