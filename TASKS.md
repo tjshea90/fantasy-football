@@ -22,35 +22,46 @@
 > for errors and continue checking and fixing errors until the app is very
 > stable. The time and usage is takes you to do this is no concern."
 
-- [ ] 1a. Root-cause why the wire keeps proposing a QB swap off Stafford/Bo
+- [x] 1a. Root-cause why the wire keeps proposing a QB swap off Stafford/Bo
       Nix — read `Value.upgrades()` (value.js) end to end for how it
-      compares a free agent to a rostered QB.
-- [ ] 1b. Fix it: a QB swap must require a genuine, season-long edge — not
-      the same flat point-margin used for every other position — since a
-      completion pays a full point here and QBs already bank 3-4x what
-      other positions do per game, so a small flat margin is noise for a
-      QB and a real edge for a RB/WR. Require real measured production
-      behind the free agent too, not just ESPN's generic season guess.
-- [ ] 1c. Exclude K/DEF from the deterministic "beats a starter" board
-      (`Value.upgrades()`) unless my own K or DEF is actually unavailable
-      this week — the live-API and handoff Claude paths already gate this,
-      the no-cost deterministic board never did.
-- [ ] 1d. Surface roster weaknesses (usually RB/WR) more directly on the
-      Wire tab, not just implicitly via the gain sort.
-- [ ] 1e. Carry the same QB-skepticism rule into the Claude prompts —
-      `Ai.buildWaiverPrompt` (live API) AND `Handoff.buildWaivers` (the
-      offline Claude-app export/import round trip) — as one shared rule so
-      neither path can drift from the other.
-- [ ] 1f. Research (web) current, credible thinking on valuing QBs in a
-      full-point-per-completion format, to sanity check the threshold
-      chosen in 1b.
-- [ ] 1g. Investigate the tab-highlight-doesn't-light-up-on-Wire glitch —
-      ONLY land a fix if confident it cannot regress anything else (the
-      test suite's synchronous render() contract is the specific risk to
-      respect). Document the finding either way.
-- [ ] 1h. General code/UI/efficiency pass: look for real inefficiencies
-      (redundant computation, anything safely simplifiable) and fix what's
-      safe to fix without changing behavior.
+      compares a free agent to a rostered QB. Found: every position used
+      the same flat "1 more point per game" margin, which is noise at QB's
+      scale (a completion pays a full point here) and `confident` let
+      ESPN's generic season model alone qualify, no measured games needed.
+- [x] 1b. Fix it: `QB_MIN_GAIN=6` pts/game (not 1) and `QB_MIN_MEASURED=3`
+      real scored games (not a projection alone) — see LADDER.md §41. Test:
+      `tools/test_waiver.js`, three new QB cases.
+- [x] 1c. Exclude K/DEF from `Value.upgrades()` unless `kdefNeedFrom()` says
+      mine is actually unavailable — see LADDER.md §41. Test:
+      `tools/test_waiver.js`, two new K/DEF cases.
+- [x] 1d. Surface roster weaknesses (usually RB/WR) more directly on the
+      Wire tab — "Your thinnest starting spot(s)" line in `freeAgentCard()`
+      (ui.js), sourced from `Value.needs()`, K/DEF excluded from it.
+- [x] 1e. Carry the same QB-skepticism rule into the Claude prompts — one
+      shared `Ai.qbSkepticismText()`, read by both `Ai.waiverPrefix()`
+      (live API) and `Handoff.buildWaivers()` (offline round trip), so
+      neither can drift from the other.
+- [x] 1f. Researched (web): point-per-completion scoring analysis
+      independently names accurate, high-volume passers — Stafford BY
+      NAME — as the archetype QB tier this scoring shape favors, matching
+      Tj's own read and validating the direction of 1b's thresholds.
+- [x] 1g. Investigated the tab-highlight glitch end to end (tab-lock class
+      of bug, swipe-swallow risk, `Store.save()` write size, actual Wire
+      render cost) — no reproducible defect found; every previously-fixed
+      cause confirmed still fixed and tested. Did NOT change render()'s
+      synchronous timing to chase a perceived-latency theory, because the
+      only way to do that touches the test suite's core synchronous
+      assumption in three files with no way to confirm it actually helps
+      the real symptom. Full trace in STATE.md's 2026-09-18 entry. See
+      "Waiting on Tj" below for the one follow-up question worth asking.
+- [x] 1h. General efficiency pass: `Value.waiverContext()` was computing
+      `myStarters()`/`bestLineup()`/`projectAll()` three times in one call;
+      `needs()` now takes an optional precomputed `starters` so it is
+      computed once fewer. Looked for other redundancy on the Wire/Rosters/
+      Advice tabs — the ~785-player free-agent scan and the per-player book
+      lookups it does were already properly memoized and cheap (a prior
+      session's 2026-09-17 fix, §38) — nothing else worth the risk of
+      touching found.
 - [ ] 1i. Run every test suite repeatedly until green, fix anything broken,
       keep checking for errors until stable.
 - [ ] 1j. Checkpoint/ship per the standing rules once done, publish the
