@@ -1,12 +1,12 @@
-# CHECKPOINT 115 — read me first, then TASKS.md
+# CHECKPOINT 118 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T19:38:27Z · **version:** 7.6 · **tests:** all 20 suites green
+**Written:** 2026-09-18T19:42:53Z · **version:** 7.7 · **tests:** all 20 suites green
 
 ## Just done
-Step I sweep, part 2 -- caught a severe bug in THIS job's own change by reviewing the diff adversarially. upgrades() searched freeAgents(week, 60): the best 60 free agents by ONE global sort. Ranking on season totals multiplies quarterback's structural scoring advantage in this league (a completion pays a full point) by the games remaining, and measured against a realistic spread of league-scored projections ALL SIXTY slots came back QB -- the function meant to find Tj a running back was searching a pool with no running backs in it. It would have surfaced as the exact complaint he has already made twice, 'it always recommends qb switch', arriving by a brand new route. Fixed: upgrades() now pulls a fixed depth from byPos() per position (10 each at the default poolSize) and lets the per-game/season/QB/KDEF gates decide who survives, which is where that judgement belongs. Test pins both halves -- that a global top-60 of this board really is all quarterbacks (the trap), and that every position is represented in what upgrades() actually searches. All 19 suites green.
+Shipped v7.7 and published the GitHub Release: triggered publish-release.yml, verified via get_release_by_tag (FFTracker-v7.7.apk, 313622 bytes, non-empty assets array, run #18 green). The whole waiver-wire overhaul -- ros.js, the season-projection fetch, the rest-of-season ranking, the two-gate swap bar, rule 6's QB/K/DEF handling and its season-ending override, both overhauled Claude prompts, the Wire tab UI, and all five bugs found along the way -- is now in a real, tested, shipped release. STATE.md carries the full narrative under 'v7.7 - the waiver wire, rebuilt on the season instead of on last Sunday'. Every box in TASKS.md steps A-J is ticked with the test that proves it named.
 
 ## Do this next
-Build the APK (bash build.sh), confirm it, then ship.sh, then publish the Release via mcp__github__actions_run_trigger (publish-release.yml, ref main, inputs.version), verify with get_release_by_tag, and send Tj the plain-text tappable release link per CLAUDE.md.
+Send Tj the v7.7 release link per CLAUDE.md's standing instruction. Nothing else in flight; this job is done. If he comes back with more: the one judgement call worth flagging is that ros.js's two constants -- PRIOR_GAMES=4 (how fast the measured sample takes over) and USAGE_SHARE=0.5 (how hard efficiency is regressed toward volume) -- are defensible and documented but not tuned against this league's own history, which is a thing that could be done later once more weeks are scored. Also still unanswered from the previous job: whether sim.js's unused season()/power()/allPlay()/bracket() should be wired into a tab or deleted.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,9 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  abc1cf3 ship v7.7: Waiver wire overhauled: ranked on expected rest-of-season points in this leag
+  f6d6ae6 ckpt 115: Step I sweep, part 2 -- caught a severe bug in THIS job's own change by review
   8647e0a ckpt 110: Step I sweep, part 1. Found and fixed a THIRD instance of the same dead-code c
   c396c21 ckpt 106: Step G done plus two real staleness bugs found and fixed while doing it. UI: t
   6b0083a ckpt 96: Steps F done (rules 4+5). New Ai.waiverCriteriaText() states all six of Tj's cr
@@ -34,9 +37,4 @@ request in his own words and `git log` carries every step already taken.
   0ba449b ckpt 54: Steps A+B done. ROOT CAUSE CONFIRMED LIVE: value.js perGame() ranks the wire, a
   835a9e3 ckpt 53: Wrote Tj's 2026-09-18c waiver-wire overhaul request into TASKS.md verbatim (his
   07c0d36 ckpt 97: Shipped v7.6 and published the GitHub Release: triggered publish-release.yml, v
-  5272367 ship v7.6: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
-  d9d94d6 ship v7.5: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
 ```
-
-(4 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)

@@ -52,32 +52,32 @@ Tj, 2026-09-18 (with a screenshot of the Wire tab showing every WR annotated
 
 ### Steps
 
-- [ ] **A. Read the existing wire stack before changing anything.**
+- [x] **A. Read the existing wire stack before changing anything.** Done. Root cause proved against the live ESPN endpoint, not inferred: the winning projections route returns no season split, so value.js perGame()'s season branch was dead code and every free agent fell to the single-measured-week branch. Written up in full in STATE.md's v7.7 entry.
       `app/assets/recommend.js` (the ranking), `app/assets/value.js` (season
       value math), `app/assets/projections.js` (multi-source blend),
       `app/assets/ai.js` (the ask-Claude file builder), the Wire tab render in
       `app/assets/ui.js`, and `tools/test_waiver.js`. Write down what actually
       produces the "16.4 proj (1 scored week — thin sample)" line in the
       screenshot, so the fix targets the real code path.
-- [ ] **B. Research the ranking method** (rule 1): how reputable public sources
+- [x] **B. Research the ranking method** Done. Sources used: FantasyPros' ROS methodology page, ESPN's expected-fantasy-points (xFP) work, Fantasy Projection Lab's projection-models write-up, and PFF/Fantasy Life on why usage is the stable part of a small sample. Method recorded in ros.js's header. (rule 1): how reputable public sources
       rank rest-of-season waiver value — opportunity/usage share, target and
       carry share, expected points per game vs replacement level, games
       remaining, injury/role news. Record the sources used.
-- [ ] **C. Rest-of-season value engine** (rules 2 + 3): rank every available
+- [x] **C. Rest-of-season value engine** Done: app/assets/ros.js. Tested by tools/test_waiver.js ("a full-season projection becomes a per-game rate AND a season total", "THE SCREENSHOT BUG", "the sample takes over as it grows", "efficiency is regressed toward the volume that produced it"). (rules 2 + 3): rank every available
       player by EXPECTED FULL-SEASON points in THIS league's scoring, not next
       week's. Blend prior-season/current-season baseline, current-season
       per-game production, usage/opportunity, and a games-remaining term.
       Shrink toward baseline when the in-app sample is thin (the screenshot's
       exact failure) rather than extrapolating one week.
-- [ ] **D. Drop/add must clear a meaningful season-long bar** (rule 3): a swap
+- [x] **D. Drop/add must clear a meaningful season-long bar** Done: two gates, MIN_GAIN (per game) and MIN_SEASON (season points), both of which a swap must clear. Tested by test_waiver.js ("a marginal edge is NOT suggested, however real" and "a genuinely better free agent IS suggested"). (rule 3): a swap
       is only surfaced when the add beats the drop by a real rest-of-season
       margin in league points, computed against the worst droppable player on
       the roster, never a roster-slot coincidence.
-- [ ] **E. QB/K/DEF stay de-prioritised** (rule 6): keep the existing
+- [x] **E. QB/K/DEF stay de-prioritised** Done, with the mandated-replacement override via the new Recommend.seasonOutlook. Tested by test_waiver.js (the three QB scenarios, "K/DEF never bump a real need", "the K/DEF exception needs a STRONG season edge", "a season-ending injury MANDATES a replacement"). (rule 6): keep the existing
       QB_MIN_GAIN-style gating, extend the same idea to K and DEF, and add the
       mandated-replacement override (season-ending injury / out for year /
       no longer starting) that bypasses the de-prioritisation.
-- [ ] **F. Overhaul the ask-Claude prompt** (rules 4 + 5): the generated file
+- [x] **F. Overhaul the ask-Claude prompt** Done: Ai.waiverCriteriaText() states all six rules once and is shared by the export file and the paid API call. Tested by test_handoff.js ("the waiver briefing: Tj's six criteria", each rule pinned separately, plus the OWNED list by name) and test_ai.js ("one-for-one swaps with a point edge"). (rules 4 + 5): the generated file
       must carry the full league scoring system, EVERY taken player in the
       league (so Claude cannot recommend one), the full roster with each
       player's league-scored season value, the available pool, and an explicit
@@ -85,15 +85,15 @@ Tj, 2026-09-18 (with a screenshot of the Wire tab showing every WR annotated
       expected season-long fantasy point edge per pair. No restrictions on what
       Claude may search: injury news, NFL news, waiver advice sites, projection
       sites, prior weeks' stats.
-- [ ] **G. Wire tab UI** shows the new season-long basis honestly — no more
+- [x] **G. Wire tab UI** Done: rows lead with expected rest-of-season points and games left, the basis on its own line; forced replacements are headlined separately with a REPLACE tag. Verified by an end-to-end smoke test reproducing the screenshot's exact scenario (16.4 in one week now prices at 8.6/gm). shows the new season-long basis honestly — no more
       "1 scored week in this app — thin sample" as the headline rationale.
-- [ ] **H. Tests**: extend `tools/test_waiver.js` (and add suites as needed) to
+- [x] **H. Tests** Done: test_waiver.js rewritten and extended; every new behaviour above has a named test, and the three staleness/regression fixes were each confirmed to FAIL against the pre-fix code before being accepted. All 19 suites green.: extend `tools/test_waiver.js` (and add suites as needed) to
       pin each rule: season-long ranking, the meaningful-improvement bar, the
       QB/K/DEF gate plus its injury override, and the prompt's required
       sections. Every suite green.
-- [ ] **I. Bug + UI sweep** across the app afterwards; confirm nothing else
+- [x] **I. Bug + UI sweep** Done. Four bugs found: the Wire tab never fetched the season projections; value.js's free-agent memo did not key on that cache; Store.setBook never bumped the store generation (older than this job); and upgrades() searched a global top-60 that came back ALL QB under season-total ranking (created by this job, caught by re-reading the diff). Plus a third instance of the dead-season-branch class in recommend.js's projectOne. All fixed, all tested. across the app afterwards; confirm nothing else
       broke.
-- [ ] **J. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
+- [x] **J. Ship** Done: v7.7 shipped, ship.sh gate green (all suites, ES2018, dex-completeness), Release published and verified via get_release_by_tag (FFTracker-v7.7.apk, 313622 bytes, non-empty assets array). (`ship.sh`), publish the GitHub Release, send Tj the link.
 
 ## Prior job, complete (2026-09-18b)
 
