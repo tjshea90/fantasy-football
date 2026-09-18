@@ -4067,8 +4067,8 @@
 
       var unmatched = [];
       Store.allPlayers().forEach(function (x) { if (!seenPid[x.player.id]) unmatched.push(x.player.name); });
-      var prevOpp = S.weekMeta[String(week)] ? S.weekMeta[String(week)].opponents : null;
-      S.weekMeta[String(week)] = {
+      var prevOpp = S.weekMeta[String(syncWeek)] ? S.weekMeta[String(syncWeek)].opponents : null;
+      S.weekMeta[String(syncWeek)] = {
         synced: true, at: new Date().toISOString(), games: meta.games,
         allFinal: meta.allFinal, estFG: meta.estFG, matched: matched,
         inProgress: meta.inProgress, twoPt: twoPtSeen, stSource: stSource,
