@@ -290,6 +290,41 @@
     return { f: f, label: lab, note: rec.note };
   }
 
+  /* ---- is he done for the YEAR, not just this week? ---------------------
+   * Tj, 2026-09-18, rule 6: a kicker, defense or quarterback add is normally
+   * low priority "unless there is a strong, clear, season long edge ... or if
+   * there is a season ending injury or anything else that mandates the player
+   * be replaced." The board therefore has to tell those two apart, and
+   * health() cannot: it collapses OUT, INJURED RESERVE, SUSPENDED and PUP into
+   * one label 'OUT', which is right for "can he play SUNDAY" and useless for
+   * "is he worth a roster spot in November".
+   *
+   * A designation that parks a player for the season (IR, PUP, NFI, a
+   * suspension) is treated as season-ending, and so is a note that says so in
+   * words — the feed's status often lags the reporting on a torn ACL or
+   * Achilles by days, and the note is where that lands first.
+   *
+   * Deliberately conservative. A plain weekly OUT is NOT season-ending; those
+   * players are already excluded from a single week's lineup by health(), and
+   * writing a roster off for the year on a one-week designation would be a far
+   * worse error than being slow to. */
+  var SE_STATUS = /INJURED RESERVE|\bI\.?R\.?\b|\bPUP\b|PHYSICALLY UNABLE|NON.?FOOTBALL|SEASON.?END/;
+  var SE_NOTE = /(out|done|lost)\s+for\s+the\s+(season|year)|season.?ending|miss(ing)?\s+the\s+(rest\s+of\s+the\s+)?season|torn\s+(acl|achilles|patellar|pectoral|quad)|ruptured\s+achilles|placed\s+on\s+(injured\s+reserve|ir)/i;
+  function seasonOutlook(player) {
+    var rec = newsCache.byName ? root.Names.hit(newsCache.byName, player.name) : null;
+    if (!rec) return { seasonEnding: false, why: '' };
+    var st = String(rec.status || '').toUpperCase();
+    var note = String(rec.note || '');
+    if (SE_STATUS.test(st)) {
+      return { seasonEnding: true,
+               why: rec.status + (note ? ' — ' + note : '') };
+    }
+    if (SE_NOTE.test(note)) {
+      return { seasonEnding: true, why: note };
+    }
+    return { seasonEnding: false, why: note };
+  }
+
   /* ---- the projection -------------------------------------------------- */
   function projectOne(p, week, opp, dp) {
     var srcs = [], sum = 0, wsum = 0;
@@ -1133,6 +1168,7 @@
                      autoLineup: autoLineup, projectAll: projectAll,
                      opponentsForWeek: opponentsForWeek, syncAll: syncAll,
                      loadCaches: loadCaches, PRIOR: PRIOR,
+                     seasonOutlook: seasonOutlook,
                      claudeAdviceEstimate: claudeAdviceEstimate,
                      /* the offline Claude-app handoff writes through these */
                      mergeAi: mergeAi, aiCache: function () { return aiCache; },
