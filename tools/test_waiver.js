@@ -668,14 +668,19 @@ console.log('\n-- recommend.js: the Advice tab\'s own full-season blend source a
  * Found while overhauling the wire; the same dead branch, in a second file. */
 (function () {
   var W = freshWindow();
-  var p = { id: 'x1', name: 'Zzz Advice Guy', pos: 'WR', nfl: 'KC', bye: 0 };
+  var me2 = W.Store.get().league.me;
+  /* a real player on the real seed roster, so this goes through the same
+     projectAll path the Advice tab itself calls */
+  var mine = W.Store.team(me2).players.filter(function (x) { return x.pos === 'WR'; })[0];
+  ok(!!mine, 'sanity: the seed roster has a receiver to project');
   W.Projections.find = function () { return null; };       /* no weekly line at all */
   W.Projections.findSeason = function (pl) {
-    return pl.name === p.name
+    return pl.name === mine.name
       ? { pos: 'WR', season: 17 * 14, gp: 17, sleeperSeason: 17 * 10, sleeperGp: 17 }
       : null;
   };
-  var out = W.Recommend.projectOne(p, 3, null, null);
+  var all = W.Recommend.projectAll(3, me2, null);
+  var out = all.filter(function (x) { return x.p.id === mine.id; })[0];
   var names = out.srcs.map(function (x) { return x.name; }).join(' / ');
   ok(/full-season pace/.test(names),
      'a full-season projection is a real, named source in the blend (sources: ' + names + ')');
