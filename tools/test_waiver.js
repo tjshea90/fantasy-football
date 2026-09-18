@@ -324,6 +324,44 @@ console.log('\n-- Value.freeAgents(): the board is ranked by REST-OF-SEASON poin
   ok(rows.indexOf(a) < rows.indexOf(c), 'and the board puts him first');
 })();
 
+console.log('\n-- Value.upgrades() searches EVERY position, not a global top-N (2026-09-18) --');
+/* Ranking the board on season totals multiplies quarterback's structural
+ * scoring advantage in this league by the games remaining. upgrades() used to
+ * search freeAgents(week, 60) — the best 60 by ONE global sort — and under a
+ * realistic spread of league-scored projections all sixty came back QB. The
+ * function meant to find Tj a running back was searching a pool containing no
+ * running backs, which would have surfaced as the exact complaint he has
+ * already made twice ("it always recommends qb switch") arriving by a new
+ * route. Every position gets its own depth now. */
+(function () {
+  var W = freshWindow();
+  var PRI = { QB: 44, RB: 13, WR: 12, TE: 10, K: 9, DEF: 12 };
+  var db = W.PlayerDB.get().players, sea = {}, i;
+  for (i = 0; i < db.length; i++) {
+    sea[W.Espn.normName(db[i].n)] = {
+      pos: db[i].p, season: PRI[db[i].p] * (0.5 + ((i % 10) / 10)) * 17, gp: 17, src: 'espn'
+    };
+  }
+  W.Projections.findSeason = function (pl) { return sea[W.Espn.normName(pl.name)] || null; };
+
+  /* the shape the OLD code searched: one global sort, take the best 60 */
+  var globalTop = W.Value.freeAgents(5, 60), onlyQB = true;
+  for (i = 0; i < globalTop.length; i++) if (globalTop[i].pos !== 'QB') onlyQB = false;
+  ok(onlyQB && globalTop.length === 60,
+     'sanity: a global top-60 of this board really is all quarterbacks — this is the trap');
+
+  /* what upgrades() searches now */
+  var perPos = Math.max(5, Math.round(60 / W.Value.POS.length));
+  var g = W.Value.byPos(5, perPos), missing = [];
+  W.Value.POS.forEach(function (k) { if (!g[k] || !g[k].length) missing.push(k); });
+  ok(!missing.length,
+     'every position is represented in the pool upgrades() actually searches (missing: ' +
+     (missing.join(',') || 'none') + ')');
+  ok(g.RB.length >= 5 && g.WR.length >= 5,
+     'including real depth at the positions Tj actually wants help with — RB ' +
+     g.RB.length + ', WR ' + g.WR.length);
+}());
+
 console.log('\n-- Value.upgrades(): a one-week spike with no sustained signal never fires --');
 (function () {
   var W = freshWindow();
