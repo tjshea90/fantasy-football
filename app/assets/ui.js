@@ -2475,12 +2475,28 @@
      * line cannot see — who just got hurt ahead of somebody, who just took a
      * job — and re-ranks the shortlist for THIS roster. */
     var wcard = el('div');
-    var wsync = el('button', 'btn pri', 'Ask Claude about the wire');
+    /* jobRunning('waivers') guard added 2026-09-18: this button used to only
+     * ever disable itself on ITS OWN click handler (a few lines below) —
+     * fine for the button instance that press created, but freeAgentCard()
+     * runs fresh on every render, and switching tabs away and back while the
+     * 5-minute Ai.askWaivers call (ai.js) is still in flight rebuilds this
+     * whole card, including a BRAND NEW button with no memory of the one
+     * still running. That new button read only !Ai.configured(), so it came
+     * back enabled — a second tap fired a second concurrent paid Claude
+     * call, and whichever response landed last silently overwrote
+     * Value.waiverSave()'s cache. Every sibling "ask Claude / refresh" button
+     * in this file (rosterInjuryCard's jobRunning('newsSync'), the player-db
+     * refresh's jobRunning('db')) already guards this way; this one and
+     * teamAnalysisCard's below it were the two that did not. */
+    var wsync = el('button', 'btn pri',
+      jobRunning('waivers') ? 'Reading the wire…' : 'Ask Claude about the wire');
     var wnote = el('p', 'hint', '');
     var west = el('p', 'hint', '');
     var cached = Value.waiverLoad();
 
-    if (!Ai.configured()) {
+    if (jobRunning('waivers')) {
+      wsync.disabled = true;
+    } else if (!Ai.configured()) {
       wsync.disabled = true;
       wnote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". ' +
         'Everything above works without one; this only adds the news layer.';
