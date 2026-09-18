@@ -736,3 +736,18 @@ Fix this and look for other possible improvements in code and ui for the app. Do
 <usage><subagent_tokens>166634</subagent_tokens><tool_uses>84</tool_uses><duration_ms>497082</duration_ms></usage>
 </task-notification>
 ```
+
+## 2026-09-18T18:29:00Z
+```
+Review the attached screenshot of this app. Notice the wire tab is only making recommendations and projecting scores based on prior weeks actual stats. This is a broken system. The wire section needs to be overhauled. Research and find a logical, reasonable way to rank players available on the waiver wire that are not already taken by a team in the league. The ranking should give logical results of the best available players in each position, maybe based on a blend of prior weeks stats, information gathered online, news and injury updates, projected stat lines for the current/upcoming weeks from multiple reputable sources online averaged and then recalculated based on this league scoring system, and any other relevant information you can think of. The following are strict rules for the system: 
+1) it must pull data from current season and current news using reputable sources.
+2) it must rank available players based on expected full season performance, not just the next NFL week, and calculated for this league scoring system
+3) it must only recommend I drop and add a player or players if they are a meaningful improvement for the rest of the season over the player it recommends I drop, and making sure to calculate the player value using this specific league scoring system.
+4) for the Claude prompt, overhaul it so that when it makes the ask Claude file, it has all the criteria I mentioned, plus it explicitly recommends which player or players to drop and replace on a one to one basis with explicit reasoning and expected fantasy point edge (e.g. drop Michael wilson and add d. Wicks because he is the new #1 receiver for the team and expected to produce 54 more fantasy points over the season than Michael Wilson, or, drop bo nix due to season ending injury and add j. Hurts because he is the best available qb).
+5) the Claude prompt should have no restrictions. It should be able to see all taken players in the league so it doesn't recommend them, it should know the league scoring system, it should search online for current injury news, NFL News, waiver wire advice websites, projected stats websites, it can consider prior weeks stats, or anything else that will allow it to make good, data backed recommendations for specific players to add and drop for my roster, with reasons for each recommendation. 
+6) the recommendation system should still give lower priority to qb  kicker and defense unless there is a strong, clear, season long edge for any of its recommendations on these positions, or if there is a season ending injury or anything else that mandates the player be replaced. 
+
+Make sure the new recommendation system is smart and uses this league scoring system. 
+
+When finished, check for bugs and ui improvements. Make sure the improvements did not break anything else in the app. Then ship.
+```
