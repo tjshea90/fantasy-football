@@ -260,6 +260,67 @@ ok(Ai.normalizeWaivers(onlyTE, known, rosterIdx, { K: false, DEF: false })
    'must never leave a required starting slot with nobody in it, which is the real ' +
    'guarantee the position-matching rule was reaching for');
 
+/* ---- the `swaps` contract (2026-09-18) -----------------------------------
+ * Tj, rule 4: "it explicitly recommends which player or players to drop and
+ * replace on a one to one basis with explicit reasoning and expected fantasy
+ * point edge". The reply shape leads with `swaps` now; `adds` is still read so
+ * a reply written against the older contract (or a watch-list name that is not
+ * part of a recommended move) is not lost. */
+console.log('\n-- normalizeWaivers: one-for-one swaps with a point edge --');
+(function () {
+  var r = Ai.normalizeWaivers({
+    swaps: [{ drop: 'Bench Guy', add: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
+              edge: 54, mandated: false, confidence: 'high',
+              why: 'The new #1 receiver after the trade (ESPN, 2026-09-16).' }]
+  }, known, rosterIdx, { K: false, DEF: false });
+  ok(r.adds.length === 1, 'a swaps-only reply produces a recommendation');
+  ok(r.adds[0].name === 'Chris Olave' && r.adds[0].dropCandidate === 'Bench Guy',
+     'and it is paired one-for-one with the exact man to drop');
+  ok(r.adds[0].edge === 54,
+     'the expected rest-of-season point edge is carried through as a number (' +
+     r.adds[0].edge + ') — Tj\'s own example is "54 more fantasy points over the season"');
+  ok(r.adds[0].priority === 'season',
+     'a swap is filed as a season-long move by construction, never as a one-week one');
+  ok(r.adds[0].dropVerified === true,
+     'and the app records that it confirmed the drop is really on my roster');
+}());
+
+(function () {
+  /* the same add arriving in BOTH lists must not be recommended twice */
+  var r = Ai.normalizeWaivers({
+    swaps: [{ drop: 'Bench Guy', add: 'Chris Olave', pos: 'WR', edge: 20, rank: 1, why: 'x' }],
+    adds: [{ name: 'Chris Olave', pos: 'WR', rank: 2, why: 'y' }]
+  }, known, rosterIdx, { K: false, DEF: false });
+  ok(r.adds.length === 1 && r.adds[0].edge === 20,
+     'a player named in both swaps and adds appears once, with the swap\'s detail kept');
+}());
+
+(function () {
+  /* rule 6's override: a forced replacement gets a K/DEF past the gate that
+     would otherwise drop it, and is ranked ahead of an optional upgrade */
+  var kKnown = {};
+  kKnown[Names.canon('Some Kicker')] = { pos: 'K', nfl: 'CHI', v: 9, vor: 1, bye: 7, onBye: false };
+  kKnown[Names.canon('Chris Olave')] = { pos: 'WR', nfl: 'NO', v: 12.3, vor: 3.1, bye: 11, onBye: false };
+  var idx = Ai.rosterIndex([
+    { name: 'Broken Kicker', pos: 'K' }, { name: 'Spare Kicker', pos: 'K' },
+    { name: 'Bench Guy', pos: 'WR' }, { name: 'Starter WR One', pos: 'WR' },
+    { name: 'Starter WR Two', pos: 'WR' }, { name: 'Starter WR Three', pos: 'WR' }
+  ]);
+  var reply = { swaps: [
+    { drop: 'Bench Guy', add: 'Chris Olave', pos: 'WR', edge: 40, rank: 1, why: 'x' },
+    { drop: 'Broken Kicker', add: 'Some Kicker', pos: 'K', edge: 15, rank: 2,
+      mandated: true, why: 'Out for the season.' }
+  ] };
+  var r = Ai.normalizeWaivers(reply, kKnown, idx, { K: false, DEF: false });
+  ok(r.adds.length === 2,
+     'a K swap flagged as a forced replacement survives the K/DEF gate that would ' +
+     'otherwise discard it, even with kdefNeed false — rule 6\'s own exception');
+  ok(r.adds[0].pos === 'K' && r.adds[0].mandated === true,
+     'and a forced replacement is ranked ahead of a larger optional upgrade (' +
+     r.adds[0].name + ' before ' + r.adds[1].name + ') — a dead roster spot is a ' +
+     'problem you already have');
+}());
+
 const invented = { adds: [
   { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
     dropCandidate: 'Nobody On This Roster', confidence: 'high', why: 'x' }
