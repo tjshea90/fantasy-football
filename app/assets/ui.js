@@ -2446,18 +2446,42 @@
     }
     var ups = Value.upgrades(week, S.league.me, opp, 80);
     if (ups.length) {
-      c.appendChild(el('p', null, ups.length + ' available player' + (ups.length === 1 ? '' : 's') +
-        ' project better than someone on your roster for the REST OF THE SEASON ' +
-        '(' + ups[0].weeks + ' week' + (ups[0].weeks === 1 ? '' : 's') + ' left, not just this ' +
-        'week) — each paired with who to drop for him:'));
+      /* A forced replacement is not the same kind of thing as an upgrade and
+         must not be presented as one: one is a hole in the roster, the other
+         is an option. upgrades() already sorts the forced ones first, so
+         counting them is enough to headline them separately (Tj, 2026-09-18,
+         rule 6: a season-ending injury "mandates the player be replaced"). */
+      var forced = ups.filter(function (u) { return u.mandated; });
+      if (forced.length) {
+        c.appendChild(el('p', 'warn', forced.length === 1
+          ? 'One player on your roster is out for the season — that spot is doing ' +
+            'nothing until you replace him:'
+          : forced.length + ' players on your roster are out for the season — those ' +
+            'spots are doing nothing until you replace them:'));
+      }
+      var optional = ups.length - forced.length;
+      if (optional > 0) {
+        c.appendChild(el('p', null, optional + ' available player' +
+          (optional === 1 ? '' : 's') + ' project better than someone on your roster ' +
+          'for the REST OF THE SEASON (' + ups[0].weeks + ' week' +
+          (ups[0].weeks === 1 ? '' : 's') + ' left, not just this week) — each paired ' +
+          'with who to drop for him:'));
+      }
       ups.slice(0, 6).forEach(function (u) {
         var r = el('div', 'row');
         markPlayer(r, u.fa.name, u.fa.pos, u.fa.nfl);
         r.appendChild(el('div', 'slot', u.fa.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(u.fa.name));
-        nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' + fmt(u.fa.v) + ' proj/gm — ' +
-          '+' + fmt(u.gain) + ' pts the rest of the season over ' + u.drop.name));
+        nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' +
+          (u.mandated
+            ? 'replaces ' + u.drop.name + ', who is out for the season — ' +
+              fmt0(u.fa.ros) + ' pts over his remaining ' + u.fa.games + ' game' +
+              (u.fa.games === 1 ? '' : 's')
+            : '+' + fmt0(u.gain) + ' pts the rest of the season over ' + u.drop.name +
+              ' (' + fmt(u.perGame) + '/gm across ' + u.fa.games + ' game' +
+              (u.fa.games === 1 ? '' : 's') + ')')));
+        if (u.mandated) nm.appendChild(el('span', 'tag warn', 'REPLACE'));
         if (u.fa.healthLabel) nm.appendChild(el('span', 'tag warn', u.fa.healthLabel));
         r.appendChild(nm);
         var b = el('button', 'btn sm', 'Add + drop ' + u.drop.name);
