@@ -252,6 +252,119 @@ console.log('\n-- Value.upgrades(): a genuinely better, confident free agent IS 
      'the gain is expressed over the actual weeks left in the season, not one week\'s points');
 })();
 
+console.log('\n-- Value.upgrades(): QB needs a much bigger, better-proven edge than other ' +
+            'positions (2026-09-18) --');
+/* Tj: "it always recommends qb switch from the QBs I already have, Stafford and bo
+ * nix... I drafted these QBs because they had excellent stats last quarter and they
+ * are pass heavy, in this league the scoring is one point for every completed pass.
+ * Only recommend a replacement qb if it is truly a season edge over the high
+ * completion QBs I already have." A completion pays a full point here, so a good QB
+ * already outscores a good RB/WR by 3-4x per game — the flat "1 more point per game"
+ * bar the WR test above uses is real signal at running back and pure noise at
+ * quarterback. Three scenarios, same incumbent (a 20-point/game starting QB): a big
+ * edge with no real games behind it, a real-games edge too small to matter, and a
+ * real-games edge big enough to actually mean something. */
+(function () {
+  var meRoster = function () {
+    return [{ p: { id: 'myqb1', name: 'My Starting QB', pos: 'QB' }, base: 20 }];
+  };
+  var meLineup = function () {
+    return [{ key: 'QB', label: 'QB', pos: 'QB',
+              pick: { p: { id: 'myqb1', name: 'My Starting QB', pos: 'QB' }, proj: 20, base: 20 } }];
+  };
+
+  (function () {
+    var W = freshWindow();
+    var meId = W.Store.get().league.me;
+    var nm = 'Zzz Unproven Season Model QB';
+    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
+    /* ESPN's rest-of-season MODEL only — no games actually played for this app to
+       measure — even though the raw gap (10/game) clears the old flat bar easily */
+    W.Projections.find = function (player) {
+      return player.name === nm ? { season: 30 * 17 } : null;
+    };
+    W.Recommend.bestLineup = meLineup; W.Recommend.projectAll = meRoster;
+    var ups = W.Value.upgrades(5, meId, null, 200);
+    ok(!ups.some(function (u) { return u.fa.name === nm; }),
+       'a QB with a big edge but ZERO real measured games is not suggested — a ' +
+       'projection, however confident, is not "truly a season edge" on its own');
+  })();
+
+  (function () {
+    var W = freshWindow();
+    var meId = W.Store.get().league.me;
+    var nm = 'Zzz Modest Real Edge QB';
+    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
+    /* three REAL scored weeks (clears the old "confident" bar with room to spare),
+       averaging 22 — only 2 more per game than my 20-point starter */
+    W.Store.setBook(1, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 22, tg: 0 } });
+    W.Store.setBook(2, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 22, tg: 0 } });
+    W.Store.setBook(3, { 'zzz modest real edge qb': { n: nm, t: 'KC', p: 22, pa: 30, cr: 22, tg: 0 } });
+    W.Recommend.bestLineup = meLineup; W.Recommend.projectAll = meRoster;
+    var ups = W.Value.upgrades(5, meId, null, 200);
+    ok(!ups.some(function (u) { return u.fa.name === nm; }),
+       'a QB with real games behind him but only a small per-game edge (2, above the ' +
+       'flat 1-point bar every other position uses) is STILL not suggested — this is ' +
+       'noise at quarterback\'s scale, not a season-defining edge');
+  })();
+
+  (function () {
+    var W = freshWindow();
+    var meId = W.Store.get().league.me;
+    var nm = 'Zzz Real Proven Edge QB';
+    W.PlayerDB.get().players.push({ n: nm, p: 'QB', t: 'KC', b: 10, e: '', st: 'active' });
+    /* three real scored weeks averaging 30 — a genuine, well-proven 10/game edge */
+    W.Store.setBook(1, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 30, tg: 0 } });
+    W.Store.setBook(2, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 30, tg: 0 } });
+    W.Store.setBook(3, { 'zzz real proven edge qb': { n: nm, t: 'KC', p: 30, pa: 35, cr: 30, tg: 0 } });
+    W.Recommend.bestLineup = meLineup; W.Recommend.projectAll = meRoster;
+    var ups = W.Value.upgrades(5, meId, null, 200);
+    var hit = ups.filter(function (u) { return u.fa.name === nm; })[0];
+    ok(!!hit, 'a QB with real, proven, large rest-of-season production IS still ' +
+       'suggested — this rule is skepticism, not a blanket ban on ever upgrading a QB');
+    ok(hit && hit.why.indexOf('quarterback') >= 0,
+       'and the reason explicitly says why a QB swap is held to a higher bar');
+  })();
+})();
+
+console.log('\n-- Value.upgrades(): K/DEF never bump a real need, and only appear at all ' +
+            'when mine is genuinely unavailable (2026-09-18) --');
+/* Tj, same message: "defense and kicker are not priorities." The Claude-driven board
+ * (ai.js normalizeWaivers) already gated K/DEF on kdefNeed; this deterministic,
+ * no-cost board — the one that needs no API key and is always on screen — never had
+ * that gate, so a streamable K/DEF could out-rank an actual RB/WR need. */
+(function () {
+  var W = freshWindow();
+  var meId = W.Store.get().league.me;
+  var nm = 'Zzz Great Streaming DEF';
+  W.PlayerDB.get().players.push({ n: nm, p: 'DEF', t: 'SF', b: 10, e: '', st: 'active' });
+  W.Projections.find = function (player) {
+    return player.name === nm ? { season: 15 * 17 } : null;
+  };
+  W.Recommend.bestLineup = function () {
+    return [{ key: 'DEF', label: 'DEF', pos: 'DEF',
+              pick: { p: { id: 'mydef1', name: 'My Healthy DEF', pos: 'DEF' }, proj: 8, base: 8 } }];
+  };
+  W.Recommend.projectAll = function () {
+    return [{ p: { id: 'mydef1', name: 'My Healthy DEF', pos: 'DEF' }, base: 8,
+              onBye: false, h: { label: '' } }];
+  };
+  var ups = W.Value.upgrades(5, meId, null, 200);
+  ok(!ups.some(function (u) { return u.fa.name === nm; }),
+     'a DEF free agent projecting well above my own healthy, available DEF is NOT ' +
+     'suggested — defense/kicker are low priority regardless of the raw point gap');
+
+  /* same free agent, but now MY OWN defense is genuinely unavailable this week */
+  W.Recommend.projectAll = function () {
+    return [{ p: { id: 'mydef1', name: 'My Healthy DEF', pos: 'DEF' }, base: 8,
+              onBye: false, h: { label: 'OUT' } }];
+  };
+  var ups2 = W.Value.upgrades(5, meId, null, 200);
+  ok(ups2.some(function (u) { return u.fa.name === nm; }),
+     'the SAME free agent IS suggested once my own DEF is ruled OUT — low priority, ' +
+     'not a blanket ban when there is a genuine need');
+})();
+
 console.log('\n-- PlayerDB: roster status is captured, and practice-squad is distinguished from active --');
 var chain = (function () {
   var W = freshWindow();
