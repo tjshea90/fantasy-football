@@ -1,12 +1,12 @@
-# CHECKPOINT 58 — read me first, then TASKS.md
+# CHECKPOINT 67 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T20:12:10Z · **version:** 7.7 · **tests:** all 20 suites green
+**Written:** 2026-09-18T20:23:09Z · **version:** 7.7 · **tests:** all 20 suites green
 
 ## Just done
-Step A done — the hallucination is fixed at its source. recommend.js: loadNews now keeps the four fields it was throwing away (details.returnDate, details.fantasyStatus, type.name, the record date) and no longer uses details.type (a BODY PART, 'Knee') as a news note. seasonOutlook is rewritten: ESPN's status is authoritative about availability (an ACTIVE player can never be season-ending, which alone kills 13 of the 14 live false positives), returnDate decides whether a parked player is back this season or finished (2027-02-15 is ESPN's 'not coming back' sentinel), an IR-R/PUP-R return designation is honoured, and the free-text note is demoted to corroboration that must be about THIS player (nearest name before the phrase) and not about a PAST season. Verified against all 800 live records: Schultz, Mahomes, Nabers, Skattebo and Demercado all correctly clear; the 12 genuinely finished are still caught; 30 players now read 'on IR, back Oct 18' instead of 'out for the season'.
+Steps B/C/D/E/F built. value.js upgrades() rewritten: it now builds EVERY plausible (free agent x drop candidate) pair, ranks them, and greedily assigns so each roster player is the drop in at most one suggestion and each free agent the add in at most one -- the actual disease behind '36 rows, one player'. Same-position is the default (a cross-position swap must clear DOUBLE both bars, and is ranked at 0.75x so it has to be about a third bigger to outrank a like-for-like move); a forced replacement crossing positions must additionally beat the best available player at the emptied position. New slotNeeds/lineupFillable/bodyCounts enforce Tj's TE rule on the ROSTER: no swap may leave a starting slot nobody can fill. New Value.mustReplace() counts holes off the roster, and ui.js's headline now names the actual men instead of counting suggestion rows. rosterValues prices an IR-but-returning player at his rate times the games he can still play (new Ros.weekOfDate/gamesLeftFrom) instead of zero or full. ai.js + handoff.js prompts carry new rules 7 (like-for-like unless the gap is big) and 8 (never name the same man twice), and normalizeWaivers now ENFORCES the one-to-one drop rather than trusting it. All 19 suites still green.
 
 ## Do this next
-Step F is partly implied by A and must be finished: seasonOutlook now returns longTermOut/mustReplace/returnAround as well as seasonEnding, so value.js rosterValues, ai.js and handoff.js need updating to the new shape (they read .seasonEnding and .why today). Then B (count distinct roster players in ui.js), C (one-to-one assignment in upgrades()), D/E (same-position-first plus roster depth), G (sweep), H (tests), I (ship).
+Step H: write the tests. Each must be confirmed to FAIL against the pre-fix code before being accepted, and the live feed text (Schultz/Higgins, Mahomes, Nabers) must be pinned as fixtures. Then G (full sweep of the wire section), then I (ship + release + link).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  f1c2810 ckpt 58: Step A done — the hallucination is fixed at its source. recommend.js: loadNew
   2e1c0d9 ckpt 53: Wrote Tj's 2026-09-18d 'the wire is broken' request into TASKS.md verbatim, and
   837c56c ckpt 118: Shipped v7.7 and published the GitHub Release: triggered publish-release.yml, 
   abc1cf3 ship v7.7: Waiver wire overhauled: ranked on expected rest-of-season points in this leag
@@ -37,5 +38,5 @@ request in his own words and `git log` carries every step already taken.
   4799ecb ckpt 72: Steps C/D/E built. New app/assets/ros.js is the rest-of-season engine: full-sea
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(8 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
