@@ -1,6 +1,96 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-15** · ladder 168/170 · **v6.7**, shipped · APK builds, signed, all 14 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-18** · ladder 168/170 · **v7.7**, shipped · APK builds, signed, all 19 test suites green · now on GitHub, worked across three Claude accounts
+
+## v7.7 — the waiver wire, rebuilt on the season instead of on last Sunday
+
+Tj, 2026-09-18, with a screenshot of the Wire tab in which every available
+receiver was priced at exactly what he had scored in week 1 and captioned
+"1 scored week in this app — thin sample": *"the wire tab is only making
+recommendations and projecting scores based on prior weeks actual stats. This
+is a broken system."*
+
+He was reading the symptom exactly right, and the cause turned out to be worse
+than "it weights recent games too heavily".
+
+**Three dead branches, one root cause.** `value.js`'s `perGame()` ranked the
+wire through a five-step preference ladder whose second step was ESPN's
+full-season projection. That step had never once executed. Proved against the
+live endpoint: the projections route that wins nearly every sync pins
+`filterStatsForScoringPeriodIds` to the week, and ESPN then returns weekly
+split rows only — never a season split — so `rec.season` was essentially never
+populated. In week 2, with one week scored, every free agent fell past it onto
+the *next* step, "a single measured game", and was priced at that one game
+forever. The label was honest. Using the number anyway was not.
+
+The same dead branch existed twice more, found by grep once the first one was
+understood: `recommend.js`'s `projectOne()` lists a full-season projection as
+source 4 of the Advice tab's blend — its own file header says "this updates
+through the season, unlike a number frozen at draft time" — and it read the
+same never-populated field, so the Advice tab's documented season-long anchor
+had contributed nothing to any projection, ever. And `projections.js`'s
+`ingest()` accepted a season split from whichever `externalId` arrived last,
+which on a response carrying both 2025 and 2026 was a coin flip between this
+season and last.
+
+**What replaced it.** A separate season-projection fetch (its own key, its own
+12-hour freshness, `externalId`-filtered, week-independent because a season
+total is not an answer to a weekly question), feeding a new `app/assets/ros.js`
+that implements what public rest-of-season models actually do:
+
+1. start from a season-long baseline — ESPN's and Sleeper's full-season
+   projected STAT LINES, both re-scored by `scoring.js` into this league's
+   points and averaged, which is what Tj asked for in so many words;
+2. weight this season's observed games in as the sample grows rather than
+   all-or-nothing — `w = n / (n + 4)`, so one game carries 20% and eleven
+   carry 73%;
+3. regress efficiency toward volume, because opportunity is the stable part of
+   a small sample and touchdowns are not — the per-opportunity rates are
+   measured from this league's own book, so they are correct here by
+   construction;
+4. multiply by the games he actually has left, bye included.
+
+That product — expected points for the rest of the season, in league scoring —
+is what the board ranks on now, what a swap's edge is measured in, and what
+both Claude prompts lead with.
+
+**Tj's six rules, and where each one lives.** Current-season data and news
+(the two season fetches, plus an unrestricted search mandate in the prompt);
+ranked on the season, not the week (`Ros.estimate().total`); a swap only when
+it is a meaningful season-long gain (two gates, per-game AND season-points,
+`MIN_GAIN`/`MIN_SEASON`); one-for-one pairs with an explicit point edge (the
+`swaps` reply contract); no restrictions on Claude, including sight of every
+owned player in the league (`Value.takenByTeam`, `Ai.waiverCriteriaText`);
+QB/K/DEF still low priority unless the edge is season-defining or the man they
+replace is finished for the year (`Recommend.seasonOutlook`, which zeroes a
+dead roster spot so the forced replacement falls out of ordinary arithmetic
+rather than needing a rule of its own).
+
+**Four bugs found on the way, three of them older than this job.**
+
+- Nothing but the Advice tab's full sync ever called the season fetch, so
+  opening the Wire tab without syncing first would have left every free agent
+  back on a weekly line — the overhaul looking broken in a brand new way.
+  The Wire tab refreshes it itself now.
+- `value.js`'s free-agent memo did not key on the season cache, so the
+  completed background refresh would have replayed the stale board. This is
+  the *third* time this exact trap has been hit in this file; the other two
+  are documented in `freeAgents()`'s own comment.
+- `Store.setBook` never bumped the store generation, so a sync that wrote a
+  fresh week of stats left every downstream cache serving pre-sync numbers
+  until Tj happened to add or drop a player. Survivable while the board leaned
+  on projections; not once a player's own games are half the estimate.
+- And one this job created, caught by re-reading its own diff: `upgrades()`
+  searched the best 60 free agents by a single global sort. A completion pays
+  a full point here, so ranking on a season TOTAL multiplies quarterback's
+  structural advantage by the games remaining — measured against a realistic
+  spread of projections, **all sixty came back QB**. The function meant to find
+  Tj a running back was searching a pool with no running backs in it, and it
+  would have surfaced as the complaint he has already made twice ("it always
+  recommends qb switch") arriving by a new route. It pulls per position now.
+
+Every one of those has a regression test that was confirmed to fail against
+the pre-fix code.
 
 ## WHERE I LEFT OFF — read CHECKPOINT.md and TASKS.md first
 On 2026-09-07 Tj gave a new list (three reported bugs, two new features, a
