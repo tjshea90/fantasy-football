@@ -2453,7 +2453,11 @@
          rule 6: a season-ending injury "mandates the player be replaced"). */
       var forced = ups.filter(function (u) { return u.mandated; });
       if (forced.length) {
-        c.appendChild(el('p', 'warn', forced.length === 1
+        /* warnText, not warn: `.warn` is only defined for a CARD and a TAG in
+           app.css (.card.warn, .tag.warn) — a bare <p class="warn"> would have
+           styled as nothing at all and the line would have read as ordinary
+           body text. */
+        c.appendChild(el('p', 'warnText', forced.length === 1
           ? 'One player on your roster is out for the season — that spot is doing ' +
             'nothing until you replace him:'
           : forced.length + ' players on your roster are out for the season — those ' +
