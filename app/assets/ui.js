@@ -3917,7 +3917,7 @@
         want.push(g);
       });
       meta.reused = reused; meta.fetched = want.length;
-      if (!want.length) step('Week ' + week + ': every game already final', 100);
+      if (!want.length) step('Week ' + syncWeek + ': every game already final', 100);
 
       /* Three at a time: the Java side runs a 3-thread pool that used to sit
          two-thirds idle while the page waited for one box score at a time. */
