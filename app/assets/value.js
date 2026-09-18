@@ -413,6 +413,32 @@
    * simply by clearing the flat 1-point bar every other position uses. */
   var QB_MIN_GAIN = 6;        /* season-defining, not week-to-week noise */
   var QB_MIN_MEASURED = 3;    /* real games played, not a projection alone */
+
+  /* THE BAR A SWAP HAS TO CLEAR (Tj, 2026-09-18, rule 3): "it must only
+   * recommend I drop and add a player or players if they are a meaningful
+   * improvement for the rest of the season over the player it recommends I
+   * drop". Two gates, and a swap must pass BOTH:
+   *
+   *   MIN_GAIN     — points per game. Kills a rounding-margin difference
+   *                  dressed up as an upgrade. QB's is large for the reason
+   *                  written at length above: a completion pays a full point
+   *                  here, so a starting QB's per-game rate runs several
+   *                  times a good receiver's and "one more point a game" is
+   *                  noise at that scale.
+   *   MIN_SEASON   — points over the rest of the season. Kills the opposite
+   *                  error, which the old per-game-only bar could not see: a
+   *                  real per-game edge with two weeks left is a two-week
+   *                  move, not a season-long one, and this screen is now
+   *                  explicitly ranked on the season.
+   */
+  var MIN_GAIN    = { QB: QB_MIN_GAIN, RB: 1.5, WR: 1.5, TE: 1.5, K: 2, DEF: 2.5 };
+  var MIN_SEASON  = { QB: 20, RB: 15, WR: 15, TE: 15, K: 18, DEF: 18 };
+  /* Rule 6 gives K and DEF one way past their own de-prioritisation other
+     than my own being unavailable or finished for the year: "a strong, clear,
+     season long edge". This is that bar, and it is deliberately far above
+     MIN_SEASON — a streamer's good matchup must never reach it. */
+  var KDEF_STRONG_SEASON = 25;
+
   function upgrades(week, teamId, opponents, poolSize) {
     var fa = freeAgents(week, poolSize || 60);
     var allProj = root.Recommend.projectAll(week, teamId, opponents);
@@ -423,54 +449,95 @@
     var starters = myStarters(week, teamId, opponents, allProj);
     var startIds = {}, i;
     for (i = 0; i < starters.length; i++) startIds[starters[i].id] = 1;
-    var repl = replacement(week), left = weeksLeft(week);
-    var dc = dropCandidatesFrom(allProj, startIds, repl, left, 1);
+    var left = weeksLeft(week);
+    var dc = dropCandidatesFrom(allProj, startIds, week, 1);
     var kdefNeed = kdefNeedFrom(allProj);
+    var mandated = mandatedFrom(allProj, startIds, week);
     var flexOK = root.Store.get().league.flexEligible || ['RB', 'WR', 'TE'];
     var out = [];
     for (i = 0; i < fa.length; i++) {
       var f = fa[i];
-      if (f.onBye || !f.confident) continue;
-      /* low priority, per Tj: never worth bumping an actual roster need,
-         and only even considered when mine is genuinely unavailable */
-      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos]) continue;
-      /* real production, not a model's opinion of him — see the header */
-      if (f.pos === 'QB' && f.n < QB_MIN_MEASURED) continue;
+      /* NOT skipped for a bye any more. A bye is a one-week fact and this
+         board is a season-long ranking — his `ros` already costs him that
+         game (ros.js's gamesLeft), so a man on bye this week competes on
+         honest terms instead of vanishing. */
+      if (!f.confident) continue;
+      var mand = !!(mandated[f.pos] && mandated[f.pos].length);
+      /* low priority, per Tj (rule 6): a K or DEF is only worth a swap when
+         mine is genuinely unavailable, when mine is finished for the year, or
+         on a strong, clear season-long edge — checked below once the gain is
+         known, since "strong and clear" is a statement about the margin. */
+      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos] && !mand &&
+          f.conf !== 'high') continue;
+      /* real production, not a model's opinion of him — see the header. The
+         one exception is rule 6's own: if my quarterback is done for the
+         year somebody has to play the position, and holding the replacement
+         to "three games on tape first" would leave the slot empty. */
+      if (f.pos === 'QB' && f.n < QB_MIN_MEASURED && !mand) continue;
       var cands = dc[f.pos] || [];
       /* a FLEX-eligible free agent also competes with the weakest FLEX-
          eligible player on the roster, not just his own listed position */
       if (flexOK.indexOf(f.pos) >= 0) {
         var flexAll = [];
         flexOK.forEach(function (fp) { flexAll = flexAll.concat(dc[fp] || []); });
-        flexAll.sort(function (a, b) { return a.base - b.base; });
-        if (flexAll.length && (!cands.length || flexAll[0].base < cands[0].base)) {
+        flexAll.sort(function (a, b) { return a.ros - b.ros; });
+        if (flexAll.length && (!cands.length || flexAll[0].ros < cands[0].ros)) {
           cands = flexAll;
         }
       }
       if (!cands.length) continue;
       var drop = cands[0];
-      var perGameGain = f.v - drop.base;
-      /* a full point of REAL rest-of-season signal per game, not a rounding
-         margin — small enough to still catch a real upgrade, large enough
-         that ordinary week-to-week noise cannot trigger it on its own.
-         QB needs far more: see the header comment above. */
-      var minGain = f.pos === 'QB' ? QB_MIN_GAIN : 1;
+      /* BOTH sides of this subtraction now come from ros.js — see
+         rosterValues(). The season gain is the headline number because the
+         season is what Tj asked to rank on; the per-game gain is kept
+         because it is how a human reads "is this actually better". */
+      var seasonGain = f.ros - drop.ros;
+      var perGameGain = f.raw - drop.perGame;
+      var minGain = MIN_GAIN[f.pos] === undefined ? 1.5 : MIN_GAIN[f.pos];
+      var minSeason = MIN_SEASON[f.pos] === undefined ? 15 : MIN_SEASON[f.pos];
+      /* Replacing a man who is finished for the year is not optional and is
+         not held to the ordinary "is this worth the churn" bar — anyone who
+         can still play beats somebody who cannot. */
+      if (drop.outForSeason) { minGain = 0; minSeason = 0; }
+      if ((f.pos === 'K' || f.pos === 'DEF') && !kdefNeed[f.pos] && !drop.outForSeason) {
+        minSeason = Math.max(minSeason, KDEF_STRONG_SEASON);
+      }
       if (perGameGain <= minGain) continue;
-      var seasonGain = perGameGain * left;
-      var why = f.name + ' projects about ' + perGameGain.toFixed(1) + ' more point' +
-        (Math.abs(perGameGain - 1) < 0.05 ? '' : 's') + ' per game than ' + drop.name +
-        ' for the rest of the season (' + left + ' week' + (left === 1 ? '' : 's') +
-        ' left) — roughly ' + seasonGain.toFixed(1) + ' points of season-long swing. ' +
-        f.name + '’s number: ' + f.src + '. ' + drop.name +
-        (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.') +
-        (f.pos === 'QB' ? ' A quarterback swap only shows up here when the edge is large and ' +
-          'backed by real games played — a completion pays a full point in this league, so a ' +
-          'proven, high-completion starter is not worth benching for a smaller or unproven edge.'
-          : '');
+      if (seasonGain <= minSeason) continue;
+
+      var why;
+      if (drop.outForSeason) {
+        why = drop.name + ' is done for the season' +
+          (drop.outWhy ? ' (' + drop.outWhy + ')' : '') +
+          ' and is worth nothing from here on, so this slot has to be replaced. ' +
+          f.name + ' projects about ' + f.ros.toFixed(0) + ' points over his remaining ' +
+          f.games + ' game' + (f.games === 1 ? '' : 's') + ' in this league’s scoring. ' +
+          f.name + '’s number: ' + f.src + '.';
+      } else {
+        why = f.name + ' projects about ' + seasonGain.toFixed(0) +
+          ' more points than ' + drop.name + ' over the rest of the season (' +
+          perGameGain.toFixed(1) + ' per game across ' + f.games + ' remaining game' +
+          (f.games === 1 ? '' : 's') + '), in this league’s scoring. ' +
+          f.name + '’s number: ' + f.src + '. ' + drop.name +
+          (drop.bench ? ' is currently on your bench.' : ' is currently your starter at ' + drop.pos + '.') +
+          (f.pos === 'QB' ? ' A quarterback swap only shows up here when the edge is large and ' +
+            'backed by real games played — a completion pays a full point in this league, so a ' +
+            'proven, high-completion starter is not worth benching for a smaller or unproven edge.'
+            : '') +
+          ((f.pos === 'K' || f.pos === 'DEF')
+            ? ' Kicker and defense are low priority here, so this one had to clear a much ' +
+              'larger season-long margin than any other position to be shown at all.' : '');
+      }
       out.push({ fa: f, drop: drop, over: drop, perGame: perGameGain, gain: seasonGain,
-                 weeks: left, why: why });
+                 weeks: left, games: f.games, mandated: !!drop.outForSeason, why: why });
     }
-    out.sort(function (a, b) { return b.gain - a.gain; });
+    /* A mandated replacement outranks any optional upgrade, however large:
+       an empty or dead roster slot is a problem you have this week, and an
+       upgrade is one you merely benefit from. */
+    out.sort(function (a, b) {
+      if (a.mandated !== b.mandated) return a.mandated ? -1 : 1;
+      return b.gain - a.gain;
+    });
     return out;
   }
 
