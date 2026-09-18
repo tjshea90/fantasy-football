@@ -362,7 +362,13 @@ console.log('\n-- the waiver loop --');
   var wctx = W.Value.waiverContext(WEEK, me, null, 2026, '2026-09-07');
   var pk = Object.keys(wctx.pool).filter(function (k) { return wctx.pool[k].length; });
   ok(pk.length > 0, 'there is a pool to answer about');
-  var real = wctx.pool[pk[0]][0];
+  /* RB/WR specifically, not QB — this test is about the generic offline
+     round-trip plumbing (verified/proj/priority/recentStat/dropCandidate),
+     not position-specific gating, and 2026-09-18 gave a QB free agent a
+     real-measured-production bar this synthetic pool entry has no reason
+     to clear (see test_waiver.js's own suite for QB-specific coverage). */
+  var realPos = ['RB', 'WR'].concat(pk).filter(function (p) { return pk.indexOf(p) >= 0; })[0];
+  var real = wctx.pool[realPos][0];
   /* a real, position-matched drop candidate and a real roster injury, when
      this seed roster happens to have one — proves the new fields survive the
      OFFLINE round trip exactly as they do the live API one */
