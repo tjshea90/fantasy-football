@@ -31,7 +31,7 @@ function freshWindow() {
     new Function('window', fs.readFileSync(path.join(__dirname, '..', 'app/assets', f), 'utf8'))(W);
   }
   ['seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js', 'store.js', 'playerdb.js',
-   'projections.js', 'usage.js', 'recommend.js', 'sim.js', 'ros.js', 'value.js', 'recap.js',
+   'projections.js', 'usage.js', 'recommend.js', 'ros.js', 'sim.js', 'value.js', 'recap.js',
    'ai.js'].forEach(load);
   W.Store.init(W.SEED);
   W.PlayerDB.init();
