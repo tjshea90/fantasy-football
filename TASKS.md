@@ -1,6 +1,64 @@
-# TASKS — the current job, in Tj's words
+# TASKS — the 2026-09-18 request, in Tj's words
 
-There is no active job right now. The most recent one (2026-09-17c: "When I
+> "Continue on sonnet and look for ways to improve the ui, code, and
+> efficiency of this app and make it perform better. Think of ways and
+> research online to see if you can make the waiver wire section smarter but
+> staying well tuned to the scoring system of this league. Defense and
+> kicker are not priorities, and right now it always recommends qb switch
+> from the QBs I already have, Stafford and bo nix. Keep in mind I drafted
+> these QBs because they had excellent stats last quarter and they are pass
+> heavy, in this league the scoring is one point for every completed pass.
+> Only recommend a replacement qb if it is truly a season edge over the high
+> completion QBs I already have. Focus waiver wire more on my roster
+> weaknesses, usually rb and wr. Make sure the claude chat export and import
+> system to ask Claude for advice also follows these rules. When I first
+> open the app it is on the live page, but it still glitches and when I
+> press another tab that tab doesn't light up on the bottom, like I never
+> selected it. Usually when I try to press the waiver wire tab. It is
+> possibly hanging on load time but I'm not sure. Only investigate this if
+> you are sure it won't affect or break anything else in the app. When you
+> have made all changes, make sure all functions work well and are
+> logically sound. Make sure everything is optimized and well coded. Check
+> for errors and continue checking and fixing errors until the app is very
+> stable. The time and usage is takes you to do this is no concern."
+
+- [ ] 1a. Root-cause why the wire keeps proposing a QB swap off Stafford/Bo
+      Nix — read `Value.upgrades()` (value.js) end to end for how it
+      compares a free agent to a rostered QB.
+- [ ] 1b. Fix it: a QB swap must require a genuine, season-long edge — not
+      the same flat point-margin used for every other position — since a
+      completion pays a full point here and QBs already bank 3-4x what
+      other positions do per game, so a small flat margin is noise for a
+      QB and a real edge for a RB/WR. Require real measured production
+      behind the free agent too, not just ESPN's generic season guess.
+- [ ] 1c. Exclude K/DEF from the deterministic "beats a starter" board
+      (`Value.upgrades()`) unless my own K or DEF is actually unavailable
+      this week — the live-API and handoff Claude paths already gate this,
+      the no-cost deterministic board never did.
+- [ ] 1d. Surface roster weaknesses (usually RB/WR) more directly on the
+      Wire tab, not just implicitly via the gain sort.
+- [ ] 1e. Carry the same QB-skepticism rule into the Claude prompts —
+      `Ai.buildWaiverPrompt` (live API) AND `Handoff.buildWaivers` (the
+      offline Claude-app export/import round trip) — as one shared rule so
+      neither path can drift from the other.
+- [ ] 1f. Research (web) current, credible thinking on valuing QBs in a
+      full-point-per-completion format, to sanity check the threshold
+      chosen in 1b.
+- [ ] 1g. Investigate the tab-highlight-doesn't-light-up-on-Wire glitch —
+      ONLY land a fix if confident it cannot regress anything else (the
+      test suite's synchronous render() contract is the specific risk to
+      respect). Document the finding either way.
+- [ ] 1h. General code/UI/efficiency pass: look for real inefficiencies
+      (redundant computation, anything safely simplifiable) and fix what's
+      safe to fix without changing behavior.
+- [ ] 1i. Run every test suite repeatedly until green, fix anything broken,
+      keep checking for errors until stable.
+- [ ] 1j. Checkpoint/ship per the standing rules once done, publish the
+      GitHub Release, send Tj the link.
+
+## Prior job, complete
+
+The one before that (2026-09-17c: "When I
 imported it back into Claude it gave nonsense answers" — a screenshot
 showing the team-analysis card displaying its own literal unfilled
 template, "Rank 1 of 10. `<a few honest sentences...>`") is complete,
