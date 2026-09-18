@@ -757,7 +757,17 @@
    *   row = { n:name, t:teamAbbr, p:leaguePoints, pa:passAtt, cr:carries, tg:targets }
    * Points are ALWAYS this league's points — the row is written from
    * Scoring.score(), never from anyone else's total. */
-  function setBook(week, rows) { S.book[String(week)] = rows; markArchive(); }
+  /* bumpGen, added 2026-09-18. The generation is what every downstream cache
+     keys on (see `generation:` in the exports — "the store exposes a
+     generation for downstream caches"), and the league book is downstream
+     data: value.js's free-agent memo and ros.js's per-opportunity rate table
+     are both computed FROM it. Without this, a sync that wrote a fresh week
+     of stats left every one of those caches serving numbers computed before
+     those stats existed — until Tj happened to add or drop a player, which
+     was the only thing that ever moved the generation. It was survivable
+     while the board leaned mostly on projections; it is not now that a
+     player's own scored games are half the estimate. */
+  function setBook(week, rows) { S.book[String(week)] = rows; bumpGen(); markArchive(); }
   function bookWeek(week) { var w = String(week); return S.book[w] || {}; }
   /* the last n scored weeks for one player, most recent first.
    * `name` is a PLAIN display name — any spelling. Found in the 2026-09-15e
