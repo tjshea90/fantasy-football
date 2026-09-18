@@ -1,74 +1,32 @@
-# TASKS — the 2026-09-18 request, in Tj's words
+# TASKS — the current job, in Tj's words
 
-> "Continue on sonnet and look for ways to improve the ui, code, and
-> efficiency of this app and make it perform better. Think of ways and
-> research online to see if you can make the waiver wire section smarter but
-> staying well tuned to the scoring system of this league. Defense and
-> kicker are not priorities, and right now it always recommends qb switch
-> from the QBs I already have, Stafford and bo nix. Keep in mind I drafted
-> these QBs because they had excellent stats last quarter and they are pass
-> heavy, in this league the scoring is one point for every completed pass.
-> Only recommend a replacement qb if it is truly a season edge over the high
-> completion QBs I already have. Focus waiver wire more on my roster
-> weaknesses, usually rb and wr. Make sure the claude chat export and import
-> system to ask Claude for advice also follows these rules. When I first
-> open the app it is on the live page, but it still glitches and when I
-> press another tab that tab doesn't light up on the bottom, like I never
-> selected it. Usually when I try to press the waiver wire tab. It is
-> possibly hanging on load time but I'm not sure. Only investigate this if
-> you are sure it won't affect or break anything else in the app. When you
-> have made all changes, make sure all functions work well and are
-> logically sound. Make sure everything is optimized and well coded. Check
-> for errors and continue checking and fixing errors until the app is very
-> stable. The time and usage is takes you to do this is no concern."
-
-- [x] 1a. Root-cause why the wire keeps proposing a QB swap off Stafford/Bo
-      Nix — read `Value.upgrades()` (value.js) end to end for how it
-      compares a free agent to a rostered QB. Found: every position used
-      the same flat "1 more point per game" margin, which is noise at QB's
-      scale (a completion pays a full point here) and `confident` let
-      ESPN's generic season model alone qualify, no measured games needed.
-- [x] 1b. Fix it: `QB_MIN_GAIN=6` pts/game (not 1) and `QB_MIN_MEASURED=3`
-      real scored games (not a projection alone) — see LADDER.md §41. Test:
-      `tools/test_waiver.js`, three new QB cases.
-- [x] 1c. Exclude K/DEF from `Value.upgrades()` unless `kdefNeedFrom()` says
-      mine is actually unavailable — see LADDER.md §41. Test:
-      `tools/test_waiver.js`, two new K/DEF cases.
-- [x] 1d. Surface roster weaknesses (usually RB/WR) more directly on the
-      Wire tab — "Your thinnest starting spot(s)" line in `freeAgentCard()`
-      (ui.js), sourced from `Value.needs()`, K/DEF excluded from it.
-- [x] 1e. Carry the same QB-skepticism rule into the Claude prompts — one
-      shared `Ai.qbSkepticismText()`, read by both `Ai.waiverPrefix()`
-      (live API) and `Handoff.buildWaivers()` (offline round trip), so
-      neither can drift from the other.
-- [x] 1f. Researched (web): point-per-completion scoring analysis
-      independently names accurate, high-volume passers — Stafford BY
-      NAME — as the archetype QB tier this scoring shape favors, matching
-      Tj's own read and validating the direction of 1b's thresholds.
-- [x] 1g. Investigated the tab-highlight glitch end to end (tab-lock class
-      of bug, swipe-swallow risk, `Store.save()` write size, actual Wire
-      render cost) — no reproducible defect found; every previously-fixed
-      cause confirmed still fixed and tested. Did NOT change render()'s
-      synchronous timing to chase a perceived-latency theory, because the
-      only way to do that touches the test suite's core synchronous
-      assumption in three files with no way to confirm it actually helps
-      the real symptom. Full trace in STATE.md's 2026-09-18 entry. See
-      "Waiting on Tj" below for the one follow-up question worth asking.
-- [x] 1h. General efficiency pass: `Value.waiverContext()` was computing
-      `myStarters()`/`bestLineup()`/`projectAll()` three times in one call;
-      `needs()` now takes an optional precomputed `starters` so it is
-      computed once fewer. Looked for other redundancy on the Wire/Rosters/
-      Advice tabs — the ~785-player free-agent scan and the per-player book
-      lookups it does were already properly memoized and cheap (a prior
-      session's 2026-09-17 fix, §38) — nothing else worth the risk of
-      touching found.
-- [x] 1i. Ran the full 18-suite test run twice in a row plus the ES2018
-      gate, and a real `bash build.sh` (28/28 Java classes, signature OK,
-      no ABI-specific dependency) — all green, no flakes.
-- [x] 1j. Shipped as v7.4 (`ship.sh` gate green), GitHub Release published
-      and verified (`FFTracker-v7.4.apk`, 288987 bytes, non-empty assets
-      array) at https://github.com/tjshea90/fantasy-football/releases/tag/v7.4
-      — Tj sent the link.
+There is no active job right now. The most recent one (2026-09-18: "it
+always recommends qb switch from the QBs I already have, Stafford and bo
+nix... Only recommend a replacement qb if it is truly a season edge over
+the high completion QBs I already have. Focus waiver wire more on my
+roster weaknesses, usually rb and wr" — plus making the Claude-app handoff
+follow the same rules, a careful look at the Wire-tab tab-highlight
+glitch, and a general efficiency/stability pass) is complete, shipped as
+v7.4, and archived at LADDER.md §41. Root cause: `Value.upgrades()` held
+every position to the same flat "1 more point per game" margin, which is
+noise at QB's scale in a league that pays a full point per completion (a
+good QB already outscores a good RB/WR 3-4x/game here), and let ESPN's
+generic season model alone qualify a free agent with zero real measured
+games. Fixed with `QB_MIN_GAIN=6` + `QB_MIN_MEASURED=3` (exported so
+`ai.js`'s Claude-suggestion path holds itself to the identical bar,
+belt-and-suspenders alongside a shared prompt paragraph,
+`Ai.qbSkepticismText()`, read by both the live-API and offline-handoff
+paths). K/DEF now gated on `kdefNeedFrom()` on the same deterministic
+board the Claude path already gated. Web research independently confirmed
+the direction (point-per-completion analysis names Stafford by name as
+the archetype QB this scoring favors). Full write-up, including the
+tab-highlight investigation's honest "no fix landed, here is exactly what
+was checked and why" conclusion, and the 8 new regression cases, in
+LADDER.md §41 and STATE.md's 2026-09-18 entry. **Tell Tj plainly if he
+sees a QB swap suggested again after v7.4, or if the tab-highlight glitch
+recurs** — either would be new diagnostic information (see "Waiting on
+Tj" below for exactly what to ask about the tab glitch), not a repeat of
+what v7.4 addressed.
 
 ## Prior job, complete
 
