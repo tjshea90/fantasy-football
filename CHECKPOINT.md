@@ -1,12 +1,12 @@
-# CHECKPOINT 53 — read me first, then TASKS.md
+# CHECKPOINT 58 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T20:05:33Z · **version:** 7.7 · **tests:** all 20 suites green
+**Written:** 2026-09-18T20:12:10Z · **version:** 7.7 · **tests:** all 20 suites green
 
 ## Just done
-Wrote Tj's 2026-09-18d 'the wire is broken' request into TASKS.md verbatim, and proved all four bugs against the LIVE ESPN injuries feed before writing any code. Dalton Schultz's real record is status ACTIVE; his news blurb says JAYDEN HIGGINS went down with a season-ending torn ACL, and seasonOutlook()'s SE_NOTE regex matches 'season-ending' anywhere in the free text while ignoring status entirely. 13 of the 14 note-only flags in the live 800-record feed are status ACTIVE, i.e. certainly false -- Patrick Mahomes and Malik Nabers among them, written off for last season's injuries. The '36' is ui.js counting swap ROWS not distinct players: a ros-0 player is the weakest drop at his position AND the weakest flex-eligible, so he pairs with every free agent that clears the gates.
+Step A done — the hallucination is fixed at its source. recommend.js: loadNews now keeps the four fields it was throwing away (details.returnDate, details.fantasyStatus, type.name, the record date) and no longer uses details.type (a BODY PART, 'Knee') as a news note. seasonOutlook is rewritten: ESPN's status is authoritative about availability (an ACTIVE player can never be season-ending, which alone kills 13 of the 14 live false positives), returnDate decides whether a parked player is back this season or finished (2027-02-15 is ESPN's 'not coming back' sentinel), an IR-R/PUP-R return designation is honoured, and the free-text note is demoted to corroboration that must be about THIS player (nearest name before the phrase) and not about a PAST season. Verified against all 800 live records: Schultz, Mahomes, Nabers, Skattebo and Demercado all correctly clear; the 12 genuinely finished are still caught; 30 players now read 'on IR, back Oct 18' instead of 'out for the season'.
 
 ## Do this next
-Step A: fix seasonOutlook -- respect status, require the note to be about THIS player and not a past season, separate IR/PUP from season-ending. Then B (count distinct players), C (one-to-one assignment), D/E (same-position-first plus roster depth), F (the other call sites), G (full sweep), H (tests), I (ship).
+Step F is partly implied by A and must be finished: seasonOutlook now returns longTermOut/mustReplace/returnAround as well as seasonEnding, so value.js rosterValues, ai.js and handoff.js need updating to the new shape (they read .seasonEnding and .why today). Then B (count distinct roster players in ui.js), C (one-to-one assignment in upgrades()), D/E (same-position-first plus roster depth), G (sweep), H (tests), I (ship).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  2e1c0d9 ckpt 53: Wrote Tj's 2026-09-18d 'the wire is broken' request into TASKS.md verbatim, and
   837c56c ckpt 118: Shipped v7.7 and published the GitHub Release: triggered publish-release.yml, 
   abc1cf3 ship v7.7: Waiver wire overhauled: ranked on expected rest-of-season points in this leag
   f6d6ae6 ckpt 115: Step I sweep, part 2 -- caught a severe bug in THIS job's own change by review
@@ -36,5 +37,5 @@ request in his own words and `git log` carries every step already taken.
   4799ecb ckpt 72: Steps C/D/E built. New app/assets/ros.js is the rest-of-season engine: full-sea
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(4 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
