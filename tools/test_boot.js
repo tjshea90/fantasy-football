@@ -449,8 +449,17 @@ ok(/function bumpGen/.test(stR) && /bumpGen\(\);/.test(stR), 'the index is inval
 ok(/generation: function/.test(stR), 'the store exposes a generation for downstream caches');
 ok(/_faMemo/.test(vaR), 'the 785-player free-agent scan is memoised per week and generation');
 ok(/Object\.defineProperty\(r, 'usage'/.test(vaR), 'usage strings are built lazily');
-ok(/var from = Math\.max\(1, Number\(week\)/.test(vaR),
+/* weeksLeft moved to ros.js in the 2026-09-18 waiver overhaul — the
+   rest-of-season engine needs the same count to turn a per-game rate into a
+   season total, and two copies of "how long is the rest of the season" is
+   exactly the pair that drifts. value.js now delegates to it, so BOTH halves
+   are pinned: the real implementation, and the fact that value.js still has
+   no second copy of its own. */
+var rosR = fs.readFileSync('app/assets/ros.js', 'utf8');
+ok(/var from = Math\.max\(1, Number\(week\)/.test(rosR),
    'weeksLeft counts from the current week, not from week 1');
+ok(/function weeksLeft\(week\) \{ return root\.Ros\.weeksLeft\(week\); \}/.test(vaR),
+   'and value.js delegates to that one implementation rather than keeping a second');
 ok(/root\.Store\.weekIsScored\(wi\)/.test(siR),
    'the season simulation rebuilds base points from scored weeks only');
 ok(/raw: true/.test(aiR2.slice(aiR2.indexOf('MODELS_API'), aiR2.indexOf('function headers'))),
