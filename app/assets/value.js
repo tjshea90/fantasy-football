@@ -261,21 +261,30 @@
    */
   function byPos(week, perPos) {
     var all = freeAgents(week, 0);
-    var rep = {}, out = {}, i, p;
+    var rep = {}, repRos = {}, out = {}, i, p;
     /* replacement = the best non-bye free agent at the position. Derived from
-       the same list so it can never disagree with the rows shown. */
+       the same list so it can never disagree with the rows shown.
+       Tracked in BOTH currencies: per-game, which the trade screen and the
+       needs list have always used, and rest-of-season, which is what `vor`
+       is expressed in now. */
     for (i = 0; i < all.length; i++) {
       p = all[i];
-      if (rep[p.pos] === undefined && !p.onBye) rep[p.pos] = p.raw;
+      if (rep[p.pos] === undefined && !p.onBye) { rep[p.pos] = p.raw; repRos[p.pos] = p.ros; }
     }
     POS.forEach(function (k) {
       if (rep[k] === undefined) rep[k] = 0;
+      if (repRos[k] === undefined) repRos[k] = 0;
       out[k] = [];
     });
     for (i = 0; i < all.length; i++) {
       p = all[i];
       if (!out[p.pos]) continue;
-      p.vor = p.raw - rep[p.pos];
+      /* points above replacement FOR THE REST OF THE SEASON. The old version
+         was a per-game gap, which made a quarterback's edge look eight times
+         a running back's for the same season-long swing and quietly buried
+         the bye-week distinction entirely. */
+      p.vor = p.ros - repRos[p.pos];
+      p.vorPerGame = p.raw - rep[p.pos];
       /* rank within his own position — the tie-breaker byVor needs below */
       p.pRank = out[p.pos].length + 1;
       if (!perPos || out[p.pos].length < perPos) out[p.pos].push(p);
@@ -311,6 +320,20 @@
     var fa = freeAgents(week, 0), out = {}, i;
     for (i = 0; i < fa.length; i++) {
       if (out[fa[i].pos] === undefined && !fa[i].onBye) out[fa[i].pos] = fa[i].raw;
+    }
+    POS.forEach(function (p) { if (out[p] === undefined) out[p] = 0; });
+    return out;
+  }
+
+  /* The same line, in rest-of-season points — what the best freely available
+     player at each position is worth from here to the end of the year. This
+     is the honest baseline for "is this pickup actually worth a roster
+     spot", because a roster spot costs you whoever else you could have had
+     for nothing at that position for the SAME remaining weeks. */
+  function replacementRos(week) {
+    var fa = freeAgents(week, 0), out = {}, i;
+    for (i = 0; i < fa.length; i++) {
+      if (out[fa[i].pos] === undefined && !fa[i].onBye) out[fa[i].pos] = fa[i].ros;
     }
     POS.forEach(function (p) { if (out[p] === undefined) out[p] = 0; });
     return out;
@@ -461,12 +484,10 @@
      was counted as "remaining" for the rest of the season — in week 10 with
      weeks 1-3 unscored it returned 8 instead of 5, inflating every trade value
      by about 60%. */
-  function weeksLeft(week) {
-    var S = root.Store.get(), reg = S.league.regularSeasonWeeks, n = 0, w;
-    var from = Math.max(1, Number(week) || 1);
-    for (w = from; w <= reg; w++) if (!root.Store.weekIsScored(w)) n++;
-    return Math.max(1, n);
-  }
+  /* One implementation, in ros.js, which needs the same count to turn a
+     per-game rate into a season total. Two copies of "how long is the rest
+     of the season" is exactly the kind of pair that drifts. */
+  function weeksLeft(week) { return root.Ros.weeksLeft(week); }
 
   function valueOf(pid, week, opponents) {
     var rec = root.Store.playerById(pid);
@@ -668,6 +689,7 @@
   }
 
   root.Value = { freeAgents: freeAgents, upgrades: upgrades, replacement: replacement,
+                 replacementRos: replacementRos,
                  needs: needs, waiverContext: waiverContext,
                  waiverLoad: waiverLoad, waiverSave: waiverSave,
                  byPos: byPos, byVor: byVor, POS: POS,
