@@ -1,6 +1,42 @@
 # TASKS — the current job, in Tj's words
 
-There is no active job right now. The most recent one (2026-09-18: "it
+## Current job (2026-09-18b)
+
+Tj, 2026-09-18T16:56:13Z: "For this app, there is still the glitch where it
+opens on the live tab (which is fine) but if I press the waiver wire tab the
+tab blinks to show that I pressed it, but it doesn't go to the waiver wire
+tab. It is stuck on the live tab. I can press on other tabs and they open
+and then go back to the live tab and after that the waiver wire tab works
+normally. Fix this and look for other possible improvements in code and ui
+for the app. Do all of this on sonnet"
+
+- [x] Fix the tab-highlight glitch. **Root cause found and confirmed** (the
+      previous job's investigation below found nothing — this is the actual
+      bug): `boot()` restores `view` from `S.settings.lastTab` on a cold
+      relaunch, but `wire()` only ever synced `aria-selected` for that
+      restored tab, never the `.on` CSS class app.css actually paints. So a
+      relaunch that restored `view` to something other than Live (Wire, most
+      plausibly — see ui.js's own comment at `paintTabBar` for the exact
+      mechanism) rendered that tab's content while the bar kept showing Live
+      highlighted from the static HTML default. The next tap on that
+      already-current tab then hit `goTab`'s legitimate `name === view`
+      no-op guard, which looked exactly like "stuck on Live" — and tapping
+      any OTHER tab was a real, different-name transition that synced the
+      class for the first time, which is why everything "worked normally"
+      after that. Fixed by extracting one `paintTabBar(name)` used by both
+      `wire()` at boot and `goTab()` on every tap, so the two can never drift
+      apart again. New regression test in `tools/test_tabsafety.js`
+      ("THE REAL BUG (2026-09-18)") reproduces the exact two-session
+      scenario (session 1 ends on Wire, session 2 is a cold boot reading the
+      same disk back) and was confirmed to FAIL against the pre-fix code and
+      PASS against the fix. All 19 suites + ES2018 gate green.
+- [ ] Look for other possible improvements in code and UI for the app, and
+      keep checking/fixing until the app is very stable (Tj: "time and usage
+      it takes you to do this is no concern").
+
+## Prior job, complete
+
+The one before that (2026-09-18: "it
 always recommends qb switch from the QBs I already have, Stafford and bo
 nix... Only recommend a replacement qb if it is truly a season edge over
 the high completion QBs I already have. Focus waiver wire more on my
