@@ -68,36 +68,36 @@ Fetched ESPN's real `/injuries` feed (800 records, the same endpoint
 
 ### Steps
 
-- [ ] **A. Fix the false season-ending flag at its source** (`recommend.js`
+- [x] **A. Fix the false season-ending flag at its source** Done. seasonOutlook rewritten around the feed's structured fields (status / details.returnDate / details.fantasyStatus), which loadNews was throwing away; the note is demoted to corroboration that must be about THIS player and not a past season. Tested by test_wire.js ("the exact live records that produced the hallucination", "a genuinely finished player is still caught", "on IR but COMING BACK", "a report written in the POSSESSIVE", "a plain weekly OUT"). Verified against all 800 live records. (`recommend.js`
       `seasonOutlook`). The status field must be respected — an ACTIVE player is
       not out for the year, full stop. A note may only promote when it is about
       THIS player (his own surname near the phrase, no other player named in
       between) and is not describing a PAST season. Distinguish IR/PUP (a
       designation, long-term but returnable) from a genuinely season-ending
       one, and never state more certainty than the feed supports.
-- [ ] **B. Count distinct roster players, not rows** (`ui.js` Wire tab). The
+- [x] **B. Count distinct roster players, not rows** Done: new Value.mustReplace() counts holes off the roster and ui.js names the men. Moved outside `if (ups.length)` so a dead spot with nothing on the wire is still reported. Tested by test_wire.js ("Value.mustReplace() names the one actual man" and the roster-size bound). (`ui.js` Wire tab). The
       headline must say what is true of the roster: one line naming the actual
       men, and never a number larger than the roster.
-- [ ] **C. One drop, one add — a real assignment** (`value.js` `upgrades()`).
+- [x] **C. One drop, one add — a real assignment** Done: upgrades() builds every plausible pair, ranks, and greedily assigns; normalizeWaivers enforces the same on the Claude path. Tested by test_wire.js ("ONE roster spot cannot be offered to the whole wire", "the one-to-one drop rule is ENFORCED, not merely requested"). (`value.js` `upgrades()`).
       Each roster player may be the drop in at most one suggestion; each free
       agent may appear once. Best pairing first, then the next best over what
       is left.
-- [ ] **D. Same-position first, not absolutely** (`value.js` `upgrades()`).
+- [x] **D. Same-position first, not absolutely** Done: cross-position swaps clear double both bars and rank at 0.75x; a forced cross-position replacement must also beat the best available player at the emptied position. Tested by test_wire.js ("LIKE FOR LIKE WINS WHEN BOTH ARE AVAILABLE", "...BUT THE RULE IS NOT ABSOLUTE", "a cross-position swap must clear DOUBLE the bar"). (`value.js` `upgrades()`).
       Prefer a replacement at the dropped player's own position; allow a
       cross-position swap only when its edge is clearly bigger, and say so in
       the row's reason. Must not re-open the QB/K/DEF or MIN_GAIN/MIN_SEASON
       gates from the prior job.
-- [ ] **E. Positional depth must survive a drop.** Never recommend dropping a
+- [x] **E. Positional depth must survive a drop.** Done: slotNeeds/lineupFillable/bodyCounts, checked against the roster and against the roster as it stands after the swaps already listed. Tested by test_wire.js ("THE TE CASE, IN TJ'S OWN WORDS", "TWO swaps that are each legal alone must not be illegal together", and the helpers directly). Never recommend dropping a
       man if it leaves the roster unable to fill his starting slot (the TE case
       Tj names). This is the roster-integrity half of rule D.
-- [ ] **F. The same bad flag anywhere else it reaches** — `ai.js` (the Claude
+- [x] **F. The same bad flag anywhere else it reaches** Done: one fix at the source; rosterValues, ai.js and handoff.js all consume the new shape and both prompts now distinguish "on IR until Oct 18" from "out for the season". Tested by test_wire.js's prompt checks plus the existing test_ai/test_handoff suites. — `ai.js` (the Claude
       prompt's MUST BE REPLACED block), `handoff.js` (the export's same block),
       `value.js` `rosterValues` (zeroing a healthy player's value). One fix at
       the source, verified not to leave a second copy behind.
-- [ ] **G. Thorough overview of the whole wire section**, as asked: re-read
+- [x] **G. Thorough overview of the whole wire section** Done, and it found four more real bugs, three of them in this job's own change: the headline nested inside `if (ups.length)`, the possessive-name miss, the per-pair (rather than cumulative) lineup-legality check, and the tab's "thinnest spots" line naming QB in contradiction of rule 6. All fixed and tested., as asked: re-read
       ros.js, value.js, recommend.js, ai.js, handoff.js and the Wire tab
       against the prior job's six rules, and fix what else is wrong.
-- [ ] **H. Tests.** A named test for each of the above, each one confirmed to
+- [x] **H. Tests.** Done: new tools/test_wire.js with ESPN's live blurbs as verbatim fixtures. 32 assertions confirmed to FAIL against the true pre-fix commit and pass now; the pre-fix run reproduces the screenshot exactly (nine forced rows for one man, eight duplicate drops, a WR replacing a TE). All 21 suites green. A named test for each of the above, each one confirmed to
       FAIL against the pre-fix code before it is accepted. Real feed text
       (Schultz/Higgins, Mahomes, Nabers) pinned as fixtures so this exact
       class of error cannot come back. Every suite green.
