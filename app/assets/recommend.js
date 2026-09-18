@@ -256,8 +256,40 @@
           var ath = it.athlete || (it.playerRef ? it.playerRef : null);
           var nm = ath && ath.displayName ? ath.displayName : (it.displayName || '');
           var st = String(it.status || (it.type ? it.type.description : '') || '').toUpperCase();
-          var det = it.longComment || it.shortComment || (it.details ? it.details.type : '') || '';
-          if (nm) byName[norm(nm)] = { status: st, note: trimNote(det, 600) };
+          /* NOT `details.type` any more (2026-09-18d). That field is the BODY
+             PART — "Knee", "Ankle" — and using it as the fallback `note` fed a
+             one-word anatomy label into seasonOutlook's prose matching as if it
+             were a news report. shortComment is the real short form; when
+             neither comment exists there is simply no note. */
+          var det = it.longComment || it.shortComment || '';
+          var dt = it.details || {};
+          var fs = (dt.fantasyStatus && dt.fantasyStatus.description)
+            ? String(dt.fantasyStatus.description).toUpperCase() : '';
+          /* THE FIELDS THAT MAKE "OUT FOR THE SEASON" A FACT INSTEAD OF A GUESS
+             (2026-09-18d, read off the live feed while fixing the Dalton
+             Schultz bug). Every one of these was being thrown away:
+
+               details.returnDate — ESPN's own expected return. Present on all
+                 39 IR records in the live pull. Most read October or November,
+                 i.e. BACK THIS SEASON; the genuinely finished carry the
+                 sentinel 2027-02-15, past the end of the year. This single
+                 field separates "on IR, back in week 6" from "done", which the
+                 old code could not tell apart at all and called both
+                 "out for the season".
+               details.fantasyStatus — distinguishes IR from IR-R and PUP-R,
+                 the return-designated variants. A man with a return
+                 designation is by definition not finished for the year.
+               date — when the record was written, so a stale entry can be
+                 aged out rather than quoted forever as current news.
+               type.name — the stable machine key (INJURY_STATUS_IR) behind the
+                 free-text status. */
+          if (nm) byName[norm(nm)] = {
+            status: st, note: trimNote(det, 600),
+            fantasyStatus: fs,
+            returnDate: dt.returnDate ? String(dt.returnDate) : '',
+            typeName: (it.type && it.type.name) ? String(it.type.name).toUpperCase() : '',
+            at: it.date ? String(it.date) : ''
+          };
         }
       }
       /* `reused` is deliberately absent here: a real fetch must not inherit the
