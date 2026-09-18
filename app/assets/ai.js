@@ -905,9 +905,24 @@
      `kdefNeed` (optional) is {K,DEF} — when supplied, a K or DEF add is kept
      only when the app itself says that position is actually short this
      week. Both are optional so older callers (tests, a handoff reply built
-     before this existed) are unaffected: no data, no filtering. */
+     before this existed) are unaffected: no data, no filtering.
+
+     QB gets the same treatment as K/DEF, for the opposite reason (Tj,
+     2026-09-18: "only recommend a replacement qb if it is truly a season
+     edge" over an accurate, high-completion QB already rostered). The
+     prompt already asks Claude for this; this is the backstop for when it
+     does not comply. `src.n` (measured games behind THIS free agent's own
+     number — only known for a player the app actually priced and sent, in
+     `known`) has to clear `Value.QB_MIN_MEASURED`, the exact same bar
+     value.js's own deterministic board holds a QB free agent to — one
+     number, read from value.js rather than copied here, so the two paths
+     cannot quietly drift apart. An unverified QB suggestion (a name Claude
+     added that was not in the pool sent) cannot be checked this way and is
+     left to its own "confidence" field, same as before. */
   function normalizeWaivers(parsed, known, dropIdx, kdefNeed) {
     dropIdx = dropIdx || {};
+    var qbMinMeasured = (root.Value && typeof root.Value.QB_MIN_MEASURED === 'number')
+      ? root.Value.QB_MIN_MEASURED : 3;
     var adds = [], arr = (parsed && parsed.adds) || [], i;
     for (i = 0; i < arr.length; i++) {
       var a = arr[i];
@@ -915,6 +930,7 @@
       var src = known[root.Names.canon(a.name)] || null;
       var pos = String(a.pos || (src ? src.pos : '')).toUpperCase();
       if ((pos === 'K' || pos === 'DEF') && kdefNeed && !kdefNeed[pos]) continue;
+      if (pos === 'QB' && src && typeof src.n === 'number' && src.n < qbMinMeasured) continue;
       var dcName = String(a.dropCandidate || '').trim();
       var dcRec = dcName ? dropIdx[root.Names.canon(dcName)] : null;
       var dropCandidate = (dcRec && dcRec.pos === pos) ? dcRec.name : '';
