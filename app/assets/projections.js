@@ -455,7 +455,17 @@
         if (!st.stats) continue;
         if (Number(st.scoringPeriodId) === Number(week) &&
             Number(st.statSplitTypeId) === 1) wk = st.stats;
-        else if (Number(st.statSplitTypeId) === 0) sea = st.stats;
+        /* A season split (statSplitTypeId 0) comes back once per SEASON the
+           feed knows about — confirmed live 2026-09-18, ESPN returns an
+           externalId "2025" row and an externalId "2026" row side by side for
+           the same player. This used to take whichever arrived last, so in
+           roughly half the responses a "season projection" was actually LAST
+           season's line. Only the season being asked about counts; a row with
+           no externalId at all is accepted, since older response shapes
+           carried exactly one season split and no id to check it against. */
+        else if (Number(st.statSplitTypeId) === 0 &&
+                 (st.externalId === undefined || st.externalId === null ||
+                  String(st.externalId) === String(season))) sea = st.stats;
       }
       if (!wk && !sea) continue;
       var rec = { pos: pos, espnId: String(p.id === undefined ? '' : p.id) };
