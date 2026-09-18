@@ -3429,3 +3429,119 @@ this change does not touch). Full suite (18 suites) +
 `node tools/check_es2018.js` all green.
 
 Shipped as v7.4.
+
+## 2026-09-18b — the tab-highlight glitch, actually found this time
+
+Tj, again: "it opens on the live tab (which is fine) but if I press the
+waiver wire tab the tab blinks to show that I pressed it, but it doesn't go
+to the waiver wire tab. It is stuck on the live tab. I can press on other
+tabs and they open and then go back to the live tab and after that the
+waiver wire tab works normally." The v7.4 entry above investigated this
+honestly and found nothing reproducible — that investigation is not wrong,
+it just did not look in the right place. The right place: `boot()`'s own
+`lastTab` restore, which that investigation never touched.
+
+### Root cause
+`boot()` restores `view` from `S.settings.lastTab` on a cold relaunch —
+Android kills a backgrounded WebView process far more often than a
+"resume" implies, so the next open is very often a real `boot()`, not a
+live process continuing (this repo's own "Branches" story documents the
+same platform behavior biting a different feature). If Tj's last real
+session ended on the Wire tab — plausible; checking the wire is a quick,
+often-last thing to do — the next cold open sets `view = 'wire'`
+internally and `render()` correctly draws Wire's content. But `wire()`
+(which runs once at boot, right after) only ever fixed up the
+`aria-selected` attribute for that restored tab — never the `.on` CSS
+class `app.css` actually paints (`.tab.on{color:var(--accent);
+box-shadow:inset 0 3px 0 var(--accent);...}`). Only `goTab()` (the tap
+handler) ever touched that class. So the bar kept showing Live highlighted
+— the static HTML's shipped default — while the screen underneath was
+already Wire. His next tap on "Wire" then hit `goTab`'s own, perfectly
+correct `if (name === view) return;` guard, because he actually was
+already on Wire — a real no-op that LOOKED exactly like "stuck on Live":
+only the native `.tab:active` press flash showed (the "blink"), nothing
+else changed. Tapping any OTHER tab had a genuinely different name, so it
+went through `goTab` for real and painted the class for the first time
+that boot — which is exactly why "other tabs... open" and why everything
+"worked normally" once he had gone anywhere else and back.
+
+Two code paths — `wire()` at boot, `goTab()` on tap — implementing "paint
+the tab bar's highlight," and only one of them was complete. Exactly the
+same shape of bug as v6.9's tab-LOCK fix (§37: two things implementing
+"can the tab bar be used at all"), one level more subtle.
+
+### Fix
+One shared `paintTabBar(name)` (ui.js), called by both `wire()` (with the
+just-restored `view`) and `goTab()` (with the tapped name), so the two can
+never drift apart again. `tools/test_tabsafety.js` gained a new case
+("THE REAL BUG (2026-09-18)") that reproduces the actual two-session
+scenario — session 1 ends on Wire, session 2 is a fresh harness reading
+the same disk back — and was confirmed to FAIL against the pre-fix code
+(the Wire button was not highlighted; Live wrongly was) and PASS against
+the fix.
+
+### The rest of the same job: a delegated code/UI audit
+Tj's same message also asked to "look for other possible improvements in
+code and ui for the app" with "no concern" for time — spent it on a
+research-only subagent audit of `app/assets/*.js` and `app.css` (kept out
+of this session's own context on purpose — a ~4,200-line `ui.js` alone is
+too much to read wholesale twice), then personally verified and fixed its
+highest-confidence findings, each with its own before/after-confirmed
+regression test:
+
+- **Duplicate paid Claude calls** (ui.js, `freeAgentCard`/
+  `teamAnalysisCard`): the Wire tab's "Ask Claude about the wire" and the
+  Rosters tab's "How your team stacks up" Ask-Claude button each only
+  disabled THEMSELVES in their own click handler — every sibling
+  ask/refresh button in this file (news-sync, player-db refresh) also
+  checks `jobRunning()` when the button is REBUILT, and these two did not.
+  Switching tabs away and back while either 5-minute Claude call was still
+  in flight rebuilt the card with a fresh, enabled button; a second tap
+  fired a second concurrent paid API call, and whichever response landed
+  last silently overwrote the cache (`Value.waiverSave`/`TeamReport.save`).
+  Fixed with the same `jobRunning('waivers')`/`jobRunning('teamanalysis')`
+  guard the other buttons already use. New test: `tools/test_jobguard.js`.
+- **Redundant projection computation** (value.js): `upgrades()` and
+  `waiverContext()` each ran `Recommend.projectAll()` twice per call —
+  once directly, once again inside `myStarters()` → `bestLineup()` — even
+  though `needs()` already solved this for itself via an optional
+  `starters` param (§ the 2026-09-18 QB-edge job, above). Threaded an
+  optional `allProj` through `bestLineup()`/`myStarters()` the same way.
+  Pure performance fix, no behavior change — verified by the existing
+  suites, no new test needed.
+- **doSync() week-capture race** (ui.js): `doSync` read the shared
+  module-level `week` variable throughout its whole async chain instead of
+  snapshotting it once at entry. `week` can be mutated mid-flight by the
+  NFL-week auto-advance or by tapping the week-next arrow while a sync is
+  running — neither checks the `busy` flag doSync itself sets. A sync
+  that started for week N could finish after `week` had moved to N+1 and
+  file its results (`Store.setBook`, `S.weekMeta`, the completion toast)
+  under week N+1 instead of the week it actually fetched — silently
+  corrupting the wrong week's scored stats. Fixed by capturing
+  `syncedWeek = week` once at the top of `doSync` and using it for every
+  "week this sync is for" reference from then on (`render()` still reads
+  the live `view`/`week`, since the SCREEN should track the current week
+  regardless of which week just finished syncing). New test:
+  `tools/test_synccapture.js` — stalls `Espn.weekGames` mid-flight,
+  advances the week via the real week-next button while the sync is still
+  waiting, resolves it, and confirms the results land under the week that
+  was actually fetched, not wherever the display ended up. Confirmed to
+  FAIL against the pre-fix code (results leaked into the wrong week) and
+  PASS against the fix.
+
+**Surfaced but deliberately not touched**: `app/assets/sim.js`'s
+`season()`/`power()`/`allPlay()`/`bracket()`/`game()` are fully
+implemented and covered by `test_engine.js`, `test_integration.js` and
+`test_recap.js`, but grepped every other source file and found no
+production caller — no tab renders playoff odds, power rankings, or
+all-play records. Reads like orphaned surface from a feature that was
+never wired into a tab, or one that was removed on a divergent branch (see
+this file's own "Branches — main is the only source of truth" story in
+CLAUDE.md for exactly this class of loss). Whether to build the missing UI
+or delete the dead code is a product call, not a unilateral one — left for
+Tj to decide, named explicitly in TASKS.md rather than silently dropped.
+
+DONE — 20 suites (two new: `test_synccapture.js`, `test_jobguard.js`) +
+`node tools/check_es2018.js` all green throughout. `tools/test_tabsafety.js`
+and `tools/test_boot.js` (one source-text pin updated for the renamed
+`syncedWeek` local) both updated in place rather than left stale.
