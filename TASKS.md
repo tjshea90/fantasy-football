@@ -213,6 +213,32 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
+- [ ] **Confirm v7.4 on the phone — PRIORITY, this is the QB/K-DEF waiver-wire
+      fix you just asked for**:
+      ```
+      https://github.com/tjshea90/fantasy-football/releases/tag/v7.4
+      ```
+      Wire tab: it should no longer suggest dropping Stafford or Bo Nix for
+      a free-agent QB unless that QB has real, multi-week measured
+      production AND a large (6+ point/game) edge — a bigger single-week
+      number or a generic season projection alone should never be enough
+      any more. K and DEF adds should not appear on the "beats a starter"
+      list unless your own kicker or defense is genuinely unavailable that
+      week. You should also see a new line near the top of the free-agent
+      board naming your thinnest starting spots (usually RB/WR). If you
+      still see a QB swap suggested off either of your two QBs, say exactly
+      who the free agent was and what the app showed as the reason — that
+      would be a different, still-undiscovered gap, not a repeat of the
+      exact bug just fixed (see LADDER.md §41).
+      **Also, about the tab-highlight glitch** ("I press Wire and it
+      doesn't light up") — this was investigated carefully and no
+      concrete, safely-fixable defect was found (full trace in STATE.md's
+      2026-09-18 entry), so nothing was changed there. If it happens again,
+      the single most useful thing to note is: does the SCREEN eventually
+      catch up (the Wire content shows up a few seconds late, just the
+      highlight lagged) or does NOTHING happen at all, ever, until you
+      tap again? Those point at two completely different causes, and only
+      a real device in the moment it happens can tell them apart.
 - [ ] **Confirm v7.3 on the phone — PRIORITY, this is the fix for the
       "nonsense answers" screenshot you just sent**:
       ```
