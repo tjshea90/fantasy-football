@@ -441,7 +441,12 @@ console.log('\n-- the waiver loop --');
     needs: 'Thin at running back.', summary: 'Claim the first one.'
   };
   var wreply = '```json\n' + JSON.stringify(replyObj, null, 2) + '\n```';
+  /* `roster` is what validates a reply's drop half now, not `dropCandidates`:
+     rule 5 (2026-09-18) lets Claude name anybody on my roster, so the app
+     checks "is he really mine" rather than "is he one of the three the app
+     pre-selected". Passed here exactly as ui.js passes it. */
   var r = W.Handoff.importReply(wreply, { week: WEEK, pool: wctx.pool,
+    roster: wctx.roster, mandated: wctx.mandated,
     dropCandidates: wctx.dropCandidates, kdefNeed: wctx.kdefNeed, injuries: wctx.injuries });
   ok(r.kind === 'waivers', 'a waiver reply is recognised as waivers');
   ok(r.applied === 2, 'both adds were applied');
