@@ -139,7 +139,16 @@
     }
     var agg = {}, w, key;
     for (w = 1; w < Number(week); w++) {
-      if (!root.Store.weekIsScored(w)) continue;
+      /* Whatever the BOOK holds, not whatever weekIsScored() blesses. These
+         rates exist to regress observed() above, and observed() reads the
+         book through bookTrend, which counts a row the moment it exists —
+         it does not wait for weekMeta to say the week is synced and final.
+         Gating this side on weekIsScored and the other side on the book
+         meant that in exactly the common case (stats pulled in, the week not
+         yet closed out) the rate table came back EMPTY, `xpg` came back null,
+         and the efficiency regression this file documents as half its method
+         silently did nothing at all. Two reads of "which weeks count" have
+         to be one read. */
       var bw = root.Store.bookWeek(w);
       for (key in bw) {
         if (!Object.prototype.hasOwnProperty.call(bw, key)) continue;
