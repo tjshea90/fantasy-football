@@ -285,7 +285,12 @@
       var r = rows[i];
       lines.push('| ' + r.name + ' | ' + r.pos + ' | ' + (r.nfl || '?') + ' | ' +
                  r.ros.toFixed(0) + ' | ' + r.perGame.toFixed(1) + ' | ' + r.games + ' | ' +
-                 (r.outForSeason ? '**OUT FOR SEASON**' : (r.bench ? 'bench' : 'starter')) +
+                 (r.outForSeason ? '**OUT FOR SEASON**'
+                   : r.longTermOut
+                     ? '**' + (r.outLabel || 'out') +
+                       (r.backAround ? ' until ' + r.backAround : '') + '** — only ' +
+                       r.games + ' game(s) left, already priced in'
+                     : (r.bench ? 'bench' : 'starter')) +
                  ' | ' + (r.src || '?') + ' |');
     }
     lines.push('');

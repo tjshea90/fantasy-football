@@ -886,7 +886,17 @@
       lines.push('- ' + r.name + ' (' + r.pos + ', ' + (r.nfl || '?') + ') ros ' +
                  nf(r.ros, 0) + ' | ' + nf(r.perGame, 1) + '/gm | ' +
                  (r.games === undefined ? '?' : r.games) + ' gms | ' +
-                 (r.outForSeason ? 'OUT FOR SEASON' : (r.bench ? 'bench' : 'starter')));
+                 (r.outForSeason ? 'OUT FOR SEASON'
+                   : r.longTermOut
+                     /* Claude must be told the difference too — "on IR until
+                        Oct 18" is a reason to look for a stopgap, "out for the
+                        season" is a reason to cut him, and a prompt that
+                        collapsed the two would reproduce the 2026-09-18d bug
+                        by simply telling the model the wrong thing. */
+                     ? (r.outLabel || 'out').toUpperCase() +
+                       (r.backAround ? ' UNTIL ' + r.backAround : '') +
+                       ' — only ' + r.games + ' game(s) left, already priced in'
+                     : (r.bench ? 'bench' : 'starter')));
     }
     lines.push('');
     if (ctx.injuries && ctx.injuries.length) {
