@@ -436,7 +436,16 @@
         keep.push(toks[t]);
       }
       if (!keep.length) continue;
-      best = keep[keep.length - 1].replace(/[^A-Za-z'’-]/g, '');
+      /* POSSESSIVES (found re-reading this change, 2026-09-18d). A blurb
+         routinely opens "Hand's move to injured reserve comes as no surprise
+         since ... he'd miss the remainder of the season" — his own report, in
+         his own sentence, and the only mention of him in it is possessive.
+         Without stripping the 's the subject reads "hand's", never matches the
+         surname "hand", and a genuinely finished player's own words are thrown
+         away as if they were somebody else's. */
+      best = keep[keep.length - 1]
+        .replace(/[’']s$/i, '')
+        .replace(/[^A-Za-z'’-]/g, '');
       if (re.lastIndex === m.index) re.lastIndex++;
     }
     return best;
