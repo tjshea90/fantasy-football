@@ -558,5 +558,21 @@ console.log('\n-- the ask-Claude briefing carries Tj\'s two new rules --');
      'model learns to stop reading past rule six)');
 })();
 
+console.log('\n-- the Wire tab\'s "thinnest spots" line does not contradict rule 6 --');
+(function () {
+  /* Tj's screenshot: "Your thinnest starting spots right now, weakest first:
+     QB, WR — a pickup there is more likely to actually move your team". The
+     board directly underneath is built to refuse ordinary QB swaps, and he has
+     complained twice that the app "always recommends qb switch". A screen
+     cannot point at quarterback and refuse to act on it in the same breath. */
+  var src = fs.readFileSync(path.join(__dirname, '..', 'app/assets/ui.js'), 'utf8');
+  var m = src.match(/var thin = Value\.needs\([^;]*;/);
+  ok(!!m, 'sanity: the thinnest-spots filter is still where this test thinks it is');
+  ok(m && /'QB'/.test(m[0]) && /'K'/.test(m[0]) && /'DEF'/.test(m[0]),
+     'quarterback is filtered out of the "go fix this" line alongside kicker and ' +
+     'defense — the three positions rule 6 de-prioritises are treated alike in both ' +
+     'the ranking and the prose (filter: ' + (m ? m[0].replace(/\s+/g, ' ') : '-') + ')');
+})();
+
 console.log(fails ? '\n  ' + fails + ' WIRE CHECK(S) FAILED\n' : '\n  wire checks pass\n');
 process.exit(fails ? 1 : 0);
