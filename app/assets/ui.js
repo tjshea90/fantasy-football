@@ -3961,7 +3961,7 @@
         var v = Names.variants(pl.name), j;
         for (j = 0; j < v.length; j++) byName[v[j]] = pl.id;
       });
-      var stats = Store.getStats(week), matched = 0, seenPid = {};
+      var stats = Store.getStats(syncWeek), matched = 0, seenPid = {};
       /* A hand-entered adjustment must survive the wipe below, or every
          re-sync (which a live poll does every 45s) silently erases it. This
          capture used to be missing entirely — `keepAdj[pid]` below referenced
