@@ -62,10 +62,13 @@
       lookups it does were already properly memoized and cheap (a prior
       session's 2026-09-17 fix, §38) — nothing else worth the risk of
       touching found.
-- [ ] 1i. Run every test suite repeatedly until green, fix anything broken,
-      keep checking for errors until stable.
-- [ ] 1j. Checkpoint/ship per the standing rules once done, publish the
-      GitHub Release, send Tj the link.
+- [x] 1i. Ran the full 18-suite test run twice in a row plus the ES2018
+      gate, and a real `bash build.sh` (28/28 Java classes, signature OK,
+      no ABI-specific dependency) — all green, no flakes.
+- [x] 1j. Shipped as v7.4 (`ship.sh` gate green), GitHub Release published
+      and verified (`FFTracker-v7.4.apk`, 288987 bytes, non-empty assets
+      array) at https://github.com/tjshea90/fantasy-football/releases/tag/v7.4
+      — Tj sent the link.
 
 ## Prior job, complete
 
