@@ -337,13 +337,13 @@
                  ? '**NEEDED** — mine is on bye or ruled out this week'
                  : 'not needed — my defense is available'));
     lines.push('');
-    lines.push('## ' + (root.Ai && root.Ai.qbSkepticismText
-      ? root.Ai.qbSkepticismText().split('\n')[0].replace(/^QUARTERBACK SWAPS: /, 'Quarterback swaps: ')
-      : 'Quarterback swaps — be skeptical'));
+    /* Same text ai.js's live-API waiver call uses (Ai.qbSkepticismText) —
+       shared rather than duplicated so the two Claude paths can never
+       quietly drift apart (Tj, 2026-09-18: this rule has to apply "also"
+       to this offline round trip, not just the paid API call). */
+    lines.push('## Quarterback swaps — be skeptical');
     lines.push('');
-    lines.push((root.Ai && root.Ai.qbSkepticismText
-      ? root.Ai.qbSkepticismText().split('\n').slice(1).join('\n')
-      : ''));
+    lines.push(root.Ai && root.Ai.qbSkepticismText ? root.Ai.qbSkepticismText() : '');
     lines.push('');
     var anyDrop = false;
     if (ctx.dropCandidates) {
