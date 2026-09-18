@@ -68,6 +68,7 @@ app/assets/ai.js
 tools/test_engine.js
 app/assets/usage.js
 app/assets/sim.js
+app/assets/ros.js
 app/assets/value.js
 app/assets/teamreport.js
 tools/test_teamreport.js
