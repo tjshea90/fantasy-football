@@ -677,6 +677,34 @@
      Lineups right back onto the stack it was just popped from and back would
      never actually leave Lineups. */
   var navHistory = [];
+  /* The one place the tab bar's HIGHLIGHT is painted, whether that is a real
+   * tap (goTab) or just boot() restoring lastTab before the first tap of the
+   * session. (2026-09-18, Tj: "I press the waiver wire tab...it doesn't go to
+   * the waiver wire tab. It is stuck on the live tab...after that the waiver
+   * wire tab works normally.") ROOT CAUSE: boot() restores `view` from
+   * S.settings.lastTab (a few lines below) whenever a cold relaunch — which
+   * Android forces far more often than Tj realises, see CLAUDE.md — last
+   * closed on a tab other than Live. wire() used to fix up `aria-selected`
+   * for that restored tab but never the `.on` CLASS, which is the one
+   * app.css actually paints (see .tab.on). So if Tj last left the app on
+   * Wire, a cold relaunch put `view` at 'wire' and rendered Wire's content,
+   * while the tab bar kept showing Live highlighted (the static HTML's
+   * default). His next tap on Wire then hit goTab's `name === view` guard —
+   * a real no-op, since he actually was already on Wire — so nothing visibly
+   * happened except the native `.tab:active` press flash. Tapping any OTHER
+   * tab had a genuinely different name, so it went through goTab for real and
+   * synced the class for the first time that boot, which is why every tab
+   * after that behaved. Two call sites painting the same highlight from two
+   * different, DRIFTING implementations is exactly how this happened; now
+   * there is one. */
+  function paintTabBar(name) {
+    var t = document.querySelectorAll('#tabs .tab'), k;
+    for (k = 0; k < t.length; k++) {
+      var on = t[k].getAttribute('data-v') === name;
+      t[k].classList.toggle('on', on);
+      t[k].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+  }
   /* The one place a tab change happens, whether it came from a tap or a swipe. */
   function goTab(name, fromBack) {
     if (!name || name === view) return;
@@ -687,24 +715,22 @@
        landing on Live — cheap: this only runs on an actual tab CHANGE,
        never per-render, matching how every other settings write here works */
     if (S && S.settings) { S.settings.lastTab = name; Store.save(); }
-    var t = document.querySelectorAll('#tabs .tab'), k;
-    for (k = 0; k < t.length; k++) {
-      var on = t[k].getAttribute('data-v') === name;
-      t[k].classList.toggle('on', on);
-      t[k].setAttribute('aria-selected', on ? 'true' : 'false');
-    }
+    paintTabBar(name);
     render();
   }
   function wire() {
     var tabs = document.querySelectorAll('#tabs .tab'), i;
     for (i = 0; i < tabs.length; i++) {
       tabs[i].setAttribute('role', 'tab');
-      tabs[i].setAttribute('aria-selected',
-        tabs[i].getAttribute('data-v') === view ? 'true' : 'false');
       tabs[i].addEventListener('click', function () {
         goTab(this.getAttribute('data-v'));
       });
     }
+    /* Sync the highlight to whatever boot() decided `view` is — the default
+       'live' the vast majority of the time, but see paintTabBar's own
+       comment for why this must never be skipped or done half (aria-selected
+       only) again. */
+    paintTabBar(view);
     var nav = $('tabs'); if (nav) nav.setAttribute('role', 'tablist');
     $('wkPrev').addEventListener('click', function () { if (week > 1) { week--; commitWeek(); } });
     /* 17, not 18. The league's season is weeks 1-14 plus playoffs 15-17
