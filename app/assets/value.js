@@ -748,15 +748,39 @@
     for (i = 0; i < allProj.length; i++) {
       var x = allProj[i], p = x.p;
       var so = (root.Recommend && root.Recommend.seasonOutlook)
-        ? root.Recommend.seasonOutlook({ name: p.name }) : { seasonEnding: false, why: '' };
+        ? root.Recommend.seasonOutlook({ name: p.name })
+        : { seasonEnding: false, longTermOut: false, why: '' };
       var e = root.Ros.estimate({ name: p.name, pos: p.pos, bye: root.Ros.byeOf(p) }, week);
+      /* A MAN ON IR WHO IS COMING BACK IS WORTH HIS GAMES, NOT ZERO AND NOT ALL
+         OF THEM (2026-09-18d). seasonOutlook used to answer one question —
+         "finished?" — and the answer was wrong most of the time (see its
+         header). It now separates "finished for the year" from "parked on IR
+         until October", and the second of those has an honest price: the same
+         per-game rate over however many games he can still actually play.
+         That is ros.js's own arithmetic, just with a later start date, and it
+         means a returning starter is no longer either written off completely
+         or counted as if he never got hurt. */
+      var games = e.games, perGame = e.perGame, missed = 0;
+      if (so.seasonEnding) {
+        games = 0; perGame = 0;
+      } else if (so.longTermOut) {
+        var back = root.Ros.weekOfDate(so.returnDate);
+        var playable = (back === null) ? 0 : root.Ros.gamesLeftFrom(back, week,
+                                                                   root.Ros.byeOf(p));
+        missed = Math.max(0, games - playable);
+        games = playable;
+      }
       out.push({
         id: p.id, name: p.name, pos: p.pos, nfl: p.nfl,
-        ros: so.seasonEnding ? 0 : e.total,
-        base: so.seasonEnding ? 0 : e.perGame,
-        perGame: so.seasonEnding ? 0 : e.perGame,
-        games: e.games, n: e.n, conf: e.conf, src: e.src,
+        ros: perGame * games,
+        base: perGame,
+        perGame: perGame,
+        games: games, gamesMissed: missed,
+        n: e.n, conf: e.conf, src: e.src,
         outForSeason: !!so.seasonEnding,
+        longTermOut: !!so.longTermOut,
+        outLabel: so.label || '',
+        backAround: so.returnAround || '',
         outWhy: so.why || '',
         bench: !startIds[p.id]
       });
