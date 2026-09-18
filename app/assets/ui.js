@@ -4037,7 +4037,7 @@
             pa: 0, cr: 0, tg: 0 };
         }
       });
-      Store.setBook(week, book);
+      Store.setBook(syncWeek, book);
 
       /* ---- the feed-shape canary -----------------------------------------
        * Two independent alarms, because the expensive failure here is silent.
