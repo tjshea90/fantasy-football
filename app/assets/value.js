@@ -145,7 +145,20 @@
     var gen = (root.Store && root.Store.generation) ? root.Store.generation() : 0;
     var dbAt = (root.PlayerDB && root.PlayerDB.meta) ? (root.PlayerDB.meta().updated || '') : '';
     var newsAt = (root.Recommend && root.Recommend.newsCache) ? (root.Recommend.newsCache().at || 0) : 0;
-    var k = String(week) + '|' + gen + '|' + dbAt + '|' + newsAt;
+    /* 2026-09-18: and the FULL-SEASON projection set, for exactly the reason
+       the paragraph above gives for the other two. The Wire tab kicks off a
+       background Projections.refreshSeason() on open (ui.js
+       refreshSeasonProjIfStale) and re-renders when it lands — but that fetch
+       touches neither the roster generation, the player database nor the
+       injury feed, so without this the completed refresh would replay the
+       same board computed from an EMPTY season cache, with every free agent
+       still sitting on a weekly line or a positional floor. Which is to say:
+       the entire overhaul would have looked like it had not worked, on the
+       first render after a cold install, until Tj happened to add or drop
+       somebody. Same trap, third feed. */
+    var seaAt = (root.Projections && root.Projections.seasonMeta)
+      ? (root.Projections.seasonMeta().at || 0) : 0;
+    var k = String(week) + '|' + gen + '|' + dbAt + '|' + newsAt + '|' + seaAt;
     if (_faMemo && _faMemo.k === k) {
       return limit ? _faMemo.rows.slice(0, limit) : _faMemo.rows;
     }
