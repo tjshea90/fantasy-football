@@ -1108,6 +1108,11 @@
                  valueOf: valueOf, trade: trade, weeksLeft: weeksLeft,
                  rosteredSet: rosteredSet, myInjuries: myInjuries,
                  rosterValues: rosterValues, mandatedFrom: mandatedFrom,
+                 mustReplace: mustReplace,
+                 /* exported so the Wire tab can count HOLES IN THE ROSTER
+                    rather than rows in a suggestion list — the "36 players
+                    on my roster are out for the season" bug (2026-09-18d). */
+                 slotNeeds: slotNeeds, lineupFillable: lineupFillable,
                  takenByTeam: takenByTeam, dropCandidatesFrom: dropCandidatesFrom,
                  myStarters: myStarters,
                  /* the exact bar upgrades() itself holds a QB free agent to —
