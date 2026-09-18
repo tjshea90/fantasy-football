@@ -540,9 +540,22 @@ var me = S.league.me;
   ok(trend2.length === 1 && trend2[0].row && trend2[0].row.p === 14.2,
      'and still works when the caller already happens to pass the exact ESPN spelling (no regression)');
 
+  /* 2026-09-18: the assertion here used to be `pg.v === 14.2` — i.e. that the
+     board valued him at exactly the one game he played. That was only ever a
+     proxy for "the tolerant lookup found his row", and it stopped being true
+     when ros.js replaced the old ladder: one game is now shrunk toward a
+     season-long baseline rather than used raw as a rest-of-season rate, which
+     is the entire point of the overhaul. What this test is actually about —
+     that a "Kenny"-vs-"Kenneth" spelling gap no longer hides real production —
+     is now asserted directly: the game was COUNTED (n) and it moved the
+     number off the baseline it would otherwise have sat on. */
   var pg = W.Value.perGame('Kenneth Gainwell', 'RB', wk + 1);
-  ok(pg.v === 14.2 && pg.src.indexOf('scored week') >= 0,
-     'Value.perGame (the free-agent board) now picks up his real recent production, not a season-pace/floor guess');
+  ok(pg.n === 1 && pg.src.indexOf('1 game this season') >= 0,
+     'Value.perGame (the free-agent board) now picks up his real recent production, not a season-pace/floor guess (got n=' +
+     pg.n + ', src "' + pg.src + '")');
+  ok(pg.v > pg.baseline && pg.v < 14.2,
+     'and that 14.2-point game pulls him ABOVE his baseline without being taken at face value — ' +
+     'shrunk, not extrapolated (baseline ' + pg.baseline.toFixed(2) + ' < ' + pg.v.toFixed(2) + ' < 14.2)');
 
   var usageRows = W.Value.usage('Kenneth Gainwell', wk + 1, 1);
   ok(usageRows.length === 1 && usageRows[0].played && usageRows[0].pts === 14.2,
