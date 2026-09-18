@@ -627,6 +627,36 @@
    * re-rank them on news and role — not to discover them. That is also what
    * keeps the call cheap: the search budget is sized to the positions of need,
    * not to the size of the wire. */
+  /* Shared with handoff.js's buildWaivers() for the identical reason
+   * rulesText() already is: Tj, 2026-09-18, asked that the same rule apply
+   * to "the claude chat export and import system to ask Claude for advice
+   * also" — one paragraph written once, not two hand-copied ones that can
+   * quietly drift apart the next time either gets edited. */
+  function qbSkepticismText() {
+    return [
+      'QUARTERBACK SWAPS: BE SKEPTICAL, NOT ENTHUSIASTIC. A completed pass is',
+      'worth a full point in this league, so an accurate, high-volume passer',
+      'already has a strong, stable floor under this scoring even in a quiet',
+      'week for yards or touchdowns — that is real value, not a name to be',
+      'casually upgraded. Do not suggest replacing my starting quarterback',
+      'because a free agent had one good week, fits a favorable one-week',
+      'matchup, or carries a generic season projection nobody has actually',
+      'lived up to yet. Only suggest a QB add ahead of my own starter if it',
+      'is a genuine SEASON-LONG edge: the free agent has real, measured games',
+      'this season — not a projection alone — that are clearly and',
+      'consistently better under THIS scoring, by several points a game, not',
+      'a rounding margin. A good starting QB already outscores every other',
+      'position here by a wide margin under a full-point-per-completion',
+      'rule, so a small gap is noise at this position\'s scale even where it',
+      'would be a real edge at running back or receiver. When you do compare',
+      'quarterbacks, weigh completions and accuracy heavily — that is what',
+      'this league actually pays for, more than yardage or a rushing',
+      'ceiling. If you are not confident the edge holds up over the rest of',
+      'the season, leave QB off your answer entirely rather than suggesting',
+      'a marginal swap.'
+    ].join('\n');
+  }
+
   function waiverPrefix() {
     var lines = [];
     lines.push('You are advising on fantasy football waiver-wire pickups.');
