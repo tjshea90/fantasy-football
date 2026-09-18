@@ -428,6 +428,13 @@
     var m, best = '';
     while ((m = re.exec(text)) !== null) {
       if (m.index >= at) break;
+      /* advance first, unconditionally: every `continue` below would otherwise
+         be a path that leaves lastIndex where it was. This regex cannot match
+         an empty string (it needs a leading [A-Z]), so it cannot actually hang
+         today — but this runs on text pulled off a live feed inside a WebView,
+         and "cannot hang today" is not a thing to leave resting on one
+         character class. */
+      if (re.lastIndex <= m.index) re.lastIndex = m.index + 1;
       var run = m[1].trim();
       /* trim trailing non-name words off a run like "Jayden Higgins Wednesday" */
       var toks = run.split(/\s+/), keep = [];
@@ -446,7 +453,6 @@
       best = keep[keep.length - 1]
         .replace(/[’']s$/i, '')
         .replace(/[^A-Za-z'’-]/g, '');
-      if (re.lastIndex === m.index) re.lastIndex++;
     }
     return best;
   }
