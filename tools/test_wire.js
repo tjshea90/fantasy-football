@@ -414,6 +414,42 @@ console.log('\n-- Value.upgrades(): same position by default, cross-position onl
        ' +' + u.gain.toFixed(0); }).join(', ') + ')');
 })();
 
+/* --- TWO swaps that are each legal alone must not be illegal together --- */
+(function () {
+  var W = freshWindow();
+  /* Two weak tight ends, one TE slot, and two stars on the wire at other
+     positions. Each swap passes the depth check on its own — there are two
+     tight ends, so losing one is fine — but taken together they empty the
+     position. Caught re-reading this job's own change, not by a report.
+     The board is a list Tj reads top to bottom and acts on, so it has to be
+     legal read that way, not merely pair by pair. */
+  var meId = scenario(W, {
+    roster: fullRoster({ 'My TE1': 3, 'My TE2': 3, 'My WR4': 14, 'My RB3': 14 }),
+    starters: STARTERS,
+    wire: [{ name: 'Wire Star WR', pos: 'WR', pg: 28 },
+           { name: 'Wire Star RB', pos: 'RB', pg: 27 }]
+  });
+  var ups = W.Value.upgrades(2, meId, null, 200);
+  var teLost = ups.filter(function (u) {
+    return u.drop.pos === 'TE' && u.fa.pos !== 'TE';
+  }).length;
+  ok(teLost <= 1,
+     'at most ONE of the two tight ends can be swapped away for a player at another ' +
+     'position — the second would leave the TE slot empty, however good the player is ' +
+     '(got ' + teLost + ' TE-emptying rows)');
+
+  /* the whole list, applied in order, still leaves a legal roster */
+  var counts = {};
+  fullRoster().forEach(function (p) { counts[p.pos] = (counts[p.pos] || 0) + 1; });
+  ups.forEach(function (u) {
+    counts[u.drop.pos]--; counts[u.fa.pos] = (counts[u.fa.pos] || 0) + 1;
+  });
+  ok(W.Value.lineupFillable(counts, W.Value.slotNeeds()),
+     'and acting on EVERY row in the list, in order, still leaves a roster that can ' +
+     'field a legal starting lineup — not just each row taken on its own (final: ' +
+     JSON.stringify(counts) + ')');
+})();
+
 /* --- the roster-shape helpers, directly -------------------------------- */
 (function () {
   var W = freshWindow();
