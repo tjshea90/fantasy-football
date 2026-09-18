@@ -128,6 +128,9 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
+  /* whole points — a rest-of-season total is a two- or three-digit number and
+     a decimal on it is false precision, not detail (2026-09-18) */
+  function fmt0(n) { return String(Math.round(Number(n) || 0)); }
   /* data-player="name|pos|nfl" — the long-press "View stats" target (v6.0).
      Every place a real NFL player's name/position/team is shown carries
      this, so the one globally-wired long-press handler can identify him
