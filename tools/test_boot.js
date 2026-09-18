@@ -139,7 +139,11 @@ ok(/on the Claude API, at current prices \(see Data → Claude costs\)\.'/
    already-fetched box score, so a later game-log browse for a team synced
    this session is never a second Espn.gameStats call — see
    tools/test_gamelog.js for the functional proof (ingestEvent). */
-ok(/if \(window\.Gamelog\) \{ try \{ Gamelog\.ingestEvent\(week, g, r\); \} catch \(e\) \{ \} \}/.test(ui),
+/* 2026-09-18: doSync now reads `syncWeek` (a value captured once at the top
+   of the function) rather than the mutable module-level `week` throughout —
+   see doSync's own comment for why (a concurrent NFL-week auto-advance could
+   otherwise file this exact box score under the wrong week). */
+ok(/if \(window\.Gamelog\) \{ try \{ Gamelog\.ingestEvent\(syncWeek, g, r\); \} catch \(e\) \{ \} \}/.test(ui),
    'doSync feeds each fetched box score into gamelog.js\'s cache too, not just its own gcache');
 var glX = fs.readFileSync('app/assets/gamelog.js', 'utf8');
 ok(/function ingestEvent\(week, game, r\)/.test(glX) && /ingestEvent: ingestEvent/.test(glX),
