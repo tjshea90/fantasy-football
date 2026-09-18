@@ -309,8 +309,11 @@
     lines.push('');
     lines.push('These players on my roster are out for the year, so they are worth zero');
     lines.push('from here on and the roster spot is dead. **Pair each of them with the best');
-    lines.push('available replacement at his position, whatever the position** — rule 6\'s');
-    lines.push('low-priority rule for QB, K and DEF does not apply to a forced replacement.');
+    lines.push('available replacement AT HIS OWN POSITION** (rule 7) — cross positions only');
+    lines.push('when the man coming in is clearly far better than anything available at the');
+    lines.push('position being emptied, and never when it leaves a starting slot unfillable.');
+    lines.push('Rule 6\'s low-priority rule for QB, K and DEF does not apply to a forced');
+    lines.push('replacement. Each man below is ONE pair — he can only be dropped once.');
     lines.push('');
     for (k in ctx.mandated) {
       if (!Object.prototype.hasOwnProperty.call(ctx.mandated, k)) continue;

@@ -675,7 +675,7 @@
    * build on, not as a ceiling on what may be considered. */
   function waiverCriteriaText() {
     return [
-      'HOW TO RANK — the criteria, all six of them.',
+      'HOW TO RANK — the criteria, all eight of them.',
       '',
       '1. CURRENT SEASON, CURRENT NEWS, REPUTABLE SOURCES. Use this season and',
       '   what is being reported right now. Search the web: injury reports, NFL',
@@ -723,7 +723,26 @@
       '   when there is a strong, clear, SEASON-LONG edge, or when the player I',
       '   have must be replaced anyway — a season-ending injury, an indefinite',
       '   suspension, losing the starting job for good. Otherwise spend your',
-      '   recommendations on running back, receiver and tight end.'
+      '   recommendations on running back, receiver and tight end.',
+      '',
+      '7. REPLACE LIKE FOR LIKE UNLESS THE GAP IS BIG. Tj, 2026-09-18:',
+      '   "generally it should recommend a same type player position for the',
+      '    recommended drop and add, because if I drop a te, I should have a',
+      '    backup te to replace him, but this rule is not absolute; for example',
+      '    if a star player with high output is available, it would make sense',
+      '    to drop a low output player even if he is in a different position."',
+      '   So: default to the dropped man\'s own position. Cross positions only',
+      '   when the player coming in is clearly, substantially better than the',
+      '   best available player at the position you are emptying — and never',
+      '   when it leaves a starting slot with nobody able to fill it. The',
+      '   starting lineup is listed below; count it before you propose a swap.',
+      '',
+      '8. NEVER NAME THE SAME MAN TWICE. He can only be dropped once, and a',
+      '   player can only be added once. Each roster player appears as the drop',
+      '   in AT MOST ONE pair across your whole answer, and each free agent as',
+      '   the add in at most one. If two adds would both be improvements on the',
+      '   same man, pick the better one and pair the other with somebody else',
+      '   or leave it out.'
     ].join('\n');
   }
 
@@ -889,9 +908,10 @@
     }
     if (mandAny.length) {
       lines.push('MUST BE REPLACED — out for the season, worth zero from here on. Pair each');
-      lines.push('with the best available replacement at his position; rule 6\'s low-priority');
-      lines.push('rule for QB/K/DEF does NOT apply to a forced replacement, and these get');
-      lines.push('"mandated":true:');
+      lines.push('with the best available replacement AT HIS OWN POSITION (rule 7) unless a');
+      lines.push('player elsewhere is clearly far better AND the lineup still fills; rule 6\'s');
+      lines.push('low-priority rule for QB/K/DEF does NOT apply to a forced replacement, and');
+      lines.push('these get "mandated":true. Each of these men is ONE pair, not several:');
       for (i = 0; i < mandAny.length; i++) {
         lines.push('- ' + mandAny[i].name + ' (' + mandAny[i].pos + ') — ' +
                    (mandAny[i].outWhy || 'out for the season'));
