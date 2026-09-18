@@ -1,12 +1,12 @@
-# CHECKPOINT 96 — read me first, then TASKS.md
+# CHECKPOINT 106 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T19:15:20Z · **version:** 7.6 · **tests:** all 20 suites green
+**Written:** 2026-09-18T19:26:13Z · **version:** 7.6 · **tests:** all 20 suites green
 
 ## Just done
-Steps F done (rules 4+5). New Ai.waiverCriteriaText() states all six of Tj's criteria in one place, shared by BOTH Claude paths so they cannot drift. handoff.js buildWaivers (the ask-Claude file) rebuilt around one-for-one swaps: it now carries the full scoring table, MY WHOLE ROSTER priced in rest-of-season league points (new rosterSection), every owned player in the league by team (takenSection, rule 5), the mandated-replacement list (mandatedSection), the app's own deterministic swaps (swapsSection), and an AVAILABLE table led by ROS/per-gm/games-left/vor/basis instead of a one-week proj. The reply contract leads with a 'swaps' array carrying drop, add, edge (the expected season point difference, Tj's '54 more fantasy points') and mandated. ai.js's paid-API waiverPrefix/waiverBlock got the same treatment. normalizeWaivers reads swaps first and falls back to adds so older replies still import. IMPORTANT RULE CHANGE, deliberate: the old 'a dropCandidate must be at the same position as the add' guard is replaced by Ai.canSpare -- a swap must never leave a required starting slot empty. The old rule rejected dropping a spare kicker for a startable WR (an ordinary correct move) while letting a same-position swap that empties a slot through; the new one is narrower and stronger. Validation of the drop half now runs against my whole roster (Ai.rosterIndex) rather than the app's three-deep shortlist, per rule 5. Also made the prompt builders tolerant of a pool row cached by an older app version (one missing number used to throw a TypeError out of prompt construction, which on the Wire tab fails the whole screen). All 19 suites green, ES2018 clean.
+Step G done plus two real staleness bugs found and fixed while doing it. UI: the free-agent row now leads with expected REST-OF-SEASON points ('103 pts rest of season (11 games left, 9.4/gm)') with the basis on its own line, instead of '16.4 proj (1 scored week in this app - thin sample)'; VOR is season-long; a forced replacement gets its own headline, a REPLACE tag and its own wording, separate from optional upgrades; Claude's rows show the per-pair season point edge and warn when the man it names to drop is not actually on the roster. BUG 1: nothing but the Advice tab's full sync ever called refreshSeason, so opening the Wire tab without syncing first would have left the season cache empty and every free agent back on a weekly line or a floor -- the overhaul would have looked broken in a new way. Added refreshSeasonProjIfStale() on Wire tab open, same quiet only-if-stale shape as refreshPlayerDBIfStale. BUG 2, which BUG 1 would have hidden: value.js's _faMemo did not key on the season cache, so the completed background refresh would have replayed the stale board -- the identical trap this file already documents for the PlayerDB and injury feeds, third instance. BUG 3, pre-existing and older: Store.setBook never bumped the store generation, so a sync that wrote a fresh week of stats left the free-agent memo and ros.js's rate table serving pre-sync numbers until a roster change happened to move the generation. Fixed at the source. Both new regression tests confirmed to FAIL against the pre-fix code and pass with it. All 19 suites green.
 
 ## Do this next
-Step G: the Wire tab render in ui.js -- it still prints the per-game 'proj' and the old src caption ('1 scored week in this app - thin sample'). It needs to lead with rest-of-season points, show games left and the basis honestly, and surface the swap pairs (drop X -> add Y, +N pts) including the mandated ones. Then step I (bug/UI sweep) and step J (ship + release + link).
+Step I: the full bug/UI sweep Tj asked for. Check anything else that reads the fields whose meaning changed (vor is now season-long, not per-game; f.v is per-game but f.ros is the ranking key) -- teamreport.js, sim.js, the trade screen and the Stats tab all consume Value. Then build the APK, then step J: ship, publish the Release, send Tj the link.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  6b0083a ckpt 96: Steps F done (rules 4+5). New Ai.waiverCriteriaText() states all six of Tj's cr
   3a24f65 ckpt 77: Step H part 1 done: tools/test_waiver.js rewritten against the new engine, and 
   4799ecb ckpt 72: Steps C/D/E built. New app/assets/ros.js is the rest-of-season engine: full-sea
   0ba449b ckpt 54: Steps A+B done. ROOT CAUSE CONFIRMED LIVE: value.js perGame() ranks the wire, a
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   d9d94d6 ship v7.5: Fixed the real waiver-wire tab-highlight bug (boot restored the tab but never
   f4dd6eb ckpt 90: Formalized the job-guard fix's verification (previously only a throwaway, uncom
   ba5d8eb ckpt 87: Fixed the doSync() week-capture race a subagent audit flagged: doSync read the 
-  4b82a38 ckpt 66: Broader code/UI review pass (Tj's same 2026-09-18 message): delegated a researc
 ```
 
-(18 automatic checkpoint(s) since the last deliberate one — the
+(9 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
