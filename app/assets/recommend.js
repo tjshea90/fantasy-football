@@ -398,7 +398,13 @@
   /* Phrases that mean the injury being described is HISTORY — he had it, he
      came back from it. Every one of these is taken from a real live record
      that the old regex misread. */
-  var PAST_NOTE = /\blast\s+(?:season|year|january|february|march|april|may|june|july|august|september|october|november|december)\b|\b(?:return|returned|returning|recover|recovered|recovering|back)\s+(?:from|to)\b|\bhis\s+return\b|\bsince\s+suffering\b|\ba\s+year\s+ago\b|\bpreviously\b|\bcareer\b/i;
+  var PAST_NOTE = /\blast\s+(?:season|year|january|february|march|april|may|june|july|august|september|october|november|december)\b|\b(?:return|returned|returning|recover|recovered|recovering|back)\s+(?:from|to)\b|\bhis\s+return\b|\bsince\s+suffering\b|\ba\s+year\s+ago\b/i;
+  /* `previously` and `career` were in this list for one draft and taken out
+     again: "it was PREVIOUSLY announced that he'd miss the remainder of the
+     season" (Da'Shawn Hand, live 2026-09-18) is a CURRENT fact reported with a
+     backward-looking adverb, and "career" appears in half the blurbs on the
+     feed. Both would have suppressed real reports. Every phrase left here is
+     one that can only describe an injury already recovered from. */
 
   /* Capitalised runs that are not people. Without this, "the Kansas City
      Chiefs" or a sentence opening with "Meanwhile" reads as a player name and
