@@ -2585,6 +2585,7 @@
           var wc = Value.waiverContext(week, S.league.me, o, S.league.season,
                                        new Date().toISOString().slice(0, 10));
           return Handoff.importReply(txt, { week: week, pool: wc.pool,
+            roster: wc.roster, mandated: wc.mandated,
             dropCandidates: wc.dropCandidates, kdefNeed: wc.kdefNeed,
             injuries: wc.injuries });
         },

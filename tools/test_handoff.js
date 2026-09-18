@@ -313,6 +313,7 @@ throws(function () {
   var wexp = W.Handoff.buildWaivers(WEEK, me, null, 2026, '2026-09-07');
   var wc = W.Value.waiverContext(WEEK, me, null, 2026, '2026-09-07');
   W.Handoff.importReply(wexp.text, { week: WEEK, pool: wc.pool,
+    roster: wc.roster, mandated: wc.mandated,
     dropCandidates: wc.dropCandidates, kdefNeed: wc.kdefNeed, injuries: wc.injuries });
 }, /still has the template's own placeholder text/,
    'same for the WAIVERS export  <-- reproduced exactly as Tj described it, just a ' +
