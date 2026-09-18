@@ -195,6 +195,22 @@ console.log('\n-- normalizeWaivers: priority, recentStat, dropCandidate, kdefNee
 
 const known = {};
 known[Names.canon('Chris Olave')] = { pos: 'WR', nfl: 'NO', v: 12.3, vor: 3.1, bye: 11, onBye: false };
+/* 2026-09-18: the drop half of a waiver reply is validated against MY WHOLE
+ * ROSTER now, not the app's three-deep shortlist — Tj's rule 5 ("the Claude
+ * prompt should have no restrictions") means Claude may name anybody of mine
+ * and the app's job is to confirm the man is really mine, not to restrict
+ * which of mine may be named. So this index is a realistic roster, and the
+ * safety property under test changed shape with it: see the two cases below. */
+const rosterIdx = Ai.rosterIndex([
+  { name: 'Bench Guy', pos: 'WR' },
+  { name: 'Starter WR One', pos: 'WR' },
+  { name: 'Starter WR Two', pos: 'WR' },
+  { name: 'Starter WR Three', pos: 'WR' },
+  { name: 'Spare Kicker', pos: 'K' },
+  { name: 'Old Kicker', pos: 'K' },
+  { name: 'My Only TE', pos: 'TE' }
+]);
+ok(Object.keys(rosterIdx).length === 7, 'rosterIndex covers every player on my roster');
 const dropIdx = Ai.dropCandidateIndex({
   WR: [{ name: 'Bench Guy', pos: 'WR' }],
   K: [{ name: 'Old Kicker', pos: 'K' }]
@@ -206,31 +222,51 @@ const base = { adds: [
     recentStat: '7 rec, 88 yds vs ATL (Wk 2)', dropCandidate: 'Bench Guy',
     confidence: 'high', why: 'Took over after the starter\'s injury.' }
 ] };
-const n1 = Ai.normalizeWaivers(base, known, dropIdx, { K: false, DEF: false });
+const n1 = Ai.normalizeWaivers(base, known, rosterIdx, { K: false, DEF: false });
 ok(n1.adds.length === 1, 'a plain add with a valid same-position dropCandidate survives');
 ok(n1.adds[0].priority === 'season', 'priority is read through');
 ok(n1.adds[0].recentStat === '7 rec, 88 yds vs ATL (Wk 2)', 'recentStat is read through');
 ok(n1.adds[0].dropCandidate === 'Bench Guy',
    'a dropCandidate at the SAME position as the add is kept');
 
-/* the whole safety property Tj asked for: a mismatched position must never survive */
-const mismatched = { adds: [
+/* THE SAFETY PROPERTY, RESHAPED (2026-09-18).
+ *
+ * It used to be "the drop must be at the same position as the add", which made
+ * "don't drop a kicker to add a WR" a guarantee. That rule was the wrong
+ * shape: dropping a SPARE kicker, or a fourth running back, to add a startable
+ * receiver is an ordinary correct fantasy move, and it rejected every one of
+ * them — while a same-position swap that empties a required slot sailed
+ * straight through. What actually has to be guaranteed is that no swap leaves
+ * a starting slot with nobody to fill it. Both halves are pinned here. */
+const spareK = { adds: [
   { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
-    dropCandidate: 'Old Kicker', /* a K, not a WR */
+    dropCandidate: 'Old Kicker',   /* a K, and I carry two */
     confidence: 'high', why: 'x' }
 ] };
-const n2 = Ai.normalizeWaivers(mismatched, known, dropIdx, { K: false, DEF: false });
-ok(n2.adds[0].dropCandidate === '',
-   'a dropCandidate at a DIFFERENT position than the add is cleared, not shown  <-- ' +
-   '"don\'t drop a kicker to add a WR" is a guarantee, not a hope');
+ok(Ai.normalizeWaivers(spareK, known, rosterIdx, { K: false, DEF: false })
+     .adds[0].dropCandidate === 'Old Kicker',
+   'dropping a SPARE kicker to add a receiver is allowed — I still have a kicker ' +
+   'for the kicker slot, and this is an ordinary roster move the old same-position ' +
+   'rule rejected outright');
+
+const onlyTE = { adds: [
+  { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
+    dropCandidate: 'My Only TE',   /* a TE, and I have exactly one */
+    confidence: 'high', why: 'x' }
+] };
+ok(Ai.normalizeWaivers(onlyTE, known, rosterIdx, { K: false, DEF: false })
+     .adds[0].dropCandidate === '',
+   'but dropping my ONLY tight end for a receiver is cleared, not shown  <-- a swap ' +
+   'must never leave a required starting slot with nobody in it, which is the real ' +
+   'guarantee the position-matching rule was reaching for');
 
 const invented = { adds: [
   { name: 'Chris Olave', pos: 'WR', nfl: 'NO', rank: 1,
     dropCandidate: 'Nobody On This Roster', confidence: 'high', why: 'x' }
 ] };
-const n3 = Ai.normalizeWaivers(invented, known, dropIdx, { K: false, DEF: false });
+const n3 = Ai.normalizeWaivers(invented, known, rosterIdx, { K: false, DEF: false });
 ok(n3.adds[0].dropCandidate === '',
-   'a dropCandidate the app never offered is cleared, not trusted blindly');
+   'a dropCandidate who is not on my roster at all is cleared, not trusted blindly');
 
 ok(Ai.normalizeWaivers({ adds: [{ name: 'Chris Olave', pos: 'WR' }] }, known, {}, {})
      .adds[0].priority === 'week',
