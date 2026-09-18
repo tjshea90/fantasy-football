@@ -590,7 +590,12 @@ console.log('\n-- one implementation, not two --');
   var code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   ok(/Ai\.normalizeAdvice/.test(code) && /Ai\.normalizeWaivers/.test(code),
      'the importer uses ai.js\'s normalisers rather than its own');
-  ok(/Ai\.normalizeInjuries/.test(code) && /Ai\.dropCandidateIndex/.test(code),
+  /* dropCandidateIndex was what the waiver importer used to validate a reply's
+     drop half; since 2026-09-18 that is Ai.rosterIndex, because rule 5 lets
+     Claude name anybody on my roster rather than only the app's shortlist.
+     The property under test is unchanged — the importer must not grow its own
+     copy of either — so it is the name that moved, not the rule. */
+  ok(/Ai\.normalizeInjuries/.test(code) && /Ai\.rosterIndex/.test(code),
      'and the two new v5.5 normalisers — the injury outlook and the drop-candidate ' +
      'position guard are not reimplemented here either');
   ok(/Ai\.normalizeTeamAnalysis/.test(code),
