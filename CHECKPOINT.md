@@ -1,12 +1,12 @@
-# CHECKPOINT 53 — read me first, then TASKS.md
+# CHECKPOINT 67 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T07:13:55Z · **version:** 7.3 · **tests:** all 18 suites green
+**Written:** 2026-09-18T07:22:14Z · **version:** 7.3 · **tests:** all 18 suites green
 
 ## Just done
-Wrote the 2026-09-18 request into TASKS.md verbatim (waiver-wire QB/RB-WR smartness, K/DEF deprioritized, handoff parity, tab-highlight investigation, general stability pass)
+1b/1c/1e done: QB waiver swaps now need a season-defining edge (6+ pts/gm, 3+ real measured games, not just ESPN's season guess) instead of the old flat 1-point margin that treated QB like every other position; K/DEF excluded from the deterministic board unless genuinely needed; same QB-skepticism rule (Ai.qbSkepticismText, shared) now in both the live-API waiver prompt and the offline Claude-app handoff export; Wire tab shows 'thinnest starting spots' (RB/WR usually) up front; waiverContext() no longer computes myStarters() twice. Fixed test_handoff.js's waiver-loop test which happened to exercise a QB with no measured games — switched it to RB/WR since it's testing generic round-trip plumbing, not QB gating.
 
 ## Do this next
-Start 1a: read Value.upgrades() and design the QB season-edge threshold
+Research current thinking on valuing accurate/high-completion QBs in a full-point-per-completion format (1f), then move to 1g: investigate the Wire-tab-doesn't-light-up glitch
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  db1b963 ckpt 53: Wrote the 2026-09-18 request into TASKS.md verbatim (waiver-wire QB/RB-WR smart
   23dc5d1 ckpt 123: v7.3 shipped and verified: GitHub Release published (non-empty assets array, F
   f49cf4c ship v7.3: Fixed a bug in all three Claude-handoff features (advice/waivers/team-analysi
   8ba6db4 ckpt 119: Archived the unfilled-template bugfix to LADDER.md §40, added the STATE.md na
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   74ac8fe ship v7.2: Added the team analysis feature: ask Claude for its overall take on your team
   e5d1ce7 ckpt 100: Noted in STATE.md why the first ship.sh call WARNed and skipped publishing (no
   f097e01 ship v7.1: Added the team analysis feature: ask Claude for its overall take on your team
-  54e249f ckpt 92: Sweep pass over the new feature: removed an unused mdl parameter from normalize
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(13 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
