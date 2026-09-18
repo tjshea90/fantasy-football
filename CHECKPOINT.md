@@ -1,12 +1,12 @@
-# CHECKPOINT 118 — read me first, then TASKS.md
+# CHECKPOINT 53 — read me first, then TASKS.md
 
-**Written:** 2026-09-18T19:42:53Z · **version:** 7.7 · **tests:** all 20 suites green
+**Written:** 2026-09-18T20:05:33Z · **version:** 7.7 · **tests:** all 20 suites green
 
 ## Just done
-Shipped v7.7 and published the GitHub Release: triggered publish-release.yml, verified via get_release_by_tag (FFTracker-v7.7.apk, 313622 bytes, non-empty assets array, run #18 green). The whole waiver-wire overhaul -- ros.js, the season-projection fetch, the rest-of-season ranking, the two-gate swap bar, rule 6's QB/K/DEF handling and its season-ending override, both overhauled Claude prompts, the Wire tab UI, and all five bugs found along the way -- is now in a real, tested, shipped release. STATE.md carries the full narrative under 'v7.7 - the waiver wire, rebuilt on the season instead of on last Sunday'. Every box in TASKS.md steps A-J is ticked with the test that proves it named.
+Wrote Tj's 2026-09-18d 'the wire is broken' request into TASKS.md verbatim, and proved all four bugs against the LIVE ESPN injuries feed before writing any code. Dalton Schultz's real record is status ACTIVE; his news blurb says JAYDEN HIGGINS went down with a season-ending torn ACL, and seasonOutlook()'s SE_NOTE regex matches 'season-ending' anywhere in the free text while ignoring status entirely. 13 of the 14 note-only flags in the live 800-record feed are status ACTIVE, i.e. certainly false -- Patrick Mahomes and Malik Nabers among them, written off for last season's injuries. The '36' is ui.js counting swap ROWS not distinct players: a ros-0 player is the weakest drop at his position AND the weakest flex-eligible, so he pairs with every free agent that clears the gates.
 
 ## Do this next
-Send Tj the v7.7 release link per CLAUDE.md's standing instruction. Nothing else in flight; this job is done. If he comes back with more: the one judgement call worth flagging is that ros.js's two constants -- PRIOR_GAMES=4 (how fast the measured sample takes over) and USAGE_SHARE=0.5 (how hard efficiency is regressed toward volume) -- are defensible and documented but not tuned against this league's own history, which is a thing that could be done later once more weeks are scored. Also still unanswered from the previous job: whether sim.js's unused season()/power()/allPlay()/bracket() should be wired into a tab or deleted.
+Step A: fix seasonOutlook -- respect status, require the note to be about THIS player and not a past season, separate IR/PUP from season-ending. Then B (count distinct players), C (one-to-one assignment), D/E (same-position-first plus roster depth), F (the other call sites), G (full sweep), H (tests), I (ship).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,10 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  837c56c ckpt 118: Shipped v7.7 and published the GitHub Release: triggered publish-release.yml, 
   abc1cf3 ship v7.7: Waiver wire overhauled: ranked on expected rest-of-season points in this leag
   f6d6ae6 ckpt 115: Step I sweep, part 2 -- caught a severe bug in THIS job's own change by review
   8647e0a ckpt 110: Step I sweep, part 1. Found and fixed a THIRD instance of the same dead-code c
@@ -34,7 +34,7 @@ request in his own words and `git log` carries every step already taken.
   6b0083a ckpt 96: Steps F done (rules 4+5). New Ai.waiverCriteriaText() states all six of Tj's cr
   3a24f65 ckpt 77: Step H part 1 done: tools/test_waiver.js rewritten against the new engine, and 
   4799ecb ckpt 72: Steps C/D/E built. New app/assets/ros.js is the rest-of-season engine: full-sea
-  0ba449b ckpt 54: Steps A+B done. ROOT CAUSE CONFIRMED LIVE: value.js perGame() ranks the wire, a
-  835a9e3 ckpt 53: Wrote Tj's 2026-09-18c waiver-wire overhaul request into TASKS.md verbatim (his
-  07c0d36 ckpt 97: Shipped v7.6 and published the GitHub Release: triggered publish-release.yml, v
 ```
+
+(2 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)
