@@ -94,6 +94,7 @@ tools/test_recap.js
 tools/test_waiver.js
 tools/test_tabsafety.js
 tools/test_synccapture.js
+tools/test_jobguard.js
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 android/res/drawable/splash_empty.xml
