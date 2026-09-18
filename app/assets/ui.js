@@ -3905,8 +3905,8 @@
        * for the session and reused; anything still moving is refetched.
        * The cache is per season+week and is memory only — a cold start does
        * one honest full sync, which is right. */
-      if (gcache.season !== season || gcache.week !== week) {
-        gcache = { season: season, week: week, byId: {} };
+      if (gcache.season !== season || gcache.week !== syncWeek) {
+        gcache = { season: season, week: syncWeek, byId: {} };
       }
       var want = [], reused = 0;
       games.forEach(function (g) {
