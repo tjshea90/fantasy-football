@@ -2473,7 +2473,15 @@
         'position you are already strong at.'));
     }
     var ups = Value.upgrades(week, S.league.me, opp, 80);
-    if (ups.length) {
+    /* OUTSIDE the `if (ups.length)` below, deliberately (found re-reading this
+       job's own diff, the way ckpt 115 caught the last severe one). A hole in
+       the roster exists whether or not the wire happens to have somebody who
+       clears the bar to put in it — and the case where it does NOT is exactly
+       when Tj most needs telling, because nothing else on this screen would
+       mention it. Nested inside the upgrade list, a dead roster spot with no
+       available replacement at his position would have gone completely
+       unreported. */
+    {
       /* A forced replacement is not the same kind of thing as an upgrade and
          must not be presented as one: one is a hole in the roster, the other
          is an option (Tj, 2026-09-18, rule 6: a season-ending injury
@@ -2506,7 +2514,16 @@
           : forced.length + ' players on your roster are out for the season — ' +
             names.join(', ') + '. Those spots are doing nothing until you ' +
             'replace them:'));
+        if (!ups.some(function (u) { return u.mandated; })) {
+          c.appendChild(el('p', 'hint',
+            'Nothing on the wire at ' +
+            forced.map(function (m) { return m.pos; }).join('/') +
+            ' is startable enough to be worth suggesting right now — but the spot is ' +
+            'still dead, so check back after the next round of waivers.'));
+        }
       }
+    }
+    if (ups.length) {
       var optional = ups.filter(function (u) { return !u.mandated; }).length;
       if (optional > 0) {
         c.appendChild(el('p', null, optional + ' available player' +
