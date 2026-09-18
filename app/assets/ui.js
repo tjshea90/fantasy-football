@@ -2649,8 +2649,13 @@
       Value.POS.forEach(function (k) {
         if (!seen[k] || !seen[k].length) return;
         var lowPri = (k === 'K' || k === 'DEF');
+        var anyForced = seen[k].some(function (x) { return x.mandated; });
         c.appendChild(el('div', 'subhd', k + ' — Claude' +
-          (lowPri ? '  ·  low priority — ranked only because yours is unavailable' : '')));
+          (lowPri
+            ? (anyForced
+                ? '  ·  low priority, but yours is out for the season'
+                : '  ·  low priority — ranked only because yours is unavailable')
+            : '')));
         seen[k].forEach(function (a) {
           var r = el('div', 'row');
           markPlayer(r, a.name, a.pos, a.nfl);
@@ -2658,14 +2663,29 @@
           var nm = el('div', 'nm');
           nm.appendChild(document.createTextNode(a.name));
           var bits = [a.nfl];
-          if (typeof a.proj === 'number') bits.push(fmt(a.proj) + ' proj');
-          if (a.onBye) bits.push('ON BYE');
+          /* the expected REST-OF-SEASON point edge over the exact man being
+             dropped — the number Tj asked every recommendation to carry
+             ("expected to produce 54 more fantasy points over the season").
+             Only Claude can supply it, so it is only shown when it came
+             back; the app's own projection stays as the fallback. */
+          if (typeof a.edge === 'number' && a.dropCandidate) {
+            bits.push('+' + fmt0(a.edge) + ' pts over ' + a.dropCandidate + ' this season');
+          } else if (typeof a.ros === 'number') {
+            bits.push(fmt0(a.ros) + ' pts rest of season');
+          } else if (typeof a.proj === 'number') {
+            bits.push(fmt(a.proj) + ' proj');
+          }
+          if (a.onBye) bits.push('ON BYE this week');
           if (a.overStarter) bits.push('beats ' + a.overStarter);
           bits.push(a.confidence + ' confidence');
           nm.appendChild(el('small', null, '  ' + bits.join(' · ') +
-            (a.verified ? '' : '  ·  NOT IN THE APP\'S POOL — check he is actually free')));
-          /* season vs. one-week-only — the priority Tj asked to see ranked
-             ahead of small weekly changes, made visible rather than implied */
+            (a.verified ? '' : '  ·  NOT IN THE APP\'S POOL — check he is actually free') +
+            (a.dropCandidate && !a.dropVerified
+              ? '  ·  the player it says to drop is not on your roster' : '')));
+          /* forced replacement, season-long move, or one-week-only. The first
+             is not a kind of upgrade at all — it is a hole — so it gets its
+             own tag rather than being folded in with the others. */
+          if (a.mandated) nm.appendChild(el('span', 'tag warn', 'REPLACE'));
           nm.appendChild(el('span', a.priority === 'season' ? 'tag ok' : 'tag',
                              a.priority === 'season' ? 'SEASON' : '1-WEEK'));
           r.appendChild(nm);
