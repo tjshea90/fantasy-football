@@ -3545,3 +3545,9 @@ DONE — 20 suites (two new: `test_synccapture.js`, `test_jobguard.js`) +
 `node tools/check_es2018.js` all green throughout. `tools/test_tabsafety.js`
 and `tools/test_boot.js` (one source-text pin updated for the renamed
 `syncedWeek` local) both updated in place rather than left stale.
+
+Built and shipped as v7.5 (`bash build.sh` regenerated `app/assets/version.js`
+for the bump after this entry was first written, hence this second commit
+to STATE.md — the ship gate checks the narrative against the LAST commit
+touching app/android, and a version stamp is exactly the kind of change
+that should not need its own separate paragraph).
