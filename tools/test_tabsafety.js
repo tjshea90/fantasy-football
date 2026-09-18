@@ -112,7 +112,7 @@ function buildHarness(sharedDisk) {
     var o = makeEl('option'); o.textContent = label; o.value = value === undefined ? label : value;
     return o;
   };
-  var disk = {};
+  var disk = sharedDisk || {};
   W.Native = { save: function (k, v) { disk[k] = v; return true; },
                load: function (k) { return disk[k] === undefined ? null : disk[k]; },
                online: function () { return false; } };
@@ -126,7 +126,7 @@ function buildHarness(sharedDisk) {
                'recommend.js', 'sim.js', 'value.js', 'recap.js', 'schedule.js',
                'handoff.js', 'stats.js', 'gestures.js', 'ui.js'];
   order.forEach(load);
-  return { W: W, ids: ids, docHandlers: docHandlers, clickTab: clickTab, tabEls: tabEls };
+  return { W: W, ids: ids, docHandlers: docHandlers, clickTab: clickTab, tabEls: tabEls, disk: disk };
 }
 
 console.log('\n-- baseline: a clean boot wires every tab as always --');
