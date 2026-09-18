@@ -649,6 +649,14 @@
                  perGame: perGame, usage: usage, usageText: usageText,
                  valueOf: valueOf, trade: trade, weeksLeft: weeksLeft,
                  rosteredSet: rosteredSet, myInjuries: myInjuries,
-                 myStarters: myStarters };
+                 myStarters: myStarters,
+                 /* the exact bar upgrades() itself holds a QB free agent to —
+                    exported so ai.js's normalizeWaivers can hold a
+                    CLAUDE-suggested QB swap to the identical standard rather
+                    than a second, hand-copied number that could drift from
+                    this one (Tj, 2026-09-18: the same rule has to apply
+                    "also" to the Claude-assisted paths, not just this
+                    deterministic board). */
+                 QB_MIN_GAIN: QB_MIN_GAIN, QB_MIN_MEASURED: QB_MIN_MEASURED };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Value;
 })(typeof window !== 'undefined' ? window : this);
