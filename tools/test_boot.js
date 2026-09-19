@@ -1001,5 +1001,21 @@ ok(/settings\.currentWeek : 1/.test(stH),
   });
 }());
 
+/* ---- 2026-09-19 sweep: the Scoring rules card's weekly-bonus text was
+ * stale. Scoring.applyWeeklyBonuses is wired into doSync and runs
+ * automatically once a week is final (confirmed by grep against the real
+ * call site below), but the Data tab told Tj the opposite -- that these
+ * three +5 bonuses "cannot be derived from a box score alone" and had to be
+ * added by hand. Following that stale advice today would double-count: once
+ * from the automatic pass, once from the manual adjustment. */
+ok(/Scoring\.applyWeeklyBonuses\(allLines, qbKey\)/.test(uiX),
+   'doSync really does call applyWeeklyBonuses automatically once a week is final');
+ok(uiX.indexOf('cannot be derived from a box score alone') < 0,
+   'the scoring-rules card no longer claims the bonuses cannot be derived -- they now are');
+ok(/applied automatically once a week is fully final/.test(uiX),
+   'and says so correctly instead');
+ok(/two different quarterbacks in a game/.test(uiX),
+   'the one real imprecision (a two-QB game) is disclosed rather than implied to be exact');
+
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
