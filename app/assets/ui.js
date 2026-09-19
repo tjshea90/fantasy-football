@@ -4180,7 +4180,25 @@
         }
       });
 
-      /* league-wide longest-play bonuses, only once every game is final */
+      /* league-wide longest-play bonuses, only once every game is final.
+       *
+       * KNOWN IMPRECISION (found in the 2026-09-19 sweep, not fixed — the
+       * data to fix it does not exist in what this app fetches). The winning
+       * QB is credited as `teamPrimaryQB[pl.abbr]` — the passer with the most
+       * COMPLETIONS in that game (espn.js) — not the man who actually threw
+       * this specific longest-reception play. In the ordinary case those are
+       * the same person and this is exact. They can differ when a team plays
+       * two quarterbacks in one game (an in-game injury, a benching) and the
+       * one who is NOT "primary" for the game happened to throw the long ball
+       * before leaving. ESPN's box score gives per-player game TOTALS, not a
+       * play-by-play passer for a specific completion; `scanPlays` above does
+       * walk the full drive list, but only to find field goals and safeties
+       * by text pattern — extracting "who threw THIS specific reception" from
+       * play text reliably enough to trust for a scored point is a real
+       * feature, not a one-line fix, and would need its own tests against
+       * real play text before it could replace this. Left as the best
+       * available proxy; a two-QB game is the one case where the +5 can land
+       * on the wrong man. */
       if (meta.allFinal && allLines.length) {
         var qbKey = null, bestLong = -1;
         perGame.forEach(function (pg) {
