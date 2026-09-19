@@ -50,11 +50,32 @@ Only FR (fumble recovery) counts.
 | FG 50–59 | +5 | | FG 50–59 | −1 |
 | FG 60+ | +6 | | FG 60+ | 0 |
 
-### Weekly bonuses — NOT MODELED
+### Weekly bonuses
 Longest completion / longest reception / longest rush of the week: +5 each.
-Awarded to one player league-wide per week. Cannot be derived from season CSVs.
-Expected value per player is small and concentrated in deep-ball QBs/WRs and
-home-run backs. Flag as unmodeled; do not silently fold into totals.
+Awarded to one player league-wide per week. Expected value per player is small
+and concentrated in deep-ball QBs/WRs and home-run backs.
+
+**RESOLVED 2026-09-19 — NOW MODELED, not "NOT MODELED" as this section used to
+say.** That was true when this file was transcribed (season CSVs alone cannot
+derive it) and stopped being true once the engine started reading live weekly
+box scores instead: `Scoring.applyWeeklyBonuses` (scoring.js) is wired into
+`doSync` (ui.js) and runs automatically once every game in a week is final,
+scanning every player's box score league-wide — not only rostered players —
+for the longest reception, longest rush, and (via play-by-play) the longest
+completion. Found stale during the 2026-09-19 full-app sweep, which had
+already caught and fixed the same staleness in the Data tab's own Scoring
+rules card (it told Tj these three bonuses "cannot be derived from a box
+score alone" and must be added by hand — true once, false since this was
+wired in, and actively harmful advice: following it now double-counts a
+bonus, once automatic and once from a manual adjustment added believing the
+app had not applied it). This file's own "NOT MODELED" line was the same
+staleness at its source and had been missed. One known imprecision remains,
+documented at the `doSync` call site and on the Scoring rules card: a team
+that plays two different quarterbacks in one game can credit the completion
+bonus to whichever one threw the most passes that game, not necessarily the
+one who actually threw the longest completion — ESPN's box score gives
+per-player game totals, not a play-by-play passer for one specific
+reception. Correctable by hand as a labelled adjustment when it happens.
 
 ## ROSTER
 **10 starting slots:** QB, RB, RB, WR, WR, WR, TE, FLEX (WR/RB/TE only), K, DEF/ST
