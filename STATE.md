@@ -1,6 +1,132 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-19** · ladder 168/170 · **v8.0**, shipped (build/dex verified, 28 classes) · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-19** · ladder 169/170 · **v8.1**, shipped · APK builds, signed, all 22 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.1 — a full test, requested through the standing protocol CLAUDE.md now carries
+
+Same day as v8.0, a fresh session, invoked as a plain "do a full test on this
+app" — the exact trigger phrase the v8.0 session had just written a permanent
+protocol for in CLAUDE.md ("Test protocols — 'light tests' and 'full tests'").
+This is the first time that protocol has actually been exercised: same depth
+as the v8.0 sweep, explicitly treating it as the template rather than a
+one-off, re-reading the whole app fresh (Android shell, HTML/CSS, all 4,452
+lines of `ui.js`, and every file in the data/logic layer) rather than trusting
+that a sweep from hours earlier caught everything.
+
+### One real bug: a sync silently erased another feature's data on the same object
+
+`doSync()` (`ui.js`) ended its success path by **replacing** `S.weekMeta[week]`
+wholesale with a brand-new object literal:
+
+```js
+S.weekMeta[String(syncedWeek)] = { synced: true, at: ..., games: ..., ... };
+```
+
+`schedule.js`'s own `ingest()`/`earlyAlertUncached()` write `kickoffs`,
+`schedAt`, `schedSig`, `shouldStart` and `shouldStartSig` directly onto that
+exact same object — and `liveTick()` calls `Schedule.ingest(week, games)`
+immediately before calling `doSync` on the very same tick. The old code went
+out of its way to carry one field forward (`opponents`, read off the old
+object before the replace) but nothing else survived — every OTHER field
+schedule.js owns on that object was simply absent from the new literal, gone
+the instant the assignment ran. `doSync` is also reachable directly, with no
+compensating re-ingest afterward, from the manual "Sync week" button and from
+pull-to-refresh on every tab but Advice/Stats.
+
+The user-facing cost: after most syncs, the game-time badges next to every
+player's name across the whole app disappeared (`Schedule.badge` reads
+`get(week)`, which read `null` the instant this ran) and the pre-Sunday bench
+alert went with them — both the in-app card (`earlyGameCard`) and
+`Alerts.java`'s closed-app notification, which reads this identical persisted
+key with **no WebView available**, so it could not route around the gap the
+way a render()-triggered re-fetch might. The window lasted until something
+else happened to call `Schedule.ingest()` again — the next live-poll tick if
+one was running, or a week change/boot/resume via `freshenSchedule()` — which
+could be anywhere from under a minute to a long, unpredictable wait depending
+on what the app was doing.
+
+This is precisely the "do not collide on the same weekMeta key" bug class
+`test_schedule.js` already guards in the OTHER direction (a sync-shaped
+`.games` count surviving a later `Schedule.ingest()` call) — nothing tested
+the reverse: a schedule-shaped object surviving a later sync. Confirmed by
+tracing the actual runtime order across two files, not by reading either one
+in isolation.
+
+**Fixed by mutating the existing object in place** instead of replacing it —
+every field doSync does not itself own now survives automatically, with no
+name list to keep in sync by hand the way the old `opponents`-only carve-out
+required:
+
+```js
+var wm = S.weekMeta[String(syncedWeek)] || (S.weekMeta[String(syncedWeek)] = {});
+var prevOpp = wm.opponents;
+wm.synced = true; wm.at = ...; /* ...every field doSync owns, assigned onto wm */
+```
+
+New test `tools/test_schedmeta.js` seeds a weekMeta object with
+`Schedule.ingest`-shaped fields (kickoffs/schedAt/schedSig/shouldStart), fires
+a real sync through the sync button, and confirms those fields are still
+there afterward — confirmed to **FAIL** against the pre-fix code (3 of its 4
+checks) and pass now.
+
+### One stale line in the ground-truth doc itself
+
+`RULES_2026.md`'s own "Weekly bonuses" section still read **"NOT MODELED...
+Cannot be derived from season CSVs"** — true when the file was transcribed,
+false since `Scoring.applyWeeklyBonuses` was wired into `doSync`. This is the
+exact same staleness the v8.0 session found and fixed on the Data tab's own
+Scoring rules card a few hours earlier — just missed at its source, the
+ground-truth file the card's own text is supposed to answer to. Corrected
+with a dated resolution note in the file's own established style (matching
+how it already records the 2026-09-09 return-TD resolution), rather than
+silently rewriting the original line out of the historical record.
+
+### Flagged, not fixed: the API key rides along in Android's own automatic backup
+
+`android:allowBackup="true"` plus `backup_rules.xml`/
+`data_extraction_rules.xml` excluding only the app's own `backups/` folder
+means the MAIN state file — `fftracker_state_v1.json`, where the live
+Anthropic key actually lives in plain text — is not excluded from Android's
+Auto Backup for Apps or device-to-device transfer. A phone with "Back up to
+Google Drive" on (the Android default for most users) uploads that key,
+in clear text, to Tj's own private Google Drive app-data folder; the same
+file rides along on a device transfer. This is a completely different path
+from the Downloads-export redaction `Store.exportJSON()` already implements
+(see that function's own "THE API KEY NEVER LEAVES IN A BACKUP" comment,
+v4.7) — that redaction covers only backups the APP produces on request, and
+says nothing about the one ANDROID produces on its own schedule. Real but
+lower-severity than the pre-v4.7 Downloads exposure (Google's Auto Backup is
+private per-app data, HTTPS-transmitted and end-to-end encrypted with a lock
+screen on Android 9+ — not "any app can read it"), but still a credential
+leaving the device through a channel nobody decided it should.
+
+Not fixed this session: the real fix is an architecture change (move the key
+into Android SharedPreferences via new NativeBridge methods, exclude that
+prefs file from backup, migrate anyone with a key already saved the old way,
+and update every current reader/writer of `S.settings.aiKey`), not a
+sweep-sized patch — exactly the shape of decision this repo's standing rule
+asks to surface to Tj rather than do silently. Named in full in TASKS.md's
+"Waiting on Tj".
+
+### Everything else checked and found clean
+
+Re-swept, fresh, rather than trusted from hours earlier: the whole Android
+shell, `index.html`/`app.css` (script load order re-verified safe), all of
+`ui.js` tab by tab, and the full data/logic layer. Specifically grepped for
+any OTHER instance of the wholesale-object-replace pattern that produced this
+session's one real bug — found none. Every memoization cache
+(`_faMemo`, `_dpMemo`, `_rateMemo`, `_alertMemo`, `_adviceEstMemo`,
+`_wireEstMemo`, `_taEstMemo`) re-checked and its key still covers every real
+invalidation trigger. `scoring.js` re-verified against `RULES_2026.md`, no
+disagreement. `sim.js`'s `season()`/`power()`/`allPlay()`/`bracket()` are
+still unused by any tab — a fourth consecutive session (v7.7, v7.9, v8.0,
+this one) flagging the same still-undecided product question rather than
+guessing.
+
+All 22 suites (21 + the new `test_schedmeta.js`) and the ES2018 gate green,
+verified by exit code AND a precise `^  FAIL ` line count — not a bare
+`grep FAIL`, which the v8.0 session already found gives a false green when a
+passing test's own assertion text happens to contain the substring "FAILED".
 
 ## v8.0 — an open-ended "find bugs, improve the UI" sweep, not a complaint this time
 
