@@ -128,6 +128,13 @@ verified by exit code AND a precise `^  FAIL ` line count — not a bare
 `grep FAIL`, which the v8.0 session already found gives a false green when a
 passing test's own assertion text happens to contain the substring "FAILED".
 
+Built and shipped as v8.1 (`bash build.sh` regenerated `app/assets/version.js`
+for the bump after this entry was first written, hence this second commit to
+STATE.md — same reason the v7.5 entry below needed one: the ship gate checks
+the narrative against the LAST commit touching `app/`/`android/`, and a
+version stamp is exactly the kind of change that should not need its own
+separate paragraph).
+
 ## v8.0 — an open-ended "find bugs, improve the UI" sweep, not a complaint this time
 
 Tj, 2026-09-19T00:39:00Z: **"Now do an overall ui and code improvement/bug
