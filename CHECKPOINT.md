@@ -1,12 +1,12 @@
-# CHECKPOINT 102 — read me first, then TASKS.md
+# CHECKPOINT 108 — read me first, then TASKS.md
 
-**Written:** 2026-09-19T00:56:13Z · **version:** 7.9 · **tests:** 1 RED: test_boot (20 green)
+**Written:** 2026-09-19T01:07:49Z · **version:** 7.9 · **tests:** all 21 suites green
 
 ## Just done
-Second consolidation found in the sweep: playerdb.js had its own inline copy of Espn.normName's exact regex sequence (character for character identical, currently). Two independent normalizers for the same thing is exactly the failure class names.js exists to guard against -- Alerts.java's own norm() carries a standing warning about this exact risk across the JS/Java boundary, and playerdb.js was the one place inside pure JS still carrying a duplicate rather than delegating. Now delegates to root.Espn.normName (espn.js loads first). Pinned in test_names.js as a source-text check so a future edit to one regex and not the other cannot silently reintroduce the drift. All 21 suites green.
+Real, user-facing bug found and fixed: the Scoring rules card (Data tab) told Tj the three league-wide +5 longest-play bonuses 'cannot be derived from a box score alone' and had to be added by hand -- true when that text was written, false now. Scoring.applyWeeklyBonuses has since been wired into doSync and runs automatically once a week is final, confirmed by grep against the live call site and by test_scoring.js's own coverage. Following the stale advice today would have DOUBLE-COUNTED a bonus: once automatic, once from a manual adjustment added believing the app had not applied it. Card text rewritten to say what the app actually does, including the one real imprecision (a two-QB game can credit the wrong quarterback for the completion bonus, documented at the doSync call site too, found while verifying this). SEPARATELY, and more important process-wise: caught that my own regression checks this session were grepping test output for the word FAIL and treating a silent CRASH (nonzero exit, zero FAIL lines printed) as green -- which is exactly what my playerdb.js norm() consolidation had done to test_boot.js two commits ago undetected. Root cause: two of that file's own minimal harnesses (g3, g5) never loaded espn.js at all, only relying on playerdb.js's old self-contained copy. Fixed both to load the real espn.js first (g5 then overrides just the network call, keeping normName real). Every suite now re-verified by BOTH exit code and FAIL-count, not text-grep alone.
 
 ## Do this next
-Continue Step E: schedule.js, gamelog.js, stats.js, gestures.js, sim.js, recap.js, usage.js, names.js, store.js, espn.js, scoring.js, projections.js -- finish the sweep for real bugs. Then G (regression), H (ship).
+Finish the sweep: a few more files to check (store.js remainder, espn.js remainder, stats.js, recap.js), then G (final regression, exit-code-checked), H (ship). Also: re-verify every earlier 'all green' claim this session was exit-code-checked, not just FAIL-grepped -- the teamreport.js and rosterInjuryCard fixes were each spot-checked individually so they're trustworthy, but re-run the full suite with real exit-code discipline one more time before shipping regardless.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  2c5974d ckpt 102: Second consolidation found in the sweep: playerdb.js had its own inline copy o
   afdcc3f ckpt 99: Real bug found and fixed in teamreport.js: rosterRow() computed onBye as Number
   05effc5 ckpt 96: Steps B, C started, D in progress. B: fixed the one real bug in the Android she
   a9c66e2 ckpt 92: Wrote Tj's 2026-09-19 'overall ui and code improvement/bug search and fix' requ
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   abb3639 ckpt 85: ship: v7.8: waiver wire repaired — the false season-ending flag, the impossib
   daa0bd7 ckpt 80: Step G done -- the thorough sweep, and it caught three more real bugs, all of t
   76e82b1 ckpt 70: Step H done. New suite tools/test_wire.js (20 suites now, all green) pins every
-  e0dc8a2 ckpt 67: Steps B/C/D/E/F built. value.js upgrades() rewritten: it now builds EVERY plaus
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
