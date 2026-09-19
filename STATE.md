@@ -1,6 +1,108 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-18** · ladder 168/170 · **v7.9**, shipped · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-19** · ladder 168/170 · **v8.0**, shipped · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.0 — an open-ended "find bugs, improve the UI" sweep, not a complaint this time
+
+Tj, 2026-09-19T00:39:00Z: **"Now do an overall ui and code improvement/bug
+search and fix."** No screenshot, no repro — the first job in this whole
+history with no specific complaint to anchor to. Treated as: read the Android
+shell, the HTML/CSS, every ui.js card and the data/logic layer that the last
+three wire-focused jobs did not already cover, fix what is actually wrong, and
+say plainly what was checked and found clean.
+
+### Five real fixes
+
+1. **The Roster tab's own injury card didn't inherit the wire fix.**
+   `rosterInjuryCard` ("your roster — injuries") is the single place in the
+   app most likely to be asked "why is this guy out" — and it was the one
+   place the v7.9 job's fix to `seasonOutlook()` never reached. `health()`
+   collapses a plain weekly OUT and a season-ending IR designation into the
+   identical tag "OUT", which is right for "can he play Sunday" and wrong for
+   this card's whole purpose. It now calls the same, now-correct
+   `Recommend.seasonOutlook()` the Wire tab uses and shows the two facts —
+   finished for the year vs. parked but returning — distinctly, with the
+   long-term case saying explicitly it is *not* the season-ending case.
+
+2. **teamreport.js priced a bye-week player as if he were playing.**
+   `rosterRow()` computed `onBye` as `Number(p.bye) === Number(week)`
+   directly, instead of `Store.isOnBye(p, week)` — the exact bug class
+   `recommend.js`'s own `myStarters` carries a standing warning against
+   ("Store.isOnBye, not `p.bye === week`: it falls back to the league's bye
+   table"). A free-agent-database player with no bye of his own but whose NFL
+   team *is* in the league's bye table read as available and priced at his
+   full rest-of-season rate for a week he cannot play — feeding a wrong number
+   straight into the whole-team-analysis Claude prompt this context object
+   builds for. Fixed; new test confirmed to fail against the pre-fix commit.
+
+3. **playerdb.js carried its own copy of Espn.normName.** Character-for-
+   character identical to the real one, today — but two independent
+   implementations of the same normalisation is precisely the failure class
+   `names.js` exists to guard against (this app has already paid for that
+   mistake once: the Kenny/Kenneth Gainwell bug `names.js`'s own header
+   documents at length). Now delegates to `root.Espn.normName`, pinned as a
+   source-text check in `test_names.js` so a future edit to one regex and not
+   the other cannot silently reintroduce the drift.
+
+4. **The Scoring rules card was telling Tj to do something the app already
+   does, and doing it would have double-counted.** Its own text said the
+   three league-wide +5 longest-play bonuses "cannot be derived from a box
+   score alone" and had to be added by hand as a manual adjustment. True when
+   that sentence was written — false since `Scoring.applyWeeklyBonuses` was
+   wired into `doSync` (undocumented in STATE.md at the time; found only by
+   reading the actual call site and confirming it runs automatically once a
+   week is final, league-wide, not only for rostered players). Following the
+   card's own advice today would have paid the bonus twice: once automatic,
+   once by hand. Rewritten to describe what the app now actually does,
+   including the one real imprecision it still carries — a team that plays
+   two different quarterbacks in a game can have the completion bonus
+   credited to whichever one threw the most passes rather than whoever
+   actually threw the longest one, since ESPN's box score gives per-QB game
+   totals, not a play-by-play passer for one specific play. Documented at
+   both the UI text and the `doSync` call site; not "fixed" beyond that,
+   because a precise fix needs a new play-by-play feature this app does not
+   have, not a one-line change.
+
+5. **NativeBridge.deviceInfo() built JSON by hand.** Escaped only a literal
+   double-quote in `Build.MODEL`, unlike every other JSON-building bridge
+   method (`alertsStatus`, `alertsTest`, `backupList`), which all go through
+   `org.json.JSONObject.quote()`. Nothing calls `deviceInfo()` today, so this
+   was dormant rather than live — fixed anyway rather than left as a landmine
+   for whichever caller reaches for it next.
+
+### Checked and confirmed correct, not fixed
+
+- The Trade evaluator (`Value.trade` → `valueOf` → `perGame`) already
+  delegates to the v7.7 job's fixed `ros.js` engine — it was never on the old
+  "one scored week, forever" path the wire rewrite existed to kill. Worth
+  checking explicitly, given the wire job's whole premise was that exact bug
+  hiding in a sibling code path.
+- `scoring.js`'s `RULES` table re-verified line by line against
+  `RULES_2026.md` — no disagreement, including the points-allowed ladder's
+  undefined-at-1-point case and the fumble-recovery-only rule.
+
+### One process bug in this session's own regression checks
+
+Every "all green" claim earlier in this job was checked by grepping test
+output for the word `FAIL` — which treats a silent **crash** (nonzero exit,
+zero `FAIL` lines ever printed because the process died first) as a pass.
+That is exactly what fix #3 above had done to `test_boot.js`, undetected,
+because two of that file's own minimal test harnesses never loaded `espn.js`
+at all — they relied on `playerdb.js`'s old self-contained copy, which fix #3
+just removed. Both harnesses now load the real `espn.js` first (one of them
+then overrides just the network call, keeping `normName` real). Every suite
+in this job's final sweep was re-verified by **both** exit code and
+`FAIL`-count, not text-grep alone, and the whole run rechecked green that way
+before shipping.
+
+### Left as an open question, again
+
+`sim.js`'s `season()`/`power()`/`allPlay()` are tested (`test_engine.js`,
+`test_integration.js`, `test_recap.js`) but appear on no tab; `bracket()` is
+entirely unused, not even by a test. Three consecutive checkpoints (v7.7,
+v7.9, this one) have flagged this as a real product decision — wire a
+Simulate section into a tab, or delete a working, tested engine — rather than
+guess which Tj wants. Still deferred to him.
 
 ## v7.9 — the wire told him 36 of his 17 players were dead, and named a healthy man
 
