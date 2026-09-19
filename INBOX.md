@@ -790,3 +790,12 @@ Now do an overall ui and code improvement/bug search and fix
 ```
 If this project has a screener that asks if I want to use opus or not  then turn it off permanently
 ```
+
+## 2026-09-19T03:10:11Z
+```
+From now on, I will be asking for "light tests" and "full tests" after Claude does work on this project. Make permanent knowledge for Claude so that when I tell it to run light tests (at any time I ask) or full tests , Claude knows exactly what to do with no further explanation from me. This must be permanently in Claude awareness so that if I ask, even in a brand new code session with no context, Claude knows what to do. 
+
+If I ask for light tests (or any similar wording like light test or light testing): run low usage, light test on the last version of the app or the latest in progress work on the app after all work is complete and look for obvious bugs or ui issues and look for any ways other parts of the app may have broken or been corrupted by anything that was changed in the current session. Then fix any findings. If there were any major findings, fix them and when the fixes are complete, run another light test to ensure the fixes worked without breaking any other part of the app. 
+
+If I ask for full tests (or anything similar like full test or full testing or comprehensive tests): do a full, comprehensive test suite of the entire app. Usage and amount of time spent on the testing is no concern, prioritize best effort at app testing and improvement. During a full test, look for any improvements in code or ui, improvements in network efficiency if Internet is needed, improvements in caching and data retention so important data is not lost from the app, improvements in logic for systems and engines within the app and make sure they work as designed, and search for and fix any bugs or parts of the app that have broken or been corrupted from changes. Search for waste of resources or battery usage and ensure that the app properly sleeps when it is not in use. The goal of this testing is to ensure the final release of the app is efficient and well coded and the features and UI work well and are intuitive with little to no bugs or data loss.
+```
