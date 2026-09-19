@@ -68,3 +68,4 @@
 2026-09-18T20:46Z | v7.9 | step 178/180 | v7.8: waiver wire repaired — APK built and packaged
 2026-09-19T01:11Z | v8.0 | step 178/180 | v8.0: overall UI/code improvement sweep -- five real fixes, a stale docs bug, and a process bug in this session's own regression checks caught along the way
 2026-09-19T04:09Z | v8.1 | step 178/180 | v8.1: full-test sweep -- fixed a doSync() weekMeta wholesale-replace bug that silently erased schedule.js's kickoffs/pre-Sunday-alert data on every sync, corrected a stale NOT-MODELED claim in RULES_2026.md, and flagged (not fixed) the API key riding along in Android's automatic cloud backup
+2026-09-19T04:12Z | v8.2 | step 178/180 | v8.1: full-test sweep -- fixed a doSync() weekMeta wholesale-replace bug that silently erased schedule.js's kickoffs/pre-Sunday-alert data on every sync, corrected a stale NOT-MODELED claim in RULES_2026.md, and flagged (not fixed) the API key riding along in Android's automatic cloud backup

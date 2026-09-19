@@ -102,6 +102,6 @@ android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 android/res/drawable/splash_empty.xml
 android/res/values-v31/styles.xml
-releases/FFTracker-v7.7.apk
 releases/FFTracker-v7.9.apk
 releases/FFTracker-v8.0.apk
+releases/FFTracker-v8.2.apk
