@@ -34,6 +34,12 @@ ok(html.indexOf('players.js') >= 0 && html.indexOf('playerdb.js') >= 0,
 ok(html.indexOf('players.js') < html.indexOf('playerdb.js'), 'data loads before its reader');
 var g = {}; g.window = g;
 new Function('window', pjs)(g);
+/* espn.js, BEFORE playerdb.js (2026-09-19 sweep): playerdb.js's norm() now
+   delegates to Espn.normName instead of carrying its own copy of the same
+   regex (see test_names.js — this is what closes the drift risk between the
+   two). That makes this harness's own load order matter for the first time;
+   it always matched index.html's, this line just needed to catch up. */
+new Function('window', fs.readFileSync('app/assets/espn.js', 'utf8'))(g);
 new Function('window', fs.readFileSync('app/assets/playerdb.js', 'utf8'))(g);
 g.PlayerDB.init();
 ok(g.PlayerDB.search('achane', null, 3).length > 0, 'search finds Achane offline');
