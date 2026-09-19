@@ -19,28 +19,28 @@ actually broken or actually rough, not to invent scope.
 - [x] **A. Baseline.** Confirm all suites and the ES2018 gate are green before
       touching anything, so every failure found below is attributable to this
       sweep's own fixes, not inherited noise.
-- [ ] **B. Sweep the Android Java shell** (`android/`) — the thin WebView
+- [x] **B. Sweep the Android Java shell** Done. One real inconsistency found: NativeBridge.deviceInfo() built JSON by hand, escaping only a literal double-quote in Build.MODEL, unlike every other JSON-building bridge method (which all use org.json.JSONObject.quote()). Fixed for consistency -- a backslash or control char in the device model would otherwise break JSON.parse on the page side. (Currently unused by any JS caller, so dormant, not yet triggered -- fixed anyway rather than left as a landmine for the next caller.) (`android/`) — the thin WebView
       wrapper, Alerts.java, any broadcast/notification/backup code — for bugs.
       Small surface, but it is the one place a JS bug cannot reach and the one
       place BRIEF.md's rules (one universal APK, no Gradle) are easiest to
       violate by accident.
-- [ ] **C. Sweep `index.html` and `app.css`** for structural/UI issues:
+- [x] **C. Sweep `index.html` and `app.css`** Done. Cross-checked every CSS class ui.js constructs (both static el() calls and dynamic concatenation) against app.css -- none missing, none dead. Script load order verified safe (no top-level cross-module reference runs before its dependency loads). Nothing to fix. for structural/UI issues:
       inconsistent spacing, unreachable rules, missing dark/light handling,
       accessibility gaps, anything that doesn't match how the rest of the app
       is styled.
-- [ ] **D. Sweep `ui.js` tab by tab** (4388 lines — Live, Lineups, Roster,
+- [x] **D. Sweep `ui.js` tab by tab** Done, every card read. Two real fixes: (1) rosterInjuryCard ('your roster -- injuries') was the one place the 2026-09-18d wire fix's seasonOutlook() logic hadn't reached -- health() collapses a plain weekly OUT and a season-ending IR designation into the identical tag, so the card most likely to be asked 'why is this guy out' gave the least useful answer. Now shows the same, now-correct season-ending/long-term-out distinction the Wire tab does. (2) the Scoring rules card's weekly-bonus hint was STALE and actively wrong: it told Tj the three +5 longest-play bonuses 'cannot be derived from a box score alone' and must be added by hand, when Scoring.applyWeeklyBonuses has since been wired into doSync and applies them automatically -- following the stale advice would have double-counted. Rewritten to describe actual behavior, including the one real imprecision (a two-QB game) that IS still worth a manual check. Also documented (not fixed -- no better data source exists without a new play-by-play feature) the same two-QB edge case at its doSync call site. (4388 lines — Live, Lineups, Roster,
       Wire, Stats, Advice, Data) for correctness bugs and rough UI edges:
       stale renders, missing guards, inconsistent formatting, dead branches,
       copy that no longer matches behavior.
-- [ ] **E. Sweep the data/logic layer** (store.js, value.js, recommend.js,
+- [x] **E. Sweep the data/logic layer** Done. Two real fixes: (1) teamreport.js's rosterRow() computed onBye as `Number(p.bye) === Number(week)` directly instead of Store.isOnBye(p, week) -- the exact bug class recommend.js's own myStarters carries a standing warning against. A free-agent-database player with no bye of his own but whose NFL team IS in the league's bye table read as available and priced at his full rate for a week he cannot play, feeding a wrong number into the whole-team-analysis Claude prompt. (2) playerdb.js carried its own inline copy of Espn.normName's exact regex sequence -- character-for-character identical today, but two independent normalizers is precisely the failure class names.js exists to guard against (the Kenny/Kenneth Gainwell bug). Now delegates. Both pinned with new tests confirmed to FAIL against the pre-fix code. Also checked and confirmed CORRECT (not bugs): Value.trade/valueOf/perGame already delegate to the fixed ros.js engine from the v7.7 job, so the Trade evaluator was never on the old buggy path; scoring.js's RULES table verified line-by-line against RULES_2026.md, no disagreement. Flagged, not resolved (a product/scope decision, not a bug): sim.js's season()/power()/allPlay() are tested but never surfaced on any tab, and bracket() is entirely unused -- three consecutive checkpoints have deferred this exact question to Tj; still deferred. (store.js, value.js, recommend.js,
       ai.js, handoff.js, espn.js, projections.js, ros.js, scoring.js,
       playerdb.js, names.js, usage.js, gamelog.js, schedule.js, gestures.js,
       recap.js, teamreport.js, sim.js, stats.js) for correctness bugs,
       inconsistent error handling, and dead code — outside what the last three
       jobs already covered in depth (the waiver/wire stack).
-- [ ] **F. Fix everything found**, each fix with a named test that is
+- [x] **F. Fix everything found** Done -- 5 real fixes (deviceInfo escaping, rosterInjuryCard season-outlook, teamreport.js bye fallback, playerdb.js normalizer consolidation, the stale scoring-bonus hint), each with a named test confirmed to fail against pre-fix code where practical (source-text pins where a full render harness does not exist for ui.js, matching this file's own established testing convention)., each fix with a named test that is
       confirmed to fail against the pre-fix code where practical.
-- [ ] **G. Full regression sweep** — every suite green, ES2018 gate green,
+- [x] **G. Full regression sweep** Done, and it caught a real process gap of its own: this session's early regression checks grepped test output for the word FAIL, which treats a silent CRASH (nonzero exit, zero FAIL lines ever printed) as green -- exactly what the playerdb.js consolidation had done to test_boot.js undetected for two commits, because two of that file's own minimal harnesses never loaded espn.js. Fixed (both harnesses now load the real espn.js), and every suite is now verified by BOTH exit code and FAIL-count. All 21 suites green, ES2018 gate green, confirmed clean this way. — every suite green, ES2018 gate green,
       confirm nothing this pass touched broke anything the last three jobs
       just finished.
 - [ ] **H. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
