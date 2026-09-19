@@ -1,6 +1,51 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-18d) — THE WAIVER WIRE IS BROKEN: FALSE SEASON-ENDING FLAGS, A BOGUS COUNT, AND NO POSITION SENSE
+## Current job (2026-09-19) — OVERALL UI AND CODE IMPROVEMENT / BUG SWEEP
+
+Tj, 2026-09-19T00:39:00Z:
+
+> "Now do an overall ui and code improvement/bug search and fix"
+
+Broad and open-ended by design — not a specific complaint like the last three
+jobs, so there is no screenshot or repro to anchor to. Treating this as: sweep
+the whole app (the Android Java shell, the HTML/CSS shell, and all of
+app/assets/*.js) for real bugs and real UI rough edges, fix what is found,
+test each fix, and ship. Not a rewrite and not a redesign — this app has just
+been through a real feature overhaul (v7.7-v7.9); the job is to find what is
+actually broken or actually rough, not to invent scope.
+
+### Steps
+
+- [x] **A. Baseline.** Confirm all suites and the ES2018 gate are green before
+      touching anything, so every failure found below is attributable to this
+      sweep's own fixes, not inherited noise.
+- [ ] **B. Sweep the Android Java shell** (`android/`) — the thin WebView
+      wrapper, Alerts.java, any broadcast/notification/backup code — for bugs.
+      Small surface, but it is the one place a JS bug cannot reach and the one
+      place BRIEF.md's rules (one universal APK, no Gradle) are easiest to
+      violate by accident.
+- [ ] **C. Sweep `index.html` and `app.css`** for structural/UI issues:
+      inconsistent spacing, unreachable rules, missing dark/light handling,
+      accessibility gaps, anything that doesn't match how the rest of the app
+      is styled.
+- [ ] **D. Sweep `ui.js` tab by tab** (4388 lines — Live, Lineups, Roster,
+      Wire, Stats, Advice, Data) for correctness bugs and rough UI edges:
+      stale renders, missing guards, inconsistent formatting, dead branches,
+      copy that no longer matches behavior.
+- [ ] **E. Sweep the data/logic layer** (store.js, value.js, recommend.js,
+      ai.js, handoff.js, espn.js, projections.js, ros.js, scoring.js,
+      playerdb.js, names.js, usage.js, gamelog.js, schedule.js, gestures.js,
+      recap.js, teamreport.js, sim.js, stats.js) for correctness bugs,
+      inconsistent error handling, and dead code — outside what the last three
+      jobs already covered in depth (the waiver/wire stack).
+- [ ] **F. Fix everything found**, each fix with a named test that is
+      confirmed to fail against the pre-fix code where practical.
+- [ ] **G. Full regression sweep** — every suite green, ES2018 gate green,
+      confirm nothing this pass touched broke anything the last three jobs
+      just finished.
+- [ ] **H. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
+
+## Prior job, complete (2026-09-18d) — THE WAIVER WIRE IS BROKEN (shipped v7.9)
 
 Tj, 2026-09-18T20:01:29Z (with a screenshot of the Wire tab in week 2: a red
 headline reading "36 players on your roster are out for the season — those
