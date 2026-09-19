@@ -638,6 +638,23 @@ ok(!/x\.note \? ' — ' \+ x\.note/.test(injuryCardBlock),
 ok(/nk\.appendChild\(el\('span', null, x\.note\)\)/.test(injuryCardBlock),
    'it is a sibling .kv line instead, which wraps properly (verified by rendering it, not just asserted)');
 
+/* ---- 2026-09-19 sweep: "your roster — injuries" now shows the SAME fact
+ * the Wire tab does, and via the same, now-fixed call. Before this, health()
+ * collapsed a plain weekly OUT and a season-ending IR designation into the
+ * identical tag "OUT" on THIS card — the one Tj is most likely to actually
+ * check "why is this guy out" on — even after the 2026-09-18d job taught the
+ * rest of the app the difference. */
+ok(/Recommend\.seasonOutlook\(\{ name: x\.name \}\)/.test(injuryCardBlock),
+   'the injury card asks the fixed seasonOutlook() the same question the Wire tab does');
+ok(/x\.status !== 'BYE'/.test(injuryCardBlock),
+   'and skips the ask for a bye row — a man merely resting this week is not a season question');
+ok(/so\.seasonEnding/.test(injuryCardBlock) && /so\.longTermOut/.test(injuryCardBlock),
+   'finished-for-the-year and parked-but-returning are shown as the two different facts they are');
+ok(/not out for the season/.test(injuryCardBlock),
+   'and the long-term-out case says explicitly that it is NOT the season-ending case -- the exact ' +
+   'confusion (Dalton Schultz) the 2026-09-18d job spent a whole job fixing must not reappear here ' +
+   'by omission');
+
 
 /* ---- v4.1: player identity ------------------------------------------------ */
 var idxH = fs.readFileSync('app/assets/index.html', 'utf8');
