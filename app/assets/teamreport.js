@@ -31,7 +31,16 @@
   function rosterRow(p, week) {
     var pg = root.Value.perGame(p.name, p.pos, week);
     var h = root.Recommend.health(p);
-    var onBye = Number(p.bye) === Number(week);
+    /* Store.isOnBye, not `p.bye === week` (found in the 2026-09-19 sweep —
+       recommend.js's own myStarters carries this exact warning already, and
+       this was the one remaining place that had not caught up). isOnBye
+       falls back to the league's own bye table when a player carries no bye
+       of his own — true of plenty of free-agent-database records — so a
+       bye-week player with an unset `p.bye` priced at his full rest-of-season
+       rate instead of zero here, and this object is what feeds Claude's
+       whole-team analysis prompt. A wrong `ros` for one bye week is a wrong
+       number in a paid call, not just a cosmetic miss. */
+    var onBye = root.Store.isOnBye(p, week);
     return {
       name: p.name, pos: p.pos, nfl: p.nfl || '',
       ros: onBye ? 0 : r1(pg.v),
