@@ -501,6 +501,50 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
+- [ ] **Decide: the live Anthropic API key rides along in Android's automatic
+      cloud backup and device-transfer, in plain text.** Found in the
+      2026-09-19 full-test sweep, reading `android/res/xml/backup_rules.xml`
+      and `data_extraction_rules.xml` against `AndroidManifest.xml`'s
+      `android:allowBackup="true"`. Those two files exclude only the
+      `backups/` folder (the app's own rotating internal snapshots,
+      NativeBridge's `backupAuto`) from Android's backup — they do NOT
+      exclude `fftracker_state_v1.json` itself, which is where the real,
+      live Anthropic key lives (`S.settings.aiKey`, written in plain text by
+      `NativeBridge.save`). So on a phone with "Back up to Google Drive"
+      turned on (the Android default for most users, not something Tj had
+      to opt into), Google's Auto Backup for Apps uploads that file —
+      including the key in clear text — to Tj's own private Google Drive
+      app-data folder, and the same file goes along on a device-to-device
+      transfer when he next gets a new phone. This is a DIFFERENT path from
+      every place this app already went out of its way to protect the key:
+      `Store.exportJSON()` redacts it before the "Export backup"/"Send to
+      Claude" flows can put it in Downloads (see store.js's own "THE API KEY
+      NEVER LEAVES IN A BACKUP" comment) — but that redaction only covers
+      backups the APP produces on request, not the ones ANDROID produces on
+      its own schedule, which store.js's comment does not mention and which
+      no test in this suite checks. Severity is real but not severe: Google's
+      Auto Backup is private per-app data, transmitted over HTTPS and
+      end-to-end encrypted on a device with a lock screen (Android 9+), so
+      this is not "any app can read it" the way the pre-v4.7 Downloads export
+      was — it is a credential leaving the device through a channel nobody
+      decided it should, which is still worth closing.
+      NOT FIXED THIS SESSION — flagged rather than changed, because the real
+      fix is an architecture change, not a one-line patch: the key would need
+      to move out of the JSON blob that gets backed up and into Android
+      SharedPreferences (a new small pair of `@JavascriptInterface` methods
+      in NativeBridge.java, e.g. `secretSave`/`secretLoad`, backed by a
+      SharedPreferences file excluded from backup via
+      `<exclude domain="sharedpref" path="..."/>` in both XML files), with a
+      one-time migration on `Store.init()` for anyone who already has a key
+      saved the old way, and every current reader/writer of
+      `S.settings.aiKey` (ai.js's `key()`/`settings()`, ui.js's `aiCard()`,
+      store.js's own export/import redaction) updated to go through it — a
+      real, multi-file, cross-language change with a migration path, exactly
+      the shape of thing this repo's standing rule asks to surface rather
+      than do silently. Your call: fix it now (a contained, well-scoped
+      change, just not a one-liner), or leave the Downloads-export
+      protection as the real-world mitigation it already is and accept the
+      Auto Backup exposure as a known, low-severity gap.
 - [ ] **Confirm v7.4 on the phone — PRIORITY, this is the QB/K-DEF waiver-wire
       fix you just asked for**:
       ```
