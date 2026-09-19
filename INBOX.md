@@ -785,3 +785,8 @@ Do a thorough overview of the waiver wire section while still keeping in mind th
 ```
 Now do an overall ui and code improvement/bug search and fix
 ```
+
+## 2026-09-19T02:44:29Z
+```
+If this project has a screener that asks if I want to use opus or not  then turn it off permanently
+```
