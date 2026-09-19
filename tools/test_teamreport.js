@@ -101,5 +101,36 @@ console.log('\n-- TeamReport.context(): an on-bye player prices at zero, not his
   }
 })();
 
+console.log('\n-- TeamReport.context(): the LEAGUE BYE TABLE fallback, not just a player\'s own field (2026-09-19) --');
+/* rosterRow() used `Number(p.bye) === Number(week)` directly — recommend.js's
+ * own myStarters carries a standing warning against exactly this ("Store.isOnBye,
+ * not `p.bye === week`: it falls back to the league's bye table when a player
+ * carries no bye of his own"), and this file had not caught up. A player whose
+ * own record carries no bye (true of plenty of free-agent-database entries) but
+ * whose NFL team IS in the league's bye table read as available and priced at
+ * his full rate for a week he cannot actually play — feeding a wrong number
+ * straight into the whole-team-analysis prompt this context object builds for. */
+(function () {
+  var W = freshWindow();
+  var S = W.Store.get();
+  var me = S.league.me;
+  var t = W.Store.team(me);
+  var p = t.players[0];
+  var byeWeek = 6;
+  p.bye = 0;                                   /* his OWN record carries none */
+  S.byes = S.byes || {};
+  S.byes[String(p.nfl).toUpperCase()] = byeWeek;   /* only the league table knows */
+
+  var ctx = W.TeamReport.context(byeWeek, me, null, S.league.season, '2026-09-17');
+  var mine = ctx.rosters.filter(function (r) { return r.mine; })[0];
+  var row = mine.players.filter(function (r) { return r.name === p.name; })[0];
+  ok(!!row, 'sanity: the player is still listed');
+  ok(row.onBye === true,
+     'he is flagged onBye off the LEAGUE table even though his own bye field is 0');
+  ok(row.ros === 0,
+     'and priced at zero for that week, not his usual rate (the exact bug: a bye-week ' +
+     'player reading as available in a paid Claude prompt)');
+})();
+
 console.log(fails ? '\n' + fails + ' teamreport check(s) FAILED\n' : '\n  all teamreport checks passed\n');
 process.exit(fails ? 1 : 0);
