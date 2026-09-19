@@ -702,6 +702,11 @@ ok(/wrong merge is far more/.test(nmH),
   g3.localStorage = { getItem: function (k) { return disk[k] === undefined ? null : disk[k]; },
                        setItem: function (k, v) { disk[k] = String(v); },
                        removeItem: function (k) { delete disk[k]; } };
+  /* espn.js, before playerdb.js (2026-09-19 sweep): playerdb.js's norm() now
+     delegates to Espn.normName rather than carrying its own copy — see
+     test_names.js. This stale/staleness test never touched a name, but
+     playerdb.js's module scope resolves root.Espn at call time regardless. */
+  new Function('window', fs.readFileSync('app/assets/espn.js', 'utf8'))(g3);
   new Function('window', pjs)(g3);
   new Function('window', fs.readFileSync('app/assets/playerdb.js', 'utf8'))(g3);
 
@@ -743,11 +748,14 @@ ok(/wrong merge is far more/.test(nmH),
 (function () {
   var g5 = {}; g5.window = g5;
   g5.localStorage = { getItem: function () { return null; }, setItem: function () {}, removeItem: function () {} };
-  g5.Espn = {
-    BASE: 'https://x',
-    _httpGet: function (url) {
-      return Promise.resolve({ athletes: [{ fullName: 'Player ' + url, position: { abbreviation: 'WR' } }] });
-    }
+  /* espn.js for real, THEN override just the network call (2026-09-19 sweep,
+     same reason as g3 above) — keeps Espn.normName real (playerdb.js's own
+     norm() now delegates to it) while still stubbing the network so this
+     stays a fast, offline, deterministic test. */
+  new Function('window', fs.readFileSync('app/assets/espn.js', 'utf8'))(g5);
+  g5.Espn.BASE = 'https://x';
+  g5.Espn._httpGet = function (url) {
+    return Promise.resolve({ athletes: [{ fullName: 'Player ' + url, position: { abbreviation: 'WR' } }] });
   };
   new Function('window', pjs)(g5);
   new Function('window', fs.readFileSync('app/assets/playerdb.js', 'utf8'))(g5);
