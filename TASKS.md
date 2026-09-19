@@ -43,7 +43,7 @@ actually broken or actually rough, not to invent scope.
 - [x] **G. Full regression sweep** Done, and it caught a real process gap of its own: this session's early regression checks grepped test output for the word FAIL, which treats a silent CRASH (nonzero exit, zero FAIL lines ever printed) as green -- exactly what the playerdb.js consolidation had done to test_boot.js undetected for two commits, because two of that file's own minimal harnesses never loaded espn.js. Fixed (both harnesses now load the real espn.js), and every suite is now verified by BOTH exit code and FAIL-count. All 21 suites green, ES2018 gate green, confirmed clean this way. — every suite green, ES2018 gate green,
       confirm nothing this pass touched broke anything the last three jobs
       just finished.
-- [ ] **H. Ship** (`ship.sh`), publish the GitHub Release, send Tj the link.
+- [x] **H. Ship** Done: v8.0 shipped via `ship.sh` (all 21 suites green, ES2018 gate, dex-completeness), Release published and verified via `get_release_by_tag` (FFTracker-v8.0.apk, 330006 bytes, non-empty assets array, not a draft). Link sent to Tj. (`ship.sh`), publish the GitHub Release, send Tj the link.
 
 ## Prior job, complete (2026-09-18d) — THE WAIVER WIRE IS BROKEN (shipped v7.9)
 
