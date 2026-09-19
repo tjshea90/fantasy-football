@@ -1,12 +1,12 @@
 # CHECKPOINT 54 — read me first, then TASKS.md
 
-**Written:** 2026-09-19T03:13:29Z · **version:** 8.0 · **tests:** all 21 suites green
+**Written:** 2026-09-19T03:57:40Z · **version:** 8.0 · **tests:** all 22 suites green
 
 ## Just done
-Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a permanent protocol (new section, before 'This repo is public'): exact trigger phrasing, exact steps, budget discipline for light, no-ceiling comprehensive sweep for full, both referencing this repo's real tooling (ckpt.sh's suite list, ship.sh, the 2026-09-19 sweep as the full-test template) so any future cold-start session on any account knows exactly what to do with zero further explanation. Also closed out the loose end from the prior session: verified v8.0's GitHub Release via get_release_by_tag (FFTracker-v8.0.apk, 330006 bytes, non-empty assets, not a draft) and ticked TASKS.md step H.
+Full-test sweep (2026-09-19, second pass): found and fixed a real caching/data-retention bug. doSync() (ui.js) ended its success path by REPLACING S.weekMeta[syncedWeek] wholesale with a brand-new object literal, discarding every field schedule.js's own ingest()/earlyAlertUncached() write onto that same object (kickoffs, schedAt, schedSig, shouldStart, shouldStartSig) -- it only went out of its way to carry 'opponents' forward. Since liveTick() calls Schedule.ingest(week, games) immediately before calling doSync on the same tick, and doSync is also reachable directly from the manual Sync-week button and pull-to-refresh with no compensating re-ingest, this silently erased the game-time badges next to every player's name and the pre-Sunday bench alert (both the in-app card and Alerts.java's closed-app notification, which reads this identical persisted key with no WebView available) after most syncs, until something unrelated happened to re-ingest a schedule. Fixed by mutating the existing weekMeta object in place instead of replacing it, so any field another module owns on it survives automatically. New test tools/test_schedmeta.js confirmed to FAIL against the pre-fix code (3 of its 4 checks) and pass now. All 22 suites + ES2018 gate green (verified by exit code AND a precise '^  FAIL ' line count, not a bare grep FAIL -- test_waiver.js's own passing assertion text contains the substring FAILED and would have been a false red under a looser grep).
 
 ## Do this next
-Nothing in flight. The 2026-09-19 sweep job (steps A-H) is fully complete and ticked. Waiting on Tj for: sim.js's unused season/power/allPlay/bracket (three checkpoints deferred now) and the two-QB longest-completion edge case (documented, not fixable without a new play-by-play feature). Next real work starts from whatever Tj asks next, or a 'light tests'/'full tests' request using the protocol just added to CLAUDE.md.
+Continue the full-test sweep: data/logic layer (store.js, value.js, recommend.js, ai.js, handoff.js, espn.js, projections.js, ros.js, scoring.js, playerdb.js, names.js, usage.js, gamelog.js, gestures.js, recap.js, teamreport.js, sim.js, stats.js) and the rest of ui.js (Rosters/Wire/Stats/Advice/Data tabs, lines ~1250-4452 not yet re-read this session). Cross-check scoring.js against RULES_2026.md. Then ship if anything else is found, per CLAUDE.md's full-test protocol.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  798e0e4 ckpt 54: Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a perm
   950bca6 ckpt 114: Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, 
   f586fc2 ship v8.0: v8.0: overall UI/code improvement sweep -- five real fixes, a stale docs bug,
   7f83117 ckpt 108: Real, user-facing bug found and fixed: the Scoring rules card (Data tab) told 
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   a9c66e2 ckpt 92: Wrote Tj's 2026-09-19 'overall ui and code improvement/bug search and fix' requ
   ec8771f ckpt 89: Shipped v7.9 and published the GitHub Release: triggered publish-release.yml (r
   3d7474c ship v7.9: v7.8: waiver wire repaired — APK built and packaged
-  3f75acc ship v7.8: v7.8: waiver wire repaired — the false season-ending flag, the impossible c
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
