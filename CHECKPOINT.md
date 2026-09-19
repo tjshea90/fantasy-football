@@ -1,12 +1,12 @@
-# CHECKPOINT 99 — read me first, then TASKS.md
+# CHECKPOINT 102 — read me first, then TASKS.md
 
-**Written:** 2026-09-19T00:51:59Z · **version:** 7.9 · **tests:** all 21 suites green
+**Written:** 2026-09-19T00:56:13Z · **version:** 7.9 · **tests:** 1 RED: test_boot (20 green)
 
 ## Just done
-Real bug found and fixed in teamreport.js: rosterRow() computed onBye as Number(p.bye) === Number(week) directly, instead of Store.isOnBye(p, week) -- recommend.js's own myStarters carries a standing warning against exactly this pattern ('Store.isOnBye, not p.bye === week: it falls back to the league's bye table'), and teamreport.js was the one remaining place that had not caught up. A free-agent-database player with no bye of his own but whose NFL team IS in the league's bye table read as available and priced at his full rest-of-season rate for a week he cannot play -- feeding a wrong number straight into the whole-team-analysis Claude prompt this context object builds. New test in test_teamreport.js confirmed to FAIL against the pre-fix commit and pass now. All 21 suites green.
+Second consolidation found in the sweep: playerdb.js had its own inline copy of Espn.normName's exact regex sequence (character for character identical, currently). Two independent normalizers for the same thing is exactly the failure class names.js exists to guard against -- Alerts.java's own norm() carries a standing warning about this exact risk across the JS/Java boundary, and playerdb.js was the one place inside pure JS still carrying a duplicate rather than delegating. Now delegates to root.Espn.normName (espn.js loads first). Pinned in test_names.js as a source-text check so a future edit to one regex and not the other cannot silently reintroduce the drift. All 21 suites green.
 
 ## Do this next
-Continue Step E: schedule.js, gamelog.js, stats.js, gestures.js, sim.js, recap.js, usage.js, playerdb.js, names.js, store.js, espn.js, scoring.js -- for the same class of bug (a fixed-elsewhere pattern that one file didn't inherit) and other real correctness issues. Then finish D (remaining ui.js cards), G (regression), H (ship).
+Continue Step E: schedule.js, gamelog.js, stats.js, gestures.js, sim.js, recap.js, usage.js, names.js, store.js, espn.js, scoring.js, projections.js -- finish the sweep for real bugs. Then G (regression), H (ship).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  afdcc3f ckpt 99: Real bug found and fixed in teamreport.js: rosterRow() computed onBye as Number
   05effc5 ckpt 96: Steps B, C started, D in progress. B: fixed the one real bug in the Android she
   a9c66e2 ckpt 92: Wrote Tj's 2026-09-19 'overall ui and code improvement/bug search and fix' requ
   ec8771f ckpt 89: Shipped v7.9 and published the GitHub Release: triggered publish-release.yml (r
@@ -35,7 +36,6 @@ request in his own words and `git log` carries every step already taken.
   daa0bd7 ckpt 80: Step G done -- the thorough sweep, and it caught three more real bugs, all of t
   76e82b1 ckpt 70: Step H done. New suite tools/test_wire.js (20 suites now, all green) pins every
   e0dc8a2 ckpt 67: Steps B/C/D/E/F built. value.js upgrades() rewritten: it now builds EVERY plaus
-  f1c2810 ckpt 58: Step A done — the hallucination is fixed at its source. recommend.js: loadNew
 ```
 
 (2 automatic checkpoint(s) since the last deliberate one — the
