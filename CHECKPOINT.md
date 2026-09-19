@@ -1,12 +1,12 @@
-# CHECKPOINT 114 — read me first, then TASKS.md
+# CHECKPOINT 54 — read me first, then TASKS.md
 
-**Written:** 2026-09-19T01:12:44Z · **version:** 8.0 · **tests:** all 21 suites green
+**Written:** 2026-09-19T03:13:29Z · **version:** 8.0 · **tests:** all 21 suites green
 
 ## Just done
-Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, verified via the live API that the release exists with a non-empty assets array (FFTracker-v8.0.apk, 330006 bytes, application/vnd.android.package-archive, not a draft). The 2026-09-19 open-ended 'overall ui and code improvement/bug search and fix' job is done: five real fixes (rosterInjuryCard's missing season-outlook detail, teamreport.js's bye-table bypass, playerdb.js's duplicate normalizer, the stale double-counting scoring-bonus hint, NativeBridge's JSON escaping), each tested against pre-fix behavior where practical; two things checked and confirmed correct rather than fixed (the Trade evaluator, scoring.js's RULES table); one thing flagged rather than resolved as a product/scope decision (sim.js's unused season/power/allPlay/bracket, now three checkpoints running); and a real process bug in this session's own regression checks (FAIL-text-grep missing a silent crash) caught and fixed along the way, with every suite re-verified by exit code afterward. Every box in TASKS.md steps A-H is ticked with the test that proves it named.
+Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a permanent protocol (new section, before 'This repo is public'): exact trigger phrasing, exact steps, budget discipline for light, no-ceiling comprehensive sweep for full, both referencing this repo's real tooling (ckpt.sh's suite list, ship.sh, the 2026-09-19 sweep as the full-test template) so any future cold-start session on any account knows exactly what to do with zero further explanation. Also closed out the loose end from the prior session: verified v8.0's GitHub Release via get_release_by_tag (FFTracker-v8.0.apk, 330006 bytes, non-empty assets, not a draft) and ticked TASKS.md step H.
 
 ## Do this next
-Send Tj the v8.0 release link per CLAUDE.md's standing instruction -- plain tappable text, never in a code block. Nothing else in flight; this job is done. Open items to mention: sim.js's dead-to-the-user simulation engine (three checkpoints now deferred to him), and the two-QB longest-completion edge case in the weekly bonus (documented, not fixable without a new play-by-play feature).
+Nothing in flight. The 2026-09-19 sweep job (steps A-H) is fully complete and ticked. Waiting on Tj for: sim.js's unused season/power/allPlay/bracket (three checkpoints deferred now) and the two-QB longest-completion edge case (documented, not fixable without a new play-by-play feature). Next real work starts from whatever Tj asks next, or a 'light tests'/'full tests' request using the protocol just added to CLAUDE.md.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  950bca6 ckpt 114: Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, 
   f586fc2 ship v8.0: v8.0: overall UI/code improvement sweep -- five real fixes, a stale docs bug,
   7f83117 ckpt 108: Real, user-facing bug found and fixed: the Scoring rules card (Data tab) told 
   2c5974d ckpt 102: Second consolidation found in the sweep: playerdb.js had its own inline copy o
@@ -35,5 +36,7 @@ request in his own words and `git log` carries every step already taken.
   ec8771f ckpt 89: Shipped v7.9 and published the GitHub Release: triggered publish-release.yml (r
   3d7474c ship v7.9: v7.8: waiver wire repaired — APK built and packaged
   3f75acc ship v7.8: v7.8: waiver wire repaired — the false season-ending flag, the impossible c
-  abb3639 ckpt 85: ship: v7.8: waiver wire repaired — the false season-ending flag, the impossib
 ```
+
+(4 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)
