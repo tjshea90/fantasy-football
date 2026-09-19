@@ -3639,11 +3639,30 @@
       'is fixed in the engine now. The app still records return TDs on the ' +
       'player\'s line so you can see them on his card — they are just worth 0.'));
 
+    /* STALE TEXT (found and fixed in the 2026-09-19 sweep). This used to say
+       these three bonuses were "not modelled" and had to be added by hand —
+       true when it was written, but Scoring.applyWeeklyBonuses has since
+       been wired into doSync (ui.js): once every game in a week is final, it
+       scans every player's box-score "long" reception/rush and the QB with
+       the most completions on the team that owns the longest reception, and
+       credits the +5 automatically, league-wide, not only for rostered
+       players. Telling Tj it still needs a manual adjustment was actively
+       wrong: following that advice today would double the bonus, once from
+       the automatic pass and once from the manualAdj he added believing the
+       app had not. See test_scoring.js's own "weekly league-wide +5 bonuses"
+       block and doSync's "league-wide longest-play bonuses" comment for the
+       one known imprecision this still carries (a two-QB game can credit
+       the wrong quarterback), which IS worth knowing before overriding one
+       by hand. */
     c.appendChild(el('p', 'hint',
-      'Not modelled: the three league-wide +5 bonuses for longest completion, ' +
-      'reception and rush are awarded once per week across the whole league and ' +
-      'cannot be derived from a box score alone. Tap any player on the Live tab ' +
-      'to add one by hand as a labelled adjustment.'));
+      'The three league-wide +5 bonuses (longest completion, reception and rush) ' +
+      'are applied automatically once a week is fully final — scanned from every ' +
+      'game\'s box score, not just your rostered players\' games, the same way the ' +
+      'rules require. The one thing it cannot always get right: if a team plays ' +
+      'two different quarterbacks in a game, the completion bonus can credit ' +
+      'whichever one threw the most passes that game rather than whoever actually ' +
+      'threw the longest one. Correct that one case by hand, on the Live tab, as a ' +
+      'labelled adjustment — everything else needs no adjustment at all.'));
     return c;
   }
 
