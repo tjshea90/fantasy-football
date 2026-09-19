@@ -772,11 +772,20 @@ public class NativeBridge {
     }
   }
 
+  /* 2026-09-19 sweep: this used to build JSON by hand and only guard against a
+   * literal double-quote in Build.MODEL (`.replace('"', ' ')`) — every OTHER
+   * JSON-building method in this file (alertsStatus, alertsTest, backupList)
+   * goes through org.json.JSONObject.quote() instead, and for good reason: a
+   * backslash or a raw control character in the string breaks JSON.parse on
+   * the page side. Build.MODEL is manufacturer-set and normally plain ASCII,
+   * but "normally" is not a guarantee worth hand-rolling JSON over — nothing
+   * calls this today, but the next caller should not inherit a landmine. */
   @JavascriptInterface
   public String deviceInfo() {
-    return "{\"sdk\":" + Build.VERSION.SDK_INT + ",\"abi\":\"" +
-        (Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "?") +
-        "\",\"model\":\"" + Build.MODEL.replace('"', ' ') + "\"}";
+    return "{\"sdk\":" + Build.VERSION.SDK_INT + ",\"abi\":" +
+        org.json.JSONObject.quote(
+            Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "?") +
+        ",\"model\":" + org.json.JSONObject.quote(Build.MODEL) + "}";
   }
 
   /* 2026-09-15e sweep: `.` and `-` are both in the allowed set (so a real
