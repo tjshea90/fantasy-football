@@ -2379,6 +2379,33 @@
         nk.appendChild(el('span', null, x.note));
         c.appendChild(nk);
       }
+      /* THE SAME FACT THE WIRE TAB SHOWS, HERE TOO (2026-09-19 sweep).
+         health() collapses a plain weekly OUT and a season-ending IR
+         designation into the identical label "OUT" — right for "can he play
+         Sunday", but this card is titled "your roster — injuries" and a man
+         who is DONE FOR THE YEAR reads exactly like one day-to-day case away
+         from playing again. Recommend.seasonOutlook is the same, now-fixed
+         call the Wire tab's mustReplace()/rosterValues() run (see the
+         2026-09-18d job: it used to write off a healthy Dalton Schultz off a
+         misread news blurb) — free, no API key, so it belongs on every card
+         that shows a hurt player, not only the one the last job happened to
+         touch. */
+      if (x.status !== 'BYE') {
+        var so = Recommend.seasonOutlook({ name: x.name });
+        if (so.seasonEnding) {
+          var sk = el('div', 'kv');
+          sk.appendChild(el('span', 'warnText',
+            'Out for the season' + (so.why ? ' — ' + so.why : '')));
+          c.appendChild(sk);
+        } else if (so.longTermOut) {
+          var lk = el('div', 'kv');
+          lk.appendChild(el('span', null,
+            (so.label || 'Long-term out') +
+            (so.returnAround ? ', not eligible to return until ' + so.returnAround : '') +
+            ' — not out for the season.'));
+          c.appendChild(lk);
+        }
+      }
       var out = outlook[Names.canon(x.name)];
       if (out && (out.extent || out.timeline)) {
         var d = el('details');
