@@ -9,10 +9,19 @@
                'JAX','KC','LAC','LAR','LV','MIA','MIN','NE','NO','NYG','NYJ','PHI','PIT','SEA',
                'SF','TB','TEN','WAS'];
 
-  function norm(s) {
-    return String(s || '').toLowerCase().replace(/[.'`]/g, '').replace(/-/g, ' ')
-      .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '').replace(/\s+/g, ' ').trim();
-  }
+  /* Was its own copy of Espn.normName's exact regex sequence, char for char
+   * (found in the 2026-09-19 sweep). Two independent implementations of the
+   * same normalisation is precisely the failure class names.js exists to
+   * guard against elsewhere — Alerts.java's own norm() carries a standing
+   * comment that it "MUST match Espn.normName in espn.js character for
+   * character, or a starter who is out will quietly fail to match". They
+   * happened to still agree here, but "happened to" is not a guarantee: the
+   * next edit to either regex updates one copy and silently strands the
+   * other, and this app has already paid for that mistake once (the
+   * Kenny/Kenneth Gainwell bug names.js's own header documents at length).
+   * espn.js loads before this file (index.html), so delegating costs nothing
+   * and removes the drift risk entirely. */
+  function norm(s) { return root.Espn.normName(s); }
   function rawLoad() {
     try {
       if (root.Native && root.Native.load) { var s = root.Native.load(KEY); return s ? JSON.parse(s) : null; }
