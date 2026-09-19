@@ -154,5 +154,21 @@ ok(!N.same('Hollywood Brown', 'A.J. Brown', 'WR', 'WR'),
      (newly.length ? ' [' + newly.join('; ') + ']' : ' [none left — the data was fixed at source]'));
 }());
 
+/* ---- playerdb.js must not carry its own copy of this normalisation --------
+ * (2026-09-19 sweep). It used to: an inline norm() with the identical regex
+ * sequence as Espn.normName, char for char. They happened to still agree, but
+ * two independent copies of the same normalisation is exactly the failure
+ * class this whole file exists to guard against (Alerts.java's own norm()
+ * carries a standing comment that it "MUST match Espn.normName ... character
+ * for character, or a starter who is out will quietly fail to match" — the
+ * same risk, just inside one process instead of across the JS/Java boundary).
+ * Pinned as source text because the two implementations LOOK identical right
+ * up until somebody edits one of them and not the other. */
+(function () {
+  var pdb = fs.readFileSync(path.join(__dirname, '..', 'app/assets/playerdb.js'), 'utf8');
+  ok(/function norm\(s\) \{ return root\.Espn\.normName\(s\); \}/.test(pdb),
+     'playerdb.js delegates to Espn.normName instead of reimplementing it');
+})();
+
 console.log(fails ? ('  ' + fails + ' name check(s) FAILED') : '  name checks pass');
 process.exit(fails ? 1 : 0);
