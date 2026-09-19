@@ -1,12 +1,12 @@
-# CHECKPOINT 108 — read me first, then TASKS.md
+# CHECKPOINT 114 — read me first, then TASKS.md
 
-**Written:** 2026-09-19T01:07:49Z · **version:** 7.9 · **tests:** all 21 suites green
+**Written:** 2026-09-19T01:12:44Z · **version:** 8.0 · **tests:** all 21 suites green
 
 ## Just done
-Real, user-facing bug found and fixed: the Scoring rules card (Data tab) told Tj the three league-wide +5 longest-play bonuses 'cannot be derived from a box score alone' and had to be added by hand -- true when that text was written, false now. Scoring.applyWeeklyBonuses has since been wired into doSync and runs automatically once a week is final, confirmed by grep against the live call site and by test_scoring.js's own coverage. Following the stale advice today would have DOUBLE-COUNTED a bonus: once automatic, once from a manual adjustment added believing the app had not applied it. Card text rewritten to say what the app actually does, including the one real imprecision (a two-QB game can credit the wrong quarterback for the completion bonus, documented at the doSync call site too, found while verifying this). SEPARATELY, and more important process-wise: caught that my own regression checks this session were grepping test output for the word FAIL and treating a silent CRASH (nonzero exit, zero FAIL lines printed) as green -- which is exactly what my playerdb.js norm() consolidation had done to test_boot.js two commits ago undetected. Root cause: two of that file's own minimal harnesses (g3, g5) never loaded espn.js at all, only relying on playerdb.js's old self-contained copy. Fixed both to load the real espn.js first (g5 then overrides just the network call, keeping normName real). Every suite now re-verified by BOTH exit code and FAIL-count, not text-grep alone.
+Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, verified via the live API that the release exists with a non-empty assets array (FFTracker-v8.0.apk, 330006 bytes, application/vnd.android.package-archive, not a draft). The 2026-09-19 open-ended 'overall ui and code improvement/bug search and fix' job is done: five real fixes (rosterInjuryCard's missing season-outlook detail, teamreport.js's bye-table bypass, playerdb.js's duplicate normalizer, the stale double-counting scoring-bonus hint, NativeBridge's JSON escaping), each tested against pre-fix behavior where practical; two things checked and confirmed correct rather than fixed (the Trade evaluator, scoring.js's RULES table); one thing flagged rather than resolved as a product/scope decision (sim.js's unused season/power/allPlay/bracket, now three checkpoints running); and a real process bug in this session's own regression checks (FAIL-text-grep missing a silent crash) caught and fixed along the way, with every suite re-verified by exit code afterward. Every box in TASKS.md steps A-H is ticked with the test that proves it named.
 
 ## Do this next
-Finish the sweep: a few more files to check (store.js remainder, espn.js remainder, stats.js, recap.js), then G (final regression, exit-code-checked), H (ship). Also: re-verify every earlier 'all green' claim this session was exit-code-checked, not just FAIL-grepped -- the teamreport.js and rosterInjuryCard fixes were each spot-checked individually so they're trustworthy, but re-run the full suite with real exit-code discipline one more time before shipping regardless.
+Send Tj the v8.0 release link per CLAUDE.md's standing instruction -- plain tappable text, never in a code block. Nothing else in flight; this job is done. Open items to mention: sim.js's dead-to-the-user simulation engine (three checkpoints now deferred to him), and the two-QB longest-completion edge case in the weekly bonus (documented, not fixable without a new play-by-play feature).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  f586fc2 ship v8.0: v8.0: overall UI/code improvement sweep -- five real fixes, a stale docs bug,
+  7f83117 ckpt 108: Real, user-facing bug found and fixed: the Scoring rules card (Data tab) told 
   2c5974d ckpt 102: Second consolidation found in the sweep: playerdb.js had its own inline copy o
   afdcc3f ckpt 99: Real bug found and fixed in teamreport.js: rosterRow() computed onBye as Number
   05effc5 ckpt 96: Steps B, C started, D in progress. B: fixed the one real bug in the Android she
@@ -34,9 +36,4 @@ request in his own words and `git log` carries every step already taken.
   3d7474c ship v7.9: v7.8: waiver wire repaired — APK built and packaged
   3f75acc ship v7.8: v7.8: waiver wire repaired — the false season-ending flag, the impossible c
   abb3639 ckpt 85: ship: v7.8: waiver wire repaired — the false season-ending flag, the impossib
-  daa0bd7 ckpt 80: Step G done -- the thorough sweep, and it caught three more real bugs, all of t
-  76e82b1 ckpt 70: Step H done. New suite tools/test_wire.js (20 suites now, all green) pins every
 ```
-
-(5 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
