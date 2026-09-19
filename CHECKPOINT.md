@@ -1,12 +1,12 @@
-# CHECKPOINT 54 — read me first, then TASKS.md
+# CHECKPOINT 57 — read me first, then TASKS.md
 
-**Written:** 2026-09-19T03:57:40Z · **version:** 8.0 · **tests:** all 22 suites green
+**Written:** 2026-09-19T04:06:28Z · **version:** 8.0 · **tests:** all 22 suites green
 
 ## Just done
-Full-test sweep (2026-09-19, second pass): found and fixed a real caching/data-retention bug. doSync() (ui.js) ended its success path by REPLACING S.weekMeta[syncedWeek] wholesale with a brand-new object literal, discarding every field schedule.js's own ingest()/earlyAlertUncached() write onto that same object (kickoffs, schedAt, schedSig, shouldStart, shouldStartSig) -- it only went out of its way to carry 'opponents' forward. Since liveTick() calls Schedule.ingest(week, games) immediately before calling doSync on the same tick, and doSync is also reachable directly from the manual Sync-week button and pull-to-refresh with no compensating re-ingest, this silently erased the game-time badges next to every player's name and the pre-Sunday bench alert (both the in-app card and Alerts.java's closed-app notification, which reads this identical persisted key with no WebView available) after most syncs, until something unrelated happened to re-ingest a schedule. Fixed by mutating the existing weekMeta object in place instead of replacing it, so any field another module owns on it survives automatically. New test tools/test_schedmeta.js confirmed to FAIL against the pre-fix code (3 of its 4 checks) and pass now. All 22 suites + ES2018 gate green (verified by exit code AND a precise '^  FAIL ' line count, not a bare grep FAIL -- test_waiver.js's own passing assertion text contains the substring FAILED and would have been a false red under a looser grep).
+Full test (2026-09-19, requested via the standing 'full tests' protocol in CLAUDE.md): comprehensive sweep of the entire app -- Android shell (MainActivity/NativeBridge/Alerts/manifest/res), index.html/app.css, all 4452 lines of ui.js tab by tab, and every file in the data/logic layer (store, scoring, ros, value, recommend, ai, handoff, espn, projections, playerdb, names, usage, gamelog, gestures, recap, teamreport, sim, stats), cross-checked scoring.js against RULES_2026.md line by line (no disagreement). Two real findings, both fixed and tested: (1) CACHING/DATA-RETENTION BUG -- doSync() (ui.js) ended every sync by REPLACING S.weekMeta[week] wholesale with a new object literal, silently discarding schedule.js's own kickoffs/schedAt/schedSig/shouldStart/shouldStartSig fields on that same object every time -- since liveTick() calls Schedule.ingest() immediately before calling doSync on the same tick, and doSync is also reachable directly from the manual Sync-week button and pull-to-refresh with no compensating re-ingest, this silently erased the game-time badges next to every player's name and the pre-Sunday bench alert (in-app card AND Alerts.java's closed-app notification, which reads this identical persisted key with no WebView available) after most syncs. Fixed by mutating the existing object in place instead of replacing it. New test tools/test_schedmeta.js confirmed to FAIL against the pre-fix code (3 of 4 checks) and pass now. (2) STALE DOCUMENTATION -- RULES_2026.md's own 'Weekly bonuses -- NOT MODELED' section was true when transcribed but has been false since Scoring.applyWeeklyBonuses was wired into doSync (the exact same staleness the 2026-09-19 sweep already found and fixed on the Data tab's Scoring rules card, just missed at its source). Corrected with a dated resolution note in the file's own established style. One finding documented, NOT fixed, in TASKS.md's Waiting on Tj (a real but lower-severity security gap needing an architectural decision, not a sweep-sized patch): the live Anthropic API key rides along in Android's automatic cloud backup/device-transfer in plain text -- backup_rules.xml/data_extraction_rules.xml only exclude the app's own backups/ folder, never the main state file the key actually lives in, a completely different path from the Downloads-export redaction store.js already has. Everything else read clean: no other wholesale-object-replace clobber pattern found anywhere else in the codebase (grepped specifically after finding #1), every memoization cache's key correctly covers its invalidation triggers, no network redundancy beyond what prior sweeps already fixed, sim.js's unused season/power/allPlay/bracket still flagged not resolved (now four consecutive sessions deferring the same product question to Tj). All 22 suites (21 + the new one) and the ES2018 gate green, verified by exit code AND a precise anchored FAIL-line count.
 
 ## Do this next
-Continue the full-test sweep: data/logic layer (store.js, value.js, recommend.js, ai.js, handoff.js, espn.js, projections.js, ros.js, scoring.js, playerdb.js, names.js, usage.js, gamelog.js, gestures.js, recap.js, teamreport.js, sim.js, stats.js) and the rest of ui.js (Rosters/Wire/Stats/Advice/Data tabs, lines ~1250-4452 not yet re-read this session). Cross-check scoring.js against RULES_2026.md. Then ship if anything else is found, per CLAUDE.md's full-test protocol.
+Ship this full test's two fixes as the next version per CLAUDE.md's full-test protocol step 6 (a full test that finds real, fixed issues is ship-worthy work): bash ship.sh, then trigger publish-release.yml, verify via get_release_by_tag, send Tj the release link. Nothing else in flight.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  8c4d8d7 ckpt 54: Full-test sweep (2026-09-19, second pass): found and fixed a real caching/data-
   798e0e4 ckpt 54: Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a perm
   950bca6 ckpt 114: Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, 
   f586fc2 ship v8.0: v8.0: overall UI/code improvement sweep -- five real fixes, a stale docs bug,
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   05effc5 ckpt 96: Steps B, C started, D in progress. B: fixed the one real bug in the Android she
   a9c66e2 ckpt 92: Wrote Tj's 2026-09-19 'overall ui and code improvement/bug search and fix' requ
   ec8771f ckpt 89: Shipped v7.9 and published the GitHub Release: triggered publish-release.yml (r
-  3d7474c ship v7.9: v7.8: waiver wire repaired — APK built and packaged
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
