@@ -4286,17 +4286,34 @@
 
       var unmatched = [];
       Store.allPlayers().forEach(function (x) { if (!seenPid[x.player.id]) unmatched.push(x.player.name); });
-      var prevOpp = S.weekMeta[String(syncedWeek)] ? S.weekMeta[String(syncedWeek)].opponents : null;
-      S.weekMeta[String(syncedWeek)] = {
-        synced: true, at: new Date().toISOString(), games: meta.games,
-        allFinal: meta.allFinal, estFG: meta.estFG, matched: matched,
-        inProgress: meta.inProgress, twoPt: twoPtSeen, stSource: stSource,
-        rostered: Store.allPlayers().length, unmatched: unmatched,
-        opponents: (prevOpp && Object.keys(prevOpp).length) ? prevOpp : oppMap,
-        expected: expected, feedWarn: feedWarn, shapeMissing: shapeMissing,
-        fetched: meta.fetched, reused: meta.reused, failed: meta.failed,
-        bookSize: Object.keys(book).length
-      };
+      /* MUTATE the existing weekMeta[week] object; never replace it wholesale.
+       * (2026-09-19 full-test sweep.) This used to be `S.weekMeta[...] = {
+       * ...a brand new object literal... }`, which discarded every field a
+       * DIFFERENT module keeps on the same object — schedule.js's own
+       * ingest()/earlyAlertUncached() write kickoffs/schedAt/schedSig/
+       * shouldStart/shouldStartSig directly onto this exact S.weekMeta[week],
+       * and liveTick() calls Schedule.ingest(week, games) immediately before
+       * calling doSync on the very same tick. The old code went out of its
+       * way to carry `opponents` forward (read off the old object first) but
+       * nothing else survived, so every manual "Sync week" tap or pull-to-
+       * refresh silently erased the game-time badges next to every player's
+       * name and the pre-Sunday bench alert — both the in-app card and
+       * Alerts.java's closed-app notification, which reads this identical
+       * persisted key with no WebView available — until something unrelated
+       * happened to re-ingest a schedule. Mutating in place keeps every field
+       * this function does not itself own, automatically, with no name list
+       * to keep in sync by hand. */
+      var wm = S.weekMeta[String(syncedWeek)];
+      if (!wm) wm = S.weekMeta[String(syncedWeek)] = {};
+      var prevOpp = wm.opponents;
+      wm.synced = true; wm.at = new Date().toISOString(); wm.games = meta.games;
+      wm.allFinal = meta.allFinal; wm.estFG = meta.estFG; wm.matched = matched;
+      wm.inProgress = meta.inProgress; wm.twoPt = twoPtSeen; wm.stSource = stSource;
+      wm.rostered = Store.allPlayers().length; wm.unmatched = unmatched;
+      wm.opponents = (prevOpp && Object.keys(prevOpp).length) ? prevOpp : oppMap;
+      wm.expected = expected; wm.feedWarn = feedWarn; wm.shapeMissing = shapeMissing;
+      wm.fetched = meta.fetched; wm.reused = meta.reused; wm.failed = meta.failed;
+      wm.bookSize = Object.keys(book).length;
       S.settings.lastSync = new Date().toISOString();
       live.at = Date.now(); live.inProgress = meta.inProgress;
       Store.save();
