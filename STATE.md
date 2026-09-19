@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-19** · ladder 168/170 · **v8.0**, shipped · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-19** · ladder 168/170 · **v8.0**, shipped (build/dex verified, 28 classes) · APK builds, signed, all 21 test suites green · now on GitHub, worked across three Claude accounts
 
 ## v8.0 — an open-ended "find bugs, improve the UI" sweep, not a complaint this time
 
