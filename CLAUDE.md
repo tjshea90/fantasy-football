@@ -230,6 +230,98 @@ the gate, the workflow only publishes. See `.github/workflows/publish-release.ym
 for the full mechanics and STATE.md's 2026-09-14 entries for the two rounds
 of debugging that produced this design.
 
+## Test protocols — "light tests" and "full tests" (Tj, 2026-09-19)
+
+**Standing instruction, not a `TASKS.md` job — this section IS the
+explanation, so no clarification is needed when Tj asks.** Whenever Tj says
+"light tests"/"light test"/"light testing", or "full tests"/"full
+test"/"full testing"/"comprehensive tests" (any close wording), run the
+matching protocol below immediately, on any account, from any cold start,
+with zero further explanation required. Neither protocol is a TASKS.md
+step to tick off; both end with `tools/ckpt.sh` recording what was found and
+fixed (a full test that finds nothing worth withholding ends with
+`ship.sh` per "After every ship" above — a light test does not ship on its
+own unless Tj asks).
+
+### Light tests — low usage, run after the session's own work is done
+
+Purpose: catch obvious bugs/UI issues and anything the CURRENT session's own
+changes broke elsewhere in the app. Not a general audit.
+
+1. Run the same automated floor `tools/ckpt.sh` runs: every `tools/test_*.js`
+   plus `tools/check_es2018.js`.
+2. Re-read only the files this session actually touched, plus (via `grep`)
+   whatever else calls into them, looking for obvious bugs and UI issues:
+   stale copy, missing guards, a render that no longer matches behavior.
+3. Check whether anything ELSE in the app could have broken from this
+   session's changes — the same "who else calls this" check the 2026-09-19
+   sweep and the 2026-09-18b sweep both used to catch real bugs (a shared
+   helper's new behavior silently feeding a different tab, a duplicated
+   normalizer drifting from the one it was copied from).
+4. If the change is visually checkable, loading `index.html` in the
+   pre-installed Chromium is fair game for markup/CSS/layout — this repo has
+   done exactly that before to catch a UI bug live rather than only in code
+   (the v6.1 stale-week bug). The Java bridge and network calls do not work
+   from a bare browser this way; say so rather than implying it was a real
+   device check. There is no real device or emulator in this environment —
+   do not claim one was used.
+5. Fix anything found. If any fix was non-trivial, re-run step 1 (and step 4
+   if it touched anything visual) before calling it done — confirm the fix
+   didn't break something else.
+6. `tools/ckpt.sh "light test: <what was found/fixed>" "<what's next>"`.
+
+Budget discipline: this is deliberately narrow. Don't re-read files the
+session didn't touch, don't chase pre-existing issues unrelated to this
+session's changes — note them for a future full test instead.
+
+### Full tests — no usage/time ceiling, best effort
+
+Purpose: a comprehensive pass over the ENTIRE app, not just recent changes.
+Same depth as the 2026-09-19 "overall ui and code improvement/bug sweep" job
+(see `LADDER.md`/`TASKS.md` for that job's method and what it found) —
+treat that job as the template, not a one-off.
+
+1. Run the automated suite (step 1 of light tests) as the floor, not the
+   ceiling.
+2. Sweep the whole app, tab by tab (Live, Lineups, Roster, Wire, Stats,
+   Advice, Data) plus the Android shell (`android/`) and the HTML/CSS shell
+   (`index.html`, `app.css`) — read every card/render path, cross-check
+   every CSS class the JS constructs against what's defined, verify script
+   load order, look for stale copy vs. actual behavior.
+3. Specifically look for, and fix:
+   - **Code/UI improvements** — dead branches, inconsistent formatting,
+     stale or misleading copy, accessibility gaps, missing dark/light
+     handling.
+   - **Network efficiency** — duplicate fetches or redundant projection/API
+     passes (the class of bug the 2026-09-18b sweep found: `projectAll()`
+     running twice per call).
+   - **Caching and data retention** — nothing important (roster, settings,
+     synced weekly stats) should be silently lost, overwritten, or
+     mis-filed by a race (the week-capture-race class of bug: a sync
+     finishing under the wrong week because a shared variable moved
+     mid-flight).
+   - **Engine/logic correctness** — anything scoring-related checked
+     against `RULES_2026.md` (ground truth, no exceptions); anything
+     waiver/valuation-related checked against `ros.js`/`value.js`'s
+     documented method.
+   - **Bugs or corruption from recent changes** — diff against the last few
+     ships if that's the fastest way to spot what moved.
+   - **Resource/battery waste** — anything polling, syncing, or holding a
+     wake lock with no reason to while the app isn't in active use; the app
+     should sleep properly when backgrounded.
+4. Fix everything found. Per this repo's standing testing convention, give
+   each fix a named test confirmed to FAIL against the pre-fix code where a
+   test can prove it; where it can't (e.g. a pure UI render with no test
+   harness), a source-text pin is the established fallback — see the
+   2026-09-19 sweep for the pattern.
+5. Full regression, verified by BOTH exit code AND output content, not a
+   bare `grep FAIL` — this repo caught itself missing a silent crash that
+   way on 2026-09-19 (zero "FAIL" lines printed is not the same as green).
+6. When clean: `tools/ckpt.sh` recording the full findings/fixes, then
+   `ship.sh` and "After every ship" above to publish the Release and send Tj
+   the link — a full test is exactly ship-worthy work, so don't leave it
+   uncommitted-to-a-release unless Tj says not to ship yet.
+
 ## This repo is public
 
 `tools/secretscan.sh` blocks the autosave hook from committing anything
