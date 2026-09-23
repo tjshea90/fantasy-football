@@ -286,15 +286,16 @@
    * the user touched first — opening the Roster tab, or the first keystroke
    * in a player search. For plain-ASCII names (effectively every NFL name)
    * a code-unit comparison of the lowercased strings gives the same order
-   * ICU does (space < apostrophe < hyphen < period < digits < letters in
-   * both), so no collator is needed; a name with any non-ASCII letter still
+   * ICU does — once the apostrophe, which ICU ranks AFTER hyphen and period,
+   * is moved there ("/", between "." and the digits); a name with any
+   * non-ASCII letter still
    * goes to localeCompare, so an accented name sorts exactly as before.
    * tools/test_names.js checks the two agree over the whole player file. */
   function cmp(a, b) {
     a = String(a === null || a === undefined ? '' : a);
     b = String(b === null || b === undefined ? '' : b);
     if (/[^\x00-\x7f]/.test(a) || /[^\x00-\x7f]/.test(b)) return a.localeCompare(b);
-    var la = a.toLowerCase(), lb = b.toLowerCase();
+    var la = a.toLowerCase().replace(/'/g, '/'), lb = b.toLowerCase().replace(/'/g, '/');
     if (la !== lb) return la < lb ? -1 : 1;
     return a === b ? 0 : (a < b ? 1 : -1);   /* ICU puts lowercase first */
   }

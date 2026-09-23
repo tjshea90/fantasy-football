@@ -189,5 +189,32 @@ ok(!N.same('Hollywood Brown', 'A.J. Brown', 'WR', 'WR'),
      'memoized hitKey(): a nickname still finds the formal key');
 })();
 
+/* FULL TEST 2026-09-23c: Names.cmp replaces String#localeCompare in the
+ * display sorts, because the first localeCompare of a session costs ~44ms of
+ * ICU start-up on a Moto G. It must give EXACTLY the order localeCompare
+ * does — checked here against node's own ICU over every name the app knows. */
+(function () {
+  var names = [];
+  (W.PLAYERS && W.PLAYERS.players ? W.PLAYERS.players : []).forEach(function (p) { if (p && p.n) names.push(p.n); });
+  W.SEED.teams.forEach(function (t) { t.players.forEach(function (p) { names.push(p.name); }); });
+  names = names.concat(["D'Andre Swift", 'Dandre Test', 'D-Andre Test', 'D.Andre Test', 'dandre test',
+                        'Amon-Ra St. Brown', "Ja'Marr Chase", 'Ja Marr', 'Kenneth Walker III', 'Kenneth Walker']);
+  var a = names.slice().sort(function (x, y) { return x.localeCompare(y); });
+  var b = names.slice().sort(N.cmp);
+  var firstDiff = -1, i;
+  for (i = 0; i < a.length; i++) if (a[i] !== b[i]) { firstDiff = i; break; }
+  ok(names.length > 500 && firstDiff < 0, 'Names.cmp orders all ' + names.length +
+     ' player names exactly as localeCompare does' + (firstDiff < 0 ? '' :
+     ' (first difference at ' + firstDiff + ': ' + a[firstDiff] + ' vs ' + b[firstDiff] + ')'));
+  ok(N.cmp('Émile Test', 'Eric Test') === 'Émile Test'.localeCompare('Eric Test'),
+     'a non-ASCII name still goes through localeCompare');
+  var src = ['ui.js', 'playerdb.js', 'teamreport.js', 'schedule.js'].map(function (f) {
+    return fs.readFileSync(path.join(__dirname, '..', 'app/assets', f), 'utf8');
+  }).join('\n');
+  var direct = (src.match(/\.localeCompare\(/g) || []).length;
+  var guarded = (src.match(/: [a-z.0-9]+\.localeCompare\(/g) || []).length;
+  ok(direct === guarded, 'no display sort calls localeCompare directly any more (only as a no-Names fallback)');
+})();
+
 console.log(fails ? ('  ' + fails + ' name check(s) FAILED') : '  name checks pass');
 process.exit(fails ? 1 : 0);
