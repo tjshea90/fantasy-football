@@ -47,8 +47,8 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
 - [x] **5. Data retention + network + battery:** DONE (findings above). caches that grow without
       bound, writes that can be lost, duplicate/redundant fetches, timers
       alive while backgrounded, Android shell (NativeBridge/Alerts/MainActivity).
-- [ ] **6. Engine/logic** spot-checks vs RULES_2026.md and ros.js/value.js docs.
-- [ ] **7. Fix everything found**, each with a named test confirmed to FAIL
+- [x] **6. Engine/logic** spot-checks vs RULES_2026.md DONE — five real week-2 lines recomputed by hand (Stafford 60.25, Taylor 29.2, Olave 22.6, Fairbairn 6 incl. a missed 58-yarder at −1, SEA D 13 at 7 allowed): all exact. Sim odds verified by test_picks.
+- [x] **7. Fix everything found** DONE — 5 findings, each fixed with a named test that fails on v8.4 (see the finding boxes above)., each with a named test confirmed to FAIL
       pre-fix (source-text pin where no harness can reach).
 - [ ] **8. Full regression** (exit code AND output) + Chromium smoke.
 - [ ] **9. Ship** + publish Release + send link.
