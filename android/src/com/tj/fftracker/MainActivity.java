@@ -66,6 +66,14 @@ public class MainActivity extends Activity {
     s.setAllowFileAccessFromFileURLs(false);
     s.setAllowUniversalAccessFromFileURLs(false);
     s.setCacheMode(WebSettings.LOAD_DEFAULT);
+    // Rasterise tiles just outside the viewport ahead of time (API 23+, so
+    // every phone this installs on). Android's own guidance for a WebView
+    // that IS the app's whole screen: without it a fast fling down the long
+    // Wire or Roster list can outrun the rasteriser and show blank
+    // checkerboard for a frame. Costs some GPU memory while visible only —
+    // onStop's web.onPause() still releases it when the app is backgrounded.
+    // (2026-09-23 speed pass, "fast and snappy on a Moto G 2026".)
+    s.setOffscreenPreRaster(true);
     // Honour the phone's display-size setting. This was pinned at 100, which
     // threw away the accessibility preference entirely — and the CSS runs down
     // to 11px in places, so somebody who has made their system text larger got
