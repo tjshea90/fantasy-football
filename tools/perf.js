@@ -54,7 +54,7 @@ const SLICES = Number(opt('slices', 2));
    then tap the sub-view chip with that label" (Lineups>Advice, 2026-09-23b) */
 let TABS = [];
 const SUBVIEWS = ['lineups>Advice'];
-const ROOT = path.resolve(__dirname, '..', 'app', 'assets');
+const ROOT = opt('root', null) ? path.resolve(opt('root')) : path.resolve(__dirname, '..', 'app', 'assets');
 
 function curl(url, headersJson, body) {
   return new Promise((resolve) => {
