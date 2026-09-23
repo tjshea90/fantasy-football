@@ -1100,17 +1100,20 @@
      S.settings.autoFill — callers that mean "only if auto-fill is on" (the
      background boot/sync path) check it once before looping; the button
      means it unconditionally, same as it always has. */
-  function autoFillTeam(w, tid) {
+  function autoFillTeam(w, tid, deferSave) {
     if (!window.Recommend || !Recommend.autoLineup) return 0;
     var opp = (S.weekMeta[String(w)] && S.weekMeta[String(w)].opponents) || null;
     try {
-      return Store.applyAuto(w, tid, Recommend.autoLineup(w, tid, opp));
+      return Store.applyAuto(w, tid, Recommend.autoLineup(w, tid, opp), deferSave);
     } catch (e) { return 0; /* one bad roster must not stop the rest */ }
   }
+  /* Runs at boot, on every Lineups render and after a sync: ONE save for the
+     whole league, not one per team that changed (see Store.applyAuto). */
   function autoFillWeek(w) {
     if (!S.settings.autoFill) return 0;
     var total = 0;
-    S.teams.forEach(function (t) { total += autoFillTeam(w, t.id); });
+    S.teams.forEach(function (t) { total += autoFillTeam(w, t.id, true); });
+    if (total) Store.save();
     return total;
   }
 

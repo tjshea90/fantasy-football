@@ -448,7 +448,11 @@
   /* Write an auto-generated lineup in, leaving every hand-picked slot alone —
      and every slot whose player has already kicked off.
      Returns how many slots it actually changed. */
-  function applyAuto(week, teamId, slots) {
+  /* `deferSave`: the caller is filling several teams in one pass and will
+     call save() ONCE afterwards (ui.js autoFillWeek). Without it a boot that
+     re-defaulted all ten lineups did ten back-to-back synchronous disk
+     writes before the first screen could paint (2026-09-23 speed pass). */
+  function applyAuto(week, teamId, slots, deferSave) {
     var L = getLineup(week, teamId), M = manualMap(week, teamId);
     var keys = slotKeys(), i, changed = 0, taken = {};
     for (i = 0; i < keys.length; i++) {
@@ -468,7 +472,7 @@
       if (want) { L[key] = want; taken[want] = 1; } else delete L[key];
       changed++;
     }
-    if (changed) save();
+    if (changed && !deferSave) save();
     return changed;
   }
   /* Copy last week's lineup forward — the single most-used convenience. */
