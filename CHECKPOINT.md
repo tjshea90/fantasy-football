@@ -1,12 +1,12 @@
-# CHECKPOINT 144 — read me first, then TASKS.md
+# CHECKPOINT 148 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T06:33:13Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T06:38:39Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-Full test: step 4 done (no further defects in v8.3/v8.4 diff); step 5 finding fixed — Gamelog cache rewritten whole per game ingest (every 45s poll) -> finals only, coalesced, flushed on pause. test_gamelog.js pins it (fails on v8.4).
+Full test step 5 done: gamelog write storm fixed; duplicate scoreboard fetch on stale boot/resume fixed (perf.js --netlog proves 2->1); Android alarms fine.
 
 ## Do this next
-Step 5 continued: Android shell (Alerts.java alarm cadence/wakeups, NativeBridge pool/threads), other caches' growth (news, projections, season proj, playerdb, backups), then step 6 engine spot-checks vs RULES_2026.md.
+Step 6: engine spot-checks vs RULES_2026.md on real synced lines (scoring.js), then step 7 wrap-up fixes, step 8 full regression + crawl, step 9 ship v8.5.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  57d29a6 ckpt 144: Full test: step 4 done (no further defects in v8.3/v8.4 diff); step 5 finding 
   9fdbc7e ckpt 140: Full-test speed finding fixed: cost-estimate lines + playoff odds now fill aft
   40bc77e ckpt 131: Full test step 3 done: perf.js --crawl (and --advice prep) — 511 actions ove
   0ea7228 ckpt 128: Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 st
@@ -36,7 +37,6 @@ request in his own words and `git log` carries every step already taken.
   49f7cc3 ship v8.4: v8.4: Tj's picks 1,2,3,5,6 -- Roster PROJ + AVG per player, Live projection u
   205e7bc ckpt 118: A-E all done and tested: new tools/test_picks.js (32 render-level checks acros
   73ee643 ckpt 114: D code done: Power rankings · playoff odds card on Data -> League (Sim.power 
-  834ac6b ckpt 105: C code done: Advice merged into Lineups as a 'Set lineups | Advice' sub-view (
 ```
 
 (3 automatic checkpoint(s) since the last deliberate one — the

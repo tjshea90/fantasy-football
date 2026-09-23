@@ -34,7 +34,17 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
       dropped" (fails on v8.4).
 - [x] **4. Review the v8.3/v8.4 diff** DONE — saveSoon/flush, memo, closing sync (a failing box score retries only at the 5-10 min idle cadence), tab merge, projections, sim, row menu: no further defects. Live warm render ~27ms at 4x (projections ~5ms of it) — fine. adversarially (saveSoon/flush, memo,
       closing sync, projections on Live/Roster, tab merge, sim rewrite, row menu).
-- [ ] **5. Data retention + network + battery:** caches that grow without
+- [x] **Finding (network): a stale boot/resume fetched the same week
+      scoreboard twice, 4 s apart** (Schedule.refresh, then the live poll
+      that fetches it anyway). freshenSchedule() now stands down when a tick
+      is due within 15 s; appResume arms the poll first. Verified with the new
+      `perf.js --netlog --idle 15` request log (2 fetches of it -> 1). Pins:
+      test_boot.js "freshenSchedule() stands down..." (fail on v8.4).
+      Alerts.java: 2 inexact alarms/day, one 6-7 s-bounded GET — fine (stale
+      "weekly" comment fixed). Caches: news/projections/season/playerdb are
+      overwritten (bounded); gamelog grows ~200 KB/wk by design, now written
+      rarely; 8 rotating auto-backups.
+- [x] **5. Data retention + network + battery:** DONE (findings above). caches that grow without
       bound, writes that can be lost, duplicate/redundant fetches, timers
       alive while backgrounded, Android shell (NativeBridge/Alerts/MainActivity).
 - [ ] **6. Engine/logic** spot-checks vs RULES_2026.md and ros.js/value.js docs.
