@@ -258,8 +258,6 @@ console.log('\n-- THE REAL BUG (2026-09-18): a cold relaunch restores lastTab bu
      'pressing the tab you are already on still correctly does nothing');
 })();
 
-console.log(fails ? ('\n  ' + fails + ' tab-safety check(s) FAILED') : '\n  tab-safety checks pass');
-process.exit(fails ? 1 : 0);
 console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush --');
 (function () {
   /* Every tab tap used to call Store.save() just to remember lastTab: a
@@ -288,3 +286,5 @@ console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush 
   ok(writes === before, 'a second pause with nothing pending writes nothing');
 }());
 
+console.log(fails ? ('\n  ' + fails + ' tab-safety check(s) FAILED') : '\n  tab-safety checks pass');
+process.exit(fails ? 1 : 0);
