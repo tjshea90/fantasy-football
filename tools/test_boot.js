@@ -888,8 +888,13 @@ ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
   ok(shortName('Matthew Stafford') === 'M. Stafford', 'a two-word name shortens to "first initial. last"');
   ok(shortName('Ka\'imi Fairbairn') === 'K. Fairbairn', 'an apostrophe in the first name does not break it');
   ok(shortName('Amon-Ra St. Brown') === 'A. St. Brown', 'a multi-word LAST name is kept whole, only the first name is initialed');
-  ok(shortName('Baltimore Ravens', 'DEF') === 'Baltimore Ravens',
-     'a defense keeps its full team name  <-- "B. Ravens" is not how anyone refers to one');
+  /* 2026-09-23: a defense now goes by its NICKNAME, the way every fantasy app
+     lists one — "Seattle Seahawks" was the one name on the Live tab that
+     reliably hit the ellipsis. Still never an initial. */
+  ok(shortName('Baltimore Ravens', 'DEF') === 'Ravens',
+     'a defense shortens to its nickname  <-- never "B. Ravens", and not "Baltimore Rav..." either');
+  ok(shortName('Seahawks D/ST', 'DEF') === 'Seahawks' && shortName('New York Giants', 'DEF') === 'Giants',
+     'a "D/ST" suffix and a two-word city are both handled');
   ok(shortName('Cher') === 'Cher', 'a single-word name (no space to split on) is returned unchanged, not mangled');
   ok(shortName('') === '', 'an empty/missing name does not throw');
   ok(/lineupDetail\(team, res\)[\s\S]{0,700}shortName\(x\.player\.name, x\.player\.pos\)/.test(uiN),
