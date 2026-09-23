@@ -1,6 +1,31 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-23b) — BUILD PROPOSALS 1, 2, 3, 5, 6
+## Current job (2026-09-23c) — FULL TEST (standing protocol, CLAUDE.md "Full tests")
+
+Tj, 2026-09-23: "Run a full test"
+
+Scope and method are CLAUDE.md's "Full tests" section — not repeated here.
+Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
+
+- [ ] **1. Floor:** every tools/test_*.js + check_es2018.js (exit code AND output).
+- [ ] **2. Static cross-checks:** every CSS class the JS builds vs app.css
+      (missing + dead rules), script load order vs top-level dependencies,
+      stale copy (tab names, "Advice tab"), MANIFEST.
+- [ ] **3. Dynamic crawl in Chromium** (tools/perf.js harness, real-data
+      state): tap every button/chip/select on every tab + sub-view + dialog,
+      collect page errors and broken renders. No real device — say so.
+- [ ] **4. Review the v8.3/v8.4 diff** adversarially (saveSoon/flush, memo,
+      closing sync, projections on Live/Roster, tab merge, sim rewrite, row menu).
+- [ ] **5. Data retention + network + battery:** caches that grow without
+      bound, writes that can be lost, duplicate/redundant fetches, timers
+      alive while backgrounded, Android shell (NativeBridge/Alerts/MainActivity).
+- [ ] **6. Engine/logic** spot-checks vs RULES_2026.md and ros.js/value.js docs.
+- [ ] **7. Fix everything found**, each with a named test confirmed to FAIL
+      pre-fix (source-text pin where no harness can reach).
+- [ ] **8. Full regression** (exit code AND output) + Chromium smoke.
+- [ ] **9. Ship** + publish Release + send link.
+
+## Prior job, complete (2026-09-23b) — BUILD PROPOSALS 1, 2, 3, 5, 6
 
 Tj, 2026-09-23T04:13:29Z, answering the v8.3 proposals list (see "Prior job"
 below and the answered item in "Waiting on Tj"):
