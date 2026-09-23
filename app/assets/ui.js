@@ -1243,6 +1243,10 @@
    * nothing in the app will ever report it. The window is small and it is
    * exactly the launch path, which is the worst place to have one. */
   function appPause() {
+    /* first, and even if already asleep: onPause is the last moment Android
+       guarantees this page runs before it may kill the process, so a
+       deferred write (Store.saveSoon — the open tab) must land now */
+    try { if (window.Store && Store.flush) Store.flush(); } catch (e) { }
     if (asleep) return;
     asleep = true;
     stopLive();                 /* the timer, not just its effects */
