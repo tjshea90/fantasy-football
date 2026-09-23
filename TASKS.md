@@ -109,9 +109,9 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
       by the suites; source-text pins where no render harness exists.
 - [x] **F. Write the MAJOR items up under "Waiting on Tj"** Done (1-7). as proposals with
       a one-line why each — not done without his yes.
-- [ ] **G. Full regression** — every suite by exit code AND output, ES2018
+- [x] **G. Full regression** DONE: 22 suites exit 0 with 0 real FAIL lines (test_waiver's one match is an OK line containing 'FAILED', same pre-change), ES2018 gate green, Chromium smoke of all 7 tabs on real-data and cold-seed states with no page errors. — every suite by exit code AND output, ES2018
       gate, Chromium smoke of every tab.
-- [ ] **H. Ship** (`ship.sh`), publish the Release, send Tj the link and the
+- [x] **H. Ship** DONE: v8.3 via ship.sh; publish-release.yml dispatched; verified via get_release_by_tag (FFTracker-v8.3.apk, 334102 bytes, not a draft). Link sent. (`ship.sh`), publish the Release, send Tj the link and the
       MAJOR proposals list.
 
 ## Prior job, complete (2026-09-19) — OVERALL UI AND CODE IMPROVEMENT / BUG SWEEP
