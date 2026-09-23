@@ -17,6 +17,7 @@
  *   node tools/perf.js --state S --shots DIR    # also screenshot every tab
  *                                             #   (--slices N viewport-height slices each, default 2)
  *   node tools/perf.js --state S --profile      # top self-time functions per tab
+ *   node tools/perf.js --state S --bootprofile  # where the cold-start time goes
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
@@ -115,9 +116,26 @@ function curl(url, headersJson, body) {
   const cdp = await ctx.newCDPSession(page);
   if (THROTTLE > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
 
+  const BOOTPROF = !!opt('bootprofile', false);
+  if (BOOTPROF) { await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 100 }); await cdp.send('Profiler.start'); }
   const t0 = Date.now();
   await page.goto('file://' + path.join(ROOT, 'index.html'), { waitUntil: 'load' });
   await page.waitForFunction(() => window.__perfBootAt !== null, null, { timeout: 60000 });
+  if (BOOTPROF) {
+    const prof = (await cdp.send('Profiler.stop')).profile;
+    const byId = new Map(prof.nodes.map((n) => [n.id, n]));
+    const self = new Map(), byFile = new Map();
+    prof.samples.forEach((id, i) => {
+      const n = byId.get(id), cf = n.callFrame, us = prof.timeDeltas[i] || 0;
+      const k = (cf.functionName || '(anon)') + ' ' + path.basename(cf.url || '') + ':' + (cf.lineNumber + 1);
+      self.set(k, (self.get(k) || 0) + us);
+      const f = path.basename(cf.url || '') || cf.functionName;
+      byFile.set(f, (byFile.get(f) || 0) + us);
+    });
+    const top = (m, n) => [...m.entries()].filter(([k]) => !/\((idle)\)/.test(k)).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, us]) => k + ' ' + Math.round(us / 1000) + 'ms').join(' | ');
+    console.log('boot profile by file: ' + top(byFile, 12));
+    console.log('boot profile top fns: ' + top(self, 12));
+  }
   const boot = await page.evaluate(() => {
     const nav = performance.getEntriesByType('navigation')[0];
     return { firstContent: Math.round(window.__perfBootAt), dcl: Math.round(nav.domContentLoadedEventEnd), load: Math.round(nav.loadEventEnd) };
