@@ -301,5 +301,30 @@ console.log('\n-- the background alarm can see kickoffs too --');
      'a failure in the new block cannot cost the bye and injury alerts that already worked');
 }());
 
+console.log('\n-- the CLOSING sync: a game that went final still owes its last box score (2026-09-23) --');
+(function () {
+  var Sch = W.Schedule;
+  ok(typeof Sch.needsSync === 'function', 'Schedule.needsSync exists');
+  if (typeof Sch.needsSync !== 'function') return;
+  var none = function () { return false; }, all = function () { return true; };
+  var mnfOver = [{ id: 'a', state: 'post' }, { id: 'b', state: 'post' }];
+  ok(Sch.needsSync(mnfOver, { synced: true, allFinal: false }, function (id) { return id === 'a'; }) === true,
+     'MONDAY NIGHT: every game post, the week not stored final, one final not captured -> sync  <-- the poll used to re-arm forever instead');
+  ok(Sch.needsSync(mnfOver, { synced: true, allFinal: true }, none) === false,
+     'a week already stored synced-and-final is never re-synced (a Tuesday cold start costs nothing)');
+  ok(Sch.needsSync(mnfOver, { synced: true, allFinal: false }, all) === false,
+     'every final already captured this session -> no sync (a Friday poll does not refetch Thursday every 5 min)');
+  var friday = [{ id: 't', state: 'post' }, { id: 's1', state: 'pre' }, { id: 's2', state: 'pre' }];
+  ok(Sch.needsSync(friday, null, none) === true,
+     'THURSDAY finished with the app closed, never synced -> one closing sync picks it up');
+  ok(Sch.needsSync([{ id: 'x', state: 'in' }], { synced: true, allFinal: true }, all) === true,
+     'a live game always syncs');
+  ok(Sch.needsSync([{ id: 'x', state: 'pre' }], null, none) === false && Sch.needsSync([], null, none) === false,
+     'nothing played yet -> nothing to sync');
+  var ui = fs.readFileSync(path.join(__dirname, '..', 'app/assets/ui.js'), 'utf8');
+  ok(/Schedule\.needsSync\(games/.test(ui) && /if \(inProg > 0 \|\| closing\)/.test(ui),
+     'liveTick actually asks it, and syncs on a closing game as well as a live one');
+})();
+
 console.log(fails ? ('\n  ' + fails + ' schedule check(s) FAILED') : '\n  schedule checks pass');
 process.exit(fails ? 1 : 0);
