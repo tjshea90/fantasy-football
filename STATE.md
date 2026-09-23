@@ -1,6 +1,48 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-23** · **v8.3**, shipped · APK builds, signed, all 22 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-23** · **v8.4**, shipped · APK builds, signed, all 23 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.4 — Tj's picks 1, 2, 3, 5, 6 from the v8.3 proposals (2026-09-23b)
+
+Tj: "Do number 1, 2, 3, 5, 6" (not 4 — league scoreboard — nor 7 — light theme).
+
+- **#1 Roster PROJ + AVG.** Each row of the Roster tab's team card shows this
+  week's projection (Recommend.projectAll — the numbers the auto-lineup uses)
+  and his season average per game played in THIS league's scoring. New
+  `Store.playerAvg(player, throughWeek)`: his own stored line when he played
+  (what his team was credited, bonuses and hand-adjustments included), else
+  the league book (so a mid-season pickup still has his earlier weeks); byes
+  and inactive lines are not games; only weeks that are final count.
+- **#2 Live per-starter projection.** "p 14.2" under each starter's 0.0 until
+  his game starts, then only his real points. Shares one projection pass per
+  team with the projected finish (they sum exactly).
+- **#3 Advice merged into Lineups (7 tabs -> 6).** Lineups has a "Set lineups |
+  Advice" chip switch (settings.lineSub); the Advice view is the old tab's
+  exact render. A saved lastTab of "advice" and any goTab('advice') land on
+  Lineups -> Advice; pull-to-refresh there still runs the advice sync. Two
+  sub-views, not one long page, so a lineup dropdown change never pays for
+  re-rendering the advice cards.
+- **#5 Power rankings + playoff odds** on Data -> League: rank, all-play
+  record, luck (wins minus all-play-expected wins), playoff % and title %.
+  **Sim.season was rebuilt before being shown:** it treated a team's measured
+  average as its true strength, so on real week-1/2 data it gave one team 100%
+  playoffs / 55% title and several teams 0%. Now empirical-Bayes: each run
+  draws every team's TRUE mean from a posterior shrunk toward the league by
+  how few weeks it has played, with weekly noise blended toward an
+  18%-of-mean prior for its first 12 team-weeks. Same data now: 99% / 39%,
+  bottom teams 5-9%. The loop is flat typed arrays (~300ms -> ~110ms at 4x);
+  results are cached on the store generation and computed just after the tab
+  paints, patched in place. The dead game()/bracket() helpers are gone.
+- **#6 Quiet row menu.** The 17 red Drop buttons are one neutral "⋯" per row
+  opening Cancel / Stats / Drop; Drop still asks before it does anything.
+
+Tests: new tools/test_picks.js (33 render-level checks against a stub DOM —
+the rows, cells, chips and dialogs ui.js actually built), incl. odds summing
+to 6 / 2 / 1, early-season humility (FAILS on the v8.3 sim.js: 96% title after
+two weeks), sharpening over ten weeks, determinism, and no NaN with zero
+scored weeks. test_tabsafety.js now reads its tab list from index.html;
+test_lifecycle.js, test_boot.js pins updated for the new shapes. perf.js
+reads tabs from the DOM and measures "lineups>Advice".
 
 ## v8.3 — polish, declutter and speed for the Moto G 2026 (2026-09-23)
 
