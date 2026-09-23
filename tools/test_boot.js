@@ -821,8 +821,15 @@ ok(/localAutoAdvance\(\);\s*syncCurrentWeek\(\);/.test(uiN),
    'localAutoAdvance() runs immediately before syncCurrentWeek() at every trigger point, boot and resume alike');
 ok((uiN.match(/localAutoAdvance\(\);/g) || []).length === 2,
    'localAutoAdvance() is called from exactly two places — boot() and appResume(), no fewer, no duplicates');
-ok(/freshenSchedule\(\);\s*refreshPlayerDBIfStale\(\);\s*\/\* A week that is finished/.test(uiN),
-   'appResume() refreshes it again on every resume, so a phone that is never rebooted still gets it');
+/* 2026-09-23c: freshenSchedule() moved below the poll decision in appResume
+   (so it can see the tick it would duplicate); the player-DB refresh this pin
+   is about is unchanged — asserted on appResume's own body now. */
+(function () {
+  var ar = uiN.slice(uiN.indexOf('function appResume'), uiN.indexOf('window.__appPause = appPause'));
+  ok(/refreshPlayerDBIfStale\(\);/.test(ar) && (ar.match(/freshenSchedule\(\);/g) || []).length === 3,
+     'appResume() refreshes it again on every resume, so a phone that is never rebooted still gets it' +
+     ' (and still freshens the schedule on each of its three exits)');
+}());
 ok(/function viewWire\(root\) \{[\s\S]{0,400}refreshPlayerDBIfStale\(\);/.test(uiN),
    'opening the Wire tab (the "see all players" screen) also nudges a stale database');
 ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
@@ -1065,6 +1072,19 @@ ok(/two different quarterbacks in a game/.test(uiX),
   });
   ok(seen >= 6 && !bad.length, 'every "Data → screen → control" pointer in the copy resolves (' + seen +
      ' checked)' + (bad.length ? '\n         ' + bad.join('\n         ') : ''));
+}());
+
+/* FULL TEST 2026-09-23c: a stale boot or resume fetched the same week
+   scoreboard twice, 4 s apart — Schedule.refresh, then the live poll, which
+   fetches that exact scoreboard and feeds Schedule.ingest anyway. */
+(function () {
+  var fs2 = uiN.slice(uiN.indexOf('function freshenSchedule'), uiN.indexOf('function tabList'));
+  ok(/if \(live\.timer && live\.next && live\.next - Date\.now\(\) <= 15000\) return;/.test(fs2),
+     'freshenSchedule() stands down when a live tick (same scoreboard) is due within seconds');
+  var ar2 = uiN.slice(uiN.indexOf('function appResume'), uiN.indexOf('window.__appPause = appPause'));
+  ok(ar2.indexOf('scheduleLive(1500);') >= 0 &&
+     ar2.indexOf('scheduleLive(1500);') < ar2.lastIndexOf('freshenSchedule();'),
+     'and appResume arms the poll BEFORE asking, so the guard can see it');
 }());
 
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
