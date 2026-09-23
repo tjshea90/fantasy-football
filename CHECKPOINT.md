@@ -1,12 +1,12 @@
-# CHECKPOINT 125 — read me first, then TASKS.md
+# CHECKPOINT 128 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T06:05:19Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T06:09:53Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-Wrote Tj's 'Run a full test' (2026-09-23c) into TASKS.md as steps 1-9 per CLAUDE.md's Full tests protocol.
+Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 stale 'Data → X' pointers in UI copy + new resolving test in test_boot.js (fails on v8.4).
 
 ## Do this next
-Step 1: floor suites. Step 2: static CSS/JS cross-check script. Step 3: Chromium click-crawler over every tab/sub-view/dialog with the real-data state (rebuild with node tools/perf.js --sync 1,2 --save F if the scratchpad fixture is gone).
+Step 3: add a --crawl mode to tools/perf.js that taps every button/select on every tab + Lineups>Advice + Data sub-screens + dialogs (cancelling destructive confirms), collecting page errors and 'This screen hit an error' cards; run on the scratchpad real-data state.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  5749120 ckpt 125: Wrote Tj's 'Run a full test' (2026-09-23c) into TASKS.md as steps 1-9 per CLAU
   f59447c ckpt 123: v8.4 Release published and verified (FFTracker-v8.4.apk, 342294 bytes). 2026-0
   96a9953 ckpt 122: v8.4 shipped via ship.sh (23 suites + ES2018 + dex gate green, APK built, main
   49f7cc3 ship v8.4: v8.4: Tj's picks 1,2,3,5,6 -- Roster PROJ + AVG per player, Live projection u
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   e759e7b ckpt 101: Code for A (Roster PROJ + AVG column; new Store.playerAvg), B (Live: 'p 14.2' 
   aea9d08 ckpt 96: Wrote Tj's 2026-09-23b request ('Do number 1, 2, 3, 5, 6' of the v8.3 proposals
   d1d42a7 ckpt 94: v8.3 Release published and verified (get_release_by_tag v8.3: FFTracker-v8.3.ap
-  21d2546 ckpt 93: v8.3 shipped via ship.sh (all 22 suites + ES2018 + dex gate green, APK built, m
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)

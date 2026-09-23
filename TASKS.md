@@ -7,8 +7,8 @@ Tj, 2026-09-23: "Run a full test"
 Scope and method are CLAUDE.md's "Full tests" section — not repeated here.
 Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
 
-- [ ] **1. Floor:** every tools/test_*.js + check_es2018.js (exit code AND output).
-- [ ] **2. Static cross-checks:** every CSS class the JS builds vs app.css
+- [x] **1. Floor:** every tools/test_*.js + check_es2018.js (exit code AND output). 23/23 green, 0 FAIL lines.
+- [x] **2. Static cross-checks:** DONE. CSS: 0 missing, 0 dead (3 hits were text values). Load order unchanged. FOUND+FIXED: 6 'Data → X' pointers in user copy named controls that do not exist under that label or no sub-screen at all (Export a backup / Run the feed self-test / depth: Smart / Test the projection feed / Claude costs / player database). Now all 'Data → Screen → Control'. Test: test_boot.js 'every "Data → screen → control" pointer resolves' (fails on v8.4: 6 bad). every CSS class the JS builds vs app.css
       (missing + dead rules), script load order vs top-level dependencies,
       stale copy (tab names, "Advice tab"), MANIFEST.
 - [ ] **3. Dynamic crawl in Chromium** (tools/perf.js harness, real-data
