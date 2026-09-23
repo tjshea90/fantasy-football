@@ -20,6 +20,7 @@
  *   node tools/perf.js --state S --bootprofile  # where the cold-start time goes
  *   node tools/perf.js --state S --tracesaves   # who called Native.save during boot
  *   node tools/perf.js --state S --crawl        # operate EVERY control on every screen, report errors
+ *   node tools/perf.js --state S --advice --save S2   # run Lineups>Advice "Sync advice" first
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
@@ -163,6 +164,24 @@ function curl(url, headersJson, body) {
   if (opt('tracesaves', false)) console.log('saves so far:\n  ' + (await page.evaluate(() => window.__perfTrace)).join('\n  '));
   console.log(`throttle ${THROTTLE}x · boot: first content ${boot.firstContent}ms (loading+running scripts ${boot.scripts}ms, boot() to first content ${boot.bootFn}ms, ${boot.saves} saves) · load ${boot.load}ms`);
 
+  if (opt('advice', false)) {
+    /* Lineups -> Advice -> "Sync advice": loads the week's projections and
+       the injury feed (no Claude key here, so that step is skipped cleanly) */
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    await page.evaluate(() => {
+      document.querySelector('#tabs .tab[data-v="live"]').click();
+      document.querySelector('#tabs .tab[data-v="lineups"]').click();
+      const chip = Array.prototype.filter.call(document.querySelectorAll('#view button'), (x) => x.textContent === 'Advice')[0];
+      if (chip) chip.click();
+      const go = Array.prototype.filter.call(document.querySelectorAll('#view button'), (x) => /^Sync advice/.test(x.textContent))[0];
+      if (go) go.click();
+    });
+    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.getElementById('job').hidden, null, { timeout: 240000, polling: 500 });
+    await page.evaluate(() => { let g = 0; while (document.querySelectorAll('[role=dialog]').length && g++ < 5) window.__onBack(); });
+    console.log('advice sync done: ' + await page.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#view h2'), (h) => h.textContent).join(' | ')));
+    if (THROTTLE > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
+  }
   if (SYNC) {
     const weeks = String(SYNC).split(',').map(Number);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
@@ -222,10 +241,13 @@ function curl(url, headersJson, body) {
       }, sc);
       await page.waitForTimeout(80);
     }
+    /* buttons, selects, text boxes, <details> toggles — and the tappable
+       player rows (Live's lineups open the player card) */
+    const CTRL = '#view button, #view select, #view input[type=text], #view input[type=number], #view input:not([type]), #view summary, #view .halfbox .row, #view .res';
     function controls() {
-      return page.evaluate(() => Array.prototype.map.call(
-        document.querySelectorAll('#view button, #view select, #view input[type=text], #view input[type=number], #view input:not([type]), #view summary'),
-        (n, i) => ({ i, tag: n.tagName, label: (n.textContent || n.placeholder || n.getAttribute('aria-label') || '').trim().slice(0, 40) })));
+      return page.evaluate((CTRL) => Array.prototype.map.call(
+        document.querySelectorAll(CTRL),
+        (n, i) => ({ i, sel: CTRL, tag: n.tagName, label: (n.textContent || n.placeholder || n.getAttribute('aria-label') || '').trim().slice(0, 40) })), CTRL);
     }
     for (const sc of SCREENS) {
       await open(sc);
@@ -235,7 +257,7 @@ function curl(url, headersJson, body) {
         const before = errors.length;
         await open(sc);
         const res = await page.evaluate((c) => {
-          const all = document.querySelectorAll('#view button, #view select, #view input[type=text], #view input[type=number], #view input:not([type]), #view summary');
+          const all = document.querySelectorAll(c.sel);
           const n = all[c.i];
           if (!n) return { skipped: 'gone after reload' };
           if (n.disabled) return { skipped: 'disabled' };
@@ -249,6 +271,14 @@ function curl(url, headersJson, body) {
           return { ok: true };
         }, c);
         await page.waitForTimeout(WAIT);
+        /* follow one level of non-destructive dialog buttons (⋯ -> Stats) */
+        const nested = await page.evaluate(() => {
+          const SAFE = /^(Stats|View stats)$/;
+          const b = Array.prototype.filter.call(document.querySelectorAll('[role=dialog] button'), (x) => SAFE.test(x.textContent))[0];
+          if (!b) return '';
+          b.click(); return b.textContent;
+        });
+        if (nested) await page.waitForTimeout(WAIT);
         const after = await page.evaluate(() => {
           const d = Array.prototype.map.call(document.querySelectorAll('[role=dialog]'), (x) => {
             const h = x.querySelector('h2'); return (h ? h.textContent : '?') + ' [' +
