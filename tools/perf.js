@@ -15,6 +15,7 @@
  *   node tools/perf.js --sync 1,2,3 --save S    # run real syncs, keep the state
  *   node tools/perf.js --state S                # measure against a saved state
  *   node tools/perf.js --state S --shots DIR    # also screenshot every tab
+ *                                             #   (--slices N viewport-height slices each, default 2)
  *   node tools/perf.js --state S --profile      # top self-time functions per tab
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *
@@ -44,6 +45,7 @@ const PROFILE = !!opt('profile', false);
 const SYNC = opt('sync', null);
 const REPS = Number(opt('reps', 5));
 const DARK = opt('dark', '1') !== '0';
+const SLICES = Number(opt('slices', 2));
 const TABS = ['live', 'lineups', 'rosters', 'wire', 'stats', 'advice', 'data'];
 const ROOT = path.resolve(__dirname, '..', 'app', 'assets');
 
@@ -167,9 +169,16 @@ function curl(url, headersJson, body) {
     const nodes = await page.evaluate(() => document.getElementById('view').getElementsByTagName('*').length);
     rows.push({ tab, js: Math.round(js[js.length >> 1]), frame: Math.round(fr[fr.length >> 1]), nodes });
     if (SHOTS) {
+      /* viewport-sized slices, the way the phone actually shows it (fixed
+         header and tab bar included), rather than one 20,000px strip */
       fs.mkdirSync(SHOTS, { recursive: true });
+      const h = await page.evaluate(() => document.documentElement.scrollHeight);
+      for (let k = 0; k < SLICES && k * 800 < h; k++) {
+        await page.evaluate((y) => window.scrollTo(0, y), k * 800);
+        await page.waitForTimeout(50);
+        await page.screenshot({ path: path.join(SHOTS, tab + '-' + k + '.png') });
+      }
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({ path: path.join(SHOTS, tab + '.png'), fullPage: true });
     }
     if (prof) {
       const self = new Map();
