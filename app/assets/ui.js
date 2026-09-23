@@ -742,7 +742,12 @@
     /* so a cold relaunch (see boot()) can restore this instead of always
        landing on Live — cheap: this only runs on an actual tab CHANGE,
        never per-render, matching how every other settings write here works */
-    if (S && S.settings) { S.settings.lastTab = name; Store.save(); }
+    if (S && S.settings) {
+      S.settings.lastTab = name;
+      /* deferred and coalesced — see Store.saveSoon for why a tab tap must
+         not pay a synchronous disk flush; __appPause flushes it */
+      if (Store.saveSoon) Store.saveSoon(); else Store.save();
+    }
     paintTabBar(name);
     render();
   }

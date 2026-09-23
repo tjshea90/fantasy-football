@@ -204,6 +204,35 @@
   function get() { return S; }
   function save() {
     bumpGen();   /* rosters may have changed — see playerById */
+    return persist();
+  }
+  /* ---- saveSoon(): a write nothing is waiting on (2026-09-23 speed pass) --
+   * Opening a tab used to call save() just to remember which tab was open
+   * (settings.lastTab). save() is a SYNCHRONOUS bridge call that serialises
+   * the main state and fsyncs it to flash on the renderer's thread, so every
+   * tab tap paid a disk flush before the new tab could paint — and every
+   * tenth tap also paid autoBackup()'s full ~1.3 MB snapshot. Worse, save()
+   * bumps the store generation, which is the key every downstream memo
+   * (free agents, ROS rates, defence profiles, schedule badges) checks, so
+   * each tap also threw away all of that work and the next tab recomputed it
+   * from scratch. Measured in throttled Chromium: one full save per tap.
+   *
+   * saveSoon() persists the same state, later, coalesced, WITHOUT bumping the
+   * generation (it is only for writes that change no roster, lineup or
+   * score). Nothing is lost on the way out: ui.js's __appPause (which the
+   * Java shell calls from onPause, before Android may kill the process)
+   * calls flush(), and any ordinary save() in between writes it anyway. */
+  var SOON_MS = 1500, soonTimer = null;
+  function saveSoon() {
+    if (soonTimer !== null) return;
+    soonTimer = setTimeout(function () { soonTimer = null; persist(); }, SOON_MS);
+  }
+  function flush() {
+    if (soonTimer === null) return true;
+    return persist();
+  }
+  function persist() {
+    if (soonTimer !== null) { clearTimeout(soonTimer); soonTimer = null; }
     S.settings.savedAt = nowISO();
     S.settings.saveCount = (S.settings.saveCount || 0) + 1;
     var ok = rawSave(S);
@@ -816,7 +845,8 @@
     return seen;
   }
   root.Store = { generation: function () { return _gen; },
-    init: init, get: get, save: save, team: team, allPlayers: allPlayers,
+    init: init, get: get, save: save, saveSoon: saveSoon, flush: flush,
+    team: team, allPlayers: allPlayers,
     playerById: playerById, addPlayer: addPlayer, removePlayer: removePlayer,
     slotKeys: slotKeys, eligible: eligible,
     getLineup: getLineup, setSlot: setSlot, copyLineup: copyLineup,
