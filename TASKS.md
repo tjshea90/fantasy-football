@@ -83,6 +83,21 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
       (.row.wrap); Wire FA rows: basis/usage as 2-line fine print, tap to
       expand (.fine), left column shows rank (#1..) instead of the duplicated
       team code. Verified by screenshots (perf.js --shots).
+- [x] **E-progress 2:** Claude handoff boxes' explainer clamped to 3 lines
+      (tap to open) on Roster/Wire/Advice; Standings rows numbered; Live's
+      projected finish skips starters whose game is over with no line and
+      returns nothing once the week is final.
+- [x] **BUG found in the sweep (accuracy): the live poll never did a CLOSING
+      sync.** liveTick synced only while a game was in progress, so the last
+      <=45s of the week's last game (Monday night) was never captured, the
+      week never became "final" without a manual Sync (so the local week
+      auto-advance never fired), and a Thursday game finished with the app
+      closed sat at 0.0 until Sunday. New Schedule.needsSync(games, meta,
+      captured); liveTick now syncs on a live game OR a finished game whose
+      final box score this session has not captured (never refetches a
+      captured final; never re-syncs a week stored synced-and-final). Test:
+      test_schedule.js "the CLOSING sync" (7 checks, confirmed FAIL pre-fix).
+      test_net.js liveTick source window widened 1400->2600 (property same).
 - [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,
       Advice, Data) against how ESPN/Sleeper/Yahoo present the same thing.
       List concrete look/function/organization improvements and obsolete
