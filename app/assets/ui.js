@@ -1409,10 +1409,18 @@
    * claims more than it knows. Before kickoff it replaces a banner that just
    * said "Level" at 0.0-0.0. null when there is nothing to project. */
   function projectedFinish(teamId, res) {
-    var yet = res.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; });
+    var wm = S.weekMeta[String(week)];
+    if (wm && wm.allFinal) return null;          /* the week is over: no guessing */
+    var yet = res.detail.filter(function (d) {
+      if (!d.pid || d.played || d.onBye) return false;
+      /* his game is already over and he has no line (inactive, a DNP):
+         he adds nothing more, whatever he was projected for */
+      var b = (window.Schedule && d.player) ? Schedule.badge(d.player.nfl, week) : null;
+      return !(b && b.done);
+    });
     if (!yet.length || !window.Recommend || !Recommend.projectAll) return null;
     try {
-      var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var opp = (wm && wm.opponents) || null;
       var byId = {};
       Recommend.projectAll(week, teamId, opp).forEach(function (x) { if (x.p) byId[x.p.id] = x.proj; });
       var add = 0;
