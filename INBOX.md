@@ -804,3 +804,10 @@ If I ask for full tests (or anything similar like full test or full testing or c
 ```
 Do a full test on this app
 ```
+
+## 2026-09-23T03:04:38Z
+```
+Make sure to checkpoint your work frequently because it is highly likely Claude usage will run out during this task and interrupt you.
+
+I like this app. Look around at the features and UI and see if anything can be made to look better, function better, or be better organized, or unneeded or obsolete junk removed. Consider other very popular fantasy football sites or apps and their ui. Also see if you can optimize it for maximum speed and efficiency and snappiness on a moto g 2026, but do not sacrifice accuracy or function. I want it as fast and snappy as possible without taking away any function or accuracy. 
+```
