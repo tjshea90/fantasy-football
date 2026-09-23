@@ -2114,10 +2114,20 @@
     var v = est(true);
     if (v !== undefined) { node.textContent = text(v); return; }
     node.textContent = '';
-    setTimeout(function () {
+    afterPaint(function () {
       if (asleep || node.isConnected === false) return;
       try { node.textContent = text(est()); } catch (e) { node.textContent = ''; }
-    }, 30);
+    });
+  }
+  /* Run fn once the screen has actually been painted: a frame callback runs
+     just BEFORE the paint, and a zero timer queued from inside it runs just
+     after. A bare setTimeout is not enough — when the render itself took
+     longer than the delay, the overdue timer runs first and the paint waits
+     for it, which is exactly what this exists to avoid. */
+  function afterPaint(fn) {
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () { setTimeout(fn, 0); });
+    } else setTimeout(fn, 30);
   }
   var _taEstMemo = null;
   /* `cachedOnly`: answer only from the memo (undefined on a miss) — lets the
@@ -3450,9 +3460,10 @@
    * luck index, a full rest-of-season simulation — and nothing ever showed
    * them. Power and all-play are instant. The odds are 3,000 simulated
    * seasons (~100ms at Moto G speed), so they are cached on the store
-   * generation and, when stale, computed just AFTER the tab has painted and
-   * patched into the table in place: opening Data never waits on them. */
-  var _oddsMemo = null, _oddsTimer = null;
+   * generation and, when stale, computed just AFTER the tab has painted
+   * (afterPaint) and patched into the table in place: opening Data never
+   * waits on them. */
+  var _oddsMemo = null, _oddsTurn = 0;
   function oddsKey() {
     return (Store.generation ? Store.generation() : 0) + '|' + S.league.regularSeasonWeeks;
   }
@@ -3510,9 +3521,9 @@
     left.hidden = true;
     if (odds) fillOdds(odds);
     else {
-      if (_oddsTimer) clearTimeout(_oddsTimer);
-      _oddsTimer = setTimeout(function () {
-        _oddsTimer = null;
+      var myTurn = ++_oddsTurn;
+      afterPaint(function () {
+        if (myTurn !== _oddsTurn) return;   /* a newer render of the card owns it */
         /* only if he is still looking at it — otherwise the next visit pays */
         if (asleep || view !== 'data' || dataSubView !== 'league') return;
         try {
@@ -3520,7 +3531,7 @@
           _oddsMemo = { k: oddsKey(), v: v };
           fillOdds(v);
         } catch (e) { left.textContent = 'Odds could not be computed: ' + (e && e.message ? e.message : e); left.hidden = false; }
-      }, 60);
+      });
     }
     return c;
   }
