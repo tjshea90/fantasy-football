@@ -25,7 +25,7 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
 ### Steps
 
 - [x] **A. Baseline.** All suites + ES2018 gate green before touching anything. Done: 22 suites green at ckpt 52.
-- [ ] **B. Measure before optimizing.** Load index.html in headless Chromium
+- [x] **B. Measure before optimizing.** Load index.html in headless Chromium
       with CPU throttling (a mid-range phone ≈ 4x slowdown) and a stubbed
       Native bridge; record boot-to-first-paint, per-tab render time, and the
       heaviest JS on each path. Also size every asset (players.js/seed.js are
@@ -41,7 +41,7 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
       normName/canon/variants (~half of Rosters/Wire), a full Store.save
       (fsync on device + generation bump that wiped every memo) on EVERY tab
       tap, Advice re-parsing the 380KB season-projection cache per render.
-- [ ] **C. Speed fixes that change no output.** Whatever B shows is actually
+- [x] **C. Speed fixes that change no output.** Whatever B shows is actually
       slow: redundant recompute per render, JSON parse/cloning at boot,
       layout thrash, unthrottled saves, expensive CSS (shadows/filters/blur)
       on scrolling lists, tap latency, WebView settings in the Java shell.
