@@ -24,7 +24,15 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
       up the first paint" (fails on v8.4), test_names.js "Names.cmp orders all
       963 player names exactly as localeCompare does". perf.js: frame marker
       now queued before the tap (was counting deferred fills), --root DIR.
-- [ ] **4. Review the v8.3/v8.4 diff** adversarially (saveSoon/flush, memo,
+- [x] **Finding (battery/jank/flash wear): Gamelog.ingestEvent rewrote the
+      WHOLE game-log cache (~200 KB/week, ~3.5 MB by week 17) synchronously
+      once PER GAME** — the Sunday live poll re-ingests every in-progress game
+      every 45 s. Fixed: only a final game marks it dirty (in-progress lines
+      are never trusted from disk), writes coalesce (one ~2 s after a batch),
+      Gamelog.flush() on __appPause. Test: test_gamelog.js "nine in-progress
+      ingests ... 0 writes / sixteen FINAL ... flush writes ONCE / nothing
+      dropped" (fails on v8.4).
+- [x] **4. Review the v8.3/v8.4 diff** DONE — saveSoon/flush, memo, closing sync (a failing box score retries only at the 5-10 min idle cadence), tab merge, projections, sim, row menu: no further defects. Live warm render ~27ms at 4x (projections ~5ms of it) — fine. adversarially (saveSoon/flush, memo,
       closing sync, projections on Live/Roster, tab merge, sim rewrite, row menu).
 - [ ] **5. Data retention + network + battery:** caches that grow without
       bound, writes that can be lost, duplicate/redundant fetches, timers

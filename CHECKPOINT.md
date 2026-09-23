@@ -1,12 +1,12 @@
-# CHECKPOINT 140 — read me first, then TASKS.md
+# CHECKPOINT 144 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T06:28:08Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T06:33:13Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-Full-test speed finding fixed: cost-estimate lines + playoff odds now fill after paint (afterPaint), Names.cmp replaces localeCompare in display sorts (no 44ms ICU start-up on first Roster/search). First Roster open at 4x ~180->~65ms, Wire ~120->~65ms. Tests in test_picks.js + test_names.js, confirmed failing on v8.4.
+Full test: step 4 done (no further defects in v8.3/v8.4 diff); step 5 finding fixed — Gamelog cache rewritten whole per game ingest (every 45s poll) -> finals only, coalesced, flushed on pause. test_gamelog.js pins it (fails on v8.4).
 
 ## Do this next
-Step 4: adversarial review of v8.3/v8.4 diff; also check Live warm render (34ms at 4x on the advice-synced state — Recommend.projectAll per team per render, maybe memoize).
+Step 5 continued: Android shell (Alerts.java alarm cadence/wakeups, NativeBridge pool/threads), other caches' growth (news, projections, season proj, playerdb, backups), then step 6 engine spot-checks vs RULES_2026.md.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  9fdbc7e ckpt 140: Full-test speed finding fixed: cost-estimate lines + playoff odds now fill aft
   40bc77e ckpt 131: Full test step 3 done: perf.js --crawl (and --advice prep) — 511 actions ove
   0ea7228 ckpt 128: Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 st
   5749120 ckpt 125: Wrote Tj's 'Run a full test' (2026-09-23c) into TASKS.md as steps 1-9 per CLAU
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   205e7bc ckpt 118: A-E all done and tested: new tools/test_picks.js (32 render-level checks acros
   73ee643 ckpt 114: D code done: Power rankings · playoff odds card on Data -> League (Sim.power 
   834ac6b ckpt 105: C code done: Advice merged into Lineups as a 'Set lineups | Advice' sub-view (
-  e759e7b ckpt 101: Code for A (Roster PROJ + AVG column; new Store.playerAvg), B (Live: 'p 14.2' 
 ```
 
-(8 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
