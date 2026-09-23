@@ -95,6 +95,7 @@ tools/test_locks.js
 tools/test_recap.js
 tools/test_waiver.js
 tools/test_wire.js
+tools/test_picks.js
 tools/test_tabsafety.js
 tools/test_synccapture.js
 tools/test_jobguard.js
