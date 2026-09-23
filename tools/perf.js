@@ -159,7 +159,8 @@ function curl(url, headersJson, body) {
     const js = [], fr = [];
     if (PROFILE) { await cdp.send('Profiler.setSamplingInterval', { interval: 100 }); await cdp.send('Profiler.start'); }
     for (let r = 0; r < REPS; r++) {
-      await frameAfter("document.querySelector('#tabs .tab[data-v=\"live\"]').click()");
+      const base = tab === 'live' ? 'stats' : 'live';
+      await frameAfter(`document.querySelector('#tabs .tab[data-v="${base}"]').click()`);
       const m = await frameAfter(`document.querySelector('#tabs .tab[data-v="${tab}"]').click()`);
       js.push(m.js); fr.push(m.frame);
     }
