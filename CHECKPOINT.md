@@ -1,12 +1,12 @@
-# CHECKPOINT 74 — read me first, then TASKS.md
+# CHECKPOINT 81 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T03:26:38Z · **version:** 8.2 · **tests:** all 22 suites green
+**Written:** 2026-09-23T03:32:28Z · **version:** 8.2 · **tests:** all 22 suites green
 
 ## Just done
-Speed C4 done: MainActivity setOffscreenPreRaster(true) (build.sh green). Minification rejected (would wreck the error card's stack traces). Step C complete.
+UI polish batch 1: compact header, Live projected finish + pre-kickoff projected banner, DEF nickname, Wire swap-row wrap, Wire FA fine print (2-line clamp, tap to expand) + rank column. perf.js now runs in America/New_York (the UTC Tue-12:15a early flag was a harness artifact, not an app bug). All suites green.
 
 ## Do this next
-Step D/E UI polish, in this order: (1) compact header — move #syncBtn into .hrow so the sync status becomes one small text line (~27px back on every tab); (2) Wire swap rows: button wraps under the text instead of squeezing it (.row.wrap); (3) Wire FA board rows: basis/usage fine print smaller + 2-line clamp, tap to expand; (4) Live: DEF shows team nickname not 'Seattle Seah...'; (5) Live pre-game banner 'Level' -> projected totals. Screenshots: node tools/perf.js --state F --shots DIR (F = scratchpad fixture; rebuild with --sync 1,2 --save F if gone).
+Continue D/E: review Roster, Lineups, Stats, Advice, Data screenshots for more small polish; tighten the repeated Claude handoff boxes' copy; then write MAJOR proposals under Waiting on Tj; then G full regression + H ship.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,10 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  b992110 ckpt 74: Speed C4 done: MainActivity setOffscreenPreRaster(true) (build.sh green). Minif
   6bde6b1 ckpt 71: Speed C3 + C3b done: Advice loads its 4 disk caches once instead of every rende
   368bf1c ckpt 63: Speed C1+C2 done: memoized name normalization; tab taps no longer do a synchron
   0d3b0ec ckpt 56: Step A done (baseline 22 suites green). Step B in progress: wrote tools/perf.js
@@ -36,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   dcd3db0 ship v8.1: v8.1: full-test sweep -- fixed a doSync() weekMeta wholesale-replace bug that
   db7e9e7 ckpt 57: Full test (2026-09-19, requested via the standing 'full tests' protocol in CLAU
   8c4d8d7 ckpt 54: Full-test sweep (2026-09-19, second pass): found and fixed a real caching/data-
-  798e0e4 ckpt 54: Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a perm
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(6 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
