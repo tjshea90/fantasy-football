@@ -242,9 +242,15 @@
     var lg = 0;
     withData.forEach(function (r) { lg += r.mean; });
     lg = withData.length ? lg / withData.length : 0;
-    var num = 0, den = 0;
+    /* Early on the pooled spread rests on a handful of team-weeks (ten, after
+       two weeks) and routinely comes out too small — it read 10% of the mean
+       on real week-1/2 data, where fantasy team weeks typically swing 15-20%.
+       So it is blended with that typical figure (18% of the league mean),
+       worth SIGMA_PRIOR_WEEKS team-weeks, and the measured value takes over
+       as the season fills in: by week 10 it is ~90% of the answer. */
+    var num = 0, den = 0, SIGMA_PRIOR_WEEKS = 12, sigma0 = 0.18 * lg;
     rows.forEach(function (r) { if (r.n > 1) { num += r.ss; den += r.n - 1; } });
-    var sigma = den ? Math.sqrt(num / den) : 0.13 * lg;
+    var sigma = Math.sqrt((num + SIGMA_PRIOR_WEEKS * sigma0 * sigma0) / (den + SIGMA_PRIOR_WEEKS));
     if (sigma < 0.08 * lg) sigma = 0.08 * lg;
     var vb = 0, invN = 0;
     withData.forEach(function (r) { vb += (r.mean - lg) * (r.mean - lg); invN += 1 / r.n; });
