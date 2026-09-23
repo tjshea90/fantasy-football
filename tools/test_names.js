@@ -195,7 +195,7 @@ ok(!N.same('Hollywood Brown', 'A.J. Brown', 'WR', 'WR'),
  * does — checked here against node's own ICU over every name the app knows. */
 (function () {
   var names = [];
-  (W.PLAYERS && W.PLAYERS.players ? W.PLAYERS.players : []).forEach(function (p) { if (p && p.n) names.push(p.n); });
+  (W.PLAYERDB && W.PLAYERDB.players ? W.PLAYERDB.players : []).forEach(function (p) { if (p && p.n) names.push(p.n); });
   W.SEED.teams.forEach(function (t) { t.players.forEach(function (p) { names.push(p.name); }); });
   names = names.concat(["D'Andre Swift", 'Dandre Test', 'D-Andre Test', 'D.Andre Test', 'dandre test',
                         'Amon-Ra St. Brown', "Ja'Marr Chase", 'Ja Marr', 'Kenneth Walker III', 'Kenneth Walker']);
