@@ -1,12 +1,12 @@
-# CHECKPOINT 128 — read me first, then TASKS.md
+# CHECKPOINT 131 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T06:09:53Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T06:19:00Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 stale 'Data → X' pointers in UI copy + new resolving test in test_boot.js (fails on v8.4).
+Full test step 3 done: perf.js --crawl (and --advice prep) — 511 actions over 12 screens on two real-data states, 0 problems.
 
 ## Do this next
-Step 3: add a --crawl mode to tools/perf.js that taps every button/select on every tab + Lineups>Advice + Data sub-screens + dialogs (cancelling destructive confirms), collecting page errors and 'This screen hit an error' cards; run on the scratchpad real-data state.
+Profile the Roster tab's cold render (187ms at 4x right after an advice sync — v8.4 PROJ/AVG column suspect), then step 4: adversarial review of the v8.3/v8.4 diff.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  0ea7228 ckpt 128: Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 st
   5749120 ckpt 125: Wrote Tj's 'Run a full test' (2026-09-23c) into TASKS.md as steps 1-9 per CLAU
   f59447c ckpt 123: v8.4 Release published and verified (FFTracker-v8.4.apk, 342294 bytes). 2026-0
   96a9953 ckpt 122: v8.4 shipped via ship.sh (23 suites + ES2018 + dex gate green, APK built, main
@@ -36,7 +37,6 @@ request in his own words and `git log` carries every step already taken.
   834ac6b ckpt 105: C code done: Advice merged into Lineups as a 'Set lineups | Advice' sub-view (
   e759e7b ckpt 101: Code for A (Roster PROJ + AVG column; new Store.playerAvg), B (Live: 'p 14.2' 
   aea9d08 ckpt 96: Wrote Tj's 2026-09-23b request ('Do number 1, 2, 3, 5, 6' of the v8.3 proposals
-  d1d42a7 ckpt 94: v8.3 Release published and verified (get_release_by_tag v8.3: FFTracker-v8.3.ap
 ```
 
 (2 automatic checkpoint(s) since the last deliberate one — the

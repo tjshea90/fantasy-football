@@ -11,7 +11,7 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
 - [x] **2. Static cross-checks:** DONE. CSS: 0 missing, 0 dead (3 hits were text values). Load order unchanged. FOUND+FIXED: 6 'Data → X' pointers in user copy named controls that do not exist under that label or no sub-screen at all (Export a backup / Run the feed self-test / depth: Smart / Test the projection feed / Claude costs / player database). Now all 'Data → Screen → Control'. Test: test_boot.js 'every "Data → screen → control" pointer resolves' (fails on v8.4: 6 bad). every CSS class the JS builds vs app.css
       (missing + dead rules), script load order vs top-level dependencies,
       stale copy (tab names, "Advice tab"), MANIFEST.
-- [ ] **3. Dynamic crawl in Chromium** (tools/perf.js harness, real-data
+- [x] **3. Dynamic crawl in Chromium** DONE — new `node tools/perf.js --state F --crawl` (reloads original state per action; taps every button, steps every select, types in every box, taps Live player rows, follows ⋯ -> Stats; dismisses dialogs via __onBack). Real-data state + an Advice-synced state (`--advice --save`): 236 + 275 actions over 12 screens, 0 page errors, 0 error cards, every dialog closes. (tools/perf.js harness, real-data
       state): tap every button/chip/select on every tab + sub-view + dialog,
       collect page errors and broken renders. No real device — say so.
 - [ ] **4. Review the v8.3/v8.4 diff** adversarially (saveSoon/flush, memo,
