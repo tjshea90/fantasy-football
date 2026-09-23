@@ -135,7 +135,7 @@ console.log('\n-- #1 Roster: PROJ + AVG on every player --');
     var l = h.W.Scoring.emptyLine(); l.rec.rec = pts / 2; l.rec.yds = pts * 5; l.played = played; return l;
   }
   var x = { id: p.id, name: p.name, pos: p.pos === 'DEF' ? 'WR' : p.pos, nfl: p.nfl, bye: 4 };
-  S.weekMeta['1'] = { synced: true, allFinal: true };
+  S.weekMeta['1'] = { synced: true, allFinal: true, at: new Date().toISOString(), games: 16 };
   St.setLine(1, p.id, line(10, true));                               /* 10 pts (5 rec, 50 yds) */
   var bk = {}; bk[h.W.Espn.normName(p.name)] = { n: p.name, t: p.nfl, p: 14 };
   St.setBook(2, bk);                                                 /* no line: the book's 14 */
@@ -266,7 +266,7 @@ var pendingOdds = null;
       var base = id === S.league.me ? 185 : 140 + (k % 9) * 3;
       St.setManualScore(wk, id, base + ((wk * 7 + k * 13) % 11) - 5);
     });
-    S.weekMeta[String(wk)] = { synced: true, allFinal: true };
+    S.weekMeta[String(wk)] = { synced: true, allFinal: true, at: new Date().toISOString(), games: 16 };
   }
   h.clickTab('data');
   ok(all(h.ids.view, function (n) { return n.tagName === 'H2' && /Power rankings/.test(n.textContent); }).length === 1,
