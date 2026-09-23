@@ -18,6 +18,7 @@
  *                                             #   (--slices N viewport-height slices each, default 2)
  *   node tools/perf.js --state S --profile      # top self-time functions per tab
  *   node tools/perf.js --state S --bootprofile  # where the cold-start time goes
+ *   node tools/perf.js --state S --tracesaves   # who called Native.save during boot
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
@@ -80,6 +81,7 @@ function curl(url, headersJson, body) {
 
   const initial = {};
   if (STATE) Object.assign(initial, JSON.parse(fs.readFileSync(STATE, 'utf8')));
+  if (opt('tracesaves', false)) initial.__trace = '1';
   await page.exposeFunction('__perfFetch', (u, h, b) => curl(u, h, b));
   await page.addInitScript((files) => {
     const disk = files;
@@ -87,10 +89,15 @@ function curl(url, headersJson, body) {
     let seq = 0;
     window.__perfDisk = disk;
     window.__perfSaves = 0;
+    window.__perfTrace = files.__trace ? [] : null;
     window.__perfSaveChars = 0;
     window.Native = {
       load: (k) => (Object.prototype.hasOwnProperty.call(disk, k) ? disk[k] : null),
-      save: (k, s) => { disk[k] = s; window.__perfSaves++; window.__perfSaveChars += s.length; return true; },
+      save: (k, s) => {
+        disk[k] = s; window.__perfSaves++; window.__perfSaveChars += s.length;
+        if (window.__perfTrace) window.__perfTrace.push(k + ' ' + String(new Error().stack).split('\n').slice(2, 9).map((l) => l.trim().replace(/^at /, '').replace(/\(file:.*\/([^/]+:\d+):\d+\)/, '$1')).join(' < '));
+        return true;
+      },
       backupAuto: () => true, backupList: () => '[]', backupLoad: () => null,
       online: () => true,
       httpAsync: (u, h, b) => {
@@ -146,6 +153,7 @@ function curl(url, headersJson, body) {
              scripts: Math.round(window.__perfScriptsDone - nav.responseEnd), bootFn: Math.round(window.__perfBootAt - window.__perfScriptsDone),
              saves: window.__perfSaves };
   });
+  if (opt('tracesaves', false)) console.log('saves so far:\n  ' + (await page.evaluate(() => window.__perfTrace)).join('\n  '));
   console.log(`throttle ${THROTTLE}x · boot: first content ${boot.firstContent}ms (loading+running scripts ${boot.scripts}ms, boot() to first content ${boot.bootFn}ms, ${boot.saves} saves) · load ${boot.load}ms`);
 
   if (SYNC) {
