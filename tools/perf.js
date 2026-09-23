@@ -48,7 +48,10 @@ const SYNC = opt('sync', null);
 const REPS = Number(opt('reps', 5));
 const DARK = opt('dark', '1') !== '0';
 const SLICES = Number(opt('slices', 2));
-const TABS = ['live', 'lineups', 'rosters', 'wire', 'stats', 'advice', 'data'];
+/* read from the page at run time; a "tab>Chip" entry means "open the tab,
+   then tap the sub-view chip with that label" (Lineups>Advice, 2026-09-23b) */
+let TABS = [];
+const SUBVIEWS = ['lineups>Advice'];
 const ROOT = path.resolve(__dirname, '..', 'app', 'assets');
 
 function curl(url, headersJson, body) {
@@ -188,6 +191,17 @@ function curl(url, headersJson, body) {
       requestAnimationFrame(() => setTimeout(() => resolve({ js: js, frame: performance.now() - a }), 0));
     }), fn);
   }
+  TABS = (await page.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#tabs .tab'), (t) => t.getAttribute('data-v')))).concat(SUBVIEWS);
+  function clickSrc(entry) {
+    const [tab, chip] = entry.split('>');
+    let src = `document.querySelector('#tabs .tab[data-v="${tab}"]').click();`;
+    if (chip) src += `Array.prototype.filter.call(document.querySelectorAll('#view button'), (b) => b.textContent === ${JSON.stringify(chip)})[0].click();`;
+    return src;
+  }
+  function resetSrc(entry) {
+    /* leave any sub-view on its default so the next entry starts clean */
+    return entry.indexOf('>') > 0 ? clickSrc(entry.split('>')[0] + '>Set lineups') : '';
+  }
   const rows = [];
   if (PROFILE) await cdp.send('Profiler.enable');
   for (const tab of TABS) {
@@ -196,11 +210,12 @@ function curl(url, headersJson, body) {
     for (let r = 0; r < REPS; r++) {
       const base = tab === 'live' ? 'stats' : 'live';
       await frameAfter(`document.querySelector('#tabs .tab[data-v="${base}"]').click()`);
-      const m = await frameAfter(`document.querySelector('#tabs .tab[data-v="${tab}"]').click()`);
+      const m = await frameAfter(clickSrc(tab));
       js.push(m.js); fr.push(m.frame);
     }
     let prof = null;
     if (PROFILE) prof = (await cdp.send('Profiler.stop')).profile;
+    const rs = resetSrc(tab);
     js.sort((a, b) => a - b); fr.sort((a, b) => a - b);
     const nodes = await page.evaluate(() => document.getElementById('view').getElementsByTagName('*').length);
     rows.push({ tab, js: Math.round(js[js.length >> 1]), frame: Math.round(fr[fr.length >> 1]), nodes });
@@ -212,7 +227,7 @@ function curl(url, headersJson, body) {
       for (let k = 0; k < SLICES && k * 800 < h; k++) {
         await page.evaluate((y) => window.scrollTo(0, y), k * 800);
         await page.waitForTimeout(50);
-        await page.screenshot({ path: path.join(SHOTS, tab + '-' + k + '.png') });
+        await page.screenshot({ path: path.join(SHOTS, tab.replace('>', '-') + '-' + k + '.png') });
       }
       await page.evaluate(() => window.scrollTo(0, 0));
     }
