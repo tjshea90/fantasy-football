@@ -1422,7 +1422,21 @@
    * is mid-game counts only what he has scored so far, so the figure never
    * claims more than it knows. Before kickoff it replaces a banner that just
    * said "Level" at 0.0-0.0. null when there is nothing to project. */
-  function projectedFinish(teamId, res) {
+  /* id -> this week's projection object for one team (Recommend.projectAll,
+     the numbers the auto-lineup uses). Computed once per team per render and
+     handed to both the projected finish and the per-starter rows. */
+  function weekProjById(teamId) {
+    var byId = {};
+    if (!window.Recommend || !Recommend.projectAll) return byId;
+    try {
+      var wm = S.weekMeta[String(week)];
+      Recommend.projectAll(week, teamId, (wm && wm.opponents) || null).forEach(function (x) {
+        if (x.p) byId[x.p.id] = x;
+      });
+    } catch (e) { /* no projections: the scores still render */ }
+    return byId;
+  }
+  function projectedFinish(teamId, res, byIdIn) {
     var wm = S.weekMeta[String(week)];
     if (wm && wm.allFinal) return null;          /* the week is over: no guessing */
     var yet = res.detail.filter(function (d) {
@@ -1433,19 +1447,15 @@
       return !(b && b.done);
     });
     if (!yet.length || !window.Recommend || !Recommend.projectAll) return null;
-    try {
-      var opp = (wm && wm.opponents) || null;
-      var byId = {};
-      Recommend.projectAll(week, teamId, opp).forEach(function (x) { if (x.p) byId[x.p.id] = x.proj; });
-      var add = 0;
-      yet.forEach(function (d) { add += Number(byId[d.pid]) || 0; });
-      return res.total + add;
-    } catch (e) { return null; }
+    var byId = byIdIn || weekProjById(teamId), add = 0;
+    yet.forEach(function (d) { add += Number(byId[d.pid] && byId[d.pid].proj) || 0; });
+    return res.total + add;
   }
   function myMatchupCard(meId, oppId) {
     var A = Store.team(meId), B = Store.team(oppId);
     var ra = Store.teamWeekPoints(week, meId), rb = Store.teamWeekPoints(week, oppId);
-    var pa = projectedFinish(meId, ra), pb = projectedFinish(oppId, rb);
+    var ja = weekProjById(meId), jb = weekProjById(oppId);
+    var pa = projectedFinish(meId, ra, ja), pb = projectedFinish(oppId, rb, jb);
     var wrap = el('div');
     var head = el('div', 'card me');
     head.appendChild(el('h2', null, 'Your matchup · week ' + week));
@@ -1466,8 +1476,8 @@
     wrap.appendChild(head);
 
     var cols = el('div', 'mu2');
-    cols.appendChild(liveScoreBox(A, ra, true, pa));
-    cols.appendChild(liveScoreBox(B, rb, false, pb));
+    cols.appendChild(liveScoreBox(A, ra, true, pa, ja));
+    cols.appendChild(liveScoreBox(B, rb, false, pb, jb));
     wrap.appendChild(cols);
     return wrap;
   }
@@ -1475,18 +1485,18 @@
      still to play, then that team's lineup — open, and every row tappable
      for the live stat breakdown behind its points. Used for both halves of
      the split Live-tab matchup, mine and my opponent's alike. */
-  function liveScoreBox(team, res, isMine, proj) {
+  function liveScoreBox(team, res, isMine, proj, projById) {
     var c = el('div', 'card halfbox' + (isMine ? ' me' : ''));
     c.appendChild(el('h2', null, team.name));
     c.appendChild(el('div', 'bigfig', fmt(res.total)));
     var yet = res.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
     c.appendChild(el('div', 'sub muted', yet + ' yet to play' +
       (proj !== null && proj !== undefined ? ' · proj ' + fmt(proj) : '')));
-    c.appendChild(openLineup(team, res));
+    c.appendChild(openLineup(team, res, projById));
     return c;
   }
-  function openLineup(team, res) {
-    var d = lineupDetail(team, res);
+  function openLineup(team, res, projById) {
+    var d = lineupDetail(team, res, projById);
     d.open = true;
     return d;
   }
@@ -1517,7 +1527,7 @@
     if (parts.length < 2 || !parts[0]) return s;
     return parts[0].charAt(0) + '. ' + parts.slice(1).join(' ');
   }
-  function lineupDetail(team, res) {
+  function lineupDetail(team, res, projById) {
     var d = el('details');
     var s = el('summary', null, team.name + ' lineup ▾');
     d.appendChild(s);
@@ -1552,6 +1562,15 @@
       }
       r.appendChild(nm);
       var p = el('div', 'pts' + (x.onBye ? ' bye' : (x.played ? '' : ' pend')), x.onBye ? '0.0' : fmt(x.pts));
+      /* Until his game starts, his projection sits under the 0.0 (2026-09-23b,
+         Tj's pick #2 — ESPN and Sleeper both do this). Once he has played,
+         only the real points show. */
+      var pj = (projById && x.pid && !x.played && !x.onBye) ? projById[x.pid] : null;
+      if (pj) {
+        var pp = el('small', 'pproj', 'p ' + fmt(pj.proj));
+        pp.setAttribute('aria-label', 'projected ' + fmt(pj.proj));
+        p.appendChild(pp);
+      }
       r.appendChild(p);
       r.addEventListener('click', function () { if (x.pid) showPlayer(x.pid); });
       d.appendChild(r);
@@ -2023,7 +2042,7 @@
     var hd = el('div', 'row rhead');
     hd.appendChild(el('div', 'slot', ''));
     hd.appendChild(el('div', 'nm', 'Player'));
-    hd.appendChild(el('div', 'pv', 'Wk ' + week + ' proj · avg'));
+    hd.appendChild(el('div', 'pv', 'Proj'));
     hd.appendChild(el('div', 'rmore'));
     c.appendChild(hd);
     t.players.slice().sort(function (a, b) {

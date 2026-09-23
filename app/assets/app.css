@@ -273,3 +273,6 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .row.rhead .nm,.row.rhead .pv{font-size:10px;color:var(--dim);text-transform:uppercase;
   letter-spacing:.05em;font-weight:600}
 .row.rhead + .row{border-top:1px solid var(--line)}
+/* Live: a starter's projection under his 0.0 until his game starts */
+.row .pts .pproj{display:block;font-size:9px;font-weight:500;font-style:normal;color:var(--dim);
+  opacity:1;white-space:nowrap}
