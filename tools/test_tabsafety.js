@@ -285,6 +285,20 @@ console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush 
   h.W.__appPause();
   ok(writes === before, 'a second pause with nothing pending writes nothing');
 }());
+(function () {
+  /* The Advice tab re-read all four advice caches from disk on every render
+     (Recommend.render -> loadCaches): four synchronous bridge reads and a
+     re-parse of the ~400 KB season-projection file per visit. */
+  var disk = {}, reads = 0;
+  var h = buildHarness(disk);
+  var realLoad = h.W.Native.load;
+  h.W.Native.load = function (k) { reads++; return realLoad(k); };
+  h.docHandlers.DOMContentLoaded();
+  h.clickTab('advice');
+  reads = 0;
+  h.clickTab('live'); h.clickTab('advice'); h.clickTab('live'); h.clickTab('advice');
+  ok(reads === 0, 'opening Advice twice more read the disk ' + reads + ' times (want 0 — caches are loaded once at boot)');
+}());
 
 console.log(fails ? ('\n  ' + fails + ' tab-safety check(s) FAILED') : '\n  tab-safety checks pass');
 process.exit(fails ? 1 : 0);
