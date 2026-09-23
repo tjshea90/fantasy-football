@@ -170,5 +170,24 @@ ok(!N.same('Hollywood Brown', 'A.J. Brown', 'WR', 'WR'),
      'playerdb.js delegates to Espn.normName instead of reimplementing it');
 })();
 
+/* MEMOIZED (2026-09-23 speed pass): normName, canon and variants cache their
+ * answers. The cache must never change an answer, and variants() must hand
+ * back a list the caller can edit without poisoning the next lookup. */
+(function () {
+  var a = N.variants('Kenny Gainwell');
+  var want = a.slice();
+  a.push('poison'); a.length = 1;
+  var b = N.variants('Kenny Gainwell');
+  ok(JSON.stringify(b) === JSON.stringify(want),
+     'memoized variants(): editing a returned list does not change the next answer');
+  ok(N.canon('Kenny Gainwell') === N.canon('Kenneth Gainwell') &&
+     N.canon('Kenny Gainwell') === N.canon('Kenny Gainwell'),
+     'memoized canon(): repeat calls agree with first calls');
+  ok(N.canon(null) === '' && N.canon(undefined) === '' && N.variants('').length === 0,
+     'memoized canon()/variants(): empty input still yields nothing');
+  ok(N.hitKey({ 'kenneth gainwell': 1 }, 'Kenny Gainwell') !== null,
+     'memoized hitKey(): a nickname still finds the formal key');
+})();
+
 console.log(fails ? ('  ' + fails + ' name check(s) FAILED') : '  name checks pass');
 process.exit(fails ? 1 : 0);
