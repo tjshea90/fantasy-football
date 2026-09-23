@@ -55,7 +55,14 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
             (2026-09-23)" — confirmed FAIL on pre-fix code (4 writes, gen
             bumped). AFTER C1+C2 (4x): rosters 77->18ms, wire 82->33ms,
             saves in the same run 74->14.
-      - [ ] C3 Advice: stop re-parsing the season-projection cache per render
+      - [x] C3 Advice no longer re-reads all four advice caches from disk
+            per render (Recommend.render -> loadCaches once). Test:
+            test_tabsafety.js "opening Advice twice more read the disk 0
+            times" (pre-fix: 8 reads). Advice 21->9ms at 4x.
+      - [x] C3b boot's league-wide auto-fill saved once PER TEAM (10 sync
+            disk writes before first paint on a fresh week) -> one save.
+            Store.applyAuto(..., deferSave). Test: test_tabsafety.js "a cold
+            boot on a fresh week wrote the main state N times" (pre-fix 11).
       - [ ] C4 boot profile (script parse vs boot()); WebView settings
             (setOffscreenPreRaster etc.); expensive CSS
 - [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,

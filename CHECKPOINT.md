@@ -1,12 +1,12 @@
-# CHECKPOINT 63 — read me first, then TASKS.md
+# CHECKPOINT 71 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T03:18:50Z · **version:** 8.2 · **tests:** all 22 suites green
+**Written:** 2026-09-23T03:23:53Z · **version:** 8.2 · **tests:** all 22 suites green
 
 ## Just done
-Speed C1+C2 done: memoized name normalization; tab taps no longer do a synchronous Store.save (new Store.saveSoon/flush, flushed on __appPause). At 4x throttle rosters 77->18ms, wire 82->33ms, saves per tab-run 74->14. Tests: test_names.js memo checks, test_tabsafety.js SPEED section (confirmed failing pre-fix).
+Speed C3 + C3b done: Advice loads its 4 disk caches once instead of every render; boot/Lineups auto-fill does ONE save for the league instead of one per team (10 sync writes before first paint -> 1). Both pinned in test_tabsafety.js, confirmed failing on pre-fix snapshot. perf.js gained --bootprofile and --tracesaves. Now at 4x: boot ~386ms (scripts ~190, boot() ~150), tabs: live 15, lineups 19, rosters 14, wire 29, stats 5, advice 9, data 19 ms.
 
 ## Do this next
-C3: projections.js loadSeasonCache is re-parsed on every Advice render (~45ms/5 renders at 4x) — cache the parsed object in memory keyed on the raw string/generation. Then C4 boot profile + WebView settings, then D UI survey (screenshots via node tools/perf.js --state F --shots DIR).
+C4: WebView settings in MainActivity (setOffscreenPreRaster(true) etc.), check CSS cost, consider script parse cost (~190ms at 4x for ~870KB with ~25% comments; minifying would hurt readable error stacks — likely skip). Then D: UI survey + small polish items (compact header, Wire row density, swap-button layout, Data tab order, DEF name truncation on Live).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  368bf1c ckpt 63: Speed C1+C2 done: memoized name normalization; tab taps no longer do a synchron
   0d3b0ec ckpt 56: Step A done (baseline 22 suites green). Step B in progress: wrote tools/perf.js
   1343c3d ckpt 52: Wrote Tj's 2026-09-23 request (polish/reorganize/declutter + make it snappy on 
   de3e3d6 ckpt 64: v8.2 shipped and published: triggered publish-release.yml, verified via get_rel
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   8c4d8d7 ckpt 54: Full-test sweep (2026-09-19, second pass): found and fixed a real caching/data-
   798e0e4 ckpt 54: Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a perm
   950bca6 ckpt 114: Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, 
-  f586fc2 ship v8.0: v8.0: overall UI/code improvement sweep -- five real fixes, a stale docs bug,
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(7 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
