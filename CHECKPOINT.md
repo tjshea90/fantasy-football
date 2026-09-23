@@ -1,12 +1,12 @@
-# CHECKPOINT 71 — read me first, then TASKS.md
+# CHECKPOINT 74 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T03:23:53Z · **version:** 8.2 · **tests:** all 22 suites green
+**Written:** 2026-09-23T03:26:38Z · **version:** 8.2 · **tests:** all 22 suites green
 
 ## Just done
-Speed C3 + C3b done: Advice loads its 4 disk caches once instead of every render; boot/Lineups auto-fill does ONE save for the league instead of one per team (10 sync writes before first paint -> 1). Both pinned in test_tabsafety.js, confirmed failing on pre-fix snapshot. perf.js gained --bootprofile and --tracesaves. Now at 4x: boot ~386ms (scripts ~190, boot() ~150), tabs: live 15, lineups 19, rosters 14, wire 29, stats 5, advice 9, data 19 ms.
+Speed C4 done: MainActivity setOffscreenPreRaster(true) (build.sh green). Minification rejected (would wreck the error card's stack traces). Step C complete.
 
 ## Do this next
-C4: WebView settings in MainActivity (setOffscreenPreRaster(true) etc.), check CSS cost, consider script parse cost (~190ms at 4x for ~870KB with ~25% comments; minifying would hurt readable error stacks — likely skip). Then D: UI survey + small polish items (compact header, Wire row density, swap-button layout, Data tab order, DEF name truncation on Live).
+Step D/E UI polish, in this order: (1) compact header — move #syncBtn into .hrow so the sync status becomes one small text line (~27px back on every tab); (2) Wire swap rows: button wraps under the text instead of squeezing it (.row.wrap); (3) Wire FA board rows: basis/usage fine print smaller + 2-line clamp, tap to expand; (4) Live: DEF shows team nickname not 'Seattle Seah...'; (5) Live pre-game banner 'Level' -> projected totals. Screenshots: node tools/perf.js --state F --shots DIR (F = scratchpad fixture; rebuild with --sync 1,2 --save F if gone).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  6bde6b1 ckpt 71: Speed C3 + C3b done: Advice loads its 4 disk caches once instead of every rende
   368bf1c ckpt 63: Speed C1+C2 done: memoized name normalization; tab taps no longer do a synchron
   0d3b0ec ckpt 56: Step A done (baseline 22 suites green). Step B in progress: wrote tools/perf.js
   1343c3d ckpt 52: Wrote Tj's 2026-09-23 request (polish/reorganize/declutter + make it snappy on 
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   db7e9e7 ckpt 57: Full test (2026-09-19, requested via the standing 'full tests' protocol in CLAU
   8c4d8d7 ckpt 54: Full-test sweep (2026-09-19, second pass): found and fixed a real caching/data-
   798e0e4 ckpt 54: Wrote Tj's standing 'light tests'/'full tests' request into CLAUDE.md as a perm
-  950bca6 ckpt 114: Shipped v8.0 and published the GitHub Release: triggered publish-release.yml, 
 ```
 
-(7 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)

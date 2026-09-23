@@ -63,8 +63,15 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
             disk writes before first paint on a fresh week) -> one save.
             Store.applyAuto(..., deferSave). Test: test_tabsafety.js "a cold
             boot on a fresh week wrote the main state N times" (pre-fix 11).
-      - [ ] C4 boot profile (script parse vs boot()); WebView settings
-            (setOffscreenPreRaster etc.); expensive CSS
+      - [x] C4 WebView: setOffscreenPreRaster(true) in MainActivity (the
+            WebView is the whole screen; pre-rasterises tiles just outside
+            the viewport so a fast fling on Wire/Roster does not checkerboard).
+            build.sh green. Boot profiled (perf.js --bootprofile): at 4x,
+            scripts ~190ms, boot() ~150ms. Script minification considered
+            and REJECTED: it would turn the in-app error card's stack trace
+            (which Tj sends to Claude to get bugs fixed) into gibberish, for
+            a win bounded by V8's already-lazy parse. CSS checked: nothing
+            expensive on scrolling content (no filters/blur/animated shadows).
 - [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,
       Advice, Data) against how ESPN/Sleeper/Yahoo present the same thing.
       List concrete look/function/organization improvements and obsolete
