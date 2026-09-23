@@ -258,6 +258,9 @@
     invN = withData.length ? invN / withData.length : 1;
     var tau2 = vb - sigma * sigma * invN, floor = 0.05 * lg;
     if (tau2 < floor * floor) tau2 = floor * floor;
+    /* nothing scored yet: every team is the same unknown — equal odds, and
+       never a 0/0 turning the whole table into NaN */
+    if (!(lg > 0)) { sigma = 1; tau2 = 1; }
     var out = {};
     rows.forEach(function (r) {
       var prec = 1 / tau2 + (r.n ? r.n / (sigma * sigma) : 0);

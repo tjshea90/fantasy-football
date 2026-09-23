@@ -271,6 +271,9 @@ var pendingOdds = null;
   h.clickTab('data');
   ok(all(h.ids.view, function (n) { return n.tagName === 'H2' && /Power rankings/.test(n.textContent); }).length === 1,
      'Data -> League has the card even before any week is final');
+  var none = Sim.season(reg);
+  ok(none.rows.every(function (r) { return isFinite(r.playoff) && isFinite(r.title) && isFinite(r.projPts); }),
+     'with NO scored week the simulation still returns finite odds (no 0/0 -> NaN)');
   playWeek(1); playWeek(2);
   var early = Sim.season(reg);
   function sum(rows, f) { return rows.reduce(function (a, r) { return a + r[f]; }, 0); }
