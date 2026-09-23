@@ -1,6 +1,64 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-23** · **v8.4**, shipped · APK builds, signed, all 23 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-23** · **v8.5**, shipped · APK builds, signed, all 23 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.5 — full test (standing protocol), 2026-09-23c
+
+Tj: "Run a full test". CLAUDE.md's Full-tests protocol, whole app, fresh eyes,
+extra weight on what v8.3/v8.4 changed. No real device exists here; the
+dynamic checks ran in headless Chromium at 4x CPU throttle with real ESPN data.
+
+New tooling (tools/perf.js, dev-only): `--crawl` reloads the original state
+before EACH action and operates every control on every screen and sub-screen
+(taps buttons, steps selects, types in boxes, taps Live player rows, follows
+⋯ -> Stats), dismissing dialogs through __onBack — 511 actions over 12 screens
+on two real-data states, 0 page errors, 0 error cards. `--advice` runs the
+Advice sync first; `--netlog --idle N` logs every request; `--root DIR`.
+The frame marker is now queued before the tap (it had been counting work
+deliberately deferred until after the paint).
+
+### Findings, all fixed, each with a test that fails on v8.4
+
+1. **Battery / jank / flash wear — the game-log cache.** Gamelog.ingestEvent
+   rewrote the WHOLE cache (~200 KB per week, ~3.5 MB by week 17) with a
+   synchronous bridge write + fsync once PER GAME, and the Sunday live poll
+   re-ingests every in-progress game every 45 s: mid-season ~9 full 2-3 MB
+   writes per poll, all afternoon, on the renderer thread. Now only a FINAL
+   game marks it dirty (an in-progress line is never trusted from disk —
+   ensureEvent refetches it), writes coalesce to one ~2 s after a batch, and
+   __appPause flushes. test_gamelog.js.
+2. **First-open lag — Claude cost estimates.** The "Estimated cost" lines on
+   Roster and Wire built the ENTIRE Claude prompt (every roster priced / the
+   whole wire) just to count characters: ~100 ms of a ~155 ms first Roster
+   open at 4x. Now filled right after the paint (afterPaint: a frame callback
+   then a zero timer, so an overdue timer can never delay the paint), and
+   written at once from the memo on later visits. Playoff odds use the same
+   path. First open to frame at 4x: Roster ~180 -> ~65 ms, Wire ~120 -> ~65 ms.
+   test_picks.js "full test" section.
+3. **First-sort lag — ICU start-up.** The first String#localeCompare of a
+   session costs ~44 ms at 4x (Chromium initialising its collator) and landed
+   on the first Roster open or first search keystroke. New Names.cmp: for
+   ASCII names a code-unit compare of lowercased strings with the apostrophe
+   moved after hyphen/period — exactly ICU's order (checked over all 963 names
+   the app ships); anything non-ASCII still uses localeCompare. test_names.js.
+4. **Network — duplicate scoreboard.** A stale boot or resume fetched the week
+   scoreboard twice, 4 s apart (Schedule.refresh, then the live poll that
+   fetches it anyway and feeds Schedule.ingest). freshenSchedule() now stands
+   down when a tick is due within 15 s; appResume arms the poll first.
+   Request log: 2 -> 1. test_boot.js pins.
+5. **Stale copy.** Six "Data → X" pointers named controls that no longer exist
+   under that label or no sub-screen at all ("Export a backup", "Run the feed
+   self-test", "depth: Smart", ...). All are "Data → Screen → Control" now,
+   and test_boot.js parses every such pointer and checks it resolves.
+
+### Checked and clean
+CSS classes built vs defined (0 missing, 0 dead); script load order; the
+v8.3/v8.4 diff (saveSoon/flush, memo, closing sync — a failing box score
+retries only at the 5-10 min idle cadence — tab merge, projections, sim, row
+menu); Android alarms (2 inexact/day, one 6-7 s-bounded GET; a stale "weekly"
+comment fixed); cache growth (all bounded except the game log, by design);
+engine: five real week-2 lines recomputed by hand from RULES_2026.md, all
+exact (incl. a missed 58-yard FG at −1 and a D/ST at 7 allowed).
 
 ## v8.4 — Tj's picks 1, 2, 3, 5, 6 from the v8.3 proposals (2026-09-23b)
 

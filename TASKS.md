@@ -50,7 +50,7 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
 - [x] **6. Engine/logic** spot-checks vs RULES_2026.md DONE — five real week-2 lines recomputed by hand (Stafford 60.25, Taylor 29.2, Olave 22.6, Fairbairn 6 incl. a missed 58-yarder at −1, SEA D 13 at 7 allowed): all exact. Sim odds verified by test_picks.
 - [x] **7. Fix everything found** DONE — 5 findings, each fixed with a named test that fails on v8.4 (see the finding boxes above)., each with a named test confirmed to FAIL
       pre-fix (source-text pin where no harness can reach).
-- [ ] **8. Full regression** (exit code AND output) + Chromium smoke.
+- [x] **8. Full regression** DONE — 23 suites exit 0 / 0 FAIL lines; ES2018 green; final crawl 275 actions 0 problems; cold-seed smoke clean. (exit code AND output) + Chromium smoke.
 - [ ] **9. Ship** + publish Release + send link.
 
 ## Prior job, complete (2026-09-23b) — BUILD PROPOSALS 1, 2, 3, 5, 6
