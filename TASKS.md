@@ -98,14 +98,16 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
       captured final; never re-syncs a week stored synced-and-final). Test:
       test_schedule.js "the CLOSING sync" (7 checks, confirmed FAIL pre-fix).
       test_net.js liveTick source window widened 1400->2600 (property same).
-- [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,
+- [x] **D. UI survey, tab by tab** DONE — every tab screenshotted in the
+      harness and read; the small items are done (E-progress above), the
+      MAJOR ones are proposals 1-7 under "Waiting on Tj". (Live, Lineups, Roster, Wire, Stats,
       Advice, Data) against how ESPN/Sleeper/Yahoo present the same thing.
       List concrete look/function/organization improvements and obsolete
       junk. Split the list: SMALL (polish, spacing, hierarchy, copy, dead
       UI) vs MAJOR (moving/merging/removing a tab or feature).
-- [ ] **E. Do the SMALL items.** Each checked in Chromium (light + dark) and
+- [x] **E. Do the SMALL items.** Done — see E-progress 1 and 2 above. Each checked in Chromium (light + dark) and
       by the suites; source-text pins where no render harness exists.
-- [ ] **F. Write the MAJOR items up under "Waiting on Tj"** as proposals with
+- [x] **F. Write the MAJOR items up under "Waiting on Tj"** Done (1-7). as proposals with
       a one-line why each — not done without his yes.
 - [ ] **G. Full regression** — every suite by exit code AND output, ES2018
       gate, Chromium smoke of every tab.
@@ -612,6 +614,31 @@ is printed into every session briefing, so a finished job left here is re-read
 at cost on every cold start, forever.
 
 ## Waiting on Tj
+
+- [ ] **Bigger ideas from the 2026-09-23 review — NOT done, need your yes.**
+      Each is modelled on how ESPN / Sleeper / Yahoo handle the same screen.
+      Reply with the numbers you want and they get built:
+      1. **Roster: a number on every player.** ESPN's roster shows PROJ and
+         AVG per player; ours shows only name/team/bye/kickoff. Add this
+         week's projection and his season average (league scoring) on the
+         right of each row.
+      2. **Live: each starter's projection before kickoff.** The team totals
+         now show a projected finish; ESPN/Sleeper also show each player's
+         projection under his 0.0 until his game starts.
+      3. **Merge Advice into Lineups (7 tabs -> 6).** Start/sit advice lives
+         where the lineup is set in every big app; each remaining tab gets
+         ~15% wider and easier to hit. Nothing removed, just moved.
+      4. **League scoreboard.** Every matchup's live score in one list (ESPN
+         "Scoreboard"). You asked for Live to be only your matchup, so this
+         would go on Data -> League or under the Live card, collapsed.
+      5. **Power rankings / playoff odds.** sim.js already computes season
+         simulations, power and all-play records (tested, never shown). A
+         small card on Data -> League, like Sleeper's playoff odds.
+      6. **Quieter Drop buttons on Roster.** 17 red buttons down the page;
+         ESPN puts Drop behind an edit mode or long-press. Proposal: a
+         neutral "⋯" per row that opens Drop (still confirmed).
+      7. **Light theme** that follows the phone's setting (currently always
+         dark).
 
 - [ ] **Decide: the live Anthropic API key rides along in Android's automatic
       cloud backup and device-transfer, in plain text.** Found in the
