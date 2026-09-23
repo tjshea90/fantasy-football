@@ -72,6 +72,17 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
             (which Tj sends to Claude to get bugs fixed) into gibberish, for
             a win bounded by V8's already-lazy parse. CSS checked: nothing
             expensive on scrolling content (no filters/blur/animated shadows).
+- [x] **E-progress (2026-09-23, done so far, all suites green):**
+      compact header (Sync button moved into the top row; status is one small
+      line; ~27px back on every tab); Live shows PROJECTED FINISH per team
+      ("10 yet to play · proj 190.1") and a pre-kickoff banner "Projected
+      190.1 – 173.5 · you by 16.6" instead of "Level" (projectedFinish(): banked
+      points + Recommend.projectAll for starters not yet started); Live DEF
+      shows nickname ("Seahawks", test_boot.js shortName checks updated);
+      Wire swap rows wrap the long "Add + drop X" button under the text
+      (.row.wrap); Wire FA rows: basis/usage as 2-line fine print, tap to
+      expand (.fine), left column shows rank (#1..) instead of the duplicated
+      team code. Verified by screenshots (perf.js --shots).
 - [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,
       Advice, Data) against how ESPN/Sleeper/Yahoo present the same thing.
       List concrete look/function/organization improvements and obsolete
