@@ -166,7 +166,9 @@ ok(/weekMeta/.test(scode), 'the schedule persists inside the season state');
 console.log('\n-- the live poll is not a fixed drumbeat --');
 (function () {
   var i = ucode.indexOf('function liveTick');
-  var block = ucode.slice(i, i + 1400);
+  /* 2600, was 1400: the closing-sync branch (2026-09-23) moved the backoff
+     further down the same function — the window, not the property, changed */
+  var block = ucode.slice(i, i + 2600);
   ok(/scheduleLive\(pre \? 5 \* 60000 : 10 \* 60000\)/.test(block),
      'with nothing in progress it drops to 5-10 minutes rather than 45 seconds');
   ok(/live\.next = 0; return;/.test(block),
