@@ -453,7 +453,13 @@
     /* opts: { title, blurb, build(), apply(text), status() } */
     var c = el('div', 'card');
     c.appendChild(el('h2', null, opts.title));
-    c.appendChild(el('p', 'hint', opts.blurb));
+    /* The how-it-works paragraph is clamped to three lines, tap to read it
+       all (2026-09-23). This same box appears on Roster, Wire and Advice,
+       and after the first use its five-line explanation was the tallest
+       thing between him and the two buttons he actually came for. */
+    var blurb = el('p', 'hint clamp', opts.blurb);
+    blurb.addEventListener('click', function () { blurb.classList.toggle('open'); });
+    c.appendChild(blurb);
 
     var step1 = el('button', 'btn pri', '1 · Make the file for Claude');
     step1.style.marginTop = '4px';
@@ -3160,8 +3166,8 @@
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Standings'));
     var st = Store.standings(Math.max(week, 1));
-    c.appendChild(table(['Team', 'W', 'L', 'T', 'Points'], st.byRecord.map(function (r) {
-      return { me: r.id === S.league.me, cells: [r.name, r.w, r.l, r.t, fmt(r.pts)] };
+    c.appendChild(table(['Team', 'W', 'L', 'T', 'Points'], st.byRecord.map(function (r, i) {
+      return { me: r.id === S.league.me, cells: [(i + 1) + '. ' + r.name, r.w, r.l, r.t, fmt(r.pts)] };
     })));
     return c;
   }

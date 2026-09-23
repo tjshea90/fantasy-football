@@ -260,3 +260,6 @@ textarea:focus-visible,[tabindex]:focus-visible{
   margin-top:2px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
   overflow:hidden}
 .row .nm .fine.open{display:block;-webkit-line-clamp:unset}
+/* A long explanatory paragraph clamped to three lines; tap to open it. */
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.clamp.open{display:block;-webkit-line-clamp:unset}
