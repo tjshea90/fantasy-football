@@ -19,6 +19,7 @@
  *   node tools/perf.js --state S --profile      # top self-time functions per tab
  *   node tools/perf.js --state S --bootprofile  # where the cold-start time goes
  *   node tools/perf.js --state S --tracesaves   # who called Native.save during boot
+ *   node tools/perf.js --state S --crawl        # operate EVERY control on every screen, report errors
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
@@ -192,6 +193,87 @@ function curl(url, headersJson, body) {
     }), fn);
   }
   TABS = (await page.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#tabs .tab'), (t) => t.getAttribute('data-v')))).concat(SUBVIEWS);
+  /* ---- --crawl: operate every control on every screen (full-test aid) ----
+   * For each screen and sub-screen, reload from the ORIGINAL state (so a
+   * destructive tap cannot poison the next one), open the screen, then act on
+   * control i: tap a button, step a <select>, or type into a text/number box.
+   * Any dialog that opens is recorded and dismissed through __onBack (the
+   * same path the phone's back gesture takes). Collected: page errors,
+   * console errors, and any "This screen hit an error" card. Network taps
+   * really go out (ESPN through curl); Claude taps fail cleanly without a key. */
+  async function crawl() {
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    const SCREENS = [['live'], ['lineups', 'Set lineups'], ['lineups', 'Advice'], ['rosters'], ['wire'],
+      ['stats', 'Search'], ['stats', 'By team'], ['stats', 'Top players'],
+      ['data', 'League'], ['data', 'Claude'], ['data', 'Sync & data'], ['data', 'App']];
+    const WAIT = Number(opt('wait', 500));
+    let actions = 0; const problems = [];
+    async function open(sc) {
+      await page.reload({ waitUntil: 'load' });
+      await page.waitForFunction(() => window.__perfBootAt !== null, null, { timeout: 60000 });
+      await page.evaluate((sc) => {
+        const other = sc[0] === 'live' ? 'stats' : 'live';
+        document.querySelector('#tabs .tab[data-v="' + other + '"]').click();
+        document.querySelector('#tabs .tab[data-v="' + sc[0] + '"]').click();
+        if (sc[1]) {
+          const b = Array.prototype.filter.call(document.querySelectorAll('#view button'), (x) => x.textContent === sc[1])[0];
+          if (b) b.click();
+        }
+      }, sc);
+      await page.waitForTimeout(80);
+    }
+    function controls() {
+      return page.evaluate(() => Array.prototype.map.call(
+        document.querySelectorAll('#view button, #view select, #view input[type=text], #view input[type=number], #view input:not([type]), #view summary'),
+        (n, i) => ({ i, tag: n.tagName, label: (n.textContent || n.placeholder || n.getAttribute('aria-label') || '').trim().slice(0, 40) })));
+    }
+    for (const sc of SCREENS) {
+      await open(sc);
+      const list = await controls();
+      console.log(`\n== ${sc.join(' > ')}: ${list.length} controls`);
+      for (const c of list) {
+        const before = errors.length;
+        await open(sc);
+        const res = await page.evaluate((c) => {
+          const all = document.querySelectorAll('#view button, #view select, #view input[type=text], #view input[type=number], #view input:not([type]), #view summary');
+          const n = all[c.i];
+          if (!n) return { skipped: 'gone after reload' };
+          if (n.disabled) return { skipped: 'disabled' };
+          if (n.tagName === 'SELECT') {
+            if (n.options.length > 1) { n.selectedIndex = (n.selectedIndex + 1) % n.options.length; n.dispatchEvent(new Event('change', { bubbles: true })); }
+          } else if (n.tagName === 'INPUT') {
+            n.focus(); n.value = n.type === 'number' ? '123.4' : 'kupp';
+            n.dispatchEvent(new Event('input', { bubbles: true })); n.dispatchEvent(new Event('change', { bubbles: true }));
+            n.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          } else n.click();
+          return { ok: true };
+        }, c);
+        await page.waitForTimeout(WAIT);
+        const after = await page.evaluate(() => {
+          const d = Array.prototype.map.call(document.querySelectorAll('[role=dialog]'), (x) => {
+            const h = x.querySelector('h2'); return (h ? h.textContent : '?') + ' [' +
+              Array.prototype.map.call(x.querySelectorAll('button'), (b) => b.textContent).join('|') + ']';
+          });
+          const bad = /This screen hit an error|Something went wrong|Script error/.test(document.getElementById('view').textContent);
+          let guard = 0; while (document.querySelectorAll('[role=dialog]').length && guard++ < 6) { if (window.__onBack) window.__onBack(); }
+          return { dialogs: d, bad, left: document.querySelectorAll('[role=dialog]').length,
+                   err: bad ? document.getElementById('view').textContent.slice(0, 300) : '' };
+        });
+        actions++;
+        const newErr = errors.slice(before);
+        const tag = `${c.tag.toLowerCase()} "${c.label}"`;
+        if (res.skipped) { console.log(`   - ${tag}: skipped (${res.skipped})`); continue; }
+        if (newErr.length || after.bad || after.left) {
+          problems.push(`${sc.join('>')} ${tag}: ` + (newErr.join(' || ') + ' ' + after.err + (after.left ? ' [dialog would not close]' : '')).slice(0, 600));
+          console.log(`   ! ${tag}: PROBLEM`);
+        } else console.log(`   . ${tag}${after.dialogs.length ? '  -> dialog ' + after.dialogs.join(' / ') : ''}`);
+      }
+    }
+    console.log(`\ncrawl: ${actions} actions, ${problems.length} problem(s)`);
+    problems.forEach((p) => console.log('  PROBLEM ' + p));
+    await browser.close();
+    process.exit(problems.length ? 1 : 0);
+  }
   function clickSrc(entry) {
     const [tab, chip] = entry.split('>');
     let src = `document.querySelector('#tabs .tab[data-v="${tab}"]').click();`;
@@ -202,6 +284,7 @@ function curl(url, headersJson, body) {
     /* leave any sub-view on its default so the next entry starts clean */
     return entry.indexOf('>') > 0 ? clickSrc(entry.split('>')[0] + '>Set lineups') : '';
   }
+  if (opt('crawl', false)) { await crawl(); return; }
   const rows = [];
   if (PROFILE) await cdp.send('Profiler.enable');
   for (const tab of TABS) {
