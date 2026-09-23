@@ -24,19 +24,40 @@ async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
 
 ### Steps
 
-- [ ] **A. Baseline.** All suites + ES2018 gate green before touching anything.
+- [x] **A. Baseline.** All suites + ES2018 gate green before touching anything. Done: 22 suites green at ckpt 52.
 - [ ] **B. Measure before optimizing.** Load index.html in headless Chromium
       with CPU throttling (a mid-range phone ≈ 4x slowdown) and a stubbed
       Native bridge; record boot-to-first-paint, per-tab render time, and the
       heaviest JS on each path. Also size every asset (players.js/seed.js are
       one-line data blobs). Write the numbers down here so the "after" can be
       compared honestly. No real device exists in this environment — say so.
+      **Done — tools/perf.js** (headless Chromium, 4x CPU throttle, 412x915
+      viewport, stubbed Native bridge that proxies the REAL network via curl;
+      `--sync 1,2 --save F` builds a real-data state, `--state F --profile`
+      prints per-tab self-time, `--shots DIR` screenshots). BEFORE (4x,
+      real weeks 1-2 + round-robin matchups): boot first-content ~430ms;
+      tab js ms: lineups 27, rosters 77, wire 82, stats 9, advice 28, data 18;
+      74 synchronous state saves during one tab-switching run. Hotspots:
+      normName/canon/variants (~half of Rosters/Wire), a full Store.save
+      (fsync on device + generation bump that wiped every memo) on EVERY tab
+      tap, Advice re-parsing the 380KB season-projection cache per render.
 - [ ] **C. Speed fixes that change no output.** Whatever B shows is actually
       slow: redundant recompute per render, JSON parse/cloning at boot,
       layout thrash, unthrottled saves, expensive CSS (shadows/filters/blur)
       on scrolling lists, tap latency, WebView settings in the Java shell.
       Each fix verified by the existing suites (identical output) and by a
       re-measure.
+      - [x] C1 memoize Espn.normName + Names.canon/variants (pure, bounded
+            memo). Test: test_names.js "memoized ..." (4 checks).
+      - [x] C2 tab tap no longer does a synchronous Store.save: new
+            Store.saveSoon()/flush() (deferred, coalesced, no generation
+            bump), flushed by __appPause. Test: test_tabsafety.js "SPEED
+            (2026-09-23)" — confirmed FAIL on pre-fix code (4 writes, gen
+            bumped). AFTER C1+C2 (4x): rosters 77->18ms, wire 82->33ms,
+            saves in the same run 74->14.
+      - [ ] C3 Advice: stop re-parsing the season-projection cache per render
+      - [ ] C4 boot profile (script parse vs boot()); WebView settings
+            (setOffscreenPreRaster etc.); expensive CSS
 - [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,
       Advice, Data) against how ESPN/Sleeper/Yahoo present the same thing.
       List concrete look/function/organization improvements and obsolete
