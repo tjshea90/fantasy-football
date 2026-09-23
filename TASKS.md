@@ -51,7 +51,7 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
 - [x] **7. Fix everything found** DONE — 5 findings, each fixed with a named test that fails on v8.4 (see the finding boxes above)., each with a named test confirmed to FAIL
       pre-fix (source-text pin where no harness can reach).
 - [x] **8. Full regression** DONE — 23 suites exit 0 / 0 FAIL lines; ES2018 green; final crawl 275 actions 0 problems; cold-seed smoke clean. (exit code AND output) + Chromium smoke.
-- [ ] **9. Ship** + publish Release + send link.
+- [x] **9. Ship** DONE — v8.5; Release verified via get_release_by_tag (FFTracker-v8.5.apk, non-empty assets, not a draft; APK checked to contain afterPaint/persistSoon and APP_VERSION 8.5).
 
 ## Prior job, complete (2026-09-23b) — BUILD PROPOSALS 1, 2, 3, 5, 6
 
