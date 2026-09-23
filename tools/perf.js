@@ -20,6 +20,7 @@
  *   node tools/perf.js --state S --bootprofile  # where the cold-start time goes
  *   node tools/perf.js --state S --tracesaves   # who called Native.save during boot
  *   node tools/perf.js --state S --crawl        # operate EVERY control on every screen, report errors
+ *   node tools/perf.js --state S --netlog --idle 15   # every request the app makes, boot + 15s idle
  *   node tools/perf.js --state S --advice --save S2   # run Lineups>Advice "Sync advice" first
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *
@@ -90,7 +91,11 @@ function curl(url, headersJson, body) {
   const initial = {};
   if (STATE) Object.assign(initial, JSON.parse(fs.readFileSync(STATE, 'utf8')));
   if (opt('tracesaves', false)) initial.__trace = '1';
-  await page.exposeFunction('__perfFetch', (u, h, b) => curl(u, h, b));
+  const NETLOG = !!opt('netlog', false), t00 = Date.now();
+  await page.exposeFunction('__perfFetch', (u, h, b) => {
+    if (NETLOG) console.log(`  net +${((Date.now() - t00) / 1000).toFixed(1)}s ${b !== null && b !== undefined ? 'POST' : 'GET '} ${u.slice(0, 150)}`);
+    return curl(u, h, b);
+  });
   await page.addInitScript((files) => {
     const disk = files;
     const results = {};
@@ -317,6 +322,11 @@ function curl(url, headersJson, body) {
   function resetSrc(entry) {
     /* leave any sub-view on its default so the next entry starts clean */
     return entry.indexOf('>') > 0 ? clickSrc(entry.split('>')[0] + '>Set lineups') : '';
+  }
+  if (opt('idle', false)) {
+    await page.waitForTimeout(Number(opt('idle')) * 1000);
+    console.log('idle done');
+    await browser.close(); process.exit(errors.length ? 1 : 0);
   }
   if (opt('crawl', false)) { await crawl(); return; }
   const rows = [];

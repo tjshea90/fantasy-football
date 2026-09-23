@@ -167,7 +167,7 @@ public class Alerts {
           } catch (Throwable t) {
             android.util.Log.w("FFT", "alert check failed: " + t);
           } finally {
-            rearm(ctx);          /* weekly, re-armed after every firing */
+            rearm(ctx);          /* daily (two slots), re-armed after every firing */
             pr.finish();
           }
         }
