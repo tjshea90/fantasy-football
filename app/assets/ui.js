@@ -3460,7 +3460,7 @@
       'wins that all-play record would expect — plus means the schedule has been kind. ' +
       'Odds: 3,000 simulated rests-of-season from every team\'s scored weeks in this ' +
       'league\'s points, with the uncertainty of a short season built in (top 6 make ' +
-      'the playoffs, top 2 get byes, ties go to points). Tap to close.');
+      'the playoffs, top 2 get byes, ties go to points).');
     note.addEventListener('click', function () { note.classList.toggle('open'); });
     var left = el('p', 'hint');
     c.appendChild(note);
