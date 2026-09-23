@@ -112,7 +112,7 @@
     }
     out.sort(function (a, b) {
       if (a.s !== b.s) return a.s - b.s;
-      return a.p.n.localeCompare(b.p.n);
+      return root.Names ? root.Names.cmp(a.p.n, b.p.n) : a.p.n.localeCompare(b.p.n);
     });
     return out.slice(0, limit || 25).map(function (x) { return x.p; });
   }

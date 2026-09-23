@@ -53,7 +53,7 @@
   function teamRoster(t, week) {
     return t.players.slice().sort(function (a, b) {
       if (POS_ORDER[a.pos] !== POS_ORDER[b.pos]) return POS_ORDER[a.pos] - POS_ORDER[b.pos];
-      return a.name.localeCompare(b.name);
+      return root.Names ? root.Names.cmp(a.name, b.name) : a.name.localeCompare(b.name);
     }).map(function (p) { return rosterRow(p, week); });
   }
 

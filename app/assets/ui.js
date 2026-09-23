@@ -2058,7 +2058,7 @@
     c.appendChild(hd);
     t.players.slice().sort(function (a, b) {
       if (order[a.pos] !== order[b.pos]) return order[a.pos] - order[b.pos];
-      return a.name.localeCompare(b.name);
+      return Names.cmp(a.name, b.name);   /* no ICU start-up on first open */
     }).forEach(function (p) {
       var r = el('div', 'row');
       markPlayer(r, p.name, p.pos, p.nfl);

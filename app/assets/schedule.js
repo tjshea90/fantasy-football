@@ -237,7 +237,9 @@
       if (!soonest || b.at < soonest) soonest = b.at;
     }
     if (!rows.length) return null;
-    rows.sort(function (a, b2) { return a.at - b2.at || a.name.localeCompare(b2.name); });
+    rows.sort(function (a, b2) {
+      return a.at - b2.at || (root.Names ? root.Names.cmp(a.name, b2.name) : a.name.localeCompare(b2.name));
+    });
     var benched = [], starting = [];
     for (i = 0; i < rows.length; i++) {
       if (rows[i].starting) starting.push(rows[i]); else benched.push(rows[i]);
