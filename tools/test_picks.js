@@ -310,8 +310,41 @@ var pendingOdds = null;
   };
 }());
 
+/* ================================================ FULL TEST 2026-09-23c */
+console.log('\n-- full test: the Claude cost lines never hold up the first paint --');
+var pendingEst = null;
+(function () {
+  /* Each cost estimate builds the ENTIRE prompt its button would send — every
+     roster priced (Roster tab) or the whole wire (Wire tab) — just to count
+     characters: ~100ms of a ~155ms first Roster open at Moto G speed. They
+     must now run only after the screen is up, then fill their line in. */
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var built = { team: 0, wire: 0 };
+  var bt = h.W.Ai.buildTeamAnalysisPrompt, bw = h.W.Ai.buildWaiverPrompt;
+  h.W.Ai.buildTeamAnalysisPrompt = function (c) { built.team++; return bt(c); };
+  h.W.Ai.buildWaiverPrompt = function (c) { built.wire++; return bw(c); };
+  h.clickTab('rosters');
+  ok(built.team === 0, 'opening Roster builds no Claude prompt before the screen paints (' + built.team + ')');
+  var rosterView = h.ids.view.children.slice();
+  h.clickTab('wire');
+  ok(built.wire === 0, 'opening Wire builds no Claude prompt before the screen paints (' + built.wire + ')');
+  var wireView = h.ids.view;
+  pendingEst = function () {
+    ok(built.wire >= 1, '... the Wire estimate is computed right after the paint');
+    var lines = all(wireView, function (n) { return /^Estimated cost: \$/.test(n.textContent || ''); });
+    ok(lines.length === 1, '... and its line is filled in on the screen (' + lines.length + ')');
+    var before = built.wire;
+    h.clickTab('live'); h.clickTab('wire');
+    var now = all(h.ids.view, function (n) { return /^Estimated cost: \$/.test(n.textContent || ''); });
+    ok(built.wire === before && now.length === 1,
+       'a second visit writes the memoized estimate at once, with no rebuild and no blank flash');
+  };
+}());
+
 setTimeout(function () {
   if (pendingOdds) pendingOdds();
+  if (pendingEst) pendingEst();
   console.log(fails ? ('\n  ' + fails + ' picks check(s) FAILED') : '\n  picks checks pass');
   process.exit(fails ? 1 : 0);
 }, 400);
