@@ -382,21 +382,6 @@
              leagueMean: post.leagueMean, leagueSd: sigma, tau: post.tau };
   }
 
-  function game(aId, bId, prof, r) {
-    var pa = prof.teams[aId], pb = prof.teams[bId];
-    var va = pa.usedMean + normal(r) * pa.usedSd;
-    var vb = pb.usedMean + normal(r) * pb.usedSd;
-    return va >= vb ? aId : bId;
-  }
-  function bracket(seeds, prof, r) {
-    if (seeds.length < 6) return null;
-    var w36 = game(seeds[2], seeds[5], prof, r);
-    var w45 = game(seeds[3], seeds[4], prof, r);
-    var s1 = game(seeds[0], w45, prof, r);
-    var s2 = game(seeds[1], w36, prof, r);
-    return game(s1, s2, prof, r);
-  }
-
   /* ---- bench regret ------------------------------------------------------
    * Optimal is exact, not greedy: fill the tight slots with the best of each
    * position, then the FLEX from whoever is left. With one FLEX that IS the
