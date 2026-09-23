@@ -14,6 +14,16 @@ Fresh eyes on the whole app, with extra weight on what v8.3/v8.4 changed.
 - [x] **3. Dynamic crawl in Chromium** DONE — new `node tools/perf.js --state F --crawl` (reloads original state per action; taps every button, steps every select, types in every box, taps Live player rows, follows ⋯ -> Stats; dismisses dialogs via __onBack). Real-data state + an Advice-synced state (`--advice --save`): 236 + 275 actions over 12 screens, 0 page errors, 0 error cards, every dialog closes. (tools/perf.js harness, real-data
       state): tap every button/chip/select on every tab + sub-view + dialog,
       collect page errors and broken renders. No real device — say so.
+- [x] **Finding (speed): first Roster/Wire open paid ~100ms to build a whole
+      Claude prompt just to print its cost estimate; first localeCompare paid
+      ~44ms of ICU start-up.** Fixed: fillAfterPaint/afterPaint (estimate +
+      playoff odds fill in after the frame; memo hit writes at once) and
+      Names.cmp (ICU-identical order for ASCII names, localeCompare for the
+      rest). First open to frame at 4x: Roster ~180 -> ~65ms, Wire ~120 ->
+      ~65ms. Tests: test_picks.js "full test: the Claude cost lines never hold
+      up the first paint" (fails on v8.4), test_names.js "Names.cmp orders all
+      963 player names exactly as localeCompare does". perf.js: frame marker
+      now queued before the tap (was counting deferred fills), --root DIR.
 - [ ] **4. Review the v8.3/v8.4 diff** adversarially (saveSoon/flush, memo,
       closing sync, projections on Live/Roster, tab merge, sim rewrite, row menu).
 - [ ] **5. Data retention + network + battery:** caches that grow without

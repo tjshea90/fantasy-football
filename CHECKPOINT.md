@@ -1,12 +1,12 @@
-# CHECKPOINT 131 — read me first, then TASKS.md
+# CHECKPOINT 140 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T06:19:00Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T06:28:08Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-Full test step 3 done: perf.js --crawl (and --advice prep) — 511 actions over 12 screens on two real-data states, 0 problems.
+Full-test speed finding fixed: cost-estimate lines + playoff odds now fill after paint (afterPaint), Names.cmp replaces localeCompare in display sorts (no 44ms ICU start-up on first Roster/search). First Roster open at 4x ~180->~65ms, Wire ~120->~65ms. Tests in test_picks.js + test_names.js, confirmed failing on v8.4.
 
 ## Do this next
-Profile the Roster tab's cold render (187ms at 4x right after an advice sync — v8.4 PROJ/AVG column suspect), then step 4: adversarial review of the v8.3/v8.4 diff.
+Step 4: adversarial review of v8.3/v8.4 diff; also check Live warm render (34ms at 4x on the advice-synced state — Recommend.projectAll per team per render, maybe memoize).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  40bc77e ckpt 131: Full test step 3 done: perf.js --crawl (and --advice prep) — 511 actions ove
   0ea7228 ckpt 128: Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 st
   5749120 ckpt 125: Wrote Tj's 'Run a full test' (2026-09-23c) into TASKS.md as steps 1-9 per CLAU
   f59447c ckpt 123: v8.4 Release published and verified (FFTracker-v8.4.apk, 342294 bytes). 2026-0
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   73ee643 ckpt 114: D code done: Power rankings · playoff odds card on Data -> League (Sim.power 
   834ac6b ckpt 105: C code done: Advice merged into Lineups as a 'Set lineups | Advice' sub-view (
   e759e7b ckpt 101: Code for A (Roster PROJ + AVG column; new Store.playerAvg), B (Live: 'p 14.2' 
-  aea9d08 ckpt 96: Wrote Tj's 2026-09-23b request ('Do number 1, 2, 3, 5, 6' of the v8.3 proposals
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(8 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
