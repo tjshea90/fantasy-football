@@ -204,6 +204,38 @@ function run() {
   }, function (e) {
     ok(/could not reach the network/.test(e.message), 'weekPositionTops surfaces a real fetch failure instead of empty buckets (got: ' + e.message + ')');
   }).then(function () {
+    /* ---- FULL TEST 2026-09-23c: how often the whole cache is written ------
+     * ingestEvent used to rewrite the ENTIRE cache (every box score of the
+     * season, ~200 KB a week) synchronously once per game — and the Sunday
+     * live poll re-ingests every in-progress game every 45 seconds. */
+    var writes = 0, realSave = W.Native.save, KEYG = W.Gamelog._KEY;
+    W.Native.save = function (k, v) { if (k === KEYG) writes++; return realSave(k, v); };
+    W.Gamelog.flush();                       /* start clean */
+    writes = 0;
+    var box = { eventId: 'gx', players: BOX.g6.players, teamScore: BOX.g6.teamScore, teamAgg: BOX.g6.teamAgg };
+    var live = JSON.parse(JSON.stringify(GAMES[6][0])); live.state = 'in';
+    var i2;
+    for (i2 = 0; i2 < 9; i2++) W.Gamelog.ingestEvent(9, live, box);
+    ok(writes === 0, 'nine in-progress ingests (one Sunday poll) wrote the cache ' + writes + ' times (want 0 — an in-progress line is never trusted from disk)');
+    var fin = JSON.parse(JSON.stringify(GAMES[6][0])); fin.state = 'post';
+    for (i2 = 0; i2 < 16; i2++) W.Gamelog.ingestEvent(10 + (i2 % 2), fin, box);
+    ok(writes === 0, 'sixteen FINAL ingests (a Tuesday sync) did not write synchronously one by one (' + writes + ')');
+    W.Gamelog.flush();
+    ok(writes === 1, 'flush() (the pause hook, or the 2 s coalescing timer) writes them ONCE (' + writes + ')');
+    var saved = JSON.parse(realSave === W.Native.save ? '{}' : (function () { var got = null;
+      W.Native.save = function (k, v) { if (k === KEYG) got = v; return true; };
+      W.Gamelog.ingestEvent(12, fin, box); W.Gamelog.flush(); W.Native.save = realSave; return got || '{}'; }()));
+    ok(!!(saved.weeks && saved.weeks['10'] && saved.weeks['11'] && saved.weeks['12'] && saved.weeks['12'].DAL),
+       'and what reaches disk holds every final game, nothing dropped');
+    W.Gamelog.flush();
+    var before = writes;
+    W.Gamelog.flush();
+    ok(writes === before, 'a flush with nothing pending writes nothing');
+    W.Native.save = realSave;
+    var ui = require('fs').readFileSync(require('path').join(__dirname, '..', 'app/assets/ui.js'), 'utf8');
+    ok(/Gamelog\.flush\(\)/.test(ui.slice(ui.indexOf('function appPause'), ui.indexOf('function appResume'))),
+       '__appPause flushes it before Android can kill the process');
+  }).then(function () {
     console.log(fails === 0 ? ('  OK  gamelog behaves correctly — 0 failures')
                              : ('  ' + fails + ' gamelog assertion(s) FAILED'));
     process.exit(fails ? 1 : 0);
