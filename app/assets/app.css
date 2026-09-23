@@ -36,8 +36,10 @@ main{will-change:transform}
 header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
   padding-top:calc(var(--ins-top) + var(--adj-top));
   padding-left:var(--ins-l);padding-right:var(--ins-r)}
-.hrow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px}
-h1{font-size:19px;margin:0;font-weight:650;letter-spacing:-.01em}
+.hrow{display:flex;align-items:center;gap:8px;padding:8px 12px 4px}
+h1{flex:1;min-width:0;font-size:19px;margin:0;font-weight:650;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .btn.sm{flex:none}
 .wk{display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
 .wk span{min-width:52px;text-align:center;color:var(--dim);font-size:13px}
 /* The week arrows. 32x32 was the smallest target in the app and among the
@@ -57,8 +59,7 @@ h1{font-size:19px;margin:0;font-weight:650;letter-spacing:-.01em}
 .subhd{margin:14px 0 2px;font-size:12px;font-weight:700;letter-spacing:.06em;
   text-transform:uppercase;color:var(--accent)}
 .subhd:first-of-type{margin-top:6px}
-.syncbar{display:flex;align-items:center;justify-content:space-between;
-  padding:0 12px 8px;font-size:12px;color:var(--dim)}
+.syncbar{padding:0 12px 7px;font-size:12px;line-height:1.35;color:var(--dim)}
 .job{padding:0 12px 8px}
 .job .jt{font-size:12px;color:var(--accent);margin-bottom:4px}
 .job .bar{height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}
