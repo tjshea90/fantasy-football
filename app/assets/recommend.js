@@ -77,7 +77,9 @@
       else root.localStorage.setItem(k, s);
     } catch (e) { /* caches are optional */ }
   }
+  var cachesLoaded = false;
   function loadCaches() {
+    cachesLoaded = true;
     newsCache = cacheLoad(NEWSKEY, newsCache);
     aiCache = cacheLoad(AIKEY, aiCache);
     if (root.Projections) {
@@ -1088,7 +1090,15 @@
   /* ---- UI -------------------------------------------------------------- */
   function render(host, ctx) {
     var el = ctx.el, fmt = ctx.fmt, week = ctx.week, teamId = ctx.teamId;
-    loadCaches();
+    /* ONCE, not per render (2026-09-23 speed pass). This used to re-read all
+       four caches from disk on every Advice render — four synchronous bridge
+       reads and a re-parse of the ~400 KB season-projection file each time
+       the tab was opened or a control on it touched. Memory is already
+       authoritative: every writer (loadNews, the Claude merge, both
+       Projections refreshes) replaces the in-memory copy first and saves
+       from it, and nothing else writes those keys. boot() loads them; this
+       only covers a boot that never got that far. */
+    if (!cachesLoaded) loadCaches();
     var S = root.Store.get();
     var team = root.Store.team(teamId);
     var pm = root.Projections ? root.Projections.meta() : { count: 0, at: 0 };
