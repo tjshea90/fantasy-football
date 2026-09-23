@@ -230,6 +230,10 @@ console.log('\n-- THE REAL BUG (2026-09-18): a cold relaunch restores lastTab bu
   h1.docHandlers.DOMContentLoaded();
   h1.clickTab('wire');
   ok(h1.W.Store.get().settings.lastTab === 'wire', 'session 1 ended on the wire tab');
+  /* Leaving the app: MainActivity.onPause calls __appPause before Android is
+     free to kill the process. Since 2026-09-23 that is what persists lastTab
+     (a tab tap defers its write — see the next section). */
+  h1.W.__appPause();
 
   var h2 = buildHarness(disk);
   h2.docHandlers.DOMContentLoaded();
@@ -256,3 +260,31 @@ console.log('\n-- THE REAL BUG (2026-09-18): a cold relaunch restores lastTab bu
 
 console.log(fails ? ('\n  ' + fails + ' tab-safety check(s) FAILED') : '\n  tab-safety checks pass');
 process.exit(fails ? 1 : 0);
+console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush --');
+(function () {
+  /* Every tab tap used to call Store.save() just to remember lastTab: a
+     synchronous bridge write + fsync on the renderer thread before the new
+     tab could paint, a full auto-backup every tenth tap, and a store
+     generation bump that threw away every downstream memo. */
+  var disk = {}, writes = 0;
+  var h = buildHarness(disk);
+  var realSave = h.W.Native.save;
+  h.W.Native.save = function (k, v) { writes++; return realSave(k, v); };
+  h.docHandlers.DOMContentLoaded();
+  var gen0 = h.W.Store.generation();
+  writes = 0;
+  h.clickTab('wire'); h.clickTab('stats'); h.clickTab('advice'); h.clickTab('rosters');
+  ok(writes === 0, 'four tab taps wrote to disk ' + writes + ' times (want 0 — the write is deferred)');
+  ok(h.W.Store.generation() === gen0,
+     'and did not bump the store generation, so the memos the next tab reads survive');
+  h.W.__appPause();
+  ok(writes >= 1, 'backgrounding the app (__appPause, from onPause) flushes the deferred write');
+  var saved = JSON.parse(disk.fftracker_state_v1 || '{}');
+  ok(saved.settings && saved.settings.lastTab === 'rosters',
+     'and what reached disk is the tab he was actually on ("rosters", got ' +
+     (saved.settings && saved.settings.lastTab) + ')');
+  var before = writes;
+  h.W.__appPause();
+  ok(writes === before, 'a second pause with nothing pending writes nothing');
+}());
+
