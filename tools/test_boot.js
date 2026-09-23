@@ -137,9 +137,11 @@ ok(/Recommend\.loadNews\(null\)\.then\(function \(nc\) \{[\s\S]{0,80}\}\)\['catc
    no reason — matched wording. (recommend.js's own source is loaded fresh
    here, not via the file-scoped `rec` — that is assigned further down this
    file, after this point runs.) */
-ok(/on the Claude API, at current prices \(see Data → Claude costs\)\.'/
+/* 2026-09-23c: the pointer now names the sub-screen too (Data → Claude →
+   Claude costs); the property pinned — both lines match — is unchanged */
+ok(/on the Claude API, at current prices \(see Data → Claude → Claude costs\)\.'/
      .test(fs.readFileSync('app/assets/recommend.js', 'utf8')) &&
-   /on the Claude API, at current prices \(see Data → Claude costs\)\.'/.test(ui),
+   /on the Claude API, at current prices \(see Data → Claude → Claude costs\)\.'/.test(ui),
    'the Advice and Wire cost-estimate lines share the same closing wording now');
 /* doSync (ui.js) feeds gamelog.js's persistent any-player cache from its own
    already-fetched box score, so a later game-log browse for a team synced
@@ -1038,6 +1040,32 @@ ok(/applied automatically once a week is fully final/.test(uiX),
    'and says so correctly instead');
 ok(/two different quarterbacks in a game/.test(uiX),
    'the one real imprecision (a two-QB game) is disclosed rather than implied to be exact');
+
+/* FULL TEST 2026-09-23c: every "Data → <screen> → <control>" pointer in the
+ * app's own copy must name a Data sub-screen that exists and a control that
+ * carries that exact label. Several had drifted ("Export a backup" for a
+ * button reading "Export backup", "Run the feed self-test", "depth: Smart" for
+ * a select labelled "How much to research each sync", and some named no
+ * sub-screen at all since Data grew League / Claude / Sync & data / App). */
+(function () {
+  var uiP = fs.readFileSync('app/assets/ui.js', 'utf8');
+  var subs = [], mm, reS = /\['[a-z]+', '([^']+)'\]/g;
+  var dsub = uiP.slice(uiP.indexOf('var DATA_SUBTABS'), uiP.indexOf('function dataSubNav'));
+  while ((mm = reS.exec(dsub))) subs.push(mm[1]);
+  var bad = [], seen = 0;
+  ['ui.js', 'recommend.js', 'ai.js', 'stats.js', 'handoff.js'].forEach(function (fn) {
+    var src = fs.readFileSync('app/assets/' + fn, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    var re = /Data → ([A-Z][A-Za-z &]*?)(?: → ([A-Z][^'".:)]*?))?(?=[.'":)]| will| and| or| here|$)/gm, m;
+    while ((m = re.exec(src))) {
+      seen++;
+      if (subs.indexOf(m[1].trim()) < 0) { bad.push(fn + ': "' + m[0] + '" (no Data sub-screen "' + m[1] + '")'); continue; }
+      if (m[2] && uiP.indexOf("'" + m[2].trim()) < 0) bad.push(fn + ': "' + m[0] + '" (no control labelled "' + m[2].trim() + '")');
+    }
+  });
+  ok(seen >= 6 && !bad.length, 'every "Data → screen → control" pointer in the copy resolves (' + seen +
+     ' checked)' + (bad.length ? '\n         ' + bad.join('\n         ') : ''));
+}());
 
 console.log(f ? ('  ' + f + ' boot check(s) FAILED') : '  boot checks pass');
 process.exit(f ? 1 : 0);
