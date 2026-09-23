@@ -1,12 +1,12 @@
-# CHECKPOINT 150 — read me first, then TASKS.md
+# CHECKPOINT 152 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T06:45:02Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T06:47:53Z · **version:** 8.5 · **tests:** all 23 suites green
 
 ## Just done
-Full test steps 6-8 done: engine spot-checks exact; 5 findings fixed and tested; full regression green; final crawl clean. STATE.md v8.5 entry written.
+v8.5 shipped via ship.sh (23 suites + ES2018 + dex gate green, main fast-forwarded); publish-release.yml dispatched for 8.5.
 
 ## Do this next
-Step 9: bash build.sh, bash ship.sh, dispatch publish-release.yml (8.5), verify get_release_by_tag, send Tj the link.
+Verify get_release_by_tag v8.5 (non-empty assets), tick TASKS.md step 9, send Tj the link. Fallback: https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v8.5.apk
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,11 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M STATE.md
-     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  53ebd79 ship v8.5: v8.5: full test -- game-log cache no longer rewritten whole per game every li
+  ca42071 ckpt 150: Full test steps 6-8 done: engine spot-checks exact; 5 findings fixed and teste
   f79c760 ckpt 148: Full test step 5 done: gamelog write storm fixed; duplicate scoreboard fetch o
   57d29a6 ckpt 144: Full test: step 4 done (no further defects in v8.3/v8.4 diff); step 5 finding 
   9fdbc7e ckpt 140: Full-test speed finding fixed: cost-estimate lines + playoff odds now fill aft
@@ -36,9 +36,4 @@ request in his own words and `git log` carries every step already taken.
   5749120 ckpt 125: Wrote Tj's 'Run a full test' (2026-09-23c) into TASKS.md as steps 1-9 per CLAU
   f59447c ckpt 123: v8.4 Release published and verified (FFTracker-v8.4.apk, 342294 bytes). 2026-0
   96a9953 ckpt 122: v8.4 shipped via ship.sh (23 suites + ES2018 + dex gate green, APK built, main
-  49f7cc3 ship v8.4: v8.4: Tj's picks 1,2,3,5,6 -- Roster PROJ + AVG per player, Live projection u
-  205e7bc ckpt 118: A-E all done and tested: new tools/test_picks.js (32 render-level checks acros
 ```
-
-(1 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
