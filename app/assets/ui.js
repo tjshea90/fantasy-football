@@ -2919,10 +2919,13 @@
     c.appendChild(chips);
 
     var groups = Value.byPos(week, 0);
-    function faRow(f, showPos) {
+    /* The left column: his position on the mixed "Best value" list, else his
+       RANK within the position group — the team code it used to show is
+       already printed right beside his name. */
+    function faRow(f, showPos, rank) {
       var r2 = el('div', 'row');
       markPlayer(r2, f.name, f.pos, f.nfl);
-      r2.appendChild(el('div', 'slot', showPos ? f.pos : (f.nfl || f.pos)));
+      r2.appendChild(el('div', 'slot', showPos ? f.pos : (rank ? '#' + rank : (f.nfl || f.pos))));
       var nm2 = el('div', 'nm');
       nm2.appendChild(document.createTextNode(f.name));
       /* THE HEADLINE NUMBER IS THE SEASON, NOT THE WEEK (Tj, 2026-09-18).
@@ -2973,7 +2976,7 @@
         var hd = el('div', 'subhd');
         hd.textContent = k + '  ·  ' + rows.length + ' available';
         c.appendChild(hd);
-        rows.slice(0, perPos).forEach(function (f) { c.appendChild(faRow(f, false)); });
+        rows.slice(0, perPos).forEach(function (f, i) { c.appendChild(faRow(f, false, i + 1)); });
         if (rows.length > perPos && faPos === 'ALL') {
           var more = el('button', 'btn sm', 'All ' + rows.length + ' ' + k + 's');
           more.addEventListener('click', function () { faPos = k; render(); });
