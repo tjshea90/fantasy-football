@@ -466,7 +466,9 @@ ok(/var from = Math\.max\(1, Number\(week\)/.test(rosR),
    'weeksLeft counts from the current week, not from week 1');
 ok(/function weeksLeft\(week\) \{ return root\.Ros\.weeksLeft\(week\); \}/.test(vaR),
    'and value.js delegates to that one implementation rather than keeping a second');
-ok(/root\.Store\.weekIsScored\(wi\)/.test(siR),
+/* 2026-09-23b: the loop was rewritten flat (typed arrays); the property —
+   base points come ONLY from scored weeks — is what is pinned */
+ok(/if \(!root\.Store\.weekIsScored\(w\)\) continue;\s*for \(i = 0; i < T; i\+\+\) basePts\[i\] \+= root\.Store\.teamWeekScore/.test(siR),
    'the season simulation rebuilds base points from scored weeks only');
 ok(/raw: true/.test(aiR2.slice(aiR2.indexOf('MODELS_API'), aiR2.indexOf('function headers'))),
    'the model list is fetched raw, or JSON.parse gets an object and always throws');
