@@ -697,6 +697,12 @@
   }
   function freshenSchedule() {
     if (!window.Schedule) return;
+    /* The live poll fetches this exact scoreboard (Espn.weekGames for the
+       same week) and hands it to Schedule.ingest for free. When a tick is due
+       within seconds — every boot, week change and resume arms one first —
+       refreshing here too fetched the same ~150 KB twice, four seconds apart
+       (full test 2026-09-23c, seen in the request log of a stale boot). */
+    if (live.timer && live.next && live.next - Date.now() <= 15000) return;
     try {
       var p = Schedule.refresh(week);
       if (p && p.then) {
@@ -1306,10 +1312,6 @@
      * week having moved on is likely, not a reason to skip checking. */
     localAutoAdvance();
     syncCurrentWeek();
-    /* Coming back after a while is exactly when a flex-scheduling change would
-       have landed, and it is cheap: refresh() only fetches if the stored copy
-       is over three hours old. */
-    freshenSchedule();
     refreshPlayerDBIfStale();
     /* A week that is finished stays finished — do not wake a poll for it.
        syncCurrentWeek() above is fire-and-forget: its network round trip
@@ -1321,12 +1323,17 @@
        (called from inside its own .then()) independently sets the new
        `week`, arms its own live poll and re-renders on its own schedule,
        decoupled from the rest of this function. */
+    /* Coming back after a while is exactly when a flex-scheduling change would
+       have landed, and it is cheap: refresh() only fetches if the stored copy
+       is over three hours old — and freshenSchedule() skips it entirely when
+       the poll armed just below is about to fetch the same scoreboard. */
     var m = S.weekMeta[String(week)];
-    if (m && m.synced && m.allFinal) { renderHeader(); return; }
-    if (!S.settings.liveRefresh) { renderHeader(); return; }
+    if (m && m.synced && m.allFinal) { freshenSchedule(); renderHeader(); return; }
+    if (!S.settings.liveRefresh) { freshenSchedule(); renderHeader(); return; }
     /* 1.5s, not 0: the WebView is still restoring and a request fired into
        that costs a frame of jank for no freshness anyone can perceive. */
     scheduleLive(1500);
+    freshenSchedule();
     renderHeader();
   }
   /* `window`, not `root`. Every OTHER module in this app is
