@@ -3420,9 +3420,89 @@
     else if (dataSubView === 'sync') viewDataSync(root);
     else viewDataApp(root);
   }
+  /* ---------- POWER RANKINGS + PLAYOFF ODDS (2026-09-23b) ---------------
+   * Tj's pick #5. sim.js has computed these since v1.x — all-play records, a
+   * luck index, a full rest-of-season simulation — and nothing ever showed
+   * them. Power and all-play are instant. The odds are 3,000 simulated
+   * seasons (~100ms at Moto G speed), so they are cached on the store
+   * generation and, when stale, computed just AFTER the tab has painted and
+   * patched into the table in place: opening Data never waits on them. */
+  var _oddsMemo = null, _oddsTimer = null;
+  function oddsKey() {
+    return (Store.generation ? Store.generation() : 0) + '|' + S.league.regularSeasonWeeks;
+  }
+  function powerCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Power rankings · playoff odds'));
+    var reg = S.league.regularSeasonWeeks, scored = 0, w;
+    for (w = 1; w <= reg; w++) if (Store.weekIsScored(w)) scored++;
+    if (!scored) {
+      c.appendChild(el('p', 'muted', 'Appears once the first week is final. Power rankings ' +
+        'judge every team against every other team, every week, so they need real results.'));
+      return c;
+    }
+    var pw = Sim.power(reg), key = oddsKey();
+    var odds = (_oddsMemo && _oddsMemo.k === key) ? _oddsMemo.v : null;
+    var byId = {};
+    if (odds) odds.rows.forEach(function (r) { byId[r.id] = r; });
+    function pct(x) { return x >= 0.995 ? '>99%' : (x > 0 && x < 0.005 ? '<1%' : Math.round(x * 100) + '%'); }
+    var t = table(['Team', 'All-play', 'Luck', 'Playoffs', 'Title'], pw.map(function (r) {
+      var o = byId[r.id];
+      var luck = Math.abs(r.luck) < 0.05 ? '0.0' : (r.luck > 0 ? '+' : '−') + fmt(Math.abs(r.luck));
+      return { me: r.id === S.league.me,
+               cells: [r.rank + '. ' + r.name, r.allPlayW + '-' + r.allPlayL, luck,
+                       o ? pct(o.playoff) : '…', o ? pct(o.title) : '…'] };
+    }));
+    c.appendChild(t);
+    var note = el('p', 'hint clamp',
+      'Ranked on how good, not how lucky: the all-play record (your score against ' +
+      'every team, every week) plus points per game. Luck = your real wins minus the ' +
+      'wins that all-play record would expect — plus means the schedule has been kind. ' +
+      'Odds: 3,000 simulated rests-of-season from every team\'s scored weeks in this ' +
+      'league\'s points, with the uncertainty of a short season built in (top 6 make ' +
+      'the playoffs, top 2 get byes, ties go to points). Tap to close.');
+    note.addEventListener('click', function () { note.classList.toggle('open'); });
+    var left = el('p', 'hint');
+    c.appendChild(note);
+    c.appendChild(left);
+    function fillOdds(v) {
+      var tb = t.children[1], i;
+      byId = {}; v.rows.forEach(function (r) { byId[r.id] = r; });
+      for (i = 0; i < pw.length && tb && i < tb.children.length; i++) {
+        var o = byId[pw[i].id], tr = tb.children[i];
+        if (!o || !tr || tr.children.length < 5) continue;
+        tr.children[3].textContent = pct(o.playoff);
+        tr.children[4].textContent = pct(o.title);
+      }
+      var remaining = reg - scored;
+      left.textContent = v.weeksLeft < remaining
+        ? 'Only ' + v.weeksLeft + ' of the ' + remaining + ' unplayed regular-season weeks have ' +
+          'matchups entered, so the odds treat the rest as unplayed — add them under the ' +
+          'week\'s matchups below (or "Generate the whole season").'
+        : '';
+      left.hidden = !left.textContent;
+    }
+    left.hidden = true;
+    if (odds) fillOdds(odds);
+    else {
+      if (_oddsTimer) clearTimeout(_oddsTimer);
+      _oddsTimer = setTimeout(function () {
+        _oddsTimer = null;
+        /* only if he is still looking at it — otherwise the next visit pays */
+        if (asleep || view !== 'data' || dataSubView !== 'league') return;
+        try {
+          var v = Sim.season(reg);
+          _oddsMemo = { k: oddsKey(), v: v };
+          fillOdds(v);
+        } catch (e) { left.textContent = 'Odds could not be computed: ' + (e && e.message ? e.message : e); left.hidden = false; }
+      }, 60);
+    }
+    return c;
+  }
   function viewDataLeague(root) {
     addSafe(root, 'Weekly scores', weeklyScoresCard);
     addSafe(root, 'Standings', standingsCard);
+    addSafe(root, 'Power rankings', powerCard);
     /* matchups */
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Week ' + week + ' matchups'));
