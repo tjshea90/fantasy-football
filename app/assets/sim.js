@@ -203,92 +203,183 @@
     return { teams: out, leagueMean: lgMean, leagueSd: lgSd };
   }
 
+  /* ---- HOW SURE CAN WE BE ABOUT A TEAM'S STRENGTH? (2026-09-23b) ---------
+   * The first version of season() treated a team's measured average as its
+   * true strength and only simulated week-to-week noise around it. After two
+   * weeks that said one team had a 100% playoff chance and a 53% title
+   * chance — two good weeks are not proof of anything, and no serious model
+   * (ESPN's, Sleeper's) would say it. It was never shown until Tj asked for
+   * playoff odds, and it is not shown now until it is honest.
+   *
+   * Now: standard empirical-Bayes shrinkage. Each team's TRUE weekly mean is
+   * uncertain, centred between its own average and the league's, and the
+   * fewer weeks it has played the wider that uncertainty and the harder it is
+   * pulled toward the league. Every simulated season first draws each team's
+   * true mean from that posterior, THEN draws its weeks around it — so early
+   * in the year the odds stay appropriately humble and they sharpen as real
+   * weeks come in. All numbers are measured from this league's own scored
+   * weeks, in this league's points:
+   *   sigma  weekly noise: the pooled within-team spread of scored weeks
+   *   tau    spread of TRUE team strength: between-team spread of averages
+   *          minus the part of it that is just sigma^2/n noise, floored so an
+   *          early-season fluke can never make every team look identical */
+  function posterior(throughWeek) {
+    var S = root.Store.get(), rows = [], i;
+    S.teams.forEach(function (t) {
+      var vals = [], w;
+      for (w = 1; w <= throughWeek; w++) {
+        if (!root.Store.weekIsScored(w)) continue;
+        var p = root.Store.teamWeekScore(w, t.id).total;
+        if (p > 0) vals.push(p);
+      }
+      var m = 0, ss = 0;
+      for (i = 0; i < vals.length; i++) m += vals[i];
+      m = vals.length ? m / vals.length : 0;
+      for (i = 0; i < vals.length; i++) ss += (vals[i] - m) * (vals[i] - m);
+      rows.push({ id: t.id, n: vals.length, mean: m, ss: ss });
+    });
+    var withData = rows.filter(function (r) { return r.n > 0; });
+    var lg = 0;
+    withData.forEach(function (r) { lg += r.mean; });
+    lg = withData.length ? lg / withData.length : 0;
+    var num = 0, den = 0;
+    rows.forEach(function (r) { if (r.n > 1) { num += r.ss; den += r.n - 1; } });
+    var sigma = den ? Math.sqrt(num / den) : 0.13 * lg;
+    if (sigma < 0.08 * lg) sigma = 0.08 * lg;
+    var vb = 0, invN = 0;
+    withData.forEach(function (r) { vb += (r.mean - lg) * (r.mean - lg); invN += 1 / r.n; });
+    vb = withData.length > 1 ? vb / (withData.length - 1) : 0;
+    invN = withData.length ? invN / withData.length : 1;
+    var tau2 = vb - sigma * sigma * invN, floor = 0.05 * lg;
+    if (tau2 < floor * floor) tau2 = floor * floor;
+    var out = {};
+    rows.forEach(function (r) {
+      var prec = 1 / tau2 + (r.n ? r.n / (sigma * sigma) : 0);
+      var pm = (lg / tau2 + (r.n ? r.n * r.mean / (sigma * sigma) : 0)) / prec;
+      out[r.id] = { n: r.n, mean: r.mean, postMean: pm, postSd: Math.sqrt(1 / prec) };
+    });
+    return { teams: out, sigma: sigma, tau: Math.sqrt(tau2), leagueMean: lg,
+             scored: withData.length > 0 };
+  }
+
+  /* Two standard normals per pair of uniforms (Box-Muller, spare kept).
+     The first version called log/sqrt/cos for every single draw and threw the
+     second value away; this is half the work for the same distribution. */
+  function gaussian(r) {
+    var spare = null;
+    return function () {
+      if (spare !== null) { var z = spare; spare = null; return z; }
+      var u = 1 - r(), v = r(), m = Math.sqrt(-2 * Math.log(u));
+      spare = m * Math.sin(2 * Math.PI * v);
+      return m * Math.cos(2 * Math.PI * v);
+    };
+  }
+
+  /* THE REST OF THE SEASON, SIMULATED. Same outputs as before (playoff, bye
+     and title odds, seed spread, projected wins and points); the loop is flat
+     typed arrays instead of a closure and a fresh object per team per week,
+     because a Data-tab render on a Moto G should not wait on 360,000 of them. */
   function season(throughWeek) {
     var S = root.Store.get(), reg = S.league.regularSeasonWeeks;
-    var prof = teamProfile(throughWeek);
+    var post = posterior(throughWeek);
     /* seasonTotals adds every week's points unconditionally — the scored
        check only gates W/L. `future` below then re-simulates exactly those
        unscored weeks, so an in-progress week was counted twice: once for real
-       and once as a draw from the distribution. Playoff odds and projected
-       points were inflated by about a week's scoring per unscored week. Take
-       the wins from seasonTotals and rebuild the points from SCORED weeks
-       only, so base and future cannot overlap. */
+       and once as a draw from the distribution. Take the wins from
+       seasonTotals and rebuild the points from SCORED weeks only, so base and
+       future cannot overlap. */
     var base = root.Store.seasonTotals(Math.min(throughWeek, reg));
-    (function () {
-      var idsA = S.teams.map(function (t) { return t.id; }), wi, ti;
-      var only = {};
-      for (ti = 0; ti < idsA.length; ti++) only[idsA[ti]] = 0;
-      for (wi = 1; wi <= Math.min(throughWeek, reg); wi++) {
-        if (!root.Store.weekIsScored(wi)) continue;
-        for (ti = 0; ti < idsA.length; ti++) {
-          only[idsA[ti]] += root.Store.teamWeekScore(wi, idsA[ti]).total;
-        }
-      }
-      for (ti = 0; ti < idsA.length; ti++) {
-        if (base[idsA[ti]]) base[idsA[ti]].pts = only[idsA[ti]];
-      }
-    }());
-    var ids = S.teams.map(function (t) { return t.id; });
+    var ids = S.teams.map(function (t) { return t.id; }), T = ids.length, idx = {}, i, j, w;
+    for (i = 0; i < T; i++) idx[ids[i]] = i;
+    var baseW = new Float64Array(T), basePts = new Float64Array(T);
+    for (i = 0; i < T; i++) baseW[i] = base[ids[i]] ? base[ids[i]].w : 0;
+    for (w = 1; w <= Math.min(throughWeek, reg); w++) {
+      if (!root.Store.weekIsScored(w)) continue;
+      for (i = 0; i < T; i++) basePts[i] += root.Store.teamWeekScore(w, ids[i]).total;
+    }
     /* which weeks are still to play, and who plays whom in them */
-    var future = [], w;
+    var pairsA = [], pairsB = [];
     for (w = 1; w <= reg; w++) {
       if (root.Store.weekIsScored(w)) continue;
       var mus = root.Store.getMatchups(w);
-      if (mus.length) future.push({ week: w, mus: mus });
+      if (!mus.length) continue;
+      var a = [], b = [];
+      for (j = 0; j < mus.length; j++) {
+        if (idx[mus[j][0]] === undefined || idx[mus[j][1]] === undefined) continue;
+        a.push(idx[mus[j][0]]); b.push(idx[mus[j][1]]);
+      }
+      pairsA.push(a); pairsB.push(b);
     }
-    var acc = {};
-    ids.forEach(function (id) {
-      acc[id] = { playoff: 0, bye: 0, title: 0, seeds: [], finalW: 0, finalPts: 0 };
-      var i; for (i = 0; i <= ids.length; i++) acc[id].seeds.push(0);
-    });
-    var r = rng(hash('season' + throughWeek + reg)), s, i, j;
+    var F = pairsA.length;
+    var pm = new Float64Array(T), psd = new Float64Array(T);
+    for (i = 0; i < T; i++) { pm[i] = post.teams[ids[i]].postMean; psd[i] = post.teams[ids[i]].postSd; }
+    var sigma = post.sigma;
+
+    var playoff = new Float64Array(T), bye = new Float64Array(T), title = new Float64Array(T);
+    var finalW = new Float64Array(T), finalPts = new Float64Array(T);
+    var seeds = []; for (i = 0; i < T; i++) seeds.push(new Float64Array(T + 1));
+    var tm = new Float64Array(T), wins = new Float64Array(T), pts = new Float64Array(T);
+    var sc = new Float64Array(T), order = [];
+    var r = rng(hash('season' + throughWeek + reg)), g = gaussian(r), s, f, k;
     var runs = Math.min(SIMS, 3000);
     for (s = 0; s < runs; s++) {
-      var wins = {}, pts = {};
-      ids.forEach(function (id) { wins[id] = base[id].w; pts[id] = base[id].pts; });
-      for (i = 0; i < future.length; i++) {
-        var scored = {};
-        ids.forEach(function (id) {
-          var pr = prof.teams[id];
-          var v = pr.usedMean + normal(r) * pr.usedSd;
-          scored[id] = v > 0 ? v : 0;
-          pts[id] += scored[id];
-        });
-        for (j = 0; j < future[i].mus.length; j++) {
-          var a = future[i].mus[j][0], b = future[i].mus[j][1];
-          if (scored[a] === undefined || scored[b] === undefined) continue;
-          if (scored[a] > scored[b]) wins[a]++; else if (scored[b] > scored[a]) wins[b]++;
+      for (i = 0; i < T; i++) {
+        tm[i] = pm[i] + g() * psd[i];
+        wins[i] = baseW[i]; pts[i] = basePts[i];
+      }
+      for (f = 0; f < F; f++) {
+        for (i = 0; i < T; i++) {
+          var v = tm[i] + g() * sigma;
+          if (v < 0) v = 0;
+          sc[i] = v; pts[i] += v;
+        }
+        var A = pairsA[f], B = pairsB[f];
+        for (j = 0; j < A.length; j++) {
+          if (sc[A[j]] > sc[B[j]]) wins[A[j]]++;
+          else if (sc[B[j]] > sc[A[j]]) wins[B[j]]++;
         }
       }
-      var order = ids.slice().sort(function (x, y) {
-        if (wins[y] !== wins[x]) return wins[y] - wins[x];
-        return pts[y] - pts[x];
-      });
-      for (i = 0; i < order.length; i++) {
-        acc[order[i]].seeds[i + 1]++;
-        if (i < PLAYOFF_TEAMS) acc[order[i]].playoff++;
-        if (i < BYES) acc[order[i]].bye++;
-        acc[order[i]].finalW += wins[order[i]];
-        acc[order[i]].finalPts += pts[order[i]];
+      /* wins, then points — the league's own tiebreak (a points title pays) */
+      order.length = 0;
+      for (i = 0; i < T; i++) {
+        k = order.length;
+        while (k > 0 && (wins[order[k - 1]] < wins[i] ||
+               (wins[order[k - 1]] === wins[i] && pts[order[k - 1]] < pts[i]))) {
+          order[k] = order[k - 1]; k--;
+        }
+        order[k] = i;
       }
-      /* the bracket: 3v6 and 4v5, then the byes enter, then the final.
-         Same team profiles, so a hot team carries its edge into January. */
-      var champ = bracket(order.slice(0, PLAYOFF_TEAMS), prof, r);
-      if (champ) acc[champ].title++;
+      for (i = 0; i < T; i++) {
+        var o = order[i];
+        seeds[o][i + 1]++;
+        if (i < PLAYOFF_TEAMS) playoff[o]++;
+        if (i < BYES) bye[o]++;
+        finalW[o] += wins[o]; finalPts[o] += pts[o];
+      }
+      /* the bracket: 3v6 and 4v5, then the byes enter, then the final —
+         each game drawn around THIS run's true strengths */
+      if (T >= PLAYOFF_TEAMS) {
+        var w36 = duel(order[2], order[5]), w45 = duel(order[3], order[4]);
+        title[duel(duel(order[0], w45), duel(order[1], w36))]++;
+      }
+    }
+    function duel(x, y) {
+      return (tm[x] + g() * sigma) >= (tm[y] + g() * sigma) ? x : y;
     }
     var out = [];
-    ids.forEach(function (id) {
-      var a = acc[id], seedPct = [], i2;
-      for (i2 = 1; i2 <= ids.length; i2++) seedPct.push(a.seeds[i2] / runs);
-      out.push({ id: id, name: root.Store.team(id).name,
-                 playoff: a.playoff / runs, bye: a.bye / runs, title: a.title / runs,
-                 seeds: seedPct, projW: a.finalW / runs, projPts: a.finalPts / runs,
-                 mean: prof.teams[id].usedMean, sd: prof.teams[id].usedSd,
-                 shrunk: prof.teams[id].shrunk, n: prof.teams[id].n });
-    });
+    for (i = 0; i < T; i++) {
+      var seedPct = [], i2;
+      for (i2 = 1; i2 <= T; i2++) seedPct.push(seeds[i][i2] / runs);
+      var pt = post.teams[ids[i]];
+      out.push({ id: ids[i], name: root.Store.team(ids[i]).name,
+                 playoff: playoff[i] / runs, bye: bye[i] / runs, title: title[i] / runs,
+                 seeds: seedPct, projW: finalW[i] / runs, projPts: finalPts[i] / runs,
+                 mean: pt.postMean, sd: sigma, uncertainty: pt.postSd,
+                 shrunk: pt.n < 4, n: pt.n });
+    }
     out.sort(function (x, y) { return y.playoff - x.playoff || y.projW - x.projW; });
-    return { rows: out, runs: runs, weeksLeft: future.length,
-             leagueMean: prof.leagueMean, leagueSd: prof.leagueSd };
+    return { rows: out, runs: runs, weeksLeft: F, scored: post.scored,
+             leagueMean: post.leagueMean, leagueSd: sigma, tau: post.tau };
   }
 
   function game(aId, bId, prof, r) {
@@ -355,6 +446,7 @@
 
   root.Sim = { season: season, power: power, allPlay: allPlay,
                regret: regret, positionCV: positionCV, teamProfile: teamProfile,
+               posterior: posterior,
                invalidate: invalidate,
                SIMS: SIMS, PLAYOFF_TEAMS: PLAYOFF_TEAMS, _rng: rng, _draw: draw };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Sim;
