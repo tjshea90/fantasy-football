@@ -1,6 +1,35 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-23) — POLISH, REORGANIZE, DECLUTTER, AND MAKE IT SNAPPY ON THE MOTO G 2026
+## Current job (2026-09-23b) — BUILD PROPOSALS 1, 2, 3, 5, 6
+
+Tj, 2026-09-23T04:13:29Z, answering the v8.3 proposals list (see "Prior job"
+below and the answered item in "Waiting on Tj"):
+
+> "Do number 1, 2, 3, 5, 6"
+
+i.e. (not 4 — league scoreboard — and not 7 — light theme):
+
+- [ ] **A. (#1) Roster: a number on every player.** This week's projection
+      and his season average (league scoring) on the right of each row of
+      the Roster tab's team cards, like ESPN's PROJ / AVG.
+- [ ] **B. (#2) Live: each starter's projection before his game starts**,
+      under/next to his 0.0, like ESPN/Sleeper. Once his game starts, the
+      real points take over as now.
+- [ ] **C. (#3) Merge Advice into Lineups (7 tabs -> 6).** Nothing removed,
+      just moved: the Advice tab's cards live on Lineups. Must also handle a
+      saved lastTab of "advice" (cold relaunch), every goTab('advice') call
+      site, the swipe order, back-history, and the test suites' tab lists.
+- [ ] **D. (#5) Power rankings / playoff odds** from sim.js (season
+      simulation, power, all-play — tested, never shown) as a card on
+      Data -> League, like Sleeper's playoff odds.
+- [ ] **E. (#6) Quieter Drop buttons on Roster.** Replace 17 red "Drop"
+      buttons with a neutral "⋯" per row that opens a small menu with Drop
+      (still confirmed).
+- [ ] **F. Tests + regression** — a named test per item, every suite by exit
+      code AND output, Chromium smoke + screenshots of every tab.
+- [ ] **G. Ship** (`ship.sh`), publish the Release, send Tj the link.
+
+## Prior job, complete (2026-09-23) — POLISH, REORGANIZE, DECLUTTER, AND MAKE IT SNAPPY ON THE MOTO G 2026
 
 Tj, 2026-09-23T03:04:38Z:
 
@@ -615,7 +644,10 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
-- [ ] **Bigger ideas from the 2026-09-23 review — NOT done, need your yes.**
+- [x] **ANSWERED 2026-09-23T04:13Z: "Do number 1, 2, 3, 5, 6"** — now the
+      current job at the top of this file. 4 (league scoreboard) and 7 (light
+      theme) were not picked; leave them unless he asks again.
+      **Bigger ideas from the 2026-09-23 review — NOT done, need your yes.**
       Each is modelled on how ESPN / Sleeper / Yahoo handle the same screen.
       Reply with the numbers you want and they get built:
       1. **Roster: a number on every player.** ESPN's roster shows PROJ and
