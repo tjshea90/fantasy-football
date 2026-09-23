@@ -1134,7 +1134,7 @@
         'These fall back to their own scored games this season (or a flat ' +
         'positional average if he has none yet) — it is just one fewer ' +
         'source, never a stale preseason number. If a starter is here every ' +
-        'week, check Data → Test the projection feed.'));
+        'week, check Data → App → Test the projection feed.'));
       st.appendChild(gd);
     }
     line('Injury feed', newsCache.at
@@ -1156,7 +1156,7 @@
          prices (Data → Claude costs)." there) for no reason other than
          having been written separately. */
       if (estText) line('Estimated cost to sync', estText +
-        ' on the Claude API, at current prices (see Data → Claude costs).');
+        ' on the Claude API, at current prices (see Data → Claude → Claude costs).');
     }
     line('Claude', root.Ai && root.Ai.configured()
       ? (aiCache.at ? (aiCache.count || Object.keys(aiCache.byName || {}).length) +

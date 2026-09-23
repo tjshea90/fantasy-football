@@ -104,7 +104,7 @@
       c.appendChild(el('h2', null, name + ' could not be drawn'));
       c.appendChild(el('p', null, (e && e.message) ? e.message : String(e)));
       c.appendChild(el('p', 'muted', 'The rest of this screen is unaffected. ' +
-        'If this keeps happening, Data → Export a backup and say what it says here.'));
+        'If this keeps happening, Data → App → Export backup and say what it says here.'));
       return c;
     }
   }
@@ -1385,7 +1385,7 @@
     var c = el('div', 'card warn');
     c.appendChild(el('h2', null, 'Check the scores this week'));
     c.appendChild(el('p', null, wm.feedWarn));
-    c.appendChild(el('p', 'muted', 'Everything else still ran. Data → Run the feed self-test ' +
+    c.appendChild(el('p', 'muted', 'Everything else still ran. Data → Sync & data → Run feed self-test ' +
       'will say which part of the parse changed.'));
     return c;
   }
@@ -2148,7 +2148,7 @@
     }
     var aestText = claudeTeamAnalysisEstimate();
     aest.textContent = aestText ? ('Estimated cost: ' + aestText +
-      ' on the Claude API, at current prices (see Data → Claude costs).') : '';
+      ' on the Claude API, at current prices (see Data → Claude → Claude costs).') : '';
     abtn.addEventListener('click', function () {
       abtn.disabled = true; abtn.textContent = 'Comparing your team to the league…';
       jobStart('teamanalysis', 'Comparing your team to the league…');
@@ -2374,7 +2374,7 @@
       var hits = PlayerDB.search(q.value, posSel.value, 20);
       if (!q.value.trim()) { hint.textContent = ''; return; }
       if (!hits.length) {
-        hint.textContent = 'No match. Refresh the player database on the Data tab, ' +
+        hint.textContent = 'No match. Refresh the player database (Data → Sync & data), ' +
                            'or add him by hand below.';
         results.appendChild(manualRow(t, q.value));
         return;
@@ -2819,7 +2819,7 @@
     /* 2026-09-15e sweep: matched wording with the Advice tab's identical
        estimate line (recommend.js render()'s own "Estimated cost to sync"). */
     west.textContent = westText ? ('Estimated cost: ' + westText +
-      ' on the Claude API, at current prices (see Data → Claude costs).') : '';
+      ' on the Claude API, at current prices (see Data → Claude → Claude costs).') : '';
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
       /* This IS "refreshing waiver wire information" — fired in the
@@ -4673,7 +4673,7 @@
       bad.appendChild(el('h2', null, 'This screen hit an error'));
       bad.appendChild(el('p', null, (e && e.message) ? e.message : String(e)));
       bad.appendChild(el('p', 'muted', 'Every other tab still works, and nothing ' +
-        'has been lost — the season is on disk and Data → Export a backup will ' +
+        'has been lost — the season is on disk and Data → App → Export backup will ' +
         'still write it out.'));
       root.appendChild(bad);
     }

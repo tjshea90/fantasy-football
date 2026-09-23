@@ -341,7 +341,7 @@
     if (stop === 'max_tokens') {
       throw new Error('Claude ran out of output room mid-answer (stop_reason '
         + 'max_tokens) and not enough arrived to rescue. Research fewer players '
-        + '(Data → depth: Smart) or raise the limit.');
+        + '(Data → Claude → How much to research each sync: Smart) or raise the limit.');
     }
     if (stop === 'refusal') throw new Error('Claude declined to answer this one.');
     if (!s.replace(/\s/g, '')) throw new Error('Claude sent no text at all.');
