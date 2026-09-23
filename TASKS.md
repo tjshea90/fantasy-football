@@ -25,9 +25,9 @@ i.e. (not 4 — league scoreboard — and not 7 — light theme):
 - [x] **E. (#6) Quieter Drop buttons on Roster.** DONE — neutral ⋯ per row -> menu Cancel / Stats / Drop (Drop still confirms). Test: test_picks.js '#6' (6 checks). Replace 17 red "Drop"
       buttons with a neutral "⋯" per row that opens a small menu with Drop
       (still confirmed).
-- [ ] **F. Tests + regression** — a named test per item, every suite by exit
+- [x] **F. Tests + regression** DONE — 23 suites exit 0 / 0 FAIL lines, ES2018 green, Chromium smoke clean on real-data + cold-seed. — a named test per item, every suite by exit
       code AND output, Chromium smoke + screenshots of every tab.
-- [ ] **G. Ship** (`ship.sh`), publish the Release, send Tj the link.
+- [x] **G. Ship** DONE — v8.4; Release verified via get_release_by_tag (FFTracker-v8.4.apk, 342294 bytes, not a draft). (`ship.sh`), publish the Release, send Tj the link.
 
 ## Prior job, complete (2026-09-23) — POLISH, REORGANIZE, DECLUTTER, AND MAKE IT SNAPPY ON THE MOTO G 2026
 

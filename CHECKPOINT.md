@@ -1,12 +1,12 @@
-# CHECKPOINT 122 — read me first, then TASKS.md
+# CHECKPOINT 123 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T04:44:53Z · **version:** 8.4 · **tests:** all 23 suites green
+**Written:** 2026-09-23T04:46:11Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-v8.4 shipped via ship.sh (23 suites + ES2018 + dex gate green, APK built, main fast-forwarded); publish-release.yml dispatched for 8.4.
+v8.4 Release published and verified (FFTracker-v8.4.apk, 342294 bytes). 2026-09-23b job (picks 1,2,3,5,6) complete.
 
 ## Do this next
-Verify get_release_by_tag v8.4 has a non-empty assets array, tick TASKS.md F and G, send Tj the link. Fallback link: https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v8.4.apk
+Nothing in flight. Proposals 4 (league scoreboard) and 7 (light theme) remain unpicked in TASKS.md Waiting on Tj; next work is whatever Tj asks (or a light/full test per CLAUDE.md).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,9 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  96a9953 ckpt 122: v8.4 shipped via ship.sh (23 suites + ES2018 + dex gate green, APK built, main
   49f7cc3 ship v8.4: v8.4: Tj's picks 1,2,3,5,6 -- Roster PROJ + AVG per player, Live projection u
   205e7bc ckpt 118: A-E all done and tested: new tools/test_picks.js (32 render-level checks acros
   73ee643 ckpt 114: D code done: Power rankings · playoff odds card on Data -> League (Sim.power 
@@ -35,5 +37,4 @@ request in his own words and `git log` carries every step already taken.
   d1d42a7 ckpt 94: v8.3 Release published and verified (get_release_by_tag v8.3: FFTracker-v8.3.ap
   21d2546 ckpt 93: v8.3 shipped via ship.sh (all 22 suites + ES2018 + dex gate green, APK built, m
   483bd59 ship v8.3: v8.3: speed + polish pass for the Moto G 2026 -- tab taps no longer fsync, me
-  6b27037 ckpt 90: Steps B-F ticked: MAJOR proposals 1-7 written under Waiting on Tj (roster PROJ/
 ```
