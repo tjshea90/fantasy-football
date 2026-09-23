@@ -1567,6 +1567,7 @@
          only the real points show. */
       var pj = (projById && x.pid && !x.played && !x.onBye) ? projById[x.pid] : null;
       if (pj) {
+        p.classList.add('hasproj');
         var pp = el('small', 'pproj', 'p ' + fmt(pj.proj));
         pp.setAttribute('aria-label', 'projected ' + fmt(pj.proj));
         p.appendChild(pp);
