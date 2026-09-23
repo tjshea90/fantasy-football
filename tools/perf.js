@@ -105,8 +105,12 @@ function curl(url, headersJson, body) {
       share: () => true, copy: () => true, export: () => true, exportShare: () => true,
       exportFile: () => true, pickFile: () => false
     };
-    /* first paint of real content, for the boot number */
+    /* first paint of real content, for the boot number; and the moment the
+       last <script> finished (DOMContentLoaded fires after all of them, and
+       this listener is registered before ui.js's boot listener) */
     window.__perfBootAt = null;
+    window.__perfScriptsDone = null;
+    document.addEventListener('DOMContentLoaded', function () { window.__perfScriptsDone = performance.now(); });
     new MutationObserver(function (list, obs) {
       const v = document.getElementById('view');
       if (v && v.firstChild && window.__perfBootAt === null) { window.__perfBootAt = performance.now(); obs.disconnect(); }
@@ -138,9 +142,11 @@ function curl(url, headersJson, body) {
   }
   const boot = await page.evaluate(() => {
     const nav = performance.getEntriesByType('navigation')[0];
-    return { firstContent: Math.round(window.__perfBootAt), dcl: Math.round(nav.domContentLoadedEventEnd), load: Math.round(nav.loadEventEnd) };
+    return { firstContent: Math.round(window.__perfBootAt), dcl: Math.round(nav.domContentLoadedEventEnd), load: Math.round(nav.loadEventEnd),
+             scripts: Math.round(window.__perfScriptsDone - nav.responseEnd), bootFn: Math.round(window.__perfBootAt - window.__perfScriptsDone),
+             saves: window.__perfSaves };
   });
-  console.log(`throttle ${THROTTLE}x · boot: first content ${boot.firstContent}ms · DOMContentLoaded ${boot.dcl}ms · load ${boot.load}ms (wall ${Date.now() - t0}ms)`);
+  console.log(`throttle ${THROTTLE}x · boot: first content ${boot.firstContent}ms (loading+running scripts ${boot.scripts}ms, boot() to first content ${boot.bootFn}ms, ${boot.saves} saves) · load ${boot.load}ms`);
 
   if (SYNC) {
     const weeks = String(SYNC).split(',').map(Number);
