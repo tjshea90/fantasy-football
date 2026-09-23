@@ -1,6 +1,57 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-19) — OVERALL UI AND CODE IMPROVEMENT / BUG SWEEP
+## Current job (2026-09-23) — POLISH, REORGANIZE, DECLUTTER, AND MAKE IT SNAPPY ON THE MOTO G 2026
+
+Tj, 2026-09-23T03:04:38Z:
+
+> "Make sure to checkpoint your work frequently because it is highly likely
+> Claude usage will run out during this task and interrupt you.
+>
+> I like this app. Look around at the features and UI and see if anything can
+> be made to look better, function better, or be better organized, or unneeded
+> or obsolete junk removed. Consider other very popular fantasy football sites
+> or apps and their ui. Also see if you can optimize it for maximum speed and
+> efficiency and snappiness on a moto g 2026, but do not sacrifice accuracy or
+> function. I want it as fast and snappy as possible without taking away any
+> function or accuracy."
+
+Standing preference (Tj's profile): consider features/UI from similar apps
+(ESPN Fantasy, Sleeper, Yahoo, Underdog) but **make no MAJOR change without his
+approval** — so small polish/perf/cleanup ships; anything that moves, merges or
+deletes a whole tab/feature is written up under "Waiting on Tj" as a proposal,
+not done silently. Hard rules still apply: ES2018 only, one universal APK,
+async bridge, RULES_2026.md is ground truth, no function or accuracy lost.
+
+### Steps
+
+- [ ] **A. Baseline.** All suites + ES2018 gate green before touching anything.
+- [ ] **B. Measure before optimizing.** Load index.html in headless Chromium
+      with CPU throttling (a mid-range phone ≈ 4x slowdown) and a stubbed
+      Native bridge; record boot-to-first-paint, per-tab render time, and the
+      heaviest JS on each path. Also size every asset (players.js/seed.js are
+      one-line data blobs). Write the numbers down here so the "after" can be
+      compared honestly. No real device exists in this environment — say so.
+- [ ] **C. Speed fixes that change no output.** Whatever B shows is actually
+      slow: redundant recompute per render, JSON parse/cloning at boot,
+      layout thrash, unthrottled saves, expensive CSS (shadows/filters/blur)
+      on scrolling lists, tap latency, WebView settings in the Java shell.
+      Each fix verified by the existing suites (identical output) and by a
+      re-measure.
+- [ ] **D. UI survey, tab by tab** (Live, Lineups, Roster, Wire, Stats,
+      Advice, Data) against how ESPN/Sleeper/Yahoo present the same thing.
+      List concrete look/function/organization improvements and obsolete
+      junk. Split the list: SMALL (polish, spacing, hierarchy, copy, dead
+      UI) vs MAJOR (moving/merging/removing a tab or feature).
+- [ ] **E. Do the SMALL items.** Each checked in Chromium (light + dark) and
+      by the suites; source-text pins where no render harness exists.
+- [ ] **F. Write the MAJOR items up under "Waiting on Tj"** as proposals with
+      a one-line why each — not done without his yes.
+- [ ] **G. Full regression** — every suite by exit code AND output, ES2018
+      gate, Chromium smoke of every tab.
+- [ ] **H. Ship** (`ship.sh`), publish the Release, send Tj the link and the
+      MAJOR proposals list.
+
+## Prior job, complete (2026-09-19) — OVERALL UI AND CODE IMPROVEMENT / BUG SWEEP
 
 Tj, 2026-09-19T00:39:00Z:
 
