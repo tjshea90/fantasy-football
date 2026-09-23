@@ -50,7 +50,32 @@
     if (!DB.weeks) DB.weeks = {};
     return DB;
   }
-  function persist() { rawSave(get()); }
+  /* ---- WHEN THIS CACHE IS WRITTEN (full test, 2026-09-23c) ---------------
+   * ingestEvent() used to rewrite the WHOLE cache — JSON.stringify of every
+   * box score this season plus a synchronous bridge write and fsync — once per
+   * game ingested. The cache is ~200 KB a week (422 KB after week 2, ~3.5 MB by
+   * week 17), and the Sunday live poll re-ingests every in-progress game every
+   * 45 seconds: mid-season that was ~9 full 2-3 MB writes per poll, on the
+   * renderer's thread, all afternoon. Two changes, no data lost:
+   *   - only a FINAL game makes the cache worth writing. An in-progress line
+   *     is never trusted from disk anyway (ensureEvent refetches anything not
+   *     cached-final), so persisting it bought nothing;
+   *   - writes are coalesced: a batch of ingests (a sync fetches three at a
+   *     time, sixteen on a Tuesday) becomes ONE write shortly after the last,
+   *     and flush() — called from ui.js's __appPause, before Android may kill
+   *     the process — writes anything still pending. */
+  var PERSIST_MS = 2000, persistTimer = null, dirty = false;
+  function persistSoon() {
+    dirty = true;
+    if (persistTimer !== null) return;
+    persistTimer = setTimeout(function () { persistTimer = null; flush(); }, PERSIST_MS);
+  }
+  function flush() {
+    if (persistTimer !== null) { clearTimeout(persistTimer); persistTimer = null; }
+    if (!dirty) return true;
+    dirty = false;
+    return rawSave(get());
+  }
   function weekBucket(week) {
     var d = get(), w = String(week);
     if (!d.weeks[w]) d.weeks[w] = {};
@@ -115,7 +140,7 @@
         dst: agg ? root.Espn.dstLine(agg) : null
       };
     }
-    persist();
+    if (game.state === 'post') persistSoon();
     return bucket;
   }
   function ensureEvent(week, game, force) {
