@@ -1188,18 +1188,32 @@
         else post++;
       }
       live.inProgress = inProg; live.err = ''; live.fails = 0;   /* the backoff resets */
-      if (inProg > 0) {
+      /* nothing live: check back rarely, and stop entirely once the week is
+         complete and already synced */
+      function idleNext() {
+        var m = S.weekMeta[String(week)];
+        if (!pre && m && m.synced && m.allFinal) { live.next = 0; return; }
+        scheduleLive(pre ? 5 * 60000 : 10 * 60000);
+      }
+      /* THE CLOSING SYNC (2026-09-23): a game that has gone final since the
+         last sync still owes its final box score — see Schedule.needsSync.
+         Without this, Monday night's last minute was never captured and the
+         week never became "final" without a manual Sync. */
+      var tickWeek = week;
+      var closing = !inProg && window.Schedule && Schedule.needsSync &&
+        Schedule.needsSync(games, S.weekMeta[String(tickWeek)], function (id) {
+          var c = (gcache.season === S.settings.season && gcache.week === tickWeek) ? gcache.byId[id] : null;
+          return !!(c && c.final);
+        });
+      if (inProg > 0 || closing) {
         return doSync({ quiet: true }).then(function () {
           live.at = Date.now();
-          scheduleLive(Math.max(20, Number(S.settings.liveEvery) || 45) * 1000);
+          if (inProg > 0) scheduleLive(Math.max(20, Number(S.settings.liveEvery) || 45) * 1000);
+          else idleNext();
         });
       }
       live.at = Date.now();
-      /* nothing live: check back rarely, and stop entirely once the week is
-         complete and already synced */
-      var m = S.weekMeta[String(week)];
-      if (!pre && m && m.synced && m.allFinal) { live.next = 0; return; }
-      scheduleLive(pre ? 5 * 60000 : 10 * 60000);
+      idleNext();
       return null;
     }).catch(function (e) {
       live.err = (e && e.message) ? e.message : String(e);

@@ -270,9 +270,38 @@
     };
   }
 
+  /* ---- does the live poll owe the week a sync? (2026-09-23) ---------------
+   * ui.js's liveTick used to sync ONLY while a game was in progress. The last
+   * in-progress sync of a game is up to one poll interval (45s) before its
+   * final whistle, so whatever happened in that gap — a game-winning TD, a
+   * last-second field goal — was never captured if no LATER game went live to
+   * trigger another sync. Monday night is exactly that game every week: after
+   * it ends the poll saw 0 live games, 0 upcoming, a week not marked final,
+   * and simply re-armed every ten minutes forever without syncing. The week
+   * never became "final" on its own, the local week auto-advance (which
+   * trusts weekMeta.allFinal) never fired, and a Thursday game finished with
+   * the app closed sat at 0.0 on the Live tab until Sunday.
+   *
+   * `games` is the scoreboard liveTick already has (ids + states), `meta` the
+   * stored weekMeta for that week, `captured(id)` whether this session already
+   * holds that game's FINAL box score. True when any game is live, or when a
+   * finished game's final line has not been captured and the week is not
+   * already stored as synced-and-final. A captured final is never refetched,
+   * so on a Friday this costs one box score (Thursday's), once. */
+  function needsSync(games, meta, captured) {
+    var i, uncaptured = 0;
+    for (i = 0; i < (games || []).length; i++) {
+      var g = games[i];
+      if (g.state === 'in') return true;
+      if (g.state === 'post' && !(captured && captured(g.id))) uncaptured++;
+    }
+    if (meta && meta.synced && meta.allFinal) return false;
+    return uncaptured > 0;
+  }
+
   root.Schedule = {
     ingest: ingest, refresh: refresh, get: get, at: at, stale: stale,
-    forTeam: forTeam, badge: badge, earlyAlert: earlyAlert,
+    forTeam: forTeam, badge: badge, earlyAlert: earlyAlert, needsSync: needsSync,
     STALE_MS: STALE_MS, _clock: clock, _DAYS: DAYS
   };
 })(typeof window !== 'undefined' ? window : this);
