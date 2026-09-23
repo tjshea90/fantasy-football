@@ -281,7 +281,7 @@ var pendingOdds = null;
   var meE = early.rows.filter(function (r) { return r.id === S.league.me; })[0];
   ok(meE.title < 0.5 && early.rows.every(function (r) { return r.playoff > 0; }),
      'AFTER TWO WEEKS the best team is not handed the title (' + (meE.title * 100).toFixed(0) +
-     '%) and nobody is written off at 0%  <-- the first model said 55% / 0% here');
+     '%) and nobody is written off at 0%  <-- the v8.3 model said 96% here (and 55% on real week-2 data)');
   for (w = 3; w <= 10; w++) playWeek(w);
   var late = Sim.season(reg);
   var meL = late.rows.filter(function (r) { return r.id === S.league.me; })[0];

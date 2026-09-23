@@ -9,20 +9,20 @@ below and the answered item in "Waiting on Tj"):
 
 i.e. (not 4 — league scoreboard — and not 7 — light theme):
 
-- [ ] **A. (#1) Roster: a number on every player.** This week's projection
+- [x] **A. (#1) Roster: a number on every player.** DONE — PROJ (Recommend.projectAll) + AVG (new Store.playerAvg: own stored line if played, else league book; byes/inactive not games; only final weeks) per row + header. Test: test_picks.js '#1' (6 checks). This week's projection
       and his season average (league scoring) on the right of each row of
       the Roster tab's team cards, like ESPN's PROJ / AVG.
-- [ ] **B. (#2) Live: each starter's projection before his game starts**,
+- [x] **B. (#2) Live: each starter's projection before his game starts** DONE — 'p 14.2' under the 0.0 until he plays (weekProjById shared with projectedFinish; sums to the team proj). Test: test_picks.js '#2'.,
       under/next to his 0.0, like ESPN/Sleeper. Once his game starts, the
       real points take over as now.
-- [ ] **C. (#3) Merge Advice into Lineups (7 tabs -> 6).** Nothing removed,
+- [x] **C. (#3) Merge Advice into Lineups (7 tabs -> 6).** DONE — Lineups has a 'Set lineups | Advice' chip switch (saved as settings.lineSub); lastTab 'advice' and goTab('advice') land on Lineups -> Advice; pull-to-refresh there runs the advice sync. Test: test_picks.js '#3' (9 checks); test_tabsafety/test_lifecycle tab lists updated. Nothing removed,
       just moved: the Advice tab's cards live on Lineups. Must also handle a
       saved lastTab of "advice" (cold relaunch), every goTab('advice') call
       site, the swipe order, back-history, and the test suites' tab lists.
-- [ ] **D. (#5) Power rankings / playoff odds** from sim.js (season
+- [x] **D. (#5) Power rankings / playoff odds** DONE — card on Data -> League (rank, all-play, luck, playoff %, title %); odds cached on store generation and computed right after paint. Sim.season REBUILT: empirical-Bayes posterior on team strength + sigma prior (the old one said 96% title after 2 weeks), flat typed-array loop ~3x faster. Test: test_picks.js '#5' (8 checks; the humility check FAILS on the v8.3 sim.js). from sim.js (season
       simulation, power, all-play — tested, never shown) as a card on
       Data -> League, like Sleeper's playoff odds.
-- [ ] **E. (#6) Quieter Drop buttons on Roster.** Replace 17 red "Drop"
+- [x] **E. (#6) Quieter Drop buttons on Roster.** DONE — neutral ⋯ per row -> menu Cancel / Stats / Drop (Drop still confirms). Test: test_picks.js '#6' (6 checks). Replace 17 red "Drop"
       buttons with a neutral "⋯" per row that opens a small menu with Drop
       (still confirmed).
 - [ ] **F. Tests + regression** — a named test per item, every suite by exit
