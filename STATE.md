@@ -1,6 +1,74 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-19** · ladder 169/170 · **v8.1**, shipped · APK builds, signed, all 22 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-23** · **v8.3**, shipped · APK builds, signed, all 22 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.3 — polish, declutter and speed for the Moto G 2026 (2026-09-23)
+
+Tj: "Look around at the features and UI and see if anything can be made to
+look better, function better, or be better organized... Also see if you can
+optimize it for maximum speed and efficiency and snappiness on a moto g 2026,
+but do not sacrifice accuracy or function."
+
+### Measured first — tools/perf.js (new, dev-only)
+
+Headless Chromium, 412x915 phone viewport, CPU throttled 4x, a stub of the
+Java bridge whose httpAsync proxies the REAL network through curl, so the app
+runs its real syncs against ESPN. `--sync 1,2 --save F` builds a real-data
+state; `--profile`, `--bootprofile`, `--tracesaves`, `--shots DIR`. Not a
+device: there is no phone or emulator here, it measures the page's own
+JS/layout cost, which is the part the repo controls.
+
+| at 4x | before | after |
+|---|---|---|
+| boot to first content | ~430ms, 10 saves | ~330ms, 1 save |
+| Roster tab | 77ms | 14ms |
+| Wire tab | 82ms | 27ms |
+| Advice tab | 28ms | 5ms |
+| Lineups tab | 27ms | 18ms |
+| state saves in one tab-switching run | 74 | 2 |
+
+### What was slow, and the fixes (no output changed)
+
+- **Every tab tap did a full synchronous Store.save()** (a bridge write +
+  fsync on the renderer thread) to remember `lastTab`; every tenth tap also
+  paid a ~1.3 MB auto-backup; and save() bumps the store generation, which
+  threw away every memo the next tab needed. New `Store.saveSoon()/flush()`
+  (deferred, coalesced, no generation bump), flushed by `__appPause`.
+- **Name normalisation** (Espn.normName, Names.canon/variants) was ~half of
+  the Roster/Wire render: memoized (pure, bounded).
+- **Advice re-read its four caches from disk every render** (including the
+  ~400 KB season-projection file): now loaded once at boot.
+- **Boot's league-wide auto-fill saved once per team** (10 synchronous
+  writes before first paint on a fresh week): one save.
+- WebView `setOffscreenPreRaster(true)`. Minification considered and
+  rejected — it would turn the error card's stack trace into gibberish.
+
+### A real accuracy bug found on the way: no closing sync
+
+liveTick synced only while a game was IN PROGRESS. After Monday night's game
+ended the poll saw nothing live and nothing upcoming, and re-armed every ten
+minutes forever — the last <=45s of that game was never captured, the week
+never became "final" without a manual Sync (so the local auto-advance never
+fired), and a Thursday game that ended with the app closed stayed 0.0 until
+Sunday. New `Schedule.needsSync()`: sync on a live game OR a finished game
+whose final box score this session has not captured; never refetch a
+captured final, never re-sync a week stored synced-and-final.
+
+### UI (small items; the big ones are proposals in TASKS.md "Waiting on Tj")
+
+Compact header (Sync button moved into the top row, ~27px back on every
+tab); Live shows a projected finish per team and "Projected 190.1 – 173.5 ·
+you by 16.6" before kickoff instead of "Level"; a defence shows its nickname
+("Seahawks", not "Seattle Seah..."); Wire swap buttons wrap under the text;
+Wire free-agent basis/usage is two-line fine print, tap to expand, and the
+left column is a rank; the repeated Claude-app explainer is clamped to three
+lines; standings are numbered.
+
+Tests: test_tabsafety.js SPEED section (tab taps write 0 times, no gen bump,
+flush on pause, Advice reads disk 0 times, a fresh-week boot writes <=2),
+test_names.js memo checks, test_schedule.js CLOSING section — each confirmed
+to FAIL against the pre-change snapshot. test_boot.js shortName DEF check
+updated; test_net.js liveTick window widened.
 
 ## v8.1 — a full test, requested through the standing protocol CLAUDE.md now carries
 
