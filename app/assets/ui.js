@@ -1280,6 +1280,7 @@
        guarantees this page runs before it may kill the process, so a
        deferred write (Store.saveSoon — the open tab) must land now */
     try { if (window.Store && Store.flush) Store.flush(); } catch (e) { }
+    try { if (window.Gamelog && Gamelog.flush) Gamelog.flush(); } catch (e) { }
     if (asleep) return;
     asleep = true;
     stopLive();                 /* the timer, not just its effects */
