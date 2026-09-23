@@ -72,7 +72,10 @@ function curl(url, headersJson, body) {
   const browser = await pw.chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => pw.chromium.launch());
   const ctx = await browser.newContext({
     viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625, isMobile: true, hasTouch: true,
-    colorScheme: DARK ? 'dark' : 'light'
+    colorScheme: DARK ? 'dark' : 'light',
+    /* the phone is in the US: the schedule's early-kickoff flag is by LOCAL
+       weekday, and in UTC a Monday-night game reads as Tuesday */
+    timezoneId: opt('tz', 'America/New_York'), locale: 'en-US'
   });
   const page = await ctx.newPage();
   const errors = [];
