@@ -748,6 +748,9 @@
   }
   /* The one place a tab change happens, whether it came from a tap or a swipe. */
   function goTab(name, fromBack) {
+    /* the old Advice tab is Lineups -> Advice now (2026-09-23b); anything
+       still asking for it by name lands there instead of on a blank screen */
+    if (name === 'advice') { lineSub = 'advice'; name = 'lineups'; if (view === 'lineups') { render(); return; } }
     if (!name || name === view) return;
     if (!fromBack) navHistory.push(view);
     scrollMem[view] = curScroll();

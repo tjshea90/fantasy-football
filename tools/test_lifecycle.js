@@ -139,7 +139,7 @@ W.document = {
   addEventListener: function (t, fn) { docHandlers[t] = fn; },
   removeEventListener: function () { }
 };
-var TAB_NAMES = ['live', 'lineups', 'rosters', 'wire', 'stats', 'advice', 'data'];
+var TAB_NAMES = ['live', 'lineups', 'rosters', 'wire', 'stats', 'data'];
 /* Same drift check as the module load order below: this stub's tab list is
    maintained by hand, so it can silently stop matching the real nav bar the
    moment a tab is added or removed there — exactly what happened to the
