@@ -263,3 +263,13 @@ textarea:focus-visible,[tabindex]:focus-visible{
 /* A long explanatory paragraph clamped to three lines; tap to open it. */
 .clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .clamp.open{display:block;-webkit-line-clamp:unset}
+
+/* ---- 2026-09-23b: Roster PROJ/AVG column and the row "⋯" menu ----------- */
+.row .pv{width:54px;flex:none;text-align:right;font-variant-numeric:tabular-nums;line-height:1.2}
+.row .pv b{display:block;font-size:14px;font-weight:600}
+.row .pv small{display:block;font-size:10px;color:var(--dim)}
+.row .rmore{flex:none;width:40px;min-width:40px;padding:0;font-size:18px;line-height:1;color:var(--dim)}
+.row.rhead{padding:0 0 4px;border-top:0}
+.row.rhead .nm,.row.rhead .pv{font-size:10px;color:var(--dim);text-transform:uppercase;
+  letter-spacing:.05em;font-weight:600}
+.row.rhead + .row{border-top:1px solid var(--line)}

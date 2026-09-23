@@ -802,6 +802,33 @@
      player's own scored games are half the estimate. */
   function setBook(week, rows) { S.book[String(week)] = rows; bumpGen(); markArchive(); }
   function bookWeek(week) { var w = String(week); return S.book[w] || {}; }
+  /* playerAvg(player, throughWeek) — his season average per game PLAYED, in
+   * this league's scoring (the Roster tab's AVG column, 2026-09-23b; ESPN's
+   * roster shows the same figure). His own stored stat line for a week wins
+   * when there is one — it is what his fantasy team was actually credited,
+   * weekly bonuses and hand adjustments included; otherwise the league book,
+   * which carries every player ESPN reported, so a man picked up in week 5
+   * still has weeks 1-4. A bye, a week with no line and no book row, or a
+   * line he never played in (inactive) is not a game and does not count.
+   * null when he has not played a scored game yet. */
+  function playerAvg(p, throughWeek) {
+    if (!p) return null;
+    var tot = 0, gp = 0, w;
+    for (w = 1; w <= throughWeek; w++) {
+      if (isOnBye(p, w)) continue;
+      var pts = null, l = p.id ? lineFor(w, p.id) : null;
+      if (l && l.played) pts = root.Scoring.score(l).total;
+      else if (!l) {
+        var bw = bookWeek(w), row = null;
+        if (p.pos === 'DEF') row = bw['DEF:' + String(p.nfl || '').toUpperCase()] || null;
+        else row = (root.Names && root.Names.hit) ? root.Names.hit(bw, p.name) : (bw[p.name] || null);
+        if (row) pts = Number(row.p) || 0;
+      }
+      if (pts === null) continue;
+      tot += pts; gp++;
+    }
+    return gp ? { avg: tot / gp, games: gp, total: tot } : null;
+  }
   /* the last n scored weeks for one player, most recent first.
    * `name` is a PLAIN display name — any spelling. Found in the 2026-09-15e
    * sweep: this used to require an exact `Espn.normName(...)` key and every
@@ -864,6 +891,7 @@
     seasonTotals: seasonTotals, standings: standings, weekIsScored: weekIsScored,
     exportJSON: exportJSON, importJSON: importJSON, resetToSeed: resetToSeed,
     autoBackup: autoBackup,
-    setBook: setBook, bookWeek: bookWeek, bookTrend: bookTrend, bookNames: bookNames
+    setBook: setBook, bookWeek: bookWeek, bookTrend: bookTrend, bookNames: bookNames,
+    playerAvg: playerAvg
   };
 })(typeof window !== 'undefined' ? window : this);

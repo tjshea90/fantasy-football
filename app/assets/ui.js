@@ -1972,11 +1972,60 @@
     addSafe(root, 'How your team stacks up', teamAnalysisCard);
     addSafe(root, 'The trade evaluator', tradeCard);
   }
+  /* The last week whose games are all in: the current week once it is
+     final, otherwise the one before it. A half-played week would drag a
+     season average down with games that have not happened yet. */
+  function avgThroughWeek() {
+    return Store.weekIsScored(week) ? week : week - 1;
+  }
+  /* Roster row actions (2026-09-23b, Tj's pick #6). Seventeen red "Drop"
+     buttons down the page made the most destructive action in the app the
+     loudest thing on it. One neutral "⋯" per row opens this instead; Drop is
+     still here and still asks before it does anything. */
+  function rosterRowMenu(t, p) {
+    dialog(p.name, p.pos + ' · ' + p.nfl + ' · ' + t.name, function (box, row, close) {
+      var cancel = el('button', 'btn', 'Cancel');
+      cancel.addEventListener('click', close);
+      var st = el('button', 'btn', 'Stats');
+      st.addEventListener('click', function () {
+        close(); Stats.openPlayerModal(statsCtx(), { name: p.name, pos: p.pos, nfl: p.nfl });
+      });
+      var dr = el('button', 'btn dan', 'Drop');
+      dr.addEventListener('click', function () {
+        close();
+        confirmModal('Drop ' + p.name + '?',
+          'Removes him from ' + t.name + ' in this app. It does not touch your ' +
+          'league site — do the drop there as well.', 'Drop him', function () {
+          Store.removePlayer(t.id, p.id);
+          if (window.Sim) Sim.invalidate();
+          render(); toast('Dropped ' + p.name);
+        }, true);
+      });
+      row.appendChild(cancel); row.appendChild(st); row.appendChild(dr);
+    });
+  }
   function teamRosterCard(t) {
     var c = el('div', 'card');
     c.appendChild(el('h2', null, t.name + ' · ' + t.players.length + ' players'));
     var order = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DEF: 5 };
     var flagsById = healthFlags(t.id, weekOpponents());
+    /* PROJ and AVG on every row (2026-09-23b, Tj's pick #1 — ESPN's roster
+       view). PROJ is this app's own week projection for him, the same number
+       that sets the auto-lineup; AVG is his season average per game played in
+       THIS league's scoring (Store.playerAvg). */
+    var projById = {};
+    try {
+      Recommend.projectAll(week, t.id, weekOpponents()).forEach(function (x) {
+        if (x.p) projById[x.p.id] = x;
+      });
+    } catch (e) { /* the roster still lists without numbers */ }
+    var thru = avgThroughWeek();
+    var hd = el('div', 'row rhead');
+    hd.appendChild(el('div', 'slot', ''));
+    hd.appendChild(el('div', 'nm', 'Player'));
+    hd.appendChild(el('div', 'pv', 'Wk ' + week + ' proj · avg'));
+    hd.appendChild(el('div', 'rmore'));
+    c.appendChild(hd);
     t.players.slice().sort(function (a, b) {
       if (order[a.pos] !== order[b.pos]) return order[a.pos] - order[b.pos];
       return a.name.localeCompare(b.name);
@@ -1996,16 +2045,14 @@
         return f.text.indexOf('ON BYE') !== 0;
       }));
       r.appendChild(nm);
-      var x = el('button', 'btn sm dan', 'Drop');
-      x.addEventListener('click', function () {
-        confirmModal('Drop ' + p.name + '?',
-          'Removes him from ' + t.name + ' in this app. It does not touch your ' +
-          'league site — do the drop there as well.', 'Drop him', function () {
-          Store.removePlayer(t.id, p.id);
-          if (window.Sim) Sim.invalidate();
-          render(); toast('Dropped ' + p.name);
-        }, true);
-      });
+      var pj = projById[p.id], av = Store.playerAvg(p, thru);
+      var pv = el('div', 'pv');
+      pv.appendChild(el('b', null, pj ? (pj.onBye ? 'BYE' : fmt(pj.proj)) : '–'));
+      pv.appendChild(el('small', null, av ? 'avg ' + fmt(av.avg) : 'avg –'));
+      r.appendChild(pv);
+      var x = el('button', 'btn sm rmore', '⋯');
+      x.setAttribute('aria-label', 'Actions for ' + p.name);
+      x.addEventListener('click', function () { rosterRowMenu(t, p); });
       r.appendChild(x);
       c.appendChild(r);
     });
