@@ -244,9 +244,10 @@ function curl(url, headersJson, body) {
       const top = [...self.entries()].filter(([k]) => !/^\((idle|program|garbage collector)\)/.test(k)).sort((a, b) => b[1] - a[1]).slice(0, 8);
       console.log(`  profile ${tab}: ` + top.map(([k, us]) => `${k} ${Math.round(us / 1000)}ms`).join(' | '));
     }
+    if (rs) await frameAfter(rs);
   }
   console.log('tab       js(ms)  to-frame(ms)  dom-nodes   (median of ' + REPS + ', live->tab)');
-  for (const r of rows) console.log(`${r.tab.padEnd(9)} ${String(r.js).padStart(6)}  ${String(r.frame).padStart(12)}  ${String(r.nodes).padStart(9)}`);
+  for (const r of rows) console.log(`${r.tab.padEnd(14)} ${String(r.js).padStart(6)}  ${String(r.frame).padStart(12)}  ${String(r.nodes).padStart(9)}`);
   const saves = await page.evaluate(() => ({ n: window.__perfSaves, chars: window.__perfSaveChars }));
   console.log(`saves during run: ${saves.n} (${Math.round(saves.chars / 1024)} KB written)`);
   if (SAVE) {
