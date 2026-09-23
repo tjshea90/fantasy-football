@@ -40,6 +40,7 @@ app/assets/app.css
 app/assets/ui.js
 app/assets/recommend.js
 tools/check_es2018.js
+tools/perf.js
 build.sh
 android/AndroidManifest.xml
 android/src/com/tj/fftracker/MainActivity.java
