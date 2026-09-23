@@ -64,6 +64,14 @@ function makeEl(tag) {
   return e;
 }
 
+/* depth-first search of the stub DOM for a <button> with this exact text */
+function findButton(n, text) {
+  if (!n) return null;
+  if (n.tagName === 'BUTTON' && n.textContent === text) return n;
+  var k = n.children || [], i, f;
+  for (i = 0; i < k.length; i++) { f = findButton(k[i], text); if (f) return f; }
+  return null;
+}
 function buildHarness(sharedDisk) {
   var ids = {};
   var W = {}; W.window = W;
@@ -80,7 +88,13 @@ function buildHarness(sharedDisk) {
              removeItem: function (k) { delete d[k]; } };
   }());
   var docHandlers = {};
-  var TAB_NAMES = ['live', 'lineups', 'rosters', 'wire', 'stats', 'advice', 'data'];
+  /* read from the real nav bar, so this list can never drift from it again
+     (it still listed "advice" for a round after that tab moved into Lineups) */
+  var TAB_NAMES = (function () {
+    var html = fs.readFileSync(A('index.html'), 'utf8'), out = [], re = /data-v="([^"]+)"/g, m;
+    while ((m = re.exec(html))) out.push(m[1]);
+    return out;
+  }());
   var tabEls = TAB_NAMES.map(function (n) {
     var e = makeEl('button'); e.setAttribute('data-v', n); return e;
   });
@@ -163,10 +177,10 @@ console.log('\n-- THE BUG: Recommend.loadCaches throws during startup --');
      'and clicking actually switched tabs — lastTab is "wire" (got ' +
      h.W.Store.get().settings.lastTab + ')');
 
-  var r2 = h.clickTab('advice');
+  var r2 = h.clickTab('lineups');
   ok(r2 !== null, 'a second tab press still works too');
-  ok(h.W.Store.get().settings.lastTab === 'advice',
-     'lastTab followed it — "advice" (got ' + h.W.Store.get().settings.lastTab + ')');
+  ok(h.W.Store.get().settings.lastTab === 'lineups',
+     'lastTab followed it — "lineups" (got ' + h.W.Store.get().settings.lastTab + ')');
 })();
 
 console.log('\n-- autoFillWeek throwing is caught the same way --');
@@ -271,7 +285,7 @@ console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush 
   h.docHandlers.DOMContentLoaded();
   var gen0 = h.W.Store.generation();
   writes = 0;
-  h.clickTab('wire'); h.clickTab('stats'); h.clickTab('advice'); h.clickTab('rosters');
+  h.clickTab('wire'); h.clickTab('stats'); h.clickTab('lineups'); h.clickTab('rosters');
   ok(writes === 0, 'four tab taps wrote to disk ' + writes + ' times (want 0 — the write is deferred)');
   ok(h.W.Store.generation() === gen0,
      'and did not bump the store generation, so the memos the next tab reads survive');
@@ -294,9 +308,13 @@ console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush 
   var realLoad = h.W.Native.load;
   h.W.Native.load = function (k) { reads++; return realLoad(k); };
   h.docHandlers.DOMContentLoaded();
-  h.clickTab('advice');
+  /* Advice is Lineups -> Advice since 2026-09-23b: open it through the chip */
+  h.clickTab('lineups');
+  var chip = findButton(h.ids.view, 'Advice');
+  if (chip && chip._h && chip._h.click) chip._h.click.call(chip);
+  ok(!!chip, 'the Lineups tab has an "Advice" chip');
   reads = 0;
-  h.clickTab('live'); h.clickTab('advice'); h.clickTab('live'); h.clickTab('advice');
+  h.clickTab('live'); h.clickTab('lineups'); h.clickTab('live'); h.clickTab('lineups');
   ok(reads === 0, 'opening Advice twice more read the disk ' + reads + ' times (want 0 — caches are loaded once at boot)');
 }());
 (function () {
