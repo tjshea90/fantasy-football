@@ -278,3 +278,5 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .pts.pend.hasproj{opacity:1}
 .row .pts .pproj{display:block;font-size:9px;font-weight:500;font-style:normal;color:var(--dim);
   opacity:1;white-space:nowrap}
+/* the two-chip switch at the top of Lineups (Set lineups | Advice) */
+.subnav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}

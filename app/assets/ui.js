@@ -9,6 +9,9 @@
      tab and back within this session, but resets to 'league' on a fresh
      boot, the same as every other view function's own scroll position. */
   var dataSubView = 'league';
+  /* Lineups tab sub-view: 'set' (the lineup editors) or 'advice' (what used
+     to be the Advice tab — see viewLineupsTab). */
+  var lineSub = 'set';
   /* live polling: a handle plus the last result, so every screen can say how
      fresh the numbers are without each one owning a timer */
   var live = { timer: null, at: 0, inProgress: 0, err: '', next: 0, fails: 0 };
@@ -598,9 +601,13 @@
        * is still whatever it was, in memory). So the one thing that can
        * make a real cold relaunch look like a resume is restoring from
        * disk what tab was open last, the same way `week` just did above. */
-      if (S.settings.lastTab && tabList().indexOf(S.settings.lastTab) >= 0) {
+      /* The Advice tab became Lineups -> Advice (2026-09-23b). A phone last
+         closed on it comes back to exactly that screen, not to Live. */
+      if (S.settings.lastTab === 'advice') { view = 'lineups'; lineSub = 'advice'; }
+      else if (S.settings.lastTab && tabList().indexOf(S.settings.lastTab) >= 0) {
         view = S.settings.lastTab;
       }
+      if (S.settings.lineSub === 'advice' && view === 'lineups') lineSub = 'advice';
     } catch (e) {
       fatal('Startup failed:\n' + (e && e.stack ? e.stack : e));
       return;
@@ -937,13 +944,13 @@
         scrollTop: curScroll,
         blocked: function () { return modalOpen() || busy || jobRunning('advice'); },
         refreshLabel: function () {
-          return view === 'advice' ? 'Refreshing week ' + week + ' advice…'
+          return isAdviceView() ? 'Refreshing week ' + week + ' advice…'
                                     : view === 'stats' ? 'Refreshing stats…'
                                     : 'Refreshing week ' + week + '…';
         },
         refresh: function () {
           if (window.Schedule) { try { Schedule.refresh(week, true); } catch (e) { } }
-          if (view === 'advice') return adviceSyncQuiet();
+          if (isAdviceView()) return adviceSyncQuiet();
           if (view === 'stats') return Stats.refresh();
           /* NOT quiet. A pull is a deliberate act, so it gets the same progress
              bar the Sync week button gets — "box score 3 of 8" is the
@@ -1351,7 +1358,7 @@
   /* ---------- header ---------- */
   function renderHeader() {
     var names = { live: 'Live', lineups: 'Lineups', rosters: 'Rosters', wire: 'Wire',
-                  stats: 'Stats', advice: 'Advice', data: 'Data' };
+                  stats: 'Stats', data: 'Data' };
     $('title').textContent = names[view] || 'Tracker';
     $('wkLabel').textContent = 'Wk ' + week;
     var m = S.weekMeta[String(week)];
@@ -2134,7 +2141,7 @@
     } else {
       anote.textContent = 'No web search on this one — every number here (prices, ' +
         'injuries, standings) is already fresh from the app\'s own feeds, so this is ' +
-        'judgment, not research, and costs less than the Advice/Wire syncs.';
+        'judgment, not research, and costs less than the Lineups → Advice and Wire syncs.';
     }
     var aestText = claudeTeamAnalysisEstimate();
     aest.textContent = aestText ? ('Estimated cost: ' + aestText +
@@ -3178,6 +3185,40 @@
       handoffCard: handoffCard, adviceHandoff: adviceHandoff,
       gameBadge: gameBadge, earlyGameCard: earlyGameCard, markPlayer: markPlayer });
   }
+  /* ---------- LINEUPS = set lineups + advice (2026-09-23b) ---------------
+   * Tj's pick #3: "Merge Advice into Lineups (7 tabs -> 6)". Start/sit advice
+   * belongs where the lineup is set — ESPN, Sleeper and Yahoo all put it
+   * there. Nothing was removed: the old Advice tab is the "Advice" sub-view,
+   * rendered by the exact same viewAdvice(), and the same two-chip switch the
+   * Data and Stats tabs already use picks between them. Two sub-views rather
+   * than one long page on purpose: the advice cards are the heaviest render
+   * in the app after Wire, and a lineup edit re-renders the screen — it should
+   * not pay for the advice every time a dropdown changes. */
+  function isAdviceView() { return view === 'lineups' && lineSub === 'advice'; }
+  function lineSubNav() {
+    var nav = el('div', 'subnav');
+    [['set', 'Set lineups'], ['advice', 'Advice']].forEach(function (t) {
+      var on = lineSub === t[0];
+      var b = el('button', 'btn sm' + (on ? ' pri' : ''), t[1]);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        if (lineSub === t[0]) return;
+        scrollMem['lineups:' + lineSub] = curScroll();
+        lineSub = t[0];
+        keepScroll = scrollMem['lineups:' + lineSub] || 0;
+        S.settings.lineSub = lineSub;
+        if (Store.saveSoon) Store.saveSoon(); else Store.save();
+        render();
+      });
+      nav.appendChild(b);
+    });
+    return nav;
+  }
+  function viewLineupsTab(root) {
+    root.appendChild(lineSubNav());
+    if (lineSub === 'advice') viewAdvice(root);
+    else viewLineups(root);
+  }
 
   /* The Advice tab's round trip. Lives here rather than in recommend.js so the
      card, the picker and the paste fallback have exactly one implementation
@@ -3973,7 +4014,7 @@
       c.appendChild(el('p', 'muted', 'Estimated cost of the next call, at today\'s roster and prices:'));
       if (adviceEst) {
         var e1 = el('div', 'kv');
-        e1.appendChild(el('span', null, 'Sync advice (Advice tab)'));
+        e1.appendChild(el('span', null, 'Sync advice (Lineups → Advice)'));
         e1.appendChild(el('b', null, adviceEst));
         c.appendChild(e1);
       }
@@ -4089,7 +4130,7 @@
       'tells you if a starter is on a bye, has been ruled OUT or doubtful, or if ' +
       'a slot is empty. Sunday at the time you set, and Thursday at 4pm for the ' +
       'night game. It is deliberately narrow: only things that are certain and ' +
-      'expensive. Everything that needs judgement stays in the Advice tab where ' +
+      'expensive. Everything that needs judgement stays in Lineups → Advice where ' +
       'the reasoning can be shown.'));
 
     var row = el('div', 'kv');
@@ -4539,11 +4580,10 @@
        whatever was already built stays on screen and the failure is named. */
     try {
       if (view === 'live') viewLive(root);
-      else if (view === 'lineups') viewLineups(root);
+      else if (view === 'lineups') viewLineupsTab(root);
       else if (view === 'rosters') viewRosters(root);
       else if (view === 'wire') viewWire(root);
       else if (view === 'stats') viewStats(root);
-      else if (view === 'advice') viewAdvice(root);
       else viewData(root);
     } catch (e) {
       var bad = el('div', 'card warn');
