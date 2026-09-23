@@ -206,9 +206,13 @@ function curl(url, headersJson, body) {
     return page.evaluate((src) => new Promise((resolve) => {
       const f = new Function(src);
       const a = performance.now();
-      f();
-      const js = performance.now() - a;
+      let js = 0;
+      /* the marker is queued BEFORE the tap runs, so its after-paint timer is
+         ahead of any afterPaint() work the render itself defers — "to-frame"
+         is the frame that shows the new screen, not the fills that follow it */
       requestAnimationFrame(() => setTimeout(() => resolve({ js: js, frame: performance.now() - a }), 0));
+      f();
+      js = performance.now() - a;
     }), fn);
   }
   TABS = (await page.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#tabs .tab'), (t) => t.getAttribute('data-v')))).concat(SUBVIEWS);
