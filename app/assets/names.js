@@ -156,7 +156,24 @@
 
   /* canon(name) -> the identity key. Two printed names that belong to the same
      man produce the same key; two different men must not. */
+  /* canon() and variants() are pure functions of the name string (every
+     table they read is built once, above, and never written again), and
+     they sit under every owned-player, free-agent and by-name cache lookup
+     in the app. Memoized for the same reason and with the same bounded
+     table as Espn.normName — see its comment. */
+  var MEMO_CAP = 20000;
+  var canonMemo = Object.create(null), canonMemoN = 0;
+  var varMemo = Object.create(null), varMemoN = 0;
   function canon(name) {
+    var k = String(name || '');
+    var c = canonMemo[k];
+    if (c !== undefined) return c;
+    c = canonRaw(k);
+    if (++canonMemoN > MEMO_CAP) { canonMemo = Object.create(null); canonMemoN = 1; }
+    canonMemo[k] = c;
+    return c;
+  }
+  function canonRaw(name) {
     var n = normName(name);
     if (!n) return '';
     if (ALIAS[n]) n = ALIAS[n];
@@ -189,7 +206,18 @@
 
   /* variants(name) — every spelling this key should also match, so a caller
      that wants a plain lookup table can insert all of them. */
-  function variants(name) {
+  /* public: a COPY, so no caller can edit the memoized list in place */
+  function variants(name) { return variantsShared(name).slice(); }
+  function variantsShared(name) {
+    var k = String(name || '');
+    var v = varMemo[k];
+    if (v !== undefined) return v;
+    v = variantsRaw(k);
+    if (++varMemoN > MEMO_CAP) { varMemo = Object.create(null); varMemoN = 1; }
+    varMemo[k] = v;
+    return v;
+  }
+  function variantsRaw(name) {
     var c = canon(name), out = [], n = normName(name), i, w, list;
     /* deduped: the nickname expansion regenerates the plain form for any name
        that was already short ("josh allen" -> canon "joshua allen" -> back to
@@ -240,7 +268,7 @@
    * function. `hit()` returns the value, `hitKey()` the key that matched. */
   function hitKey(map, name) {
     if (!map || !name) return null;
-    var v = variants(name), i;
+    var v = variantsShared(name), i;
     for (i = 0; i < v.length; i++) {
       if (v[i] && Object.prototype.hasOwnProperty.call(map, v[i])) return v[i];
     }

@@ -193,11 +193,26 @@
     var p = String(s || '').split('/');
     return { made: num(p[0]), att: num(p.length > 1 ? p[1] : 0) };
   }
+  /* MEMOIZED (2026-09-23 speed pass). A pure function of its input, and the
+     hottest one in the app: profiled in throttled Chromium, normName plus
+     Names.canon/variants on top of it were the single largest cost of
+     opening the Roster and Wire tabs (~100ms of a ~110ms render at phone
+     speed), because every free-agent and owned-player check re-ran five
+     regexes over the same few thousand names. Same output, computed once
+     per distinct string. The table is dropped wholesale if it ever grows
+     past NORM_CAP, so it cannot leak across a long session. */
+  var NORM_CAP = 20000, normMemo = Object.create(null), normMemoN = 0;
   function normName(s) {
-    return String(s || '').toLowerCase()
+    var k = String(s || '');
+    var v = normMemo[k];
+    if (v !== undefined) return v;
+    v = k.toLowerCase()
       .replace(/[.'`]/g, '').replace(/-/g, ' ')
       .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
       .replace(/\s+/g, ' ').trim();
+    if (++normMemoN > NORM_CAP) { normMemo = Object.create(null); normMemoN = 1; }
+    normMemo[k] = v;
+    return v;
   }
 
   /* ---- schedule ---------------------------------------------------- */
