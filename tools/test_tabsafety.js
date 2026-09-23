@@ -299,6 +299,18 @@ console.log('\n-- SPEED (2026-09-23): a tab tap is not a synchronous disk flush 
   h.clickTab('live'); h.clickTab('advice'); h.clickTab('live'); h.clickTab('advice');
   ok(reads === 0, 'opening Advice twice more read the disk ' + reads + ' times (want 0 — caches are loaded once at boot)');
 }());
+(function () {
+  /* Boot re-defaults every team's lineup (autoFillWeek), and each team that
+     changed used to cost its own synchronous save — ten disk flushes before
+     the first screen on a fresh week. One pass, one save. */
+  var disk = {}, writes = 0;
+  var h = buildHarness(disk);
+  var realSave = h.W.Native.save;
+  h.W.Native.save = function (k, v) { if (k === 'fftracker_state_v1') writes++; return realSave(k, v); };
+  h.docHandlers.DOMContentLoaded();
+  ok(writes <= 2, 'a cold boot on a fresh week wrote the main state ' + writes +
+     ' times (want <= 2: the first-run seed save plus ONE for the league-wide auto-fill)');
+}());
 
 console.log(fails ? ('\n  ' + fails + ' tab-safety check(s) FAILED') : '\n  tab-safety checks pass');
 process.exit(fails ? 1 : 0);
