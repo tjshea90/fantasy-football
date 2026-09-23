@@ -2100,13 +2100,35 @@
    * with no key at all. TeamReport/Handoff/Ai own the data and the wording
    * of what is safe to show (an unverified player is flagged, never
    * hidden); this function only lays it out. */
+  /* ---- a number worth showing, not worth waiting for (2026-09-23c) -------
+   * Full-test finding. The Claude cost estimates build the ENTIRE prompt the
+   * button would send — every roster in the league priced, or the whole wire
+   * — only to count its characters. Measured in throttled Chromium: ~100ms of
+   * a ~155ms first Roster open at Moto G speed, on a line nobody needs in the
+   * first frame. If the estimate is already memoized it is written at once
+   * (no flicker on later visits); otherwise the line paints empty and is
+   * filled a moment after the screen is up. A re-render that replaced the
+   * card in between (the node is detached) skips the fill — the new card
+   * schedules its own. `est(cachedOnly)` is one of the estimate functions. */
+  function fillAfterPaint(node, est, text) {
+    var v = est(true);
+    if (v !== undefined) { node.textContent = text(v); return; }
+    node.textContent = '';
+    setTimeout(function () {
+      if (asleep || node.isConnected === false) return;
+      try { node.textContent = text(est()); } catch (e) { node.textContent = ''; }
+    }, 30);
+  }
   var _taEstMemo = null;
-  function claudeTeamAnalysisEstimate() {
+  /* `cachedOnly`: answer only from the memo (undefined on a miss) — lets the
+     card paint at once and fill the line in after (see fillAfterPaint) */
+  function claudeTeamAnalysisEstimate(cachedOnly) {
     try {
       var mdl = Ai.depth() === 'cheap' ? Ai.cheapModel() : Ai.model();
       var gen = (window.Store && Store.generation) ? Store.generation() : 0;
       var k = week + '|' + S.league.me + '|' + gen + '|' + mdl + '|' + JSON.stringify(Usage.rates(mdl));
       if (_taEstMemo && _taEstMemo.k === k) return _taEstMemo.v;
+      if (cachedOnly) return undefined;
       var ctx = TeamReport.context(week, S.league.me, weekOpponents(), S.league.season,
                                     new Date().toISOString().slice(0, 10));
       var promptChars = Ai.buildTeamAnalysisPrompt(ctx).length;
@@ -2146,9 +2168,10 @@
         'injuries, standings) is already fresh from the app\'s own feeds, so this is ' +
         'judgment, not research, and costs less than the Lineups → Advice and Wire syncs.';
     }
-    var aestText = claudeTeamAnalysisEstimate();
-    aest.textContent = aestText ? ('Estimated cost: ' + aestText +
-      ' on the Claude API, at current prices (see Data → Claude → Claude costs).') : '';
+    fillAfterPaint(aest, claudeTeamAnalysisEstimate, function (v) {
+      return v ? ('Estimated cost: ' + v +
+        ' on the Claude API, at current prices (see Data → Claude → Claude costs).') : '';
+    });
     abtn.addEventListener('click', function () {
       abtn.disabled = true; abtn.textContent = 'Comparing your team to the league…';
       jobStart('teamanalysis', 'Comparing your team to the league…');
@@ -2595,7 +2618,7 @@
    * because editing a price field on the Data tab must still change the
    * number immediately. */
   var _wireEstMemo = null;
-  function claudeWireEstimate() {
+  function claudeWireEstimate(cachedOnly) {
     try {
       /* NOT root.Store — ui.js is a bare (function () {...})(), unlike every
          other module here, so `root` does not mean `window` in this file
@@ -2613,6 +2636,7 @@
       var gen = (window.Store && Store.generation) ? Store.generation() : 0;
       var k = week + '|' + S.league.me + '|' + gen + '|' + mdl + '|' + JSON.stringify(Usage.rates(mdl));
       if (_wireEstMemo && _wireEstMemo.k === k) return _wireEstMemo.v;
+      if (cachedOnly) return undefined;
       var opp2 = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
       var ctx = Value.waiverContext(week, S.league.me, opp2, S.league.season,
                                     new Date().toISOString().slice(0, 10));
@@ -2815,11 +2839,12 @@
      * not a key is configured right now — the whole point is he can see
      * this without one. Computed from the REAL prompt this exact press
      * would send (claudeWireEstimate below), not a flat guess. */
-    var westText = claudeWireEstimate();
     /* 2026-09-15e sweep: matched wording with the Advice tab's identical
        estimate line (recommend.js render()'s own "Estimated cost to sync"). */
-    west.textContent = westText ? ('Estimated cost: ' + westText +
-      ' on the Claude API, at current prices (see Data → Claude → Claude costs).') : '';
+    fillAfterPaint(west, claudeWireEstimate, function (v) {
+      return v ? ('Estimated cost: ' + v +
+        ' on the Claude API, at current prices (see Data → Claude → Claude costs).') : '';
+    });
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
       /* This IS "refreshing waiver wire information" — fired in the
