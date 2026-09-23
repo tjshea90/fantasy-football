@@ -1,12 +1,12 @@
-# CHECKPOINT 118 — read me first, then TASKS.md
+# CHECKPOINT 122 — read me first, then TASKS.md
 
-**Written:** 2026-09-23T04:39:51Z · **version:** 8.3 · **tests:** all 23 suites green
+**Written:** 2026-09-23T04:44:53Z · **version:** 8.4 · **tests:** all 23 suites green
 
 ## Just done
-A-E all done and tested: new tools/test_picks.js (32 render-level checks across #1 #2 #3 #5 #6; D's humility check confirmed failing on the v8.3 sim.js). TASKS.md A-E ticked.
+v8.4 shipped via ship.sh (23 suites + ES2018 + dex gate green, APK built, main fast-forwarded); publish-release.yml dispatched for 8.4.
 
 ## Do this next
-F: full regression (exit code AND output) + Chromium smoke; then G: STATE.md v8.4 entry, bash build.sh, bash ship.sh, dispatch publish-release.yml (version 8.4), verify with get_release_by_tag, send Tj the link.
+Verify get_release_by_tag v8.4 has a non-empty assets array, tick TASKS.md F and G, send Tj the link. Fallback link: https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v8.4.apk
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,11 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
-     M tools/test_picks.js
 
 ## Last ten checkpoints
 ```
+  49f7cc3 ship v8.4: v8.4: Tj's picks 1,2,3,5,6 -- Roster PROJ + AVG per player, Live projection u
+  205e7bc ckpt 118: A-E all done and tested: new tools/test_picks.js (32 render-level checks acros
   73ee643 ckpt 114: D code done: Power rankings · playoff odds card on Data -> League (Sim.power 
   834ac6b ckpt 105: C code done: Advice merged into Lineups as a 'Set lineups | Advice' sub-view (
   e759e7b ckpt 101: Code for A (Roster PROJ + AVG column; new Store.playerAvg), B (Live: 'p 14.2' 
@@ -36,9 +36,4 @@ request in his own words and `git log` carries every step already taken.
   21d2546 ckpt 93: v8.3 shipped via ship.sh (all 22 suites + ES2018 + dex gate green, APK built, m
   483bd59 ship v8.3: v8.3: speed + polish pass for the Moto G 2026 -- tab taps no longer fsync, me
   6b27037 ckpt 90: Steps B-F ticked: MAJOR proposals 1-7 written under Waiting on Tj (roster PROJ/
-  e2ee784 ckpt 88: UI batch 2 (handoff explainer clamp, standings rank, projected-finish refinemen
-  ce69753 ckpt 81: UI polish batch 1: compact header, Live projected finish + pre-kickoff projecte
 ```
-
-(3 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
