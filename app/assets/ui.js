@@ -1395,22 +1395,51 @@
      says who is leading, because that comparison belongs to neither side
      alone. Every player row in BOTH boxes is tappable (via lineupDetail ->
      showPlayer), which is what shows the live stat line behind a score. */
+  /* PROJECTED FINISH (2026-09-23) — what ESPN, Sleeper and Yahoo all put
+   * under a live score: points already banked plus this app's own weekly
+   * projection (Recommend.projectAll — the same numbers that set the
+   * auto-lineup) for every starter whose game has NOT started. A starter who
+   * is mid-game counts only what he has scored so far, so the figure never
+   * claims more than it knows. Before kickoff it replaces a banner that just
+   * said "Level" at 0.0-0.0. null when there is nothing to project. */
+  function projectedFinish(teamId, res) {
+    var yet = res.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; });
+    if (!yet.length || !window.Recommend || !Recommend.projectAll) return null;
+    try {
+      var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
+      var byId = {};
+      Recommend.projectAll(week, teamId, opp).forEach(function (x) { if (x.p) byId[x.p.id] = x.proj; });
+      var add = 0;
+      yet.forEach(function (d) { add += Number(byId[d.pid]) || 0; });
+      return res.total + add;
+    } catch (e) { return null; }
+  }
   function myMatchupCard(meId, oppId) {
     var A = Store.team(meId), B = Store.team(oppId);
     var ra = Store.teamWeekPoints(week, meId), rb = Store.teamWeekPoints(week, oppId);
+    var pa = projectedFinish(meId, ra), pb = projectedFinish(oppId, rb);
     var wrap = el('div');
     var head = el('div', 'card me');
     head.appendChild(el('h2', null, 'Your matchup · week ' + week));
     var diff = ra.total - rb.total;
-    var banner = el('div', 'banner' + (diff > 0 ? ' good' : (diff < 0 ? ' bad' : '')));
-    banner.textContent = diff === 0 ? 'Level' :
-      (diff > 0 ? 'You lead by ' + fmt(diff) : 'You trail by ' + fmt(-diff));
+    var started = ra.detail.concat(rb.detail).some(function (d) { return d.played; });
+    var banner;
+    if (!started && diff === 0 && pa !== null && pb !== null) {
+      var pd = pa - pb;
+      banner = el('div', 'banner');
+      banner.textContent = 'Projected ' + fmt(pa) + ' – ' + fmt(pb) +
+        (Math.abs(pd) < 0.05 ? ' · even' : (pd > 0 ? ' · you by ' + fmt(pd) : ' · them by ' + fmt(-pd)));
+    } else {
+      banner = el('div', 'banner' + (diff > 0 ? ' good' : (diff < 0 ? ' bad' : '')));
+      banner.textContent = diff === 0 ? 'Level' :
+        (diff > 0 ? 'You lead by ' + fmt(diff) : 'You trail by ' + fmt(-diff));
+    }
     head.appendChild(banner);
     wrap.appendChild(head);
 
     var cols = el('div', 'mu2');
-    cols.appendChild(liveScoreBox(A, ra, true));
-    cols.appendChild(liveScoreBox(B, rb, false));
+    cols.appendChild(liveScoreBox(A, ra, true, pa));
+    cols.appendChild(liveScoreBox(B, rb, false, pb));
     wrap.appendChild(cols);
     return wrap;
   }
@@ -1418,12 +1447,13 @@
      still to play, then that team's lineup — open, and every row tappable
      for the live stat breakdown behind its points. Used for both halves of
      the split Live-tab matchup, mine and my opponent's alike. */
-  function liveScoreBox(team, res, isMine) {
+  function liveScoreBox(team, res, isMine, proj) {
     var c = el('div', 'card halfbox' + (isMine ? ' me' : ''));
     c.appendChild(el('h2', null, team.name));
     c.appendChild(el('div', 'bigfig', fmt(res.total)));
     var yet = res.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
-    c.appendChild(el('div', 'sub muted', yet + ' yet to play'));
+    c.appendChild(el('div', 'sub muted', yet + ' yet to play' +
+      (proj !== null && proj !== undefined ? ' · proj ' + fmt(proj) : '')));
     c.appendChild(openLineup(team, res));
     return c;
   }
@@ -1441,14 +1471,20 @@
    * health tag sharing that same nowrap flex box (see the comment on the
    * "to play" tag below) makes it worse. Full names elsewhere in the app
    * have room and stay full — this is scoped to lineupDetail() alone,
-   * which nothing but the Live tab's two-column view calls. Left alone for
-   * a defense (a two-word team name reads wrong as an initial — "S.
-   * Seahawks" is not how anyone refers to one) and for anything that is
-   * not "first last" shaped, rather than risk mangling a name this cannot
-   * parse correctly. */
+   * which nothing but the Live tab's two-column view calls. A defense gets
+   * its nickname instead of an initial ("S. Seahawks" is not how anyone
+   * refers to one), and anything that is not "first last" shaped is left
+   * alone rather than risk mangling a name this cannot parse correctly. */
   function shortName(name, pos) {
     var s = String(name || '');
-    if (pos === 'DEF') return s;
+    /* A defence goes by its nickname in every fantasy app ("Seahawks D/ST"),
+       never its city: "Seattle Seahawks" was the one name on the Live tab
+       that reliably hit the ellipsis ("Seattle Seah..."). The row's small
+       text already says DEF and the team code. */
+    if (pos === 'DEF') {
+      var d = s.replace(/\s+(d\/st|dst|defen[cs]e)$/i, '').split(' ');
+      return d[d.length - 1] || s;
+    }
     var parts = s.split(' ');
     if (parts.length < 2 || !parts[0]) return s;
     return parts[0].charAt(0) + '. ' + parts.slice(1).join(' ');
@@ -2586,7 +2622,7 @@
           'with who to drop for him:'));
       }
       ups.slice(0, 6).forEach(function (u) {
-        var r = el('div', 'row');
+        var r = el('div', 'row wrap');
         markPlayer(r, u.fa.name, u.fa.pos, u.fa.nfl);
         r.appendChild(el('div', 'slot', u.fa.pos));
         var nm = el('div', 'nm');
@@ -2903,8 +2939,13 @@
           (f.games === 1 ? '' : 's') + ' left, ' + fmt(f.v) + '/gm)'
         : fmt(f.v) + ' proj';
       nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE this week' : '') +
-        ' · ' + season + vor + '\n' + f.src +
-        (f.usage ? '\n' + f.usage : '')));
+        ' · ' + season + vor));
+      /* The basis and the usage trail are fine print, clamped to two lines —
+         tap to read the rest. They used to be full-size text under every
+         row, which made each free agent five or six lines tall and the
+         board ~7,000px long. Nothing is removed: the whole sentence is in
+         the row, one tap away. */
+      nm2.appendChild(finePrint(f.src + (f.usage ? '\n' + f.usage : '')));
       /* OUT/IR/SUSPENDED/PUP never reach this row at all (Value.freeAgents
          excludes them entirely) — DOUBTFUL/QUESTIONABLE still show up here,
          just visibly tagged rather than silently offered as if healthy. */
@@ -2950,6 +2991,14 @@
       'never shown at all; DOUBTFUL/QUESTIONABLE still show, tagged. Adding a player ' +
       'here does not tell your league site anything; do the real add there.'));
     return c;
+  }
+  function finePrint(text) {
+    var d = el('div', 'fine', text);
+    d.addEventListener('click', function (e) {
+      e.stopPropagation();
+      d.classList.toggle('open');
+    });
+    return d;
   }
   function addFreeAgent(f) {
     var t = Store.team(S.league.me);
