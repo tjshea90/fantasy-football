@@ -169,6 +169,14 @@ function curl(url, headersJson, body) {
   if (opt('tracesaves', false)) console.log('saves so far:\n  ' + (await page.evaluate(() => window.__perfTrace)).join('\n  '));
   console.log(`throttle ${THROTTLE}x · boot: first content ${boot.firstContent}ms (loading+running scripts ${boot.scripts}ms, boot() to first content ${boot.bootFn}ms, ${boot.saves} saves) · load ${boot.load}ms`);
 
+  if (opt('eval', false)) {
+    /* arbitrary page JS after boot, before --advice/--sync/--save — e.g.
+       --eval "Recap.generateSchedule({}); Store.save()" to give a real-data
+       state the league's whole schedule (2026-09-24) */
+    const r = await page.evaluate((src) => { const v = (0, eval)(src); return v === undefined ? 'undefined' : JSON.stringify(v); }, String(opt('eval')));
+    console.log('eval -> ' + String(r).slice(0, 300));
+    await page.waitForTimeout(500);
+  }
   if (opt('advice', false)) {
     /* Lineups -> Advice -> "Sync advice": loads the week's projections and
        the injury feed (no Claude key here, so that step is skipped cleanly) */
