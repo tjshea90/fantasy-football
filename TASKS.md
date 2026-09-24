@@ -1,52 +1,11 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-24b) — BUILD PROPOSALS 1, 2, 3, 6, 7, 8, 9, 10 + LIVE LAYOUT, THEN A FULL TEST
+## Current job — none open
 
-Tj, 2026-09-24T19:27Z:
-
-> "Add recommended features 1, 2, 3, 6, 7, 8, 9, 10.
->
-> For the live tab, move the projection/win probability card to the bottom of
-> the section under the live team tracking.
->
-> Then run full tests on the app using the full power of opus 5.5 ultracode"
-
-Not 4 (light theme) and not 5 (league scoreboard). The proposal texts are
-under "Waiting on Tj" below. Hard rules still apply: ES2018 only, one
-universal APK, async bridge, RULES_2026.md ground truth, no function or
-accuracy lost. Each item gets a named test; checkpoint after every item.
-
-- [x] **A. (#1) Win probability on Live** DONE (test_picks2 '#1', 16 checks: Sim.matchupOdds math, Schedule.remaining clock parse, on-screen bar, halftime projection, final week) — — from both teams' projected finish
-      and a per-player spread (measured position CV, sim.js), live: banked
-      points are certain, a player mid-game carries part of his spread, a
-      finished week is 100/0. Shown as "you 58% · 42% Opp" with a bar.
-- [x] **B. Live layout** DONE (test_picks2: boxes index 0, card index 1) — — the projection / win-probability card moves BELOW
-      the two live team boxes.
-- [x] **C. (#2) Position colours** DONE (test_picks2 '#2 ... #3', Roster/Live/Lineups/Advice) — — QB/RB/WR/TE/K/DEF colour chips in every
-      slot column (Live, Lineups, Roster, Wire, Advice, dialogs); FLEX neutral.
-- [x] **D. (#3) Compact injury badges** DONE (same block: Q, IR distinct from O, no spelled-out words in lists, tooltip/aria full text) — — Q / D / O / IR / SUSP / PUP pills
-      (full word as title + aria-label) in lists; detail views keep words.
-- [x] **E. (#6) Matchup difficulty chip** DONE (test_picks2 '#6', 7 checks; fantasy-points-allowed from the league book + PlayerDB positions, rank 1 = toughest, 2-game minimum) — — "vs HOU · 28th vs RB" coloured
-      soft/avg/tough from the engine's own defense-vs-position numbers, on
-      Lineups, Advice and Roster rows.
-- [x] **F. (#7) Trending on the Wire** DONE (test_picks2 '#7', 5 checks; projections.js captures ownership + outlooks from the same response) — — ESPN ownership % + weekly change
-      (already in the downloaded projection data) on free-agent rows, plus a
-      "Trending" filter sorted by the change.
-- [x] **G. (#8) One player card** DONE (test_picks2 '#8': Live tap, Roster ⋯ -> Player card, long-press direct, free agent; Adjust -> Store.setAdj; test_boot/test_picks pins) — — tapping/long-pressing any player opens one
-      sheet: this week (kickoff, projection + how built, matchup, injury note,
-      Claude), stat line + scoring breakdown + Adjust, season average, game
-      log, ESPN's written outlook, % rostered. Replaces the separate pre-game
-      card / stat-line card / long-press "View stats" menu.
-- [x] **H. (#9) Inactives alert** DONE (tools/test_alertplan.js: AlertPlan.java compiled on the desktop JDK, 26 scenario checks + 9 wiring pins; test_picks2 '#9': starterKicks, plan pushed on __appPause only when changed, Data -> App opt-in switch; build.sh green. Also fixed the stale daily-check copy: it runs every day + 4pm, not Sunday/Thursday) — opt-in closed-app check ~75-85 min before
-      each kickoff that involves one of his starters; warns if a starter is
-      ruled OUT/doubtful. Pure scheduling logic in a plain-Java class tested
-      with the desktop JDK; Alerts.java wires it.
-- [x] **I. (#10) Data -> League order** DONE (test_picks2 '#10', 7 checks: Standings card first, score entry second in a details.wsc collapsed before kickoff, open once a game starts / a score is typed / he opened it) — Standings first; "Enter week N scores"
-      below, collapsed until that week has kicked off.
-- [x] **J. Tests + regression + ship v8.7** DONE (all 28 suites green by exit code + output; crawls 313 + 258 actions 0 errors; build.sh green; ship.sh) (named test per item, every suite by
-      exit code AND output, crawls, build).
-- [x] **K. FULL TEST (standing protocol, whole app, max depth)** DONE (STATE.md v8.8 entry: 6 fixes landed in v8.7 from the visual pass, dead Stats.openPlayerModal removed after it — test_picks2 #8 pin; crawls 0 errors on 3 states; netlog unchanged; shipped v8.8) after the
-      features land, then ship again if it finds anything.
+The 2026-09-24b job (Tj's picks 1, 2, 3, 6, 7, 8, 9, 10 + the Live layout,
+then a full test) is finished: shipped as v8.7 (features) and v8.8 (the full
+test's last fix), archived to LADDER.md §44 with every item's test. Anything
+new from Tj goes here as unticked boxes, in his words, before any code.
 
 ## When Tj asks for something new
 
