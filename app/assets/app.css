@@ -319,3 +319,9 @@ textarea:focus-visible,[tabindex]:focus-visible{
   line-height:16px;white-space:nowrap;color:var(--dim);background:var(--panel2);border:1px solid var(--line)}
 .ochip.up{color:var(--good);border-color:#1f4529}
 .ochip.down{color:var(--dim)}
+/* ---- 2026-09-24b: the player card (Tj's pick #8) ------------------------ */
+.pcard .pcmeta{margin:0 0 4px;font-size:13px;color:var(--dim)}
+.pcard .pcsec{border-top:1px solid var(--line);padding-top:6px;margin-top:8px}
+.pcard .pcsec .subhd{margin:2px 0 4px}
+.pcard .pcline{margin:3px 0;font-size:13px;line-height:1.45}
+.pcard .pcpre{white-space:pre-wrap;font-size:13px;margin:0 0 8px;font-family:inherit;line-height:1.5}

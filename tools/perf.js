@@ -297,7 +297,7 @@ function curl(url, headersJson, body) {
         await page.waitForTimeout(WAIT);
         /* follow one level of non-destructive dialog buttons (⋯ -> Stats) */
         const nested = await page.evaluate(() => {
-          const SAFE = /^(Stats|View stats)$/;
+          const SAFE = /^(Stats|View stats|Player card)$/;
           const b = Array.prototype.filter.call(document.querySelectorAll('[role=dialog] button'), (x) => SAFE.test(x.textContent))[0];
           if (!b) return '';
           b.click(); return b.textContent;

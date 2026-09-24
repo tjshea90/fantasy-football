@@ -1048,8 +1048,12 @@
    * markPlayer above) is a target.
    *
    * "Just like in the stats tab" is true by construction, not by keeping two
-   * renderers in sync by hand: openPlayerStatsMenu below calls the exact
-   * same Stats.openPlayerModal every search result on the Stats tab uses. */
+   * renderers in sync by hand: the player card's game log is Stats.logInto,
+   * the same loader and table the Stats tab's search uses.
+   *
+   * 2026-09-24b (Tj's pick #8): a long-press opens the PLAYER CARD directly —
+   * the "Cancel / View stats" menu in between was one more tap to reach the
+   * same place, and the card now carries the game log itself. */
   var LONGPRESS_MS = 500, LONGPRESS_SLOP = 10;
   var lpTimer = null, lpStart = null, lpSuppressClickUntil = 0, lpSuppressRow = null, lpEnabled = true;
   function findPlayerRow(node) {
@@ -1065,20 +1069,8 @@
     return { name: p[0] || '', pos: p[1] || '', nfl: p[2] || '' };
   }
   function openPlayerStatsMenu(player) {
-    if (!player.name) return;
-    dialog(player.name, null, function (box, row, close) {
-      var cancel = el('button', 'btn', 'Cancel');
-      cancel.addEventListener('click', close);
-      /* NOT `view` — this file keeps the current tab name in a module-level
-         `view` (see the very top of this file). A local `var view` here
-         shadowed it silently within this function; harmless today only
-         because nothing in this function happens to read the outer one, the
-         same landmine showPlayer()'s own `dlgRow` rename avoided elsewhere
-         in this sweep. */
-      var viewBtn = el('button', 'btn pri', 'View stats');
-      viewBtn.addEventListener('click', function () { close(); Stats.openPlayerModal(statsCtx(), player); });
-      row.appendChild(cancel); row.appendChild(viewBtn);
-    });
+    if (!player || !player.name) return;
+    openPlayerCard(player);
   }
   function lpCancel() { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } lpStart = null; }
   function longPressStart(e) {
@@ -2208,9 +2200,9 @@
     dialog(p.name, p.pos + ' · ' + p.nfl + ' · ' + t.name, function (box, row, close) {
       var cancel = el('button', 'btn', 'Cancel');
       cancel.addEventListener('click', close);
-      var st = el('button', 'btn', 'Stats');
+      var st = el('button', 'btn', 'Player card');
       st.addEventListener('click', function () {
-        close(); Stats.openPlayerModal(statsCtx(), { name: p.name, pos: p.pos, nfl: p.nfl });
+        close(); openPlayerCard({ pid: p.id, name: p.name, pos: p.pos, nfl: p.nfl });
       });
       var dr = el('button', 'btn dan', 'Drop');
       dr.addEventListener('click', function () {
