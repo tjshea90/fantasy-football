@@ -94,7 +94,34 @@
     return ok;
   }
   /* Every path that changes a scored week or the league book calls this. */
-  function markArchive() { archiveDirty = true; }
+  function markArchive() { archiveDirty = true; clearLazy(); }
+  /* ---- the live poll's archive writes (full test 2026-09-24) --------------
+   * A quiet in-progress sync — the 45-second Sunday poll — replaces the week's
+   * book and stat lines every tick, and used to mark the archive dirty each
+   * time: the WHOLE archive (every scored week: ~200 KB after week 2, ~1.5-1.9
+   * MB late season) serialised and fsynced on the JS thread per tick, all
+   * afternoon. Those in-progress numbers are refetched by the next sync anyway
+   * (a cold start does a full one), so they only need to reach disk
+   * eventually: at most ARCH_LAZY_MS later, or when flush() runs from
+   * __appPause, or at once when anything marks the archive properly (the
+   * closing sync of a final week, a manual sync, an adjustment, an import). */
+  var ARCH_LAZY_MS = 5 * 60000, archLazy = false, archLazyTimer = null;
+  function clearLazy() {
+    archLazy = false;
+    if (archLazyTimer !== null) { clearTimeout(archLazyTimer); archLazyTimer = null; }
+  }
+  function markArchiveLazy() {
+    if (archiveDirty) return;            /* a full write is already owed */
+    archLazy = true;
+    if (archLazyTimer !== null) return;
+    archLazyTimer = setTimeout(function () {
+      archLazyTimer = null;
+      if (archLazy && !archiveDirty && S) {
+        archLazy = false;
+        if (!writeKey(ARCHIVE_KEY, { book: S.book, stats: S.stats })) markArchive();
+      }
+    }, ARCH_LAZY_MS);
+  }
 
   function fromSeed(seed) {
     return {
