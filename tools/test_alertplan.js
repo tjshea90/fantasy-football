@@ -131,7 +131,7 @@ public class PlanMain {
        "title for one: " + AlertPlan.title(1));
     st = new String[] { "Doubtful", "", "", "Out" };
     msg = AlertPlan.message(K2 - 60 * MIN, 3, names, slots, new long[] { K1, K1, K1, K3 },
-                            new String[] { "Out", "", "", "Out" }, et);
+                            new String[] { "Out", "Doubtful", "", "" }, et);
     ok(msg.equals(""), "a check at 3:05 does not re-report 1:00 games (they have kicked off): '" + msg + "'");
     msg = AlertPlan.message(K2 - 60 * MIN, 3, names, slots, new long[] { K2, K1, K1, K3 },
                             new String[] { "Doubtful", "", "", "Injured Reserve" }, et);
@@ -148,7 +148,7 @@ let out = '', rc = 0;
 try {
   execFileSync('javac', ['-source', '8', '-target', '8', '-nowarn', '-encoding', 'UTF-8', '-d', path.join(tmp, 'cls'),
     path.join(pkg, 'AlertPlan.java'), path.join(pkg, 'PlanMain.java')], { stdio: 'pipe' });
-  out = execFileSync('java', ['-cp', path.join(tmp, 'cls'), 'com.tj.fftracker.PlanMain'], { encoding: 'utf8', stdio: 'pipe' });
+  out = execFileSync('java', ['-Dstdout.encoding=UTF-8', '-Dfile.encoding=UTF-8', '-cp', path.join(tmp, 'cls'), 'com.tj.fftracker.PlanMain'], { encoding: 'utf8', stdio: 'pipe' });
 } catch (e) {
   out = String((e.stdout || '')) + String((e.stderr || ''));
   rc = e.status || 1;
