@@ -270,7 +270,7 @@ console.log('\n-- #6 matchup difficulty chip --');
   h.ids.wkNext._h.click(); h.ids.wkNext._h.click();           /* to week 3 */
   var rbs = W.PlayerDB.get().players.filter(function (p) { return p.p === 'RB'; }).slice(0, 4);
   /* weeks 1-2: KC, BUF, SF, DAL (and IND, HOU so IND has an opponent) */
-  var opp1 = { KC: 'BUF', BUF: 'KC', SF: 'DAL', DAL: 'SF', IND: 'HOU', HOU: 'IND' };
+  var opp1 = { KC: 'BUF', BUF: 'KC', SF: 'DAL', DAL: 'SF' };            /* IND/HOU on bye */
   var opp2 = { KC: 'SF', SF: 'KC', BUF: 'DAL', DAL: 'BUF', IND: 'HOU', HOU: 'IND' };
   function bk(rows) { var o = {}; rows.forEach(function (r) { o[W.Espn.normName(r[0])] = { n: r[0], t: r[1], p: r[2] }; }); return o; }
   /* RB points allowed: SF gives up the most, KC the fewest */
@@ -281,11 +281,10 @@ console.log('\n-- #6 matchup difficulty chip --');
   S.weekMeta['3'] = { opponents: { IND: 'SF', SF: 'IND', KC: 'DAL', DAL: 'KC' } };
   St.save();
   var tb = R._fpaTable(3);
-  /* allowed to RBs per game: BUF (30+26)/2=28? no: KC's RB scored vs BUF(30) and vs SF(28) */
   ok(tb.of.RB === 4, 'four defenses with two games are ranked for RBs (' + tb.of.RB + ')');
   var m = R.matchupRank(3, 'RB', 'IND');
   ok(!!m && m.opp === 'SF', 'IND plays SF in week 3');
-  /* SF faced the KC RB (30... wait wk1 SF faced DAL: 26; wk2 SF faced KC: 28) -> 27/gm, the most */
+  /* SF faced DAL's RB in week 1 (26) and KC's in week 2 (28): 27/gm, the most */
   ok(m && m.rank === 4 && m.tier === 'soft' && near(m.fpa, 27), 'SF allows the most to RBs (27/gm): 4th of 4, soft (' + JSON.stringify(m) + ')');
   var m2 = R.matchupRank(3, 'RB', 'SF');
   ok(m2 === null, 'no chip when the opponent (IND) has fewer than two games in the table');
