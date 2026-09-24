@@ -348,7 +348,23 @@
     else if (s.indexOf('DOUBT') >= 0) { f = HEALTH.DOUBTFUL; lab = 'DOUBTFUL'; }
     else if (s.indexOf('QUEST') >= 0) { f = HEALTH.QUESTIONABLE; lab = 'QUESTIONABLE'; }
     else if (s.indexOf('PROB') >= 0) { f = HEALTH.PROBABLE; lab = 'PROBABLE'; }
-    return { f: f, label: lab, note: rec.note };
+    return { f: f, label: lab, note: rec.note, code: injuryCode(s) };
+  }
+  /* The compact badge text the big apps use in a list (Sleeper/ESPN, Tj's
+     pick #3, 2026-09-24b): Q, D, O — and, where "OUT" is really a longer
+     designation the feed spells out, IR / SUSP / PUP rather than hiding
+     that behind the same O. '' for a healthy status. */
+  function injuryCode(status) {
+    var s = String(status || '').toUpperCase();
+    if (!s) return '';
+    if (s.indexOf('INJURED RESERVE') >= 0 || /(^|[^A-Z])IR([^A-Z]|$)/.test(s)) return 'IR';
+    if (s.indexOf('SUSPEND') >= 0) return 'SUSP';
+    if (s.indexOf('PUP') >= 0) return 'PUP';
+    if (s.indexOf('OUT') >= 0) return 'O';
+    if (s.indexOf('DOUBT') >= 0) return 'D';
+    if (s.indexOf('QUEST') >= 0) return 'Q';
+    if (s.indexOf('PROB') >= 0) return 'P';
+    return '';
   }
 
   /* ---- is he done for the YEAR, not just this week? ---------------------
@@ -723,14 +739,17 @@
 
     /* Hard exclusions. Not a penalty — these players are not offered at all. */
     var flags = [];
-    if (onBye) flags.push({ kind: 'out', text: 'ON BYE in week ' + week + ' — scores 0' });
-    if (h.label === 'OUT') flags.push({ kind: 'out', text: 'ESPN has him OUT' + (h.note ? ': ' + h.note : '') });
+    /* `code` is the compact badge a list shows (Q/D/O/IR...); `text` stays the
+       full sentence for the Flagged card, the badge's tooltip and the
+       player card */
+    if (onBye) flags.push({ kind: 'out', code: 'BYE', text: 'ON BYE in week ' + week + ' — scores 0' });
+    if (h.label === 'OUT') flags.push({ kind: 'out', code: h.code || 'O', text: 'ESPN has him OUT' + (h.note ? ': ' + h.note : '') });
     if (ai && (ai.willPlay === false || ai.status === 'out')) {
-      flags.push({ kind: 'out', text: 'Claude: not expected to play' });
+      flags.push({ kind: 'out', code: 'O', text: 'Claude: not expected to play' });
     }
-    if (h.label === 'DOUBTFUL') flags.push({ kind: 'warn', text: 'DOUBTFUL' + (h.note ? ': ' + h.note : '') });
-    if (h.label === 'QUESTIONABLE') flags.push({ kind: 'warn', text: 'QUESTIONABLE' + (h.note ? ': ' + h.note : '') });
-    if (ai && ai.status === 'limited') flags.push({ kind: 'warn', text: 'Claude: playing with a restriction' });
+    if (h.label === 'DOUBTFUL') flags.push({ kind: 'warn', code: 'D', text: 'DOUBTFUL' + (h.note ? ': ' + h.note : '') });
+    if (h.label === 'QUESTIONABLE') flags.push({ kind: 'warn', code: 'Q', text: 'QUESTIONABLE' + (h.note ? ': ' + h.note : '') });
+    if (ai && ai.status === 'limited') flags.push({ kind: 'warn', code: 'LTD', text: 'Claude: playing with a restriction' });
     var blocked = false, k2;
     for (k2 = 0; k2 < flags.length; k2++) if (flags[k2].kind === 'out') blocked = true;
     if (blocked) proj = 0;
@@ -1324,7 +1343,7 @@
         if (s.pick && curPid !== s.pick.p.id) changes++;
 
         var row = el('div', 'row');
-        row.appendChild(el('div', 'slot', s.label));
+        row.appendChild(ctx.slotEl ? ctx.slotEl(s.label) : el('div', 'slot', s.label));
         var nm = el('div', 'nm');
         if (!s.pick) nm.appendChild(el('span', 'muted', 'no eligible player'));
         else {
@@ -1343,7 +1362,7 @@
             if (gbA) { gbA.textContent = ' · ' + gbA.textContent.replace(/^\s+/, ''); nm.appendChild(gbA); }
           }
           s.pick.flags.forEach(function (f) {
-            nm.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
+            nm.appendChild(ctx.healthTag ? ctx.healthTag(f) : el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
                               f.text.split(' — ')[0].split(':')[0]));
           });
           if (s.forced) nm.appendChild(el('span', 'tag out', 'nothing else eligible'));
@@ -1400,12 +1419,12 @@
         bench.forEach(function (x) {
           var r = el('div', 'row');
           if (ctx.markPlayer) ctx.markPlayer(r, x.p.name, x.p.pos, x.p.nfl);
-          r.appendChild(el('div', 'slot', x.p.pos));
+          r.appendChild(ctx.slotEl ? ctx.slotEl(x.p.pos) : el('div', 'slot', x.p.pos));
           var nm2 = el('div', 'nm');
           nm2.appendChild(document.createTextNode(x.p.name));
           nm2.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp ? ' vs ' + x.opp : '')));
           x.flags.forEach(function (f) {
-            nm2.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
+            nm2.appendChild(ctx.healthTag ? ctx.healthTag(f) : el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
                                f.text.split(' — ')[0].split(':')[0]));
           });
           r.appendChild(nm2);
@@ -1463,12 +1482,12 @@
           oppAll.forEach(function (x) {
             var r2 = el('div', 'row');
             if (ctx.markPlayer) ctx.markPlayer(r2, x.p.name, x.p.pos, x.p.nfl);
-            r2.appendChild(el('div', 'slot', x.p.pos));
+            r2.appendChild(ctx.slotEl ? ctx.slotEl(x.p.pos) : el('div', 'slot', x.p.pos));
             var nm3 = el('div', 'nm');
             nm3.appendChild(document.createTextNode(x.p.name));
             nm3.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp ? ' vs ' + x.opp : '')));
             x.flags.forEach(function (f) {
-              nm3.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
+              nm3.appendChild(ctx.healthTag ? ctx.healthTag(f) : el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
                                  f.text.split(' — ')[0].split(':')[0]));
             });
             r2.appendChild(nm3);
@@ -1544,6 +1563,7 @@
                         actually are, instead of presenting a persisted cache
                         (possibly days old) as if it were current (v5.5b) */
                      newsCache: function () { return newsCache; },
+                     injuryCode: injuryCode,
                      rosterContext: rosterContext,
                      /* exported so value.js's free-agent board can apply the
                         EXACT same OUT/IR/SUSPENDED/PUP exclusion this file
