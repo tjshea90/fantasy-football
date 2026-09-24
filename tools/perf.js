@@ -15,6 +15,7 @@
  *   node tools/perf.js --sync 1,2,3 --save S    # run real syncs, keep the state
  *   node tools/perf.js --state S                # measure against a saved state
  *   node tools/perf.js --state S --shots DIR    # also screenshot every tab
+ *   node tools/perf.js --state S --shots DIR --views "data>App,wire>Trending"   # + sub-views
  *                                             #   (--slices N viewport-height slices each, default 2)
  *   node tools/perf.js --state S --profile      # top self-time functions per tab
  *   node tools/perf.js --state S --bootprofile  # where the cold-start time goes
@@ -56,7 +57,9 @@ const SLICES = Number(opt('slices', 2));
 /* read from the page at run time; a "tab>Chip" entry means "open the tab,
    then tap the sub-view chip with that label" (Lineups>Advice, 2026-09-23b) */
 let TABS = [];
-const SUBVIEWS = ['lineups>Advice'];
+/* --views "data>App,wire>Trending": extra sub-views to measure/screenshot,
+   each "tab>button text" */
+const SUBVIEWS = ['lineups>Advice'].concat(opt('views', false) ? String(opt('views')).split(',').filter(Boolean) : []);
 const ROOT = opt('root', null) ? path.resolve(opt('root')) : path.resolve(__dirname, '..', 'app', 'assets');
 
 function curl(url, headersJson, body) {
@@ -336,12 +339,14 @@ function curl(url, headersJson, body) {
   function clickSrc(entry) {
     const [tab, chip] = entry.split('>');
     let src = `document.querySelector('#tabs .tab[data-v="${tab}"]').click();`;
-    if (chip) src += `Array.prototype.filter.call(document.querySelectorAll('#view button'), (b) => b.textContent === ${JSON.stringify(chip)})[0].click();`;
+    if (chip) src += `var __b = Array.prototype.filter.call(document.querySelectorAll('#view button'), (b) => b.textContent === ${JSON.stringify(chip)})[0]; if (__b) __b.click();`;
     return src;
   }
+  const RESET = { lineups: 'Set lineups', data: 'League', wire: 'All positions' };
   function resetSrc(entry) {
     /* leave any sub-view on its default so the next entry starts clean */
-    return entry.indexOf('>') > 0 ? clickSrc(entry.split('>')[0] + '>Set lineups') : '';
+    const t = entry.split('>')[0];
+    return entry.indexOf('>') > 0 && RESET[t] ? clickSrc(t + '>' + RESET[t]) : '';
   }
   if (opt('idle', false)) {
     await page.waitForTimeout(Number(opt('idle')) * 1000);
