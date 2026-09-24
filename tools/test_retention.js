@@ -155,7 +155,7 @@ console.log('\n-- 2. the live poll does not rewrite the season every tick --');
   ok(backups.length - b1 === 1, 'ten ordinary saves still take one auto-backup');
 
   const ui = fs.readFileSync(path.join(A, 'ui.js'), 'utf8');
-  ok(/Store\.setBook\(syncedWeek, book, liveTick\)/.test(ui) && /Store\.saveLive\(\)/.test(ui),
+  ok(/Store\.setBook\(syncedWeek, book, lazyArch\)/.test(ui) && /if \(lazyArch\) Store\.saveLive\(\); else Store\.save\(\);/.test(ui),
      'ui.js doSync: a quiet in-progress sync marks the archive lazily and saves with saveLive()');
 }
 

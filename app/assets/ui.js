@@ -1718,9 +1718,12 @@
     var save = el('button', 'btn pri', 'Save adjustment');
     save.style.marginTop = '8px';
     save.addEventListener('click', function () {
-      line.manualAdj = Number(inp.value) || 0;
-      Store.save(); render();
-      var freshSc = Scoring.score(line);
+      /* Store.setAdj, not `line.manualAdj = ...; Store.save()`: the line lives
+         in the archive file, which only a marked write reaches — the bare
+         assignment was lost at the next cold start (test_retention.js) */
+      Store.setAdj(week, pid, Number(inp.value) || 0);
+      render();
+      var freshSc = Scoring.score(Store.lineFor(week, pid) || line);
       if (preEl) preEl.textContent = bodyTextFor(freshSc);
       toast(rec.player.name + ' adjusted to ' + fmt(freshSc.total));
     });
@@ -4583,7 +4586,13 @@
             pa: 0, cr: 0, tg: 0 };
         }
       });
-      Store.setBook(syncedWeek, book);
+      /* A quiet poll of a week still being played rewrites this book every
+         45 seconds; the archive it lives in is written lazily for those
+         (store.js markArchiveLazy) and the save is not counted as an edit
+         (saveLive). A manual sync or the week's closing, final sync is
+         written at once, exactly as before. */
+      var lazyArch = quiet && !meta.allFinal;
+      Store.setBook(syncedWeek, book, lazyArch);
 
       /* ---- the feed-shape canary -----------------------------------------
        * Two independent alarms, because the expensive failure here is silent.
@@ -4643,7 +4652,7 @@
       wm.bookSize = Object.keys(book).length;
       S.settings.lastSync = new Date().toISOString();
       live.at = Date.now(); live.inProgress = meta.inProgress;
-      Store.save();
+      if (lazyArch) Store.saveLive(); else Store.save();
       /* only spend a Downloads write on a settled week — a live poll every 45s
          would otherwise fill the folder with near-identical copies */
       if (!quiet || meta.allFinal) Store.autoBackup(true);
