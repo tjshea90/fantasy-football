@@ -318,8 +318,9 @@ console.log('\n-- #7 trending on the Wire --');
   ok(o0 && o0.own === 20 && o0.chg === 12.4, 'Projections.ownership reads % rostered and the weekly change');
   h.clickTab('wire');
   var chips = all(h.ids.view, function (n) { return hasClass(n, 'ochip'); });
-  ok(chips.length >= 1 && chips.some(function (n) { return /^\d+% rostered ▲12\.4$/.test(n.textContent) && hasClass(n, 'up'); }),
-     'free-agent rows show "N% rostered ▲12.4" (' + chips.map(function (n) { return n.textContent; }).slice(0, 3).join(' | ') + ')');
+  ok(chips.length >= 1 && chips.some(function (n) { return /^\d+% rostered ▲12$/.test(n.textContent) && hasClass(n, 'up'); }) &&
+     chips.some(function (n) { return /▼3$/.test(n.textContent); }),
+     'free-agent rows show "N% rostered ▲12" / "▼3" (' + chips.map(function (n) { return n.textContent; }).slice(0, 3).join(' | ') + ')');
   var trend = button(h.ids.view, 'Trending');
   ok(!!trend, 'the filter row has a "Trending" chip');
   click(trend);
