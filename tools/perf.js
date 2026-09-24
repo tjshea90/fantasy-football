@@ -23,6 +23,7 @@
  *   node tools/perf.js --state S --netlog --idle 15   # every request the app makes, boot + 15s idle
  *   node tools/perf.js --state S --advice --save S2   # run Lineups>Advice "Sync advice" first
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
+ *   node tools/perf.js --state S --eval "JS" --save S2   # run page JS after boot (e.g. Recap.generateSchedule({}))
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
  * Chromium and the network). ES2018 rules do not apply to this file — it runs
