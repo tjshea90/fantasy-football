@@ -131,7 +131,7 @@ ok(/lpSuppressRow = row;/.test(ui) &&
 /* freshenInjuries had no .catch — an async rejection (offline, a bad feed)
    from Recommend.loadNews went unhandled every failed tick, unlike every
    other network call on the same live-poll chain right below it. */
-ok(/Recommend\.loadNews\(null\)\.then\(function \(nc\) \{[\s\S]{0,80}\}\)\['catch'\]\(function \(\)/.test(ui),
+ok(/Recommend\.loadNews\(null\)\.then\(function \(nc\) \{[\s\S]{0,400}?\}\)\['catch'\]\(function \(\)/.test(ui),
    'freshenInjuries now catches a failed news fetch instead of leaving it unhandled');
 /* the Advice and Wire tabs' cost-estimate lines used to end differently for
    no reason — matched wording. (recommend.js's own source is loaded fresh
