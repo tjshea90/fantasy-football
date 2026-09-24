@@ -1171,7 +1171,7 @@
                       ' players reviewed, ' + ago(aiCache.at) +
                       (aiCache.week && aiCache.week !== week ? ' (for week ' + aiCache.week + ')' : '')
                     : 'key set, not run yet')
-      : 'no API key — add one on the Data tab for news-aware reasoning',
+      : 'no API key — add one under Data → Claude → API key for news-aware reasoning',
       !(root.Ai && root.Ai.configured()));
     head.appendChild(st);
 
@@ -1302,13 +1302,15 @@
            * in the app," and this is the one screen that never wired it). */
           if (ctx.markPlayer) ctx.markPlayer(row, s.pick.p.name, s.pick.p.pos, s.pick.p.nfl);
           nm.appendChild(document.createTextNode(s.pick.p.name));
-          /* the kickoff, on the screen where he decides who to start */
-          if (ctx.gameBadge) {
-            var gbA = ctx.gameBadge(s.pick.p.nfl);
-            if (gbA) nm.appendChild(gbA);
-          }
           nm.appendChild(el('small', null, '  ' + s.pick.p.pos + ' ' + s.pick.p.nfl +
             (s.pick.opp ? ' vs ' + s.pick.opp : '')));
+          /* the kickoff, on the screen where he decides who to start — AFTER
+             the team, as on every other screen (it used to sit between the
+             name and the position: "Jonathan Taylor Sun 1p RB IND vs HOU") */
+          if (ctx.gameBadge) {
+            var gbA = ctx.gameBadge(s.pick.p.nfl);
+            if (gbA) { gbA.textContent = ' · ' + gbA.textContent.replace(/^\s+/, ''); nm.appendChild(gbA); }
+          }
           s.pick.flags.forEach(function (f) {
             nm.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
                               f.text.split(' — ')[0].split(':')[0]));
@@ -1492,7 +1494,7 @@
         'nothing. Here it is worth a point, which is most of a quarterback\'s ' +
         'score and none of anybody else\'s. So their STAT LINE is imported and ' +
         're-scored here, and their own "projected points" are never used for ' +
-        'anything. Tap any player to see each source\'s number and its weight.'));
+        'anything. Open any player\'s "why" to see each source\'s number and its weight.'));
       holder.appendChild(note);
     }
     build();

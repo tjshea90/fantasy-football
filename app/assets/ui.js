@@ -1368,7 +1368,7 @@
 
   /* ---------- header ---------- */
   function renderHeader() {
-    var names = { live: 'Live', lineups: 'Lineups', rosters: 'Rosters', wire: 'Wire',
+    var names = { live: 'Live', lineups: 'Lineups', rosters: 'Roster', wire: 'Wire',
                   stats: 'Stats', data: 'Data' };
     $('title').textContent = names[view] || 'Tracker';
     $('wkLabel').textContent = 'Wk ' + week;
@@ -1416,9 +1416,11 @@
     if (!mine) {
       var c = el('div', 'card');
       c.appendChild(el('h2', null, 'No opponent set for week ' + week));
-      c.appendChild(el('p', 'muted', 'Add this week\'s matchup on the Data tab.'));
+      c.appendChild(el('p', 'muted', 'Add this week\'s matchup under Data → League → Add matchup.'));
       var b = el('button', 'btn pri', 'Set up week ' + week + ' matchup');
-      b.addEventListener('click', function () { goTab('data'); });
+      /* straight to League, where the matchups are — Data remembers its last
+         sub-screen, so a bare goTab('data') could land on Claude or App */
+      b.addEventListener('click', function () { dataSubView = 'league'; goTab('data'); });
       c.appendChild(b); root.appendChild(c);
       return;
     }
@@ -1842,7 +1844,8 @@
     else {
       var nc = el('div', 'card');
       nc.appendChild(el('h2', null, 'No opponent set for week ' + week));
-      nc.appendChild(el('p', 'muted', 'Add this week\'s matchup on the Data tab to see their lineup here.'));
+      nc.appendChild(el('p', 'muted', 'Add this week\'s matchup under Data → League → Add matchup ' +
+        'to see their lineup here.'));
       root.appendChild(nc);
     }
   }
@@ -1954,9 +1957,11 @@
     rb.addEventListener('click', function () {
       Store.clearManual(week, t.id);
       if (window.Sim) Sim.invalidate();
-      var was = S.settings.autoFill; S.settings.autoFill = true;
-      autoFillWeek(week);
-      S.settings.autoFill = was;
+      /* THIS team only (full test 2026-09-24). It called autoFillWeek(),
+         which refilled all ten rosters — even with Auto-default switched OFF,
+         the one setting that says not to. autoFillTeam ignores the setting,
+         which is right for a button pressed on purpose for this team. */
+      autoFillTeam(week, t.id);
       render(); toast('Reset to the recommended lineup');
     });
     st.appendChild(rb);
@@ -2079,8 +2084,11 @@
       nm.appendChild(document.createTextNode(p.name));
       nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '')));
       /* after the team/bye text, matching every other player row in the app,
-         so a roster reads  Name   CHI · bye 7   Thu 8:20p  QUESTIONABLE */
-      var gb1 = gameBadge(p.nfl); if (gb1) nm.appendChild(gb1);
+         so a roster reads  Name  CHI · bye 7 · Thu 8:20p  QUESTIONABLE — the
+         " · " is needed: without it the row read "bye 7 Thu 8:20p", which
+         says "bye 7 Thu" (full test 2026-09-24) */
+      var gb1 = gameBadge(p.nfl);
+      if (gb1) { gb1.textContent = ' · ' + gb1.textContent.replace(/^\s+/, ''); nm.appendChild(gb1); }
       /* the "· bye N" text just above already says so; skip the flag that
          would say it again as a second, identical-meaning tag */
       appendHealthTags(nm, (flagsById[p.id] || []).filter(function (f) {
@@ -2183,7 +2191,7 @@
       abtn.disabled = true;
     } else if (!Ai.configured()) {
       abtn.disabled = true;
-      anote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". Everything ' +
+      anote.textContent = 'Needs an Anthropic API key (Data → Claude → API key). Everything ' +
         'below works without one.';
     } else {
       anote.textContent = 'No web search on this one — every number here (prices, ' +
@@ -2574,7 +2582,12 @@
          exactly what produced Tj's garbled, mid-word-cut screenshot */
       if (x.note) {
         var nk = el('div', 'kv');
-        nk.appendChild(el('span', null, x.note));
+        /* three lines, tap for the rest (full test 2026-09-24): ESPN's notes
+           run to ten lines, and a roster with three hurt players pushed the
+           free-agent board a whole screen down. Nothing is cut — one tap. */
+        var nt = el('span', 'clamp', x.note);
+        nt.addEventListener('click', function () { nt.classList.toggle('open'); });
+        nk.appendChild(nt);
         c.appendChild(nk);
       }
       /* THE SAME FACT THE WIRE TAB SHOWS, HERE TOO (2026-09-19 sweep).
@@ -2848,7 +2861,7 @@
       wsync.disabled = true;
     } else if (!Ai.configured()) {
       wsync.disabled = true;
-      wnote.textContent = 'Needs an Anthropic API key — Data tab, "Claude". ' +
+      wnote.textContent = 'Needs an Anthropic API key (Data → Claude → API key). ' +
         'Everything above works without one; this only adds the news layer.';
     } else {
       wnote.textContent = 'Reads this week\'s waiver-wire and injury news for the ' +
