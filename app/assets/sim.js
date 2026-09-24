@@ -420,7 +420,7 @@
                  shrunk: pt.n < 4, n: pt.n });
     }
     out.sort(function (x, y) { return y.playoff - x.playoff || y.projW - x.projW; });
-    return { rows: out, runs: runs, weeksLeft: F, scored: post.scored,
+    return { rows: out, runs: runs, weeksLeft: F, randomWeeks: randomWeeks, scored: post.scored,
              leagueMean: post.leagueMean, leagueSd: sigma, tau: post.tau };
   }
 
