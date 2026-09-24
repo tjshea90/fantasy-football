@@ -26,8 +26,7 @@ ideas become numbered proposals under "Waiting on Tj".
 - [x] **5. Data retention + network + battery** DONE — findings F9, F10,
       F11 below. Sleep path (pause flushes Store+Gamelog, pauseTimers, no
       wakelocks) unchanged and fine. Scoreboard poll 22 KB gz, fine.
-- [ ] **6. Engine/logic spot-checks vs RULES_2026.md** (fresh players, not the
-      five checked on 2026-09-23c).
+- [x] **6. Engine/logic spot-checks vs RULES_2026.md** DONE (see F14 + spot-check box below).
 - [ ] **7. Research: ESPN, Sleeper, Yahoo, NFL Fantasy, CBS, FantasyPros,
       Underdog** — features and UI/appearance worth borrowing; split into
       SMALL (do now) vs MAJOR (numbered proposals for Tj).
@@ -86,6 +85,22 @@ is just "No opponent set").
   HOU" — kickoff before pos/team, unlike every other screen.
 - [x] FIXED (test_picks) F13 Advice "How this is calculated" says "Tap any player to see each
   source's number" — Advice rows have no tap handler; it is the "why ▾".
+- [x] FIXED (tools/test_syncfail.js, 16 checks, 8 fail on v8.5) F14 DATA LOSS
+  (found by the engine spot-check step: my week-1 harness sync had 1 of 16 box
+  scores time out and the week was still stored synced+final): doSync wiped
+  EVERY line of the week and rebuilt from what arrived, so one failed box
+  score zeroed that game's players (a Tuesday re-sync on a flaky connection
+  destroyed correct lines), and every game being over the week was stamped
+  final — never retried. Now: a team whose game did not arrive keeps its
+  lines + book rows; no bonus pass on a week with a hole (flags carried);
+  final only when complete (or already complete before); otherwise stays
+  open, header says "N box score(s) missing", closing sync retries.
+- [x] Step 6 engine spot-checks DONE: 7 fresh week-2 lines hand-computed vs
+  RULES_2026.md — Nix 41, Schultz 26, Swift 12.9 (fumble -2), Bates 7,
+  Texans D 15 (5 sacks, 20 PA tier), Wan'Dale 1.9, Goff 67.05: all exact.
+  Weekly +5s went to the league-wide longest rush/rec both weeks.
+- [x] SMALL polish from the survey, DONE: live game clock on the badge
+  (test_schedule), playoff cut line in Standings (test_picks).
 
 ## When Tj asks for something new
 

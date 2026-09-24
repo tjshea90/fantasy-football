@@ -103,6 +103,7 @@ tools/test_jobguard.js
 tools/test_schedmeta.js
 tools/test_retention.js
 tools/test_jsonslim.js
+tools/test_syncfail.js
 tools/fixtures/espn_injuries_sample.json
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
