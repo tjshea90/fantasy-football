@@ -326,6 +326,17 @@
         cache = { at: Date.now(), week: week, season: season, byName: best.byName,
                   count: best.count, weekly: best.weekly, error: '',
                   route: best.route, notes: notes };
+      } else if (cache && cache.season === season && cache.week === week && (cache.weekly || 0) > 0) {
+        /* EVERY route failed — offline, or a feed outage — and this week's
+           set is already on hand. It used to be REPLACED with nothing, so one
+           pull-to-refresh with no signal threw away an hour-old projection
+           set and every lineup call fell back to rough averages (full test
+           2026-09-24). Keep it, leave its time alone so its real age still
+           shows, and tell the caller this attempt failed. */
+        var kept = {}, k2;
+        for (k2 in cache) if (Object.prototype.hasOwnProperty.call(cache, k2)) kept[k2] = cache[k2];
+        kept.failedNow = notes.join(' | ');
+        return kept;
       } else {
         cache = { at: Date.now(), week: week, season: season, byName: {}, count: 0,
                   weekly: 0, error: notes.join(' | '), route: '', notes: notes };
@@ -624,20 +635,46 @@
      have a man, BOTH are kept — averaging two independent professional
      projections is the whole point of carrying two (same reasoning as the
      weekly sleeperWeek second opinion), and ros.js does the averaging. */
+  /* ---- a season fetch that fails (full test 2026-09-24) -------------------
+   * The Wire tab asks for this set on EVERY render while it is stale or
+   * missing (ui.js refreshSeasonProjIfStale) and re-renders when the attempt
+   * settles. When the attempt FAILED — no signal, an ESPN outage — that
+   * re-render asked again at once: measured at ~88 ESPN + 88 Sleeper requests
+   * and as many full Wire renders and cache writes in two seconds, for as long
+   * as the tab stayed open. Now: one attempt in flight at a time, and after a
+   * failure a background caller waits SEASON_RETRY_MS before trying again (a
+   * sync he started himself — opts.user — or opts.force still goes straight
+   * out). And a failure keeps the set already on hand instead of replacing it
+   * with nothing, exactly like the weekly refresh above. */
+  var SEASON_RETRY_MS = 10 * 60000, seasonFailAt = 0, seasonInFlight = null;
   function refreshSeason(season, onStep, opts) {
-    if (!(opts && opts.force) && seasonFresh(season)) {
+    var force = !!(opts && opts.force), user = !!(opts && opts.user);
+    if (!force && seasonFresh(season)) {
       var hrs = Math.max(1, Math.round((Date.now() - seasonCache.at) / 3600000));
       if (onStep) onStep('Season projections: reusing the set from ' + hrs + 'h ago', 80);
+      return Promise.resolve(seasonCache);
+    }
+    if (seasonInFlight) return seasonInFlight;
+    if (!force && !user && seasonFailAt && (Date.now() - seasonFailAt) < SEASON_RETRY_MS) {
       return Promise.resolve(seasonCache);
     }
     var notes = [], merged = {}, count = 0, routes = [];
     var url = HOST + season + '/segments/0/leaguedefaults/3?view=kona_player_info';
 
     function finish() {
+      seasonInFlight = null;
       if (count > 0) {
+        seasonFailAt = 0;
         seasonCache = { at: Date.now(), season: season, byName: merged, count: count,
                         error: '', route: routes.join(' + '), notes: notes };
       } else {
+        seasonFailAt = Date.now();
+        if (seasonCache && Number(seasonCache.season) === Number(season) && (seasonCache.count || 0) > 0) {
+          var kept = {}, k3;
+          for (k3 in seasonCache) if (Object.prototype.hasOwnProperty.call(seasonCache, k3)) kept[k3] = seasonCache[k3];
+          kept.failedNow = notes.join(' | ');
+          return kept;
+        }
         seasonCache = { at: Date.now(), season: season, byName: {}, count: 0,
                         error: notes.join(' | '), route: '', notes: notes };
       }
@@ -680,7 +717,7 @@
     }
 
     if (onStep) onStep('Season projections: ESPN…', 82);
-    return root.Espn._httpGetH(url, { 'X-Fantasy-Filter': JSON.stringify(seasonFilter()) },
+    seasonInFlight = root.Espn._httpGetH(url, { 'X-Fantasy-Filter': JSON.stringify(seasonFilter()) },
                                { timeout: 90000 })
       .then(function (j) {
         var got = ingestSeasonEspn(j, season);
@@ -692,7 +729,11 @@
       .catch(function (e) {
         notes.push('espn season: FAILED — ' + (e && e.message ? e.message : String(e)));
         return trySleeperSeason();
-      });
+      })
+      /* nothing above rejects (every step ends in finish()), but a throw in
+         an ingest must not leave the in-flight marker set forever */
+      ['catch'](function (e) { seasonInFlight = null; seasonFailAt = Date.now(); throw e; });
+    return seasonInFlight;
   }
 
   /* No week guard, deliberately — see the block comment above. */

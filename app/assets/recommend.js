@@ -900,8 +900,11 @@
       return root.Projections.refresh(S.settings.season, week, function (t, p) { step(t, p); })
         .then(function (c) {
           report.steps.push(c.error ? ('projections FAILED: ' + c.error)
-                                    : ((c.weekly || 0) + ' week-' + week +
-                                       ' projections via ' + c.route));
+                                    : c.failedNow
+                                      ? ('projections FAILED this time — kept the week-' + week + ' set from ' +
+                                         ago(c.at) + ' (' + (c.weekly || 0) + ' lines): ' + c.failedNow)
+                                      : ((c.weekly || 0) + ' week-' + week +
+                                         ' projections via ' + c.route));
           /* Then the FULL-SEASON set, which is what the waiver board actually
              ranks on (Tj, 2026-09-18: "expected full season performance, not
              just the next NFL week"). Separate fetch, separate 12-hour cache,
@@ -911,11 +914,13 @@
              take the whole advice run down with it. */
           if (!root.Projections.refreshSeason) return opp;
           return root.Projections.refreshSeason(S.settings.season,
-                                                function (t, p) { step(t, p); })
+                                                function (t, p) { step(t, p); }, { user: true })
             .then(function (sc) {
               report.steps.push(sc.error
                 ? ('season projections FAILED: ' + sc.error)
-                : ((sc.count || 0) + ' full-season projections via ' + sc.route));
+                : sc.failedNow
+                  ? ('season projections FAILED this time — kept the set from ' + ago(sc.at) + ': ' + sc.failedNow)
+                  : ((sc.count || 0) + ' full-season projections via ' + sc.route));
               return opp;
             })
             .catch(function (e) {

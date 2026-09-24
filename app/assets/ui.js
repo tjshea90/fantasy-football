@@ -689,9 +689,17 @@
     if (!window.Projections || !Projections.refreshSeason) return;
     try {
       if (Projections.seasonFresh && Projections.seasonFresh(S.settings.season)) return;
+      /* re-render ONLY when a new set actually landed. It used to re-render
+         whenever the attempt settled — and the re-render asked again, so a
+         failed fetch (offline) looped as fast as it could fail: ~90 attempts
+         a second on the Wire tab (full test 2026-09-24; Projections now also
+         cools down after a failure) */
+      var before = Projections.seasonMeta ? Projections.seasonMeta().at : 0;
       var p = Projections.refreshSeason(S.settings.season);
       if (p && p.then) {
-        p.then(function () { render(); })['catch'](function () { /* offline is fine */ });
+        p.then(function () {
+          if (!Projections.seasonMeta || Projections.seasonMeta().at !== before) render();
+        })['catch'](function () { /* offline is fine */ });
       }
     } catch (e) { /* never block a tab render for a background refresh */ }
   }
