@@ -111,9 +111,13 @@ ok(/return \(r\.equals\("\."\) \|\| r\.equals\("\.\."\)\) \? "_" : r;/.test(nb),
    "safe() rejects a bare '.' or '..' result outright, not just relying on slash-stripping and readFile's own directory failure");
 ok(!/Shown at the top of Live, Lineups and Advice/.test(ui),
    'the earlyGameCard comment no longer claims a Live call site that never existed');
-ok(/var viewBtn = el\('button', 'btn pri', 'View stats'\);/.test(ui) &&
-   !/var view = el\('button', 'btn pri', 'View stats'\);/.test(ui),
-   'openPlayerStatsMenu no longer shadows the file-level `view` (current tab) with a local button variable');
+/* 2026-09-24b: the long-press menu became the player card (Tj's pick #8);
+   the same landmine applies to its code — no local `view` */
+(function () {
+  var card = ui.slice(ui.indexOf('function openPlayerCard('), ui.indexOf('function showPlayer(pid)'));
+  ok(card.length > 500 && !/var view\b|[,\s]view = /.test(card),
+     'the player card never shadows the file-level `view` (current tab) with a local variable');
+}());
 /* doSync() already render()s on both its success and catch path (see its
    own end) — the pull-to-refresh default branch used to wrap it in a
    SECOND .then(render)/.catch(render), rendering the whole page twice on
@@ -402,15 +406,17 @@ ok(!/124px/.test(css3.replace(/\/\*[\s\S]*?\*\//g, '')),
      and stop there — a dead end on the screen he uses most, at the time he uses
      it most. The app already had the projection, the kickoff, the injury note
      and Claude's read; none of it was reachable. */
-  ok(/function showPlayerPreGame/.test(code),
-     'there is a pre-game card for a player with no stat line yet');
-  ok(/if \(!line\) \{ showPlayerPreGame\(rec\); return; \}/.test(code),
-     'and showPlayer uses it instead of a dead-end toast  <-- the reported dead end');
+  /* 2026-09-24b: the pre-game card and the stat-line card are ONE player card
+     now (Tj's pick #8); everything the pre-game card promised is still on it */
+  ok(/function openPlayerCard/.test(code),
+     'there is a player card that works with no stat line yet');
+  ok(/function showPlayer\(pid\) \{ openPlayerCard\(\{ pid: pid \}\); \}/.test(code),
+     'and a Live tap (showPlayer) opens it instead of a dead-end toast  <-- the reported dead end');
   ok(!/no stats synced for week/.test(code),
      'the dead-end toast is gone');
-  var pg = code.slice(code.indexOf('function showPlayerPreGame'), code.indexOf('function showPlayer(pid)'));
-  ok(/Schedule\.badge/.test(pg), 'the pre-game card says when he plays');
-  ok(/row\.h && row\.h\.label/.test(pg), 'and carries the injury feed line');
+  var pg = code.slice(code.indexOf('function openPlayerCard'), code.indexOf('function showPlayer(pid)'));
+  ok(/Schedule\.badge/.test(pg), 'the card says when he plays');
+  ok(/hh && hh\.label/.test(pg), 'and carries the injury feed line');
   ok(/row\.ai && row\.ai\.reason/.test(pg), "and Claude's read when there is one");
 
   /* "TO PLAY" next to "Sun 4:05p" is noise, and .row .nm ellipsises the NAME to

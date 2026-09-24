@@ -177,7 +177,7 @@ console.log('\n-- #6 a quiet "⋯" menu instead of seventeen red Drop buttons --
   click(more[0]);
   var dlg = h.W.document.body.children[h.W.document.body.children.length - 1];
   var dropBtn = dlg ? button(dlg, 'Drop') : null;
-  ok(!!dropBtn && !!button(dlg, 'Stats') && !!button(dlg, 'Cancel'), 'tapping it opens a menu: Cancel · Stats · Drop');
+  ok(!!dropBtn && !!button(dlg, 'Player card') && !!button(dlg, 'Cancel'), 'tapping it opens a menu: Cancel · Player card · Drop');
   click(dropBtn);
   ok(St.team(St.get().league.me).players.length === n0, 'Drop in the menu does NOT drop yet — it asks first');
   var confirm = h.W.document.body.children[h.W.document.body.children.length - 1];
