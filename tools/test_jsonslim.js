@@ -149,6 +149,41 @@ for (const [name, text] of CASES) {
   ok(!r.err && r.out === txt, 'kept values are copied byte for byte (no number re-spelling): ' + r.out);
 }
 
+/* ---- 2b. the app's own parser reads the slim feed exactly as the raw one -- */
+console.log('\n-- 2b. Recommend.loadNews: slim and raw feeds give identical results --');
+{
+  const vm = require('vm');
+  const A = path.join(ROOT, 'app', 'assets');
+  const raw = fs.readFileSync(path.join(__dirname, 'fixtures', 'espn_injuries_sample.json'), 'utf8');
+  const r = slim(raw, 'links,logos,headshot,notes');
+  function newsFrom(text) {
+    const sb = { console, window: null, setTimeout, clearTimeout, Date, Math, JSON };
+    sb.window = sb;
+    sb.localStorage = { _d: {}, getItem(k) { return this._d[k] || null; }, setItem(k, v) { this._d[k] = String(v); } };
+    vm.createContext(sb);
+    for (const f of ['version.js', 'seed.js', 'players.js', 'scoring.js', 'names.js', 'playerdb.js',
+                     'espn.js', 'store.js', 'usage.js', 'projections.js', 'ai.js', 'recommend.js']) {
+      vm.runInContext(fs.readFileSync(path.join(A, f), 'utf8'), sb, { filename: f });
+    }
+    sb.Store.init(sb.SEED);
+    let asked = null;
+    sb.Espn._httpGetH = (u, h) => { asked = h; return Promise.resolve(JSON.parse(text)); };
+    sb.Espn._httpGet = () => Promise.resolve(JSON.parse(text));
+    return sb.Recommend.loadNews(null, { force: true }).then(() => {
+      const nc = sb.Recommend.newsCache();
+      return { byName: nc.byName, count: nc.count, asked: asked };
+    });
+  }
+  return Promise.all([newsFrom(raw), newsFrom(r.out)]).then(([a, b]) => {
+    ok(a.count > 0 && a.count === b.count, 'same record count (' + a.count + ' / ' + b.count + ')');
+    ok(same(a.byName, b.byName), 'identical per-player status, note, return date and fantasy status');
+    ok(a.asked && a.asked['X-FFT-Drop-Keys'] === 'links,logos,headshot,notes',
+       'loadNews sends the drop list to the bridge');
+    finish();
+  });
+}
+}
+function finish() {
 /* ---- 3. malformed input throws, so callers fall back to the raw body ------ */
 console.log('\n-- 3. malformed input throws --');
 for (const bad of ['{"a":1', '{"a" 1}', '{"a":"unterminated}', '[1,2', '{"a":1}}', '', '{a:1}']) {
@@ -182,3 +217,4 @@ try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* tmp */ 
 console.log('\n  ' + (fail ? fail + ' FAILED, ' : '') + pass + ' passed');
 if (fail) { console.log('  jsonslim checks FAILED'); process.exit(1); }
 console.log('  jsonslim checks pass');
+}
