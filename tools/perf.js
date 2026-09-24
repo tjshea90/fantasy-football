@@ -25,6 +25,7 @@
  *   node tools/perf.js --state S --advice --save S2   # run Lineups>Advice "Sync advice" first
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *   node tools/perf.js --state S --eval "JS" --save S2   # run page JS after boot (e.g. Recap.generateSchedule({}))
+ *   node tools/perf.js --state S --eval "JS" --evalshot F.png   # ... and screenshot what it left on screen
  *   node tools/perf.js --state S --inject mock.js --shots DIR   # design mockups: extra page script before boot
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
@@ -189,6 +190,8 @@ function curl(url, headersJson, body) {
     const r = await page.evaluate((src) => { const v = (0, eval)(src); return v === undefined ? 'undefined' : JSON.stringify(v); }, String(opt('eval')));
     console.log('eval -> ' + String(r).slice(0, 300));
     await page.waitForTimeout(500);
+    /* --evalshot FILE: what that left on screen (a dialog it opened, say) */
+    if (opt('evalshot', false)) await page.screenshot({ path: String(opt('evalshot')) });
   }
   if (opt('advice', false)) {
     /* Lineups -> Advice -> "Sync advice": loads the week's projections and
