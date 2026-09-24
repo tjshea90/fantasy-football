@@ -1718,9 +1718,10 @@
     var save = el('button', 'btn pri', 'Save adjustment');
     save.style.marginTop = '8px';
     save.addEventListener('click', function () {
-      /* Store.setAdj, not `line.manualAdj = ...; Store.save()`: the line lives
-         in the archive file, which only a marked write reaches — the bare
-         assignment was lost at the next cold start (test_retention.js) */
+      /* Store.setAdj, not a bare assignment to the line plus Store.save():
+         the line lives in the archive file, which only a marked write
+         reaches — the bare assignment was lost at the next cold start
+         (test_retention.js) */
       Store.setAdj(week, pid, Number(inp.value) || 0);
       render();
       var freshSc = Scoring.score(Store.lineFor(week, pid) || line);
