@@ -100,6 +100,7 @@ tools/test_tabsafety.js
 tools/test_synccapture.js
 tools/test_jobguard.js
 tools/test_schedmeta.js
+tools/test_retention.js
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 android/res/drawable/splash_empty.xml
