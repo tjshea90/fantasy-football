@@ -309,10 +309,28 @@
       cacheSave(NEWSKEY, newsCache);
       return newsCache;
     }).catch(function (e) {
-      newsCache = { at: Date.now(), byName: {}, count: 0,
-                    error: (e && e.message) ? e.message : String(e) };
+      /* A FAILED FETCH KEEPS WHAT WE HAD (full test 2026-09-24). This used
+         to REPLACE the cache with an empty one and save it: one failed
+         refresh — a blip on the 45-second live poll, or no signal — and every
+         OUT and IR designation vanished, so the auto-lineup, Advice and the
+         Wire tab all treated every hurt player as healthy until a later fetch
+         worked, while the Wire card claimed it was "showing" the old records.
+         Now the last good set stays, keeps its own time (its real age shows),
+         and carries the error; newsFresh() refuses an errored cache, so the
+         next poll tries again. */
+      var msg = (e && e.message) ? e.message : String(e);
+      var first = !newsCache.error;
+      if (newsCache && (newsCache.count || 0) > 0 && newsCache.byName) {
+        newsCache.error = msg;
+        newsCache.failedAt = Date.now();
+      } else {
+        newsCache = { at: Date.now(), byName: {}, count: 0, error: msg };
+      }
       cacheSave(NEWSKEY, newsCache);
-      return newsCache;
+      var out = {}, k;
+      for (k in newsCache) if (Object.prototype.hasOwnProperty.call(newsCache, k)) out[k] = newsCache[k];
+      out.failedNow = true; out.firstFailure = first;
+      return out;
     });
   }
   function health(player) {
@@ -890,7 +908,11 @@
       step('Injury report…', 20);
       return loadNews(null).then(function () { return opp; });
     }).then(function (opp) {
-      report.steps.push(newsCache.error ? ('injury feed FAILED: ' + newsCache.error)
+      report.steps.push(newsCache.error
+                          ? ((newsCache.count || 0) > 0
+                              ? ('injury feed FAILED this time — kept ' + newsCache.count + ' records from ' +
+                                 ago(newsCache.at) + ': ' + newsCache.error)
+                              : ('injury feed FAILED: ' + newsCache.error))
                                         : ((newsCache.count || 0) + ' injury records' +
                                            (newsCache.reused
                                              ? ' (reused, ' + newsCache.reused + ' min old)'
@@ -1151,7 +1173,10 @@
       st.appendChild(gd);
     }
     line('Injury feed', newsCache.at
-      ? (newsCache.error ? 'failed — ' + newsCache.error
+      ? (newsCache.error ? ((newsCache.count || 0) > 0
+                              ? 'refresh failed (' + newsCache.error + ') — using ' + newsCache.count +
+                                ' records from ' + ago(newsCache.at)
+                              : 'failed — ' + newsCache.error)
          : (newsCache.count || 0) + ' records, ' + ago(newsCache.at))
       : 'not loaded', !!newsCache.error || !newsCache.at);
     /* Tj, 2026-09-15: "get rid of anywhere it says how much Claude usage I

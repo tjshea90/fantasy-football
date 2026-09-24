@@ -1193,7 +1193,9 @@
          call on this exact poll that did not, left as an unhandled
          rejection every tick a fetch failed instead of a quiet no-op. */
       Recommend.loadNews(null).then(function (nc) {
-        if (nc && !nc.reused) render();
+        /* new data, or the FIRST failure (so the screen can say so) — not a
+           re-render on every failed tick while the signal is gone */
+        if (nc && !nc.reused && (!nc.failedNow || nc.firstFailure)) render();
       })['catch'](function () { /* offline or a bad feed: try again next tick */ });
     } catch (e) { /* never let an injury refresh break the score poll */ }
   }
