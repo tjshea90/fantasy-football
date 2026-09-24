@@ -3659,7 +3659,8 @@
       c2.appendChild(el('p', 'muted', 'Last sync fetched ' + m.fetched + ' box score' +
         (m.fetched === 1 ? '' : 's') + ' and reused ' + m.reused +
         ' already-final game' + (m.reused === 1 ? '' : 's') +
-        (m.failed ? ', ' + m.failed + ' failed' : '') + '. ' +
+        (m.fetchFailed || m.failed ? ', ' + (m.fetchFailed || m.failed) + ' failed' +
+          (m.kept ? ' (kept the last good numbers for ' + m.kept + ' player' + (m.kept === 1 ? '' : 's') + ')' : '') : '') + '. ' +
         (m.bookSize || 0) + ' players are in the league book.'));
     }
     if (m && m.feedWarn) {
@@ -4738,7 +4739,11 @@
       wm.rostered = Store.allPlayers().length; wm.unmatched = unmatched;
       wm.opponents = (prevOpp && Object.keys(prevOpp).length) ? prevOpp : oppMap;
       wm.expected = expected; wm.feedWarn = feedWarn; wm.shapeMissing = shapeMissing;
-      wm.fetched = meta.fetched; wm.reused = meta.reused; wm.failed = meta.failed;
+      wm.fetched = meta.fetched; wm.reused = meta.reused;
+      /* `failed`: games with NO numbers at all (a hole — the week stays open
+         and is retried); `fetchFailed`: fetches that failed this time, holes
+         or not (a kept line is not a hole) — shown on Data -> Sync & data */
+      wm.failed = complete ? 0 : meta.failed; wm.fetchFailed = meta.failed;
       wm.bookSize = Object.keys(book).length;
       S.settings.lastSync = new Date().toISOString();
       live.at = Date.now(); live.inProgress = meta.inProgress;
