@@ -845,7 +845,10 @@
     refreshSeason: refreshSeason, findSeason: findSeason, seasonMeta: seasonMeta,
     loadSeasonCache: loadSeasonCache, seasonFresh: seasonFresh,
     SEASON_FRESH_MS: SEASON_FRESH_MS,
-    _ingestSeasonEspn: ingestSeasonEspn, _ingestSleeperSeason: ingestSleeperSeason,
+    _ingestSeasonEspn: ingestSeasonEspn,
+    /* test seams only: install a cache as a good sync would have left it */
+    _setCacheForTest: function (c) { cache = c; },
+    _setSeasonForTest: function (c) { seasonCache = c; seasonFailAt = 0; seasonInFlight = null; }, _ingestSleeperSeason: ingestSleeperSeason,
     _seasonFilter: seasonFilter, _sleeperSeasonUrl: sleeperSeasonUrl
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Projections;
