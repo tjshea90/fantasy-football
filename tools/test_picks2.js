@@ -191,7 +191,8 @@ console.log('\n-- #1 win probability, and the card under the live team boxes --'
   var expect = St.teamWeekPoints(wk, S.league.me).total;
   St.teamWeekPoints(wk, S.league.me).detail.forEach(function (d) {
     if (!d.pid || d.onBye) return;
-    expect += (Number(byId[d.pid] && byId[d.pid].proj) || 0) * (d.pid === qbId ? 0.5 : 1);
+    /* everyone in that game (his receivers too) is at halftime */
+    expect += (Number(byId[d.pid] && byId[d.pid].proj) || 0) * (d.player && d.player.nfl === qb.nfl ? 0.5 : 1);
   });
   ok(near(proj, Math.round(expect * 10) / 10, 0.051),
      'at halftime his projection counts half his game on top of what he banked (' + proj + ' vs ' + expect.toFixed(1) + ')' +
