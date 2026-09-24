@@ -3017,7 +3017,10 @@
         /* Tj, 2026-09-18d: same position is the default, so the exceptions are
            worth flagging on the row rather than only in the "why". */
         if (u.crossPos) nm.appendChild(el('span', 'tag', u.fa.pos + ' for ' + u.drop.pos));
-        if (u.drop.longTermOut) nm.appendChild(healthTag({ code: 'IR', text: 'Out long-term', kind: 'out' }));
+        if (u.drop.longTermOut) {
+          var ol = u.drop.outLabel || 'on injured reserve';
+          nm.appendChild(healthTag({ code: Recommend.injuryCode(ol) || 'IR', text: u.drop.name + ' is ' + ol, kind: 'out' }));
+        }
         if (u.fa.healthLabel) nm.appendChild(healthTag({ kind: 'warn', text: u.fa.healthLabel }));
         r.appendChild(nm);
         var b = el('button', 'btn sm', 'Add + drop ' + u.drop.name);
