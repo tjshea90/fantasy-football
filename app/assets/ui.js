@@ -1734,147 +1734,183 @@
     });
     return d;
   }
-  /* BEFORE KICKOFF THERE IS NO STAT LINE, AND THAT USED TO BE A DEAD END.
-   * Every player row on the Live tab is tappable, and `Store.lineFor` returns
-   * nothing until the week has been synced — so on any day before the games
-   * (which is most days, and exactly when you are deciding a lineup) tapping a
-   * player produced a toast saying "no stats synced" and nothing else.
-   * The app already knows plenty about him at that moment: what it projects,
-   * when he plays, who he plays, and what the injury feed and Claude said. All
-   * of it was computed and none of it was reachable. This shows that instead.
-   * The manual-adjustment editor below is unchanged and still only appears once
-   * there IS a line to adjust — there is nothing to correct before kickoff. */
-  function showPlayerPreGame(rec) {
-    var p = rec.player, lines = [];
+  /* ---------- THE PLAYER CARD (2026-09-24b, Tj's pick #8) -----------------
+   * One sheet for any player, however he was reached — a tap on a Live row, a
+   * long-press anywhere, Roster ⋯ -> Player card. It replaces three pop-ups
+   * that each knew part of the story: the pre-game card (projection, kickoff,
+   * injury, Claude), the stat-line card (points and Adjust), and the
+   * long-press "View stats" menu (game log). ESPN's 2026 player pages and
+   * Sleeper's player sheet are this shape.
+   *   header    position · NFL team · bye · whose roster · % rostered
+   *   this week kickoff/opponent + matchup chip, projection and how it was
+   *             built, the injury feed IN WORDS, the season outlook when he
+   *             is long-term out, Claude's read
+   *   scored    his stat line with every scoring part, and Adjust
+   *   season    average per game in this league's points
+   *   outlook   ESPN's written outlook (already in the downloaded data)
+   *   game log  the Stats tab's table, loaded in place
+   * BEFORE KICKOFF THERE IS NO STAT LINE, AND THAT USED TO BE A DEAD END
+   * (2026-09-08): a tap before the week was synced toasted "no stats synced"
+   * and stopped. Everything the app knows before kickoff is on this card. */
+  function findRostered(player) {
+    if (player.pid) return Store.playerById(player.pid);
+    var list = Store.allPlayers(), i;
+    for (i = 0; i < list.length; i++) {
+      var q = list[i].player;
+      if ((!player.pos || q.pos === player.pos) && Names.same(q.name, player.name)) return list[i];
+    }
+    return null;
+  }
+  function cardSection(host, title) {
+    var s = el('div', 'pcsec');
+    s.appendChild(el('div', 'subhd', title));
+    host.appendChild(s);
+    return s;
+  }
+  function cardLine(host, text, cls) { var d = el('p', 'pcline' + (cls ? ' ' + cls : ''), text); host.appendChild(d); return d; }
+  function openPlayerCard(player) {
+    if (!player || (!player.pid && !player.name)) return;
+    var rec = findRostered(player);
+    var p = rec ? rec.player : { name: player.name, pos: player.pos, nfl: player.nfl, bye: player.bye };
+    if (!p || !p.name) return;
+    var body = el('div', 'pcard');
+
+    /* header */
+    var hd = el('p', 'pcmeta');
+    hd.appendChild(el('span', 'pchip' + posClass(p.pos), p.pos || '?'));
+    hd.appendChild(document.createTextNode(' ' + (p.nfl || 'FA') + (p.bye ? ' · bye ' + p.bye : '') + ' · ' +
+      (rec ? rec.team.name + (rec.team.id === S.league.me ? ' (you)' : '') : 'free agent')));
+    var ow = ownershipOf(p); if (ow) hd.appendChild(ownChip(ow));
+    body.appendChild(hd);
+
+    /* this week */
+    var sw = cardSection(body, 'Week ' + week);
     var b = window.Schedule ? Schedule.badge(p.nfl, week) : null;
+    var kick = cardLine(sw, b ? ((b.live ? 'Playing now · ' + b.text : (b.done ? 'Game over' : 'Kicks off ' + b.text)) +
+      '  ' + b.opp + (b.early ? '  — BEFORE SUNDAY' : '')) : 'No kickoff known for week ' + week + ' yet.');
+    var mc = matchupChip(p.pos, p.nfl); if (mc) kick.appendChild(mc);
     var row = null;
-    try {
-      var opp = (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
-      var all = Recommend.projectAll(week, rec.team.id, opp), i;
-      for (i = 0; i < all.length; i++) if (all[i].p && all[i].p.id === p.id) row = all[i];
-    } catch (e) { /* the schedule and the roster facts below still stand */ }
-
-    lines.push(p.pos + '  ·  ' + p.nfl + (rec.team ? '  ·  ' + rec.team.name : ''));
-    if (b) lines.push('Kicks off ' + b.text + '  ' + b.opp +
-                      (b.early ? '   — BEFORE SUNDAY' : ''));
-    else lines.push('No kickoff known for week ' + week + ' yet.');
-    if (row && row.onBye) lines.push('ON A BYE in week ' + week + ' — he scores 0.');
-    if (row && typeof row.proj === 'number') {
-      lines.push('Projected ' + fmt(row.proj) + ' points in this league\'s scoring.');
+    if (rec) {
+      try {
+        var all2 = Recommend.projectAll(week, rec.team.id, weekOpponents()), i;
+        for (i = 0; i < all2.length; i++) if (all2[i].p && all2[i].p.id === rec.player.id) row = all2[i];
+      } catch (e) { /* the schedule and the roster facts still stand */ }
     }
-    if (row && row.h && row.h.label) {
-      lines.push('');
-      lines.push('Injury feed: ' + row.h.label + (row.h.note ? ' — ' + row.h.note : ''));
+    if (row && row.onBye) cardLine(sw, 'ON A BYE in week ' + week + ' — he scores 0.', 'warnText');
+    else if (row && typeof row.proj === 'number') cardLine(sw, 'Projected ' + fmt(row.proj) + ' points in this league\'s scoring.');
+    else if (window.Projections) {
+      var pr = Projections.find(p, week);
+      if (pr && typeof pr.week === 'number') cardLine(sw, 'ESPN projects ' + fmt(pr.week) + ' in this league\'s scoring (his stat line, re-scored).');
     }
-    if (row && row.ai && row.ai.reason) {
-      lines.push('');
-      lines.push('Claude (' + (row.ai.confidence || 'low') + '): ' + row.ai.reason);
+    var hh = row ? row.h : (window.Recommend && Recommend.health ? Recommend.health(p) : null);
+    if (hh && hh.label) cardLine(sw, 'Injury feed: ' + hh.label + (hh.note ? ' — ' + hh.note : ''), hh.label === 'OUT' ? 'warnText' : null);
+    if (window.Recommend && Recommend.seasonOutlook) {
+      var so = null;
+      try { so = Recommend.seasonOutlook({ name: p.name }); } catch (e) { so = null; }
+      if (so && so.seasonEnding) cardLine(sw, 'Out for the season' + (so.why ? ' — ' + so.why : ''), 'warnText');
+      else if (so && so.longTermOut) cardLine(sw, (so.label || 'Long-term out') +
+        (so.returnAround ? ', not eligible to return until ' + so.returnAround : '') + ' — not out for the season.');
     }
+    if (row && row.ai && row.ai.reason) cardLine(sw, 'Claude (' + (row.ai.confidence || 'low') + '): ' + row.ai.reason);
     if (row && row.why && row.why.length) {
-      lines.push('');
-      lines.push('How that number was built:');
-      row.why.forEach(function (w) { lines.push('  ' + w); });
+      var wd = el('details');
+      wd.appendChild(el('summary', null, 'How that projection was built ▾'));
+      row.why.forEach(function (w) { var kv = el('div', 'kv'); kv.appendChild(el('span', null, w)); wd.appendChild(kv); });
+      sw.appendChild(wd);
     }
-    lines.push('');
-    lines.push('Nothing has been scored for week ' + week + ' yet, so there is no ' +
-               'stat line to correct. Sync the week once his game has finished.');
-    modal(p.name, lines.join('\n'));
-  }
 
-  function showPlayer(pid) {
-    var rec = Store.playerById(pid); if (!rec) return;
-    var line = Store.lineFor(week, pid);
-    if (!line) { showPlayerPreGame(rec); return; }
-    var sc = Scoring.score(line);
-    /* The manual adjustment is the escape hatch for the two things the feed
-       cannot settle by itself: the league-wide longest-play bonuses, which are
-       decided across every game and not always resolvable, and a rare
-       mis-parse. It survives a re-sync because it lives on the stat line, and
-       it always shows up as its own labelled row so nothing is ever silently
-       fudged.
-       Tj: "when I press a player to see his stats, the android keyboard
-       automatically appears because of the manual adjustment feature and its
-       number field." dialog() focuses the first input/button it finds in the
-       modal, and a number input WAS the first thing here — so opening any
-       already-scored player's card popped the keyboard uninvited. The field
-       now only exists in the DOM once "Adjust" is pressed, which is a
-       deliberate tap and earns the keyboard it summons. */
-    var wrap = el('div');
-    var adjBtn = el('button', 'btn', 'Adjust');
-    var form = el('div'); form.hidden = true;
-    form.style.marginTop = '8px';
-    form.appendChild(el('label', 'f', 'Manual adjustment (points)'));
-    var inp = el('input'); inp.type = 'number'; inp.step = '0.5';
-    inp.value = String(Number(line.manualAdj) || 0);
-    inp.style.width = '100%';
-    form.appendChild(inp);
-    var row = el('div', 'kv'); row.style.marginTop = '8px';
-    [['+5 longest play', 5], ['−5', -5], ['Clear', 0]].forEach(function (b) {
-      var btn = el('button', 'btn sm', b[0]);
-      btn.addEventListener('click', function () {
-        inp.value = b[1] === 0 ? '0' : String((Number(inp.value) || 0) + b[1]);
+    /* scored: the stat line, its parts, and Adjust (a rostered player only) */
+    var line = rec ? Store.lineFor(week, rec.player.id) : null;
+    if (line) {
+      var ss = cardSection(body, 'Scored in week ' + week);
+      var trend = window.Value ? Value.usageText(p.name, week + 1) : '';
+      var bodyTextFor = function (scObj) {
+        return fmt(scObj.total) + ' points\n\n' +
+          (scObj.parts.length
+            ? scObj.parts.map(function (q) { return '  ' + q.label + '   ' + (q.pts > 0 ? '+' : '') + fmt(q.pts); }).join('\n')
+            : '  no scoring plays') +
+          (trend ? '\n\nOpportunity\n  ' + trend.split('   ·   ').join('\n  ') : '');
+      };
+      var preEl = el('pre', 'pcpre');
+      preEl.textContent = bodyTextFor(Scoring.score(line));
+      ss.appendChild(preEl);
+      /* The manual adjustment is the escape hatch for the two things the feed
+         cannot settle by itself (a two-QB longest-completion bonus, a rare
+         mis-parse). It lives on the stat line, so it survives a re-sync, and
+         shows as its own labelled row. The number field only exists once
+         "Adjust" is pressed — a card that opens with the keyboard up (the
+         field was the first input dialog() focuses) is the 2026-09-12 bug. */
+      var adjBtn = el('button', 'btn', 'Adjust');
+      var form = el('div'); form.hidden = true; form.style.marginTop = '8px';
+      form.appendChild(el('label', 'f', 'Manual adjustment (points)'));
+      var inp = el('input'); inp.type = 'number'; inp.step = '0.5';
+      inp.value = String(Number(line.manualAdj) || 0); inp.style.width = '100%';
+      form.appendChild(inp);
+      var steps = el('div', 'kv'); steps.style.marginTop = '8px';
+      [['+5 longest play', 5], ['−5', -5], ['Clear', 0]].forEach(function (bb) {
+        var btn = el('button', 'btn sm', bb[0]);
+        btn.addEventListener('click', function () {
+          inp.value = bb[1] === 0 ? '0' : String((Number(inp.value) || 0) + bb[1]);
+        });
+        steps.appendChild(btn);
       });
-      row.appendChild(btn);
-    });
-    form.appendChild(row);
-    /* opportunity over the last three weeks, above the points. Touches are what
-       predict next week; points are what happened last week. Fixed part of
-       the body — unaffected by the adjustment below, computed once. */
-    var trend = window.Value ? Value.usageText(rec.player.name, week + 1) : '';
-    function bodyTextFor(scObj) {
-      return fmt(scObj.total) + ' points\n\n' +
-        (scObj.parts.length
-          ? scObj.parts.map(function (p) { return '  ' + p.label + '   ' + (p.pts > 0 ? '+' : '') + fmt(p.pts); }).join('\n')
-          : '  no scoring plays') +
-        (trend ? '\n\nOpportunity\n  ' + trend.split('   ·   ').join('\n  ') : '');
+      form.appendChild(steps);
+      var save = el('button', 'btn pri', 'Save adjustment');
+      save.style.marginTop = '8px';
+      save.addEventListener('click', function () {
+        /* Store.setAdj, not a bare assignment to the line plus Store.save():
+           the line lives in the archive file, which only a marked write
+           reaches — the bare assignment was lost at the next cold start
+           (test_retention.js) */
+        Store.setAdj(week, rec.player.id, Number(inp.value) || 0);
+        render();
+        var freshSc = Scoring.score(Store.lineFor(week, rec.player.id) || line);
+        preEl.textContent = bodyTextFor(freshSc);
+        toast(p.name + ' adjusted to ' + fmt(freshSc.total));
+      });
+      form.appendChild(save);
+      adjBtn.addEventListener('click', function () {
+        adjBtn.hidden = true; form.hidden = false;
+        try { inp.focus(); } catch (e) { /* older WebView */ }
+      });
+      ss.appendChild(adjBtn); ss.appendChild(form);
+    } else if (b && b.done && S.weekMeta[String(week)] && S.weekMeta[String(week)].synced) {
+      cardLine(cardSection(body, 'Scored in week ' + week), 'No stat line — inactive, or he did not play.');
     }
-    /* NOT modal() here (found in the 2026-09-15e sweep): modal()/dialog()
-     * write the <pre> body ONCE at open time with no way back into it, so
-     * "Save adjustment" updated the toast and the page underneath but left
-     * the modal showing the OLD total and breakdown frozen on screen right
-     * above the button that just changed them — the one action this dialog
-     * exists to offer, visibly not reflected by it. dialog() is called
-     * directly instead, building the <pre> here (same markup/styling
-     * dialog() itself would have used) so the save handler can rewrite its
-     * text in place. */
-    var preEl;
-    /* NOT `row` for the dialog's own button row below — this function
-       already has an outer `row` (the +5/-5/Clear buttons above) in scope,
-       and shadowing it here would be exactly the kind of landmine a later
-       edit could trip over even though nothing reads the wrong one today. */
-    dialog(rec.player.name + ' · week ' + week, null, function (box, dlgRow, close) {
-      preEl = el('pre');
-      preEl.style.cssText = 'white-space:pre-wrap;font-size:13px;margin:0 0 12px;' +
-        'font-family:inherit;line-height:1.5';
-      preEl.textContent = bodyTextFor(sc);
-      box.appendChild(preEl);
-      box.appendChild(wrap);
-      var ok = el('button', 'btn pri', 'Close');
-      ok.addEventListener('click', close);
-      dlgRow.appendChild(ok);
+
+    /* season */
+    var av = Store.playerAvg(p, avgThroughWeek());
+    if (av) {
+      cardLine(cardSection(body, 'Season'), fmt(av.avg) + ' a game over ' + av.games + ' game' +
+        (av.games === 1 ? '' : 's') + ' (' + fmt(av.total) + ' total) in this league\'s scoring.');
+    }
+
+    /* ESPN's outlook */
+    var ol = (window.Projections && Projections.outlook) ? Projections.outlook(p, week) : null;
+    if (ol && ol.text) {
+      var os = cardSection(body, 'ESPN outlook · ' + ol.kind);
+      var op = el('p', 'pcline clamp', ol.text);
+      op.addEventListener('click', function () { op.classList.toggle('open'); });
+      os.appendChild(op);
+    }
+
+    /* game log, loaded in place */
+    var ls = cardSection(body, 'Game log');
+    var logHost = el('div');
+    ls.appendChild(logHost);
+    if (window.Stats && Stats.logInto) {
+      try { Stats.logInto(statsCtx(), { name: p.name, pos: p.pos, nfl: p.nfl }, logHost); }
+      catch (e) { logHost.appendChild(el('p', 'muted', 'The game log could not load: ' + (e && e.message ? e.message : e))); }
+    }
+
+    dialog(p.name, null, function (box, dlgRow, close) {
+      box.appendChild(body);
+      var ok2 = el('button', 'btn pri', 'Close');
+      ok2.addEventListener('click', close);
+      dlgRow.appendChild(ok2);
     });
-    var save = el('button', 'btn pri', 'Save adjustment');
-    save.style.marginTop = '8px';
-    save.addEventListener('click', function () {
-      /* Store.setAdj, not a bare assignment to the line plus Store.save():
-         the line lives in the archive file, which only a marked write
-         reaches — the bare assignment was lost at the next cold start
-         (test_retention.js) */
-      Store.setAdj(week, pid, Number(inp.value) || 0);
-      render();
-      var freshSc = Scoring.score(Store.lineFor(week, pid) || line);
-      if (preEl) preEl.textContent = bodyTextFor(freshSc);
-      toast(rec.player.name + ' adjusted to ' + fmt(freshSc.total));
-    });
-    form.appendChild(save);
-    adjBtn.addEventListener('click', function () {
-      adjBtn.hidden = true;
-      form.hidden = false;
-      try { inp.focus(); } catch (e) { /* older WebView */ }
-    });
-    wrap.appendChild(adjBtn);
-    wrap.appendChild(form);
   }
+  function showPlayer(pid) { openPlayerCard({ pid: pid }); }
 
   /* ---------- LINEUPS ----------
    * Tj, to a different session: "only have me and my opponent in it... delete
