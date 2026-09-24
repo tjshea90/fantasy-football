@@ -16,11 +16,11 @@ under "Waiting on Tj" below. Hard rules still apply: ES2018 only, one
 universal APK, async bridge, RULES_2026.md ground truth, no function or
 accuracy lost. Each item gets a named test; checkpoint after every item.
 
-- [ ] **A. (#1) Win probability on Live** — from both teams' projected finish
+- [x] **A. (#1) Win probability on Live** DONE (test_picks2 '#1', 16 checks: Sim.matchupOdds math, Schedule.remaining clock parse, on-screen bar, halftime projection, final week) — — from both teams' projected finish
       and a per-player spread (measured position CV, sim.js), live: banked
       points are certain, a player mid-game carries part of his spread, a
       finished week is 100/0. Shown as "you 58% · 42% Opp" with a bar.
-- [ ] **B. Live layout** — the projection / win-probability card moves BELOW
+- [x] **B. Live layout** DONE (test_picks2: boxes index 0, card index 1) — — the projection / win-probability card moves BELOW
       the two live team boxes.
 - [ ] **C. (#2) Position colours** — QB/RB/WR/TE/K/DEF colour chips in every
       slot column (Live, Lineups, Roster, Wire, Advice, dialogs); FLEX neutral.
