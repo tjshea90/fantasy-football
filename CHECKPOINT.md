@@ -1,12 +1,12 @@
-# CHECKPOINT 92 — read me first, then TASKS.md
+# CHECKPOINT 99 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T18:26:49Z · **version:** 8.5 · **tests:** all 25 suites green
+**Written:** 2026-09-24T18:31:19Z · **version:** 8.5 · **tests:** all 25 suites green
 
 ## Just done
-Fixed F1-F8, F12, F13 (ui.js/recommend.js/sim.js) + F6 sim random pairing for unentered matchups (full schedule byte-identical to v8.5). New test_picks block 'FULL TEST 2026-09-24' (18 checks, 13 fail on v8.5); test_boot injury-note pin updated. All suites green; APK builds (29 classes).
+Small polish from the competitor survey: live game clock on the schedule badge ('Q3 7:33' / Half / End Q2 / OT, else LIVE; test_schedule 3 checks) and a playoff cut line + caption under Standings (test_picks). All suites green.
 
 ## Do this next
-Chromium screenshots of the changed screens (Live DNP, Roster row, Wire injury clamp, Advice row, Data odds note); then step 7 research write-up of ESPN/Sleeper/Yahoo/FantasyPros features -> SMALL vs MAJOR proposals; then full regression + ship.
+Step 6 engine spot-checks vs RULES_2026.md (fresh week-2 players); then step 7 proposals write-up (+ mockup screenshots for the appearance items); then full regression + ship.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  4c4845e ckpt 92: Fixed F1-F8, F12, F13 (ui.js/recommend.js/sim.js) + F6 sim random pairing for u
   93d7c82 ckpt 81: F11 fixed: new JsonSlim.java (plain-Java JSON member cutter) used by NativeBrid
   2434fca ckpt 70: F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write
   b639867 ckpt 60: Full test steps 3-5 done: crawl 275 actions/0 problems on state G; v8.5 diff cl
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   7e01358 ckpt 152: v8.5 shipped via ship.sh (23 suites + ES2018 + dex gate green, main fast-forwa
   53ebd79 ship v8.5: v8.5: full test -- game-log cache no longer rewritten whole per game every li
   ca42071 ckpt 150: Full test steps 6-8 done: engine spot-checks exact; 5 findings fixed and teste
-  f79c760 ckpt 148: Full test step 5 done: gamelog write storm fixed; duplicate scoreboard fetch o
 ```
 
-(10 automatic checkpoint(s) since the last deliberate one — the
+(6 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
