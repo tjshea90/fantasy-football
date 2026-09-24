@@ -455,7 +455,13 @@ public class Alerts {
       int k;
       while ((k = r.read(buf)) > 0) sb.append(buf, 0, k);
       r.close();
-      JSONObject j = new JSONObject(sb.toString());
+      /* 8.76 MB as served, 8.4 MB of it `athlete.links` that is never read:
+         cut before org.json builds it (JsonSlim; the raw body if that fails) */
+      String body;
+      try { body = JsonSlim.dropKeys(sb, JsonSlim.parseList("links")); }
+      catch (Throwable slimFail) { body = sb.toString(); }
+      sb = null;
+      JSONObject j = new JSONObject(body);
       JSONArray groups = j.optJSONArray("injuries");
       for (int i = 0; groups != null && i < groups.length(); i++) {
         JSONObject g = groups.optJSONObject(i);

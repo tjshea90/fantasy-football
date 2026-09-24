@@ -248,7 +248,12 @@
     }
     var url = root.Espn.BASE + '/injuries';
     if (onStep) onStep('Injury report…', 15);
-    return root.Espn._httpGet(url).then(function (j) {
+    /* X-FFT-Drop-Keys is read by the Java bridge, never sent to ESPN: it cuts
+       every `links` member (the athlete's card/stats/news URLs — 8.4 MB of
+       the feed's 8.76 MB, read by nothing here) on the bridge's own thread,
+       so this parse is ~350 KB instead of 8.76 MB (full test 2026-09-24).
+       Nothing below reads `links`; a body that arrives uncut parses the same. */
+    return root.Espn._httpGetH(url, { 'X-FFT-Drop-Keys': 'links' }).then(function (j) {
       var byName = {}, i, k;
       var groups = j.injuries || j.items || [];
       for (i = 0; i < groups.length; i++) {

@@ -64,7 +64,8 @@ function curl(url, headersJson, body) {
     if (headersJson) {
       try {
         const h = JSON.parse(headersJson);
-        for (const k of Object.keys(h)) a.push('-H', k + ': ' + h[k]);
+        /* X-FFT-* headers are instructions to NativeBridge, never sent */
+        for (const k of Object.keys(h)) if (!/^X-FFT-/.test(k)) a.push('-H', k + ': ' + h[k]);
       } catch (e) { /* no headers */ }
     }
     if (body !== null && body !== undefined) a.push('-X', 'POST', '--data-binary', String(body));

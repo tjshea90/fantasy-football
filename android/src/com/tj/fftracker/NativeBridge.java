@@ -219,13 +219,20 @@ public class NativeBridge {
 
   /** Tiny flat-JSON object reader: {"a":"b","c":"d"}. Deliberately not a
    *  general parser — header maps are the only thing it ever sees, and this
-   *  build takes no third-party dependencies. */
-  private static void applyHeaders(HttpURLConnection c, String json) {
-    if (json == null || json.length() < 2) return;
+   *  build takes no third-party dependencies.
+   *
+   *  A header named X-FFT-* is an instruction to THIS class, never sent to the
+   *  server. The only one is X-FFT-Drop-Keys: a comma list of JSON member names
+   *  to cut out of the response before the page sees it (see JsonSlim — the
+   *  8.76 MB ESPN injury feed is 8.4 MB of `links`). Returned to the caller;
+   *  null when absent. */
+  private static String applyHeaders(HttpURLConnection c, String json) {
+    String drop = null;
+    if (json == null || json.length() < 2) return drop;
     int i = 0, n = json.length();
     while (i < n) {
       int ks = json.indexOf('"', i);
-      if (ks < 0) return;
+      if (ks < 0) return drop;
       int ke = ks + 1;
       StringBuilder key = new StringBuilder();
       while (ke < n && json.charAt(ke) != '"') {
@@ -233,9 +240,9 @@ public class NativeBridge {
         key.append(json.charAt(ke)); ke++;
       }
       int colon = json.indexOf(':', ke);
-      if (colon < 0) return;
+      if (colon < 0) return drop;
       int vs = json.indexOf('"', colon);
-      if (vs < 0) return;
+      if (vs < 0) return drop;
       int ve = vs + 1;
       StringBuilder val = new StringBuilder();
       while (ve < n && json.charAt(ve) != '"') {
@@ -247,9 +254,15 @@ public class NativeBridge {
         }
         val.append(json.charAt(ve)); ve++;
       }
-      if (key.length() > 0) c.setRequestProperty(key.toString(), val.toString());
+      String k = key.toString();
+      if (k.startsWith("X-FFT-")) {
+        if (k.equals("X-FFT-Drop-Keys")) drop = val.toString();
+      } else if (k.length() > 0) {
+        c.setRequestProperty(k, val.toString());
+      }
       i = ve + 1;
     }
+    return drop;
   }
 
   /* One automatic retry, but ONLY when the first attempt read nothing at all.
@@ -295,7 +308,7 @@ public class NativeBridge {
         c.setRequestProperty("Accept-Encoding", "identity");
         c.setRequestProperty("Connection", "close");
       }
-      applyHeaders(c, headersJson);
+      String dropKeys = applyHeaders(c, headersJson);
       if (postBody != null) {
         c.setDoOutput(true);
         if (c.getRequestProperty("Content-Type") == null) {
@@ -325,6 +338,13 @@ public class NativeBridge {
         String det = sb.toString().replace('\n', ' ');
         if (det.length() > 400) det = det.substring(0, 400);
         return ERRMARK + "HTTP " + code + (det.length() > 0 ? " " + det : "");
+      }
+      /* Cut what the page asked to never see, here on the pool thread rather
+         than as megabytes of JSON.parse on the page's one JS thread. Any
+         failure hands over the untouched body — slower, never wrong. */
+      if (dropKeys != null) {
+        try { return JsonSlim.dropKeys(sb, JsonSlim.parseList(dropKeys)); }
+        catch (Throwable t) { android.util.Log.w("FFT", "JsonSlim failed, sending the raw body: " + t); }
       }
       return sb.toString();
     } catch (Exception e) {
