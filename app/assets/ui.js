@@ -3381,9 +3381,15 @@
         }
       });
     }
+    /* says how THIS chip orders them: "grouped by position" was wrong under
+       Best value and Trending (full test, v8.7) */
+    var how = faPos === 'TREND'
+      ? 'ordered by how fast ESPN leagues are adding them, each with a REST-OF-SEASON number'
+      : (faPos === 'VALUE' ? 'ranked by REST-OF-SEASON points over the best free agent at the same position'
+                           : 'grouped by position and ranked for the REST OF THE SEASON');
     c.appendChild(el('p', 'hint',
       'Everyone active on one of the 32 NFL rosters who is not on one of the ten ' +
-      'league rosters, grouped by position and ranked for the REST OF THE SEASON — ' +
+      'league rosters, ' + how + ' — ' +
       'his own recent scored games in this app where there are enough of them, ' +
       'ESPN\'s season-long projection where there are not, and this week\'s ESPN line ' +
       'only as a last resort before a flat guess. Each row says which. Practice-squad ' +
