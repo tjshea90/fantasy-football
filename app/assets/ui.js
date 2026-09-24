@@ -1335,12 +1335,47 @@
    * `S.weekMeta` is a TypeError thrown straight into evaluateJavascript, where
    * nothing in the app will ever report it. The window is small and it is
    * exactly the launch path, which is the worst place to have one. */
+  /* ---- the inactives alarm's plan (v8.7, Tj's pick #9) ----
+   * The CURRENT week's starter kickoffs (Schedule.starterKicks), handed to
+   * the Java shell, which arms one check 85..75 minutes before each
+   * (AlertPlan.java). One short bridge call — preferences and one alarm, no
+   * file, no network — and only when the list changed. Returns the time Java
+   * armed (0 = nothing to arm) or -1 when nothing was sent. */
+  var alertPlanSent = null;
+  function pushAlertPlan(force) {
+    if (!S || !(window.Native && Native.alertsKickoffs)) return -1;
+    var csv = Schedule.starterKicks(S.settings.currentWeek, S.league.me).join(',');
+    if (!force && csv === alertPlanSent) return -1;
+    var at = Number(Native.alertsKickoffs(csv));
+    alertPlanSent = csv;
+    return at;
+  }
+  function inactNote(on, at) {
+    if (!on) {
+      return 'When on: 85 to 75 minutes before each kickoff that involves one of ' +
+        'your starters — just after teams announce their inactives — it reads ' +
+        'ESPN\u2019s injury report and tells you if one of them is ruled OUT or ' +
+        'doubtful, with over an hour left to swap. It works from the kickoff times ' +
+        'this app has loaded and re-plans every time you leave the app.';
+    }
+    if (at > 0) {
+      var d = new Date(at);
+      return 'Next inactives check: ' + Schedule._DAYS[d.getDay()] + ' ' + Schedule._clock(d) +
+        '. Re-planned every time you leave the app, so a lineup change is picked up.';
+    }
+    return 'On. Nothing is armed right now: none of this week\u2019s starters has a ' +
+      'game still to come that the app knows the kickoff of. It re-plans every ' +
+      'time you leave the app.';
+  }
   function appPause() {
     /* first, and even if already asleep: onPause is the last moment Android
        guarantees this page runs before it may kill the process, so a
        deferred write (Store.saveSoon — the open tab) must land now */
     try { if (window.Store && Store.flush) Store.flush(); } catch (e) { }
     try { if (window.Gamelog && Gamelog.flush) Gamelog.flush(); } catch (e) { }
+    /* and the inactives alarm's plan: backgrounding is the moment the
+       closed-app half takes over (v8.7). Only sent when it changed. */
+    try { pushAlertPlan(false); } catch (e) { }
     if (asleep) return;
     asleep = true;
     stopLive();                 /* the timer, not just its effects */
@@ -4490,7 +4525,7 @@
     c.appendChild(el('p', 'muted',
       'Before kickoff, this checks your starting lineup with the app closed and ' +
       'tells you if a starter is on a bye, has been ruled OUT or doubtful, or if ' +
-      'a slot is empty. Sunday at the time you set, and Thursday at 4pm for the ' +
+      'a slot is empty — every day at the time you set, and again at 4pm for a ' +
       'night game. It is deliberately narrow: only things that are certain and ' +
       'expensive. Everything that needs judgement stays in Lineups → Advice where ' +
       'the reasoning can be shown.'));
@@ -4523,7 +4558,7 @@
     hr.addEventListener('change', apply);
     mn.addEventListener('change', apply);
     lab.appendChild(cb);
-    lab.appendChild(document.createTextNode(' Check my lineup on Sunday at'));
+    lab.appendChild(document.createTextNode(' Check my lineup every day at'));
     c.appendChild(lab);
     row.appendChild(hr); row.appendChild(el('span', null, ':')); row.appendChild(mn);
     c.appendChild(row);
@@ -4531,6 +4566,31 @@
       'The alarm uses a half-hour window rather than an exact time, so it needs ' +
       'no special permission from you — set it comfortably before the early ' +
       'kickoff, not at one minute to.'));
+
+    /* v8.7 (Tj's pick #9): its own opt-in switch — see AlertPlan.java */
+    if (Native.alertsInactives) {
+      var lab2 = el('label', 'chk');
+      var cb2 = el('input'); cb2.type = 'checkbox'; cb2.checked = !!st.inact;
+      lab2.appendChild(cb2);
+      lab2.appendChild(document.createTextNode(' Inactives check before each of my starters\u2019 kickoffs'));
+      c.appendChild(lab2);
+      var inP = el('p', 'hint', inactNote(!!st.inact, st.inactAt || 0));
+      cb2.addEventListener('change', function () {
+        var at = -1;
+        try {
+          at = Number(Native.alertsInactives(!!cb2.checked));
+          /* the switch arms from the last plan Java has; send the current one */
+          if (cb2.checked && at >= 0) { var a2 = pushAlertPlan(true); if (a2 >= 0) at = a2; }
+        } catch (e) {
+          toast('The alarm bridge failed: ' + ((e && e.message) ? e.message : e), 7000);
+          return;
+        }
+        if (at < 0) { toast('Could not set the alarm'); return; }
+        inP.textContent = inactNote(cb2.checked, at);
+        toast(cb2.checked ? 'Inactives check on' : 'Inactives check off');
+      });
+      c.appendChild(inP);
+    }
 
     var t = el('button', 'btn pri', 'Run the check now');
     /* alertsTest() is async now (2026-09-15e): the real check is a real
@@ -4563,6 +4623,10 @@
     if (st.lastRun) {
       c.appendChild(el('p', 'muted', 'Last automatic check: ' +
         new Date(st.lastRun).toLocaleString() + ' — ' + (st.lastResult || 'all clear')));
+    }
+    if (st.inactLastAt) {
+      c.appendChild(el('p', 'muted', 'Last inactives check: ' +
+        new Date(st.inactLastAt).toLocaleString() + ' — ' + (st.inactLast || 'no starter ruled out')));
     }
     return c;
   }
