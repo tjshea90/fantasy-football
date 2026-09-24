@@ -471,6 +471,60 @@ console.log('\n-- #9 inactives alert: the page hands Java the week\'s starter ki
   ok(/Nothing is armed right now/.test(text(card)), 'on with nothing to arm says so, rather than implying a check is coming');
 }());
 
+/* ======================================================================= #10 */
+console.log('\n-- #10 Data -> League: standings first, score entry collapsed until kickoff --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var W = h.W, St = W.Store, S = St.get(), wk = S.settings.currentWeek || 1, me = S.league.me;
+  var now = Date.now(), H = 3600e3;
+  function slate(state, ms) {
+    var g = [], i = 0;
+    S.teams.forEach(function () { });
+    ['KC', 'BUF', 'PHI', 'DAL'].forEach(function (a) {
+      g.push({ id: 'x' + (i++), date: new Date(ms).toISOString(), state: state, detail: '',
+               teams: [{ abbr: a, homeAway: 'home' }, { abbr: 'Z' + a, homeAway: 'away' }] });
+    });
+    return g;
+  }
+  /* the week has not started, and nobody has typed a score */
+  S.teams.forEach(function (t) { if (t.id !== me) St.setManualScore(wk, t.id, ''); });
+  W.Schedule.ingest(wk, slate('pre', now + 30 * H));
+  h.clickTab('data');
+  click(button(h.ids.view, 'League'));
+  function cards() { return all(h.ids.view, function (n) { return hasClass(n, 'card'); }); }
+  function h2(n) { var x = all(n, function (m) { return m.tagName === 'H2'; })[0]; return x ? text(x) : ''; }
+  var cs = cards();
+  ok(/^Standings/.test(h2(cs[0])) && /^Enter week \d+ scores/.test(h2(cs[1])),
+     'Standings is the first card, score entry the second (' + h2(cs[0]) + ' | ' + h2(cs[1]) + ')  <-- v8.6: scores first');
+  function scoreDetails() { return all(h.ids.view, function (n) { return n.tagName === 'DETAILS' && hasClass(n, 'wsc'); })[0]; }
+  var d = scoreDetails();
+  ok(!!d && d.open === false, 'before the week kicks off the score boxes are collapsed');
+  ok(d && /Opens once week \d+ kicks off/.test(text(d.children[0])), 'and the heading says when it opens: ' + (d ? text(d.children[0]) : ''));
+  ok(d && all(d, function (n) { return n.tagName === 'INPUT'; }).length === S.teams.length - 1,
+     'the ' + (S.teams.length - 1) + ' boxes are still there, one tap away (collapsed, not removed)');
+  /* he opened it himself: a re-render keeps it open */
+  d.open = true; if (d._h && d._h.toggle) d._h.toggle.call(d);
+  rerender(h, 'data');
+  ok(scoreDetails().open === true, 'opened by hand, it stays open across a re-render');
+
+  /* a fresh app: once a game of the week has started it opens by itself */
+  var h2b = buildHarness(); h2b.docHandlers.DOMContentLoaded();
+  var W2 = h2b.W, St2 = W2.Store, S2 = St2.get(), wk2 = S2.settings.currentWeek || 1;
+  S2.teams.forEach(function (t) { if (t.id !== S2.league.me) St2.setManualScore(wk2, t.id, ''); });
+  W2.Schedule.ingest(wk2, slate('in', now - H));
+  h2b.clickTab('data');
+  var d2 = all(h2b.ids.view, function (n) { return n.tagName === 'DETAILS' && hasClass(n, 'wsc'); })[0];
+  ok(d2 && d2.open === true, 'a game of the week in progress: open');
+  /* before kickoff but a score already typed: never hide it */
+  W2.Schedule.ingest(wk2, slate('pre', now + 30 * H));
+  var other = S2.teams.filter(function (t) { return t.id !== S2.league.me; })[0];
+  St2.setManualScore(wk2, other.id, '101.5');
+  rerender(h2b, 'data');
+  d2 = all(h2b.ids.view, function (n) { return n.tagName === 'DETAILS' && hasClass(n, 'wsc'); })[0];
+  ok(d2 && d2.open === true, 'a score already entered keeps it open even before kickoff');
+}());
+
 setTimeout(function () {
   pending.forEach(function (f) { f(); });
   console.log(fails ? ('\n  ' + fails + ' picks2 check(s) FAILED') : '\n  picks2 checks pass');
