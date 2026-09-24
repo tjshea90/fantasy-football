@@ -87,7 +87,9 @@ function slim(text, drop) {
     execFileSync('java', ['-cp', classes, 'com.tj.fftracker.SlimMain', i, drop, o], { stdio: 'pipe' });
     return { out: fs.readFileSync(o, 'utf8') };
   } catch (e) {
-    return { err: String(e.stdout || '') + String(e.stderr || ''), code: e.status };
+    /* stdout carries the ERR line; stderr only JVM chatter (JAVA_TOOL_OPTIONS) */
+    return { err: String(e.stdout || '') ||
+      String(e.stderr || '').split('\n').filter((l) => !/^Picked up /.test(l)).join(' '), code: e.status };
   }
 }
 
