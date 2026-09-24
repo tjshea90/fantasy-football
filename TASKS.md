@@ -33,6 +33,30 @@ ideas become numbered proposals under "Waiting on Tj".
 - [ ] **9. Full regression** (exit code AND output) + Chromium smoke.
 - [ ] **10. Ship**, publish the Release, send Tj the link + the proposals.
 
+### Findings so far (not yet fixed — fix in step 8)
+Test state for all of this: `perf.js --sync 1,2 --save F`, then
+`--state F --eval "Recap.generateSchedule({force:true}); Store.save()" --advice --save G`
+(new `--eval` option in perf.js; the seed has NO matchups, so without it Live
+is just "No opponent set").
+- F1 Live "Set up week N matchup" does goTab('data') — lands on whatever Data
+  sub-screen was last open (Claude/Sync/App), not League where matchups live.
+- F2 pointers not in "Data → Screen → Control" form, so test_boot's pointer
+  check misses them: recommend.js "add one on the Data tab", ui.js 'Data tab,
+  "Claude"' (x2), Live/Lineups "Add this week's matchup on the Data tab".
+- F3 Roster row reads "DEN · bye 10 Sun 8:20p" — no separator before the
+  kickoff badge, so it reads "bye 10 Sun".
+- F4 Live: a starter whose game is FINAL with no line (inactive) still counts
+  in "N yet to play", keeps the pending style and shows "p 14.2" under 0.0 —
+  projectedFinish() already excludes him, the rows/count do not.
+- F5 Lineups per-team "Reset to auto" calls autoFillWeek() = refills EVERY
+  team in the league, even with Auto-default OFF. Should be that team only.
+- F6 Power card playoff odds: unplayed weeks with no matchups entered are
+  treated as never played → ">99%" / "0%" after 2 weeks. Unentered pairs
+  should be drawn at random per simulated season (identical output when the
+  schedule is complete).
+- F7 header says "Rosters", tab says "Roster".
+- F8 Wire injury card: ESPN's note is an unclamped ~10-line paragraph.
+
 ## When Tj asks for something new
 
 Write it HERE FIRST, in his own words, as unticked boxes — before writing any
