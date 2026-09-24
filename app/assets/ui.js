@@ -4565,7 +4565,9 @@
       'expensive. Everything that needs judgement stays in Lineups → Advice where ' +
       'the reasoning can be shown.'));
 
-    var row = el('div', 'kv');
+    /* its own row class, not .kv: `.kv span{flex:1}` stretched the ":" across
+       the card and pushed the minutes box to the far edge (full test, v8.7) */
+    var row = el('div', 'timeRow');
     var lab = el('label', 'chk');
     var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!st.on;
     var hr = el('input'); hr.type = 'number'; hr.min = '0'; hr.max = '23';
@@ -4628,6 +4630,7 @@
     }
 
     var t = el('button', 'btn pri', 'Run the check now');
+    t.style.marginTop = '10px';
     /* alertsTest() is async now (2026-09-15e): the real check is a real
        network fetch on the Java side, and a @JavascriptInterface method
        blocks the calling JS thread until it returns — this button used to

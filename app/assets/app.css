@@ -333,3 +333,5 @@ details.wsc{border-top:0;padding:0}
 details.wsc>summary h2{margin:0}
 details.wsc>summary .hint{display:block;margin-top:4px}
 details.wsc[open]>summary{margin-bottom:10px}
+/* Data -> App -> Lineup alerts: "11 : 30", together (v8.7 full test) */
+.timeRow{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:16px;color:var(--dim)}
