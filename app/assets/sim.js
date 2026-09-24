@@ -117,6 +117,50 @@
    * a real lineup only for his own team and that week's opponent. Bringing
    * this back later would mean rebuilding it for that pair specifically. */
 
+  /* ---- LIVE WIN PROBABILITY (2026-09-24b, Tj's pick #1) ------------------
+   * What ESPN, Sleeper and Yahoo put under a live matchup. Each side is
+   *   { banked: points already scored (certain),
+   *     players: [{ pos, proj, rem }] }
+   * where `proj` is his full-game projection in this league's points and
+   * `rem` the fraction of his game still to play (1 before kickoff, 0 once it
+   * is over, the clock's fraction in between — Schedule.remaining). A player's
+   * remaining points average proj*rem, and their variance is his position's
+   * MEASURED spread (positionCV above: sd/mean of a single game) scaled to the
+   * part of the game left: (cv*proj)^2 * rem. The two totals are sums of ~10
+   * independent players, so a normal approximation of the difference is
+   * accurate here and — unlike a seeded simulation — exactly repeatable and
+   * free. A week with nothing left to play is decided: 1 / 0 (or 0.5 level).
+   * Pure arithmetic: the caller builds the sides from the stored lineup. */
+  function phi(z) {
+    /* Abramowitz-Stegun 26.2.17, |error| < 7.5e-8 */
+    var t = 1 / (1 + 0.2316419 * Math.abs(z));
+    var d = 0.3989422804014327 * Math.exp(-z * z / 2);
+    var p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    return z > 0 ? 1 - p : p;
+  }
+  function sideMoments(side, cvMap) {
+    var mean = Number(side && side.banked) || 0, v = 0, i;
+    var ps = (side && side.players) || [];
+    for (i = 0; i < ps.length; i++) {
+      var p = ps[i], rem = Math.max(0, Math.min(1, Number(p.rem) || 0));
+      var proj = Math.max(0, Number(p.proj) || 0);
+      if (!rem || !proj) continue;
+      var cv = (cvMap[p.pos] || { cv: 0.6 }).cv;
+      mean += proj * rem;
+      v += cv * cv * proj * proj * rem;
+    }
+    return { mean: mean, variance: v };
+  }
+  function matchupOdds(sideA, sideB, throughWeek) {
+    var cvMap = positionCV(Math.max(0, (throughWeek || 1) - 1));
+    var a = sideMoments(sideA, cvMap), b = sideMoments(sideB, cvMap);
+    var d = a.mean - b.mean, sd = Math.sqrt(a.variance + b.variance);
+    var pA;
+    if (sd < 1e-9) pA = d > 0.005 ? 1 : (d < -0.005 ? 0 : 0.5);
+    else pA = phi(d / sd);
+    return { pA: pA, pB: 1 - pA, meanA: a.mean, meanB: b.mean, sd: sd };
+  }
+
   /* ---- all-play: the record you would have if you played everyone ---------
    * The single most honest number in a fantasy league. Your record depends on
    * which of nine teams you happened to draw each week; this does not. */
@@ -471,7 +515,7 @@
              picks: picks, misses: misses };
   }
 
-  root.Sim = { season: season, power: power, allPlay: allPlay,
+  root.Sim = { season: season, power: power, allPlay: allPlay, matchupOdds: matchupOdds, _phi: phi,
                regret: regret, positionCV: positionCV, teamProfile: teamProfile,
                posterior: posterior,
                invalidate: invalidate,

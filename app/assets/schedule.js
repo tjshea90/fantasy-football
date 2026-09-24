@@ -166,6 +166,32 @@
     if ((m = /^end of (?:the )?(1st|2nd|3rd|4th)\b/i.exec(s))) return 'End Q' + m[1].charAt(0);
     return 'LIVE';
   }
+  /* How much of a team's game is still to play, 0..1 (2026-09-24b) — for the
+     live projection and the win probability on Live. 1 before kickoff, 0
+     once it is over; in between, read off the same status line liveClock
+     uses: "7:33 - 3rd" is 7:33 of the 3rd plus the whole 4th, 22.55 of 60
+     minutes. Halftime is half; "End of 3rd" a quarter; overtime a sliver.
+     A live game whose clock cannot be read counts as half played — the
+     honest middle, never "over" and never "not started". null when the
+     schedule does not know the game at all. */
+  function remainingOf(state, detail) {
+    if (state === 'pre') return 1;
+    if (state === 'post') return 0;
+    var s = String(detail || '').trim(), m;
+    if ((m = /^(\d{1,2}):(\d{2})\s*-\s*(1st|2nd|3rd|4th)$/i.exec(s))) {
+      var q = Number(m[3].charAt(0)), left = Number(m[1]) + Number(m[2]) / 60;
+      return Math.max(0, Math.min(1, ((4 - q) * 15 + Math.min(15, left)) / 60));
+    }
+    if (/^(\d{1,2}:\d{2})\s*-\s*\d?OT$/i.test(s)) return 0.02;
+    if (/^half/i.test(s)) return 0.5;
+    if ((m = /^end of (?:the )?(1st|2nd|3rd|4th)\b/i.exec(s))) return (4 - Number(m[1].charAt(0))) / 4;
+    return 0.5;
+  }
+  function remaining(nfl, week) {
+    var g = forTeam(nfl, week);
+    if (!g) return null;
+    return remainingOf(g.state || 'pre', g.detail);
+  }
   /* The badge that sits next to a player's name.
      `text`  — "Thu 8:20p", "Q3 5:21" (or "LIVE"), "final"
      `early` — kicks off before Sunday, i.e. the lineup is due sooner than he
@@ -319,6 +345,7 @@
   root.Schedule = {
     ingest: ingest, refresh: refresh, get: get, at: at, stale: stale,
     forTeam: forTeam, badge: badge, earlyAlert: earlyAlert, needsSync: needsSync,
+    remaining: remaining, _remainingOf: remainingOf,
     STALE_MS: STALE_MS, _clock: clock, _liveClock: liveClock, _DAYS: DAYS
   };
 })(typeof window !== 'undefined' ? window : this);
