@@ -151,10 +151,6 @@
     return h + (mm ? ':' + (mm < 10 ? '0' + mm : mm) : '') + ap;
   }
 
-  /* The badge that sits next to a player's name.
-     `text`  — "Thu 8:20p", "Q3 5:21" (or "LIVE"), "final"
-     `early` — kicks off before Sunday, i.e. the lineup is due sooner than he
-               probably thinks. This is what the UI colours. */
   /* ESPN's in-game status line -> the compact game clock every fantasy app
      puts next to a live player (ESPN, Sleeper and Yahoo all do; full test
      2026-09-24): "7:33 - 2nd" -> "Q2 7:33", "Halftime" -> "Half",
@@ -170,6 +166,10 @@
     if ((m = /^end of (?:the )?(1st|2nd|3rd|4th)\b/i.exec(s))) return 'End Q' + m[1].charAt(0);
     return 'LIVE';
   }
+  /* The badge that sits next to a player's name.
+     `text`  — "Thu 8:20p", "Q3 5:21" (or "LIVE"), "final"
+     `early` — kicks off before Sunday, i.e. the lineup is due sooner than he
+               probably thinks. This is what the UI colours. */
   function badge(nfl, week) {
     var g = forTeam(nfl, week);
     if (!g) return null;
