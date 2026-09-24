@@ -45,6 +45,7 @@ build.sh
 android/AndroidManifest.xml
 android/src/com/tj/fftracker/MainActivity.java
 android/src/com/tj/fftracker/NativeBridge.java
+android/src/com/tj/fftracker/JsonSlim.java
 android/res/values/strings.xml
 android/res/values/colors.xml
 android/res/values/styles.xml
@@ -101,6 +102,8 @@ tools/test_synccapture.js
 tools/test_jobguard.js
 tools/test_schedmeta.js
 tools/test_retention.js
+tools/test_jsonslim.js
+tools/fixtures/espn_injuries_sample.json
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 android/res/drawable/splash_empty.xml

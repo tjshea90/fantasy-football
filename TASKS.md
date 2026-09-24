@@ -72,7 +72,7 @@ is just "No opponent set").
   Fix: in-progress quiet syncs mark the archive lazily (written <=5 min
   later / on flush / at once when final or on a manual sync) and do not
   count toward the backup cadence.
-- F11 SPEED/MEMORY: ESPN /injuries is 8.76 MB of JSON (355 KB gzipped);
+- [x] FIXED (test_jsonslim.js, 37 checks: desktop-javac JsonSlim vs real records + edge cases + malformed + loadNews raw==slim; full live feed 799 records identical, 8.76 MB -> 0.91 MB) F11 SPEED/MEMORY: ESPN /injuries is 8.76 MB of JSON (355 KB gzipped);
   8.76 MB of it is athlete.links (player-card URLs the app never reads).
   The page pulls it over the bridge in 46 x 192 KB chunks and JSON.parses
   it: 45-145 ms at 4x on the JS thread + ~17 MB string + parse garbage,
