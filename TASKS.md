@@ -41,7 +41,7 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
       each kickoff that involves one of his starters; warns if a starter is
       ruled OUT/doubtful. Pure scheduling logic in a plain-Java class tested
       with the desktop JDK; Alerts.java wires it.
-- [ ] **I. (#10) Data -> League order** — Standings first; "Enter week N scores"
+- [x] **I. (#10) Data -> League order** DONE (test_picks2 '#10', 7 checks: Standings card first, score entry second in a details.wsc collapsed before kickoff, open once a game starts / a score is typed / he opened it) — Standings first; "Enter week N scores"
       below, collapsed until that week has kicked off.
 - [ ] **J. Tests + regression + ship v8.7** (named test per item, every suite by
       exit code AND output, crawls, build).
