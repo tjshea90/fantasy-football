@@ -59,12 +59,12 @@ is just "No opponent set").
   schedule is complete).
 - F7 header says "Rosters", tab says "Roster".
 - F8 Wire injury card: ESPN's note is an unclamped ~10-line paragraph.
-- F9 DATA LOSS: Live player card "Adjust" -> Save does `line.manualAdj = x;
+- [x] FIXED (test_retention.js §1, 3 checks fail on v8.5) F9 DATA LOSS: Live player card "Adjust" -> Save does `line.manualAdj = x;
   Store.save()` — stat lines live in the ARCHIVE file, which save() writes
   only when archiveDirty (markArchive). Nothing marks it, so on a final week
   (no more syncs) the adjustment never reaches disk and is gone on the next
   cold start. Fix: Store.setAdj() that marks the archive.
-- F10 WRITE STORM (same class as v8.5's gamelog fix): every quiet live-poll
+- [x] FIXED (test_retention.js §2: v8.5 = 80 archive writes + 8 backups per live hour) F10 WRITE STORM (same class as v8.5's gamelog fix): every quiet live-poll
   doSync (45 s while any game is in progress) calls setBook -> archive
   rewritten whole (~200 KB now, ~1.5-1.9 MB late season) + main state; and
   each of those saves counts toward the every-10-saves autoBackup (~1.5 MB
