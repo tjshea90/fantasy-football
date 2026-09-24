@@ -1,12 +1,12 @@
-# CHECKPOINT 70 — read me first, then TASKS.md
+# CHECKPOINT 81 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T18:11:56Z · **version:** 8.5 · **tests:** all 24 suites green
+**Written:** 2026-09-24T18:18:29Z · **version:** 8.5 · **tests:** all 25 suites green
 
 ## Just done
-F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write storm) fixed: Store.setAdj, Store.setBook(w,rows,lazy)+markArchiveLazy (<=5 min / flush / immediate on final+manual), Store.saveLive (not counted toward the 10-edit backup). New tools/test_retention.js (12 checks; 6 fail on v8.5). All 24 suites green.
+F11 fixed: new JsonSlim.java (plain-Java JSON member cutter) used by NativeBridge (X-FFT-Drop-Keys request header, never sent) and Alerts.java; recommend.js loadNews drops links,logos,headshot,notes -> injury feed 8.76 MB -> 0.91 MB before the page parses it (identical results, 799/799 records). tools/test_jsonslim.js (37 checks) + fixture. perf.js strips X-FFT-* headers.
 
 ## Do this next
-F11: JsonSlim.java (plain Java, drop 'links' members) + NativeBridge X-FFT-Drop-Keys header + recommend.js loadNews passes it; node test compiles JsonSlim with desktop javac against real feed records.
+Wait for build.sh (background) to confirm javac/d8 on the Java changes; then F6 sim random pairing for unentered matchups; then F4, F5, F1/F2, F3/F7/F8/F12/F13.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,10 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M MANIFEST.txt
 
 ## Last ten checkpoints
 ```
+  2434fca ckpt 70: F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write
   b639867 ckpt 60: Full test steps 3-5 done: crawl 275 actions/0 problems on state G; v8.5 diff cl
   fc9c4a3 ckpt 58: Full test steps 1 (floor 23/23 green, exit code + output) and 2 (CSS cross-chec
   ba62218 ckpt 53: Wrote Tj's 2026-09-24 'full test + what other popular FF apps have (incl. UI/ap
@@ -36,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   ca42071 ckpt 150: Full test steps 6-8 done: engine spot-checks exact; 5 findings fixed and teste
   f79c760 ckpt 148: Full test step 5 done: gamelog write storm fixed; duplicate scoreboard fetch o
   57d29a6 ckpt 144: Full test: step 4 done (no further defects in v8.3/v8.4 diff); step 5 finding 
-  9fdbc7e ckpt 140: Full-test speed finding fixed: cost-estimate lines + playoff odds now fill aft
 ```
 
-(9 automatic checkpoint(s) since the last deliberate one — the
+(10 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
