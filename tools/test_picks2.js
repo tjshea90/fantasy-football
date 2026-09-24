@@ -333,6 +333,66 @@ console.log('\n-- #7 trending on the Wire --');
      'Trending lists only risers, biggest first: ' + got.join(', '));
 }());
 
+/* ============================================================= #8 player card */
+console.log('\n-- #8 one player card --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var W = h.W, St = W.Store, S = St.get(), wk = S.settings.currentWeek || 1;
+  St.setMatchups(wk, [[S.league.me, 'tugdude']]);
+  var L = St.getLineup(wk, S.league.me), qbId = L.QB, qb = St.playerById(qbId).player;
+  /* ESPN's outlook + ownership ride in on the projection set */
+  var bn = {}; bn[W.Espn.normName(qb.name)] = { pos: 'QB', week: 38.2, outlook: 'He faces a soft pass defense this week.', own: 97.5, ownChg: 1.2 };
+  W.Projections._setCacheForTest({ at: Date.now(), week: wk, season: S.settings.season, byName: bn, count: 1, weekly: 1, error: '', route: 't', notes: [] });
+  function lastDialog() { var k = W.document.body.children; return k[k.length - 1]; }
+  function dialogs() { return W.document.body.children.filter(function (n) { return n.getAttribute && n.getAttribute('role') === 'dialog'; }); }
+  rerender(h, 'live');
+  var row = all(h.ids.view, function (n) { return n.getAttribute && n.getAttribute('data-player') && n.getAttribute('data-player').indexOf(qb.name + '|') === 0 && n._h && n._h.click; })[0];
+  ok(!!row, 'the Live row for ' + qb.name + ' is tappable');
+  click(row);
+  var d = lastDialog(), tx = text(d);
+  ok(d && /Week \d+/.test(tx) && /Game log/.test(tx) && /Season|Projected/.test(tx),
+     'tapping it opens ONE card with this week, the season and the game log');
+  ok(/free agent/.test(tx) === false && /My team \(you\)/.test(tx), 'the header says whose roster he is on');
+  ok(/ESPN outlook/.test(tx) && /soft pass defense/.test(tx), "ESPN's written outlook is on the card");
+  ok(/98% rostered|97% rostered/.test(tx), 'and his % rostered');
+  ok(!all(d, function (n) { return n.tagName === 'BUTTON' && n.textContent === 'View stats'; }).length,
+     'no "View stats" hop — the game log is on the card itself');
+  /* scored: a stat line and Adjust */
+  var line = W.Scoring.emptyLine(); line.played = true; line.pass.cmp = 20; line.pass.yds = 200;
+  St.setLine(wk, qbId, line); St.save();
+  var before = St.playerPoints(wk, qbId);
+  click(row);
+  d = lastDialog();
+  ok(/Scored in week/.test(text(d)) && new RegExp(before.toFixed(1) + ' points').test(text(d)),
+     'with a stat line the card shows the points and every scoring part (' + before + ')');
+  var adj = all(d, function (n) { return n.tagName === 'BUTTON' && n.textContent === 'Adjust'; })[0];
+  var firstFocusable = all(d, function (n) { return n.tagName === 'BUTTON' || n.tagName === 'INPUT' || n.tagName === 'TEXTAREA'; })[0];
+  ok(!!adj && firstFocusable === adj, 'Adjust comes before its number field, so opening the card never pops the keyboard');
+  click(adj);
+  var inp = all(d, function (n) { return n.tagName === 'INPUT'; })[0];
+  inp.value = '5';
+  click(all(d, function (n) { return n.tagName === 'BUTTON' && n.textContent === 'Save adjustment'; })[0]);
+  ok(Math.abs(St.playerPoints(wk, qbId) - (before + 5)) < 1e-9 && Number(St.lineFor(wk, qbId).manualAdj) === 5,
+     'Save adjustment goes through Store.setAdj (+5 -> ' + St.playerPoints(wk, qbId) + ')');
+  /* long-press anywhere opens the same card, directly */
+  var n0 = dialogs().length;
+  h.docHandlers.contextmenu({ target: row, preventDefault: function () { } });
+  ok(dialogs().length === n0 + 1 && /Game log/.test(text(lastDialog())), 'a long-press opens the card directly (no menu in between)');
+  /* Roster ⋯ -> Player card */
+  h.clickTab('rosters');
+  var more = all(h.ids.view, function (n) { return n.tagName === 'BUTTON' && n.textContent === '⋯'; })[0];
+  click(more);
+  click(button(lastDialog(), 'Player card'));
+  ok(/Game log/.test(text(lastDialog())), 'Roster ⋯ -> Player card opens it too');
+  /* a free agent */
+  var fa = W.PlayerDB.get().players.filter(function (p) {
+    return p.p === 'WR' && !St.allPlayers().some(function (x) { return W.Names.same(x.player.name, p.n); });
+  })[0];
+  h.docHandlers.contextmenu({ target: (function () { var e = { nodeType: 1, getAttribute: function (k) { return k === 'data-player' ? fa.n + '|WR|' + fa.t : null; }, parentNode: null }; return e; }()), preventDefault: function () { } });
+  ok(/free agent/.test(text(lastDialog())), 'a free agent gets the card too, marked as a free agent (' + fa.n + ')');
+}());
+
 setTimeout(function () {
   pending.forEach(function (f) { f(); });
   console.log(fails ? ('\n  ' + fails + ' picks2 check(s) FAILED') : '\n  picks2 checks pass');
