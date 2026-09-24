@@ -1,12 +1,12 @@
-# CHECKPOINT 153 — read me first, then TASKS.md
+# CHECKPOINT 164 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T19:58:10Z · **version:** 8.6 · **tests:** all 27 suites green
+**Written:** 2026-09-24T20:09:36Z · **version:** 8.6 · **tests:** all 28 suites green
 
 ## Just done
-Item G done: one player card (openPlayerCard) replaces pre-game card / stat-line card / long-press menu; test_picks2 #8 green (stub DOM elements now carry nodeType 1 like a browser)
+Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alarm 85..75 min before each distinct starter kickoff, covers <=90 min, catch-up, retry, done-tracking, message) + Alerts.java slot 2 (own switch, re-arms only itself) + bridge alertsInactives/alertsKickoffs + ui.js pushAlertPlan on __appPause + Data->App switch; test_alertplan.js + test_picks2 #9; build.sh green
 
 ## Do this next
-Item H: inactives alert — AlertPlan.java (pure scheduling, desktop-javac test tools/test_alertplan.js) + Alerts.java wiring + opt-in toggle in Data -> App; then I (Data -> League order), J ship v8.7, K full test
+Item I: Data -> League order — Standings first; 'Enter week N scores' (weeklyScoresCard) below it, collapsed until week N has kicked off; then J ship v8.7, K full test
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
   d9412f0 ckpt 146: Item F done: ESPN ownership (percentOwned/percentChange) + written outlooks ca
   3b2fbaa ckpt 141: Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the 
   d8f32eb ckpt 136: Items C+D done: position colour chips (slotEl/posClass; FLEX neutral; Lineups 
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
   249189d ckpt 122: ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR f
   2dc714b ckpt 121: Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colou
-  c3b1759 ckpt 116: F17 fixed: a failed injury-feed fetch no longer wipes (and saves) an empty inj
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(10 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)

@@ -37,7 +37,7 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
       Claude), stat line + scoring breakdown + Adjust, season average, game
       log, ESPN's written outlook, % rostered. Replaces the separate pre-game
       card / stat-line card / long-press "View stats" menu.
-- [ ] **H. (#9) Inactives alert** — opt-in closed-app check ~75-85 min before
+- [x] **H. (#9) Inactives alert** DONE (tools/test_alertplan.js: AlertPlan.java compiled on the desktop JDK, 26 scenario checks + 9 wiring pins; test_picks2 '#9': starterKicks, plan pushed on __appPause only when changed, Data -> App opt-in switch; build.sh green. Also fixed the stale daily-check copy: it runs every day + 4pm, not Sunday/Thursday) — opt-in closed-app check ~75-85 min before
       each kickoff that involves one of his starters; warns if a starter is
       ruled OUT/doubtful. Pure scheduling logic in a plain-Java class tested
       with the desktop JDK; Alerts.java wires it.
