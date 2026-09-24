@@ -159,6 +159,48 @@ console.log('\n-- 2. the live poll does not rewrite the season every tick --');
      'ui.js doSync: a quiet in-progress sync marks the archive lazily and saves with saveLive()');
 }
 
+/* ======================================================================== */
+console.log('\n-- 3. a failed injury-feed refresh keeps the designations it had --');
+(function () {
+  const disk = {};
+  function bootNews() {
+    const sb = { console, window: null, setTimeout, clearTimeout, Date, Math, JSON,
+                 Native: { load: (k) => (disk[k] === undefined ? null : disk[k]), save: (k, s) => { disk[k] = s; return true; } } };
+    sb.window = sb;
+    vm.createContext(sb);
+    for (const f of ['version.js', 'seed.js', 'players.js', 'scoring.js', 'names.js', 'playerdb.js', 'espn.js',
+                     'store.js', 'usage.js', 'projections.js', 'ai.js', 'recommend.js']) {
+      vm.runInContext(fs.readFileSync(path.join(A, f), 'utf8'), sb, { filename: f });
+    }
+    sb.Store.init(sb.SEED);
+    if (sb.Recommend.loadCaches) sb.Recommend.loadCaches();
+    return sb;
+  }
+  const feed = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'espn_injuries_sample.json'), 'utf8'));
+  const who = feed.injuries[0].injuries[0].athlete.displayName, status = String(feed.injuries[0].injuries[0].status).toUpperCase();
+  let sb = bootNews();
+  sb.Espn._httpGetH = () => Promise.resolve(JSON.parse(JSON.stringify(feed)));
+  return sb.Recommend.loadNews(null, { force: true }).then(function (nc) {
+    const n0 = nc.count;
+    ok(n0 === 6, 'a good fetch: ' + n0 + ' records (' + who + ' is ' + status + ')');
+    sb.Espn._httpGetH = () => Promise.reject(new Error('offline'));
+    return sb.Recommend.loadNews(null, { force: true }).then(function (bad) {
+      const now = sb.Recommend.newsCache();
+      ok(now.count === n0 && !!now.error, 'a failed refresh KEEPS the ' + now.count + ' records and records the error' +
+         '  <-- v8.5 replaced them with 0 and saved that');
+      const h = sb.Recommend.health({ name: who });
+      ok(h.label !== '', who + ' is still flagged ' + (h.label || '(nothing)') + ' after the failed refresh');
+      ok(bad.failedNow === true && bad.firstFailure === true, 'the caller is told it failed (and that it is the first failure)');
+      sb = bootNews();                                  /* a cold start reads what was saved */
+      ok(sb.Recommend.newsCache().count === n0, 'and a cold start still has them (' + sb.Recommend.newsCache().count + ')');
+      const ui = fs.readFileSync(path.join(A, 'ui.js'), 'utf8');
+      ok(/!nc\.reused && \(!nc\.failedNow \|\| nc\.firstFailure\)\) render\(\);/.test(ui),
+         'ui.js: the live poll re-renders on new data or the first failure, not on every failed tick');
+    });
+  }).then(finish, function (e) { ok(false, 'threw: ' + (e && e.stack || e)); finish(); });
+}());
+function finish() {
 console.log('\n  ' + (fail ? fail + ' FAILED, ' : '') + pass + ' passed');
 if (fail) { console.log('  retention checks FAILED'); process.exit(1); }
 console.log('  retention checks pass');
+}
