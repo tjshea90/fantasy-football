@@ -108,6 +108,14 @@ is just "No opponent set").
   signal and every lineup call fell back to rough averages. Now the set on
   hand is kept (its real age still shows) and the sync report says
   "FAILED this time — kept the set from N min ago".
+- [x] FIXED (test_retention.js §3, 6 checks, 5 fail on v8.5) F17 ACCURACY:
+  one failed injury-feed fetch (a blip on the 45 s live poll, no signal)
+  replaced the saved injury list with an EMPTY one and wrote it to disk —
+  every OUT/IR player then looked healthy to auto-lineup, Advice and the
+  Wire board until a later fetch worked (the Wire card even said "showing"
+  the old records). Now the last good list is kept with its real age + the
+  error; the poll retries next tick; re-render only on new data / first
+  failure.
 - [x] Step 6 engine spot-checks DONE: 7 fresh week-2 lines hand-computed vs
   RULES_2026.md — Nix 41, Schultz 26, Swift 12.9 (fumble -2), Bates 7,
   Texans D 15 (5 sacks, 20 PA tier), Wan'Dale 1.9, Goff 67.05: all exact.
