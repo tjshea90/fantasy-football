@@ -27,10 +27,14 @@ ideas become numbered proposals under "Waiting on Tj".
       F11 below. Sleep path (pause flushes Store+Gamelog, pauseTimers, no
       wakelocks) unchanged and fine. Scoreboard poll 22 KB gz, fine.
 - [x] **6. Engine/logic spot-checks vs RULES_2026.md** DONE (see F14 + spot-check box below).
-- [ ] **7. Research: ESPN, Sleeper, Yahoo, NFL Fantasy, CBS, FantasyPros,
-      Underdog** — features and UI/appearance worth borrowing; split into
-      SMALL (do now) vs MAJOR (numbered proposals for Tj).
-- [ ] **8. Fix everything found + do the SMALL items**, each with a named test
+- [x] **7. Research** DONE — ESPN (2026: Live Activities, Matchup Moments,
+      win-probability charts, player pages w/ depth charts; NFL Fantasy is
+      moving to ESPN), Yahoo (denser matchup/roster, starters grouped),
+      Sleeper (position colours, matchup-difficulty colours, win prob,
+      trending), FantasyPros (start/sit, waiver, league analyzer). SMALL done
+      now: live game clock, Standings playoff line. MAJOR: proposals 1-10
+      under "Waiting on Tj" + mockups (perf.js --inject).
+- [x] **8. Fix everything found + do the SMALL items** DONE (F1-F17 below), each with a named test
       confirmed to FAIL pre-fix (source-text pin where no harness reaches).
 - [ ] **9. Full regression** (exit code AND output) + Chromium smoke.
 - [ ] **10. Ship**, publish the Release, send Tj the link + the proposals.
@@ -156,6 +160,38 @@ is printed into every session briefing, so a finished job left here is re-read
 at cost on every cold start, forever.
 
 ## Waiting on Tj
+
+- [ ] **NEW 2026-09-24 — ideas from ESPN / Sleeper / Yahoo / FantasyPros, need
+      your yes.** Reply with the numbers you want. Mockups of 1-4 were sent
+      with the v8.6 message (scratchpad proposals-mockups.jpg — not shipped).
+      1. **Win probability on Live** (ESPN, Sleeper, Yahoo): "you 58% · 42%
+         Tugdude" bar under the projected score, moving as players score —
+         from this app's own projections and the league's measured spread.
+      2. **Position colours** (Sleeper): QB/RB/WR/TE/K/DEF colour chips in
+         every slot column, so a lineup scans at a glance.
+      3. **Compact injury badges** (Sleeper/ESPN): Q / D / O / IR pills instead
+         of the full word — "QUESTIONABLE" currently wraps roster rows.
+      4. **Light theme that follows the phone** (was #7 last time).
+      5. **League scoreboard** (was #4): every matchup's live score, a
+         collapsed card under yours.
+      6. **Matchup difficulty chip** (Sleeper/Yahoo/ESPN): "vs HOU · 28th vs RB"
+         in green/amber/red on Lineups/Advice/Roster rows, from the app's own
+         defense-vs-position numbers.
+      7. **Trending on the Wire** (Sleeper "Trending", ESPN "Most added"): %
+         rostered and this week's change next to each free agent. ESPN already
+         sends ownership.percentOwned/percentChange in the projection data the
+         app downloads (checked 2026-09-24) — no extra request.
+      8. **One player card** (ESPN 2026 player pages, Sleeper's player sheet):
+         tapping any player opens one sheet — this week (projection, matchup,
+         injury note, Claude), game log, scoring breakdown and ESPN's written
+         outlook (also already in the downloaded data) — instead of today's
+         three different pop-ups.
+      9. **Inactives alert** (ESPN/Sleeper push): extend the existing lineup
+         alert to warn ~90 min before kickoff when a starter is ruled out.
+         Opt-in; one extra background check on game days.
+      10. **Data → League order**: Standings first; "Enter week N scores" moves
+          below and stays collapsed until that week has kicked off.
+
 
 - [x] **ANSWERED 2026-09-23T04:13Z: "Do number 1, 2, 3, 5, 6"** — now the
       current job at the top of this file. 4 (league scoreboard) and 7 (light
