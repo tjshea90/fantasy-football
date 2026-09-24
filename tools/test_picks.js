@@ -432,6 +432,11 @@ console.log('\n-- full test 2026-09-24: copy and layout --');
   ok(!!set, 'Live offers "Set up week N matchup" when there is no opponent');
   click(set);
   ok(!!button(h.ids.view, 'Add matchup'), 'and it opens Data -> League, where "Add matchup" is  <-- v8.5 reopened Data -> App');
+  /* Standings: the playoff line under 6th, like ESPN/Yahoo */
+  var rows = all(h.ids.view, function (n) { return n.tagName === 'TR' && n.parentNode && n.parentNode.tagName === 'TBODY'; });
+  var stand = rows.filter(function (n) { return n.children[0] && /^\d+\. /.test(n.children[0].textContent) && n.children.length === 5; });
+  var cutAt = stand.map(function (n) { return hasClass(n, 'cut'); }).indexOf(true);
+  ok(stand.length === 10 && cutAt === 5, 'Standings draw the playoff line under the 6th seed (row ' + (cutAt + 1) + ' of ' + stand.length + ')');
   /* F7 */
   h.clickTab('rosters');
   ok(h.ids.title.textContent === 'Roster', 'the header reads "Roster", like its tab (' + h.ids.title.textContent + ')');
