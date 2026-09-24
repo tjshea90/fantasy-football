@@ -1,131 +1,52 @@
 # TASKS — the current job, in Tj's words
 
-## Current job (2026-09-24) — FULL TEST + WHAT THE BIG APPS DO BETTER
+## Current job (2026-09-24b) — BUILD PROPOSALS 1, 2, 3, 6, 7, 8, 9, 10 + LIVE LAYOUT, THEN A FULL TEST
 
-Tj, 2026-09-24: "Run a full test on this app and see what other popular
-fantasy football apps have that may be good in this app, including ui and
-appearance"
+Tj, 2026-09-24T19:27Z:
 
-Part 1 is CLAUDE.md's "Full tests" protocol (method not repeated here), fresh
-eyes on the whole app with extra weight on what v8.5 changed. Part 2 is a
-research survey. Standing preference: no MAJOR change (moving/merging/removing
-a tab or feature, a new feature) without Tj's yes — SMALL polish ships, MAJOR
-ideas become numbered proposals under "Waiting on Tj".
+> "Add recommended features 1, 2, 3, 6, 7, 8, 9, 10.
+>
+> For the live tab, move the projection/win probability card to the bottom of
+> the section under the live team tracking.
+>
+> Then run full tests on the app using the full power of opus 5.5 ultracode"
 
-- [x] **1. Floor:** DONE at start — 23/23 green by exit code AND output (0 FAIL lines).
-- [x] **2. Static cross-checks:** DONE — CSS 0 missing / 0 dead (re-run after changes: still 0/0); load order unchanged; manifest agrees. every CSS class the JS builds vs app.css
-      (missing + dead rules), script load order vs top-level dependencies,
-      stale copy, MANIFEST.
-- [x] **3. Dynamic crawl in Chromium** DONE on state G (real weeks 1-2 +
-      generated schedule + Advice sync): 275 actions over 12 screens, 0 page
-      errors, 0 error cards. Screenshots of every tab read. No real device.
-- [x] **4. Review the v8.5 diff adversarially** DONE — Gamelog dirty/flush,
-      afterPaint/fillAfterPaint, Names.cmp (ICU tie/case/punctuation order
-      re-derived), freshenSchedule stand-down (tick always fetches the
-      scoreboard; busy re-arms in 15 s): no defects.
-- [x] **5. Data retention + network + battery** DONE — findings F9, F10,
-      F11 below. Sleep path (pause flushes Store+Gamelog, pauseTimers, no
-      wakelocks) unchanged and fine. Scoreboard poll 22 KB gz, fine.
-- [x] **6. Engine/logic spot-checks vs RULES_2026.md** DONE (see F14 + spot-check box below).
-- [x] **7. Research** DONE — ESPN (2026: Live Activities, Matchup Moments,
-      win-probability charts, player pages w/ depth charts; NFL Fantasy is
-      moving to ESPN), Yahoo (denser matchup/roster, starters grouped),
-      Sleeper (position colours, matchup-difficulty colours, win prob,
-      trending), FantasyPros (start/sit, waiver, league analyzer). SMALL done
-      now: live game clock, Standings playoff line. MAJOR: proposals 1-10
-      under "Waiting on Tj" + mockups (perf.js --inject).
-- [x] **8. Fix everything found + do the SMALL items** DONE (F1-F17 below), each with a named test
-      confirmed to FAIL pre-fix (source-text pin where no harness reaches).
-- [x] **9. Full regression** DONE — 26 suites exit 0 / 0 FAIL lines, ES2018 green, CSS 0/0; final crawls on the shipped code: real-data 275 actions / cold 220, 0 problems; build.sh green (29 classes). No real device.
-- [x] **10. Ship** DONE — v8.6 via ship.sh; publish-release.yml dispatched; verified via get_release_by_tag (FFTracker-v8.6.apk, 350486 bytes, not a draft). Link + proposals + mockups sent.
+Not 4 (light theme) and not 5 (league scoreboard). The proposal texts are
+under "Waiting on Tj" below. Hard rules still apply: ES2018 only, one
+universal APK, async bridge, RULES_2026.md ground truth, no function or
+accuracy lost. Each item gets a named test; checkpoint after every item.
 
-### Findings so far (not yet fixed — fix in step 8)
-Test state for all of this: `perf.js --sync 1,2 --save F`, then
-`--state F --eval "Recap.generateSchedule({force:true}); Store.save()" --advice --save G`
-(new `--eval` option in perf.js; the seed has NO matchups, so without it Live
-is just "No opponent set").
-- [x] FIXED (test_picks 'full test 2026-09-24: copy and layout') F1 Live "Set up week N matchup" does goTab('data') — lands on whatever Data
-  sub-screen was last open (Claude/Sync/App), not League where matchups live.
-- [x] FIXED (test_picks: no bare 'the Data tab'; test_boot pointer check now 14) F2 pointers not in "Data → Screen → Control" form, so test_boot's pointer
-  check misses them: recommend.js "add one on the Data tab", ui.js 'Data tab,
-  "Claude"' (x2), Live/Lineups "Add this week's matchup on the Data tab".
-- [x] FIXED (test_picks pin) F3 Roster row reads "DEN · bye 10 Sun 8:20p" — no separator before the
-  kickoff badge, so it reads "bye 10 Sun".
-- [x] FIXED (test_picks 'an inactive starter whose game is over', 3 checks) F4 Live: a starter whose game is FINAL with no line (inactive) still counts
-  in "N yet to play", keeps the pending style and shows "p 14.2" under 0.0 —
-  projectedFinish() already excludes him, the rows/count do not.
-- [x] FIXED (test_picks 'Reset to auto resets THAT team only') F5 Lineups per-team "Reset to auto" calls autoFillWeek() = refills EVERY
-  team in the league, even with Auto-default OFF. Should be that team only.
-- [x] FIXED (test_picks 'odds when future matchups were never entered'; full schedule verified byte-identical to v8.5) F6 Power card playoff odds: unplayed weeks with no matchups entered are
-  treated as never played → ">99%" / "0%" after 2 weeks. Unentered pairs
-  should be drawn at random per simulated season (identical output when the
-  schedule is complete).
-- [x] FIXED (test_picks) F7 header says "Rosters", tab says "Roster".
-- [x] FIXED (test_boot pin updated: clamp + tap to open) F8 Wire injury card: ESPN's note is an unclamped ~10-line paragraph.
-- [x] FIXED (test_retention.js §1, 3 checks fail on v8.5) F9 DATA LOSS: Live player card "Adjust" -> Save does `line.manualAdj = x;
-  Store.save()` — stat lines live in the ARCHIVE file, which save() writes
-  only when archiveDirty (markArchive). Nothing marks it, so on a final week
-  (no more syncs) the adjustment never reaches disk and is gone on the next
-  cold start. Fix: Store.setAdj() that marks the archive.
-- [x] FIXED (test_retention.js §2: v8.5 = 80 archive writes + 8 backups per live hour) F10 WRITE STORM (same class as v8.5's gamelog fix): every quiet live-poll
-  doSync (45 s while any game is in progress) calls setBook -> archive
-  rewritten whole (~200 KB now, ~1.5-1.9 MB late season) + main state; and
-  each of those saves counts toward the every-10-saves autoBackup (~1.5 MB
-  snapshot, 8 kept) — an hour of live polling rotates out EVERY older backup.
-  Fix: in-progress quiet syncs mark the archive lazily (written <=5 min
-  later / on flush / at once when final or on a manual sync) and do not
-  count toward the backup cadence.
-- [x] FIXED (test_jsonslim.js, 37 checks: desktop-javac JsonSlim vs real records + edge cases + malformed + loadNews raw==slim; full live feed 799 records identical, 8.76 MB -> 0.91 MB) F11 SPEED/MEMORY: ESPN /injuries is 8.76 MB of JSON (355 KB gzipped);
-  8.76 MB of it is athlete.links (player-card URLs the app never reads).
-  The page pulls it over the bridge in 46 x 192 KB chunks and JSON.parses
-  it: 45-145 ms at 4x on the JS thread + ~17 MB string + parse garbage,
-  every 10 min while the app is open (freshenInjuries on the live poll),
-  on every Advice sync and every "Ask Claude about the wire". Fix: the Java
-  bridge drops `links` members on the pool thread before the page sees the
-  body (opt-in request header X-FFT-Drop-Keys, never sent to ESPN; any
-  failure returns the raw body). New plain-Java JsonSlim class so it is
-  testable with desktop javac against real feed records.
-- [x] FIXED (test_picks) F12 Advice recommended-lineup rows read "Jonathan Taylor Sun 1p RB IND vs
-  HOU" — kickoff before pos/team, unlike every other screen.
-- [x] FIXED (test_picks) F13 Advice "How this is calculated" says "Tap any player to see each
-  source's number" — Advice rows have no tap handler; it is the "why ▾".
-- [x] FIXED (tools/test_syncfail.js, 16 checks, 8 fail on v8.5) F14 DATA LOSS
-  (found by the engine spot-check step: my week-1 harness sync had 1 of 16 box
-  scores time out and the week was still stored synced+final): doSync wiped
-  EVERY line of the week and rebuilt from what arrived, so one failed box
-  score zeroed that game's players (a Tuesday re-sync on a flaky connection
-  destroyed correct lines), and every game being over the week was stamped
-  final — never retried. Now: a team whose game did not arrive keeps its
-  lines + book rows; no bonus pass on a week with a hole (flags carried);
-  final only when complete (or already complete before); otherwise stays
-  open, header says "N box score(s) missing", closing sync retries.
-- [x] FIXED (test_picks 'a failed projection fetch', 4 checks; v8.5: 42 requests in 0.5 s) F16 BATTERY/NETWORK LOOP:
-  on the Wire tab with no signal (or an ESPN/Sleeper outage) the season-
-  projection refresh failed -> render() -> refresh again, with no cooldown:
-  ~88 ESPN + 88 Sleeper requests, as many full Wire renders and cache writes
-  in 2 s, for as long as the tab stayed open. Now: one attempt in flight,
-  10-min retry cooldown for background callers (a sync he starts, opts.user,
-  still goes out), and the Wire tab re-renders only when a new set landed.
-- [x] FIXED (same block) F15 DATA LOSS: Projections.refresh / refreshSeason
-  replaced this week's (this season's) already-loaded projections with an
-  EMPTY set whenever every source failed — one pull-to-refresh with no
-  signal and every lineup call fell back to rough averages. Now the set on
-  hand is kept (its real age still shows) and the sync report says
-  "FAILED this time — kept the set from N min ago".
-- [x] FIXED (test_retention.js §3, 6 checks, 5 fail on v8.5) F17 ACCURACY:
-  one failed injury-feed fetch (a blip on the 45 s live poll, no signal)
-  replaced the saved injury list with an EMPTY one and wrote it to disk —
-  every OUT/IR player then looked healthy to auto-lineup, Advice and the
-  Wire board until a later fetch worked (the Wire card even said "showing"
-  the old records). Now the last good list is kept with its real age + the
-  error; the poll retries next tick; re-render only on new data / first
-  failure.
-- [x] Step 6 engine spot-checks DONE: 7 fresh week-2 lines hand-computed vs
-  RULES_2026.md — Nix 41, Schultz 26, Swift 12.9 (fumble -2), Bates 7,
-  Texans D 15 (5 sacks, 20 PA tier), Wan'Dale 1.9, Goff 67.05: all exact.
-  Weekly +5s went to the league-wide longest rush/rec both weeks.
-- [x] SMALL polish from the survey, DONE: live game clock on the badge
-  (test_schedule), playoff cut line in Standings (test_picks).
+- [ ] **A. (#1) Win probability on Live** — from both teams' projected finish
+      and a per-player spread (measured position CV, sim.js), live: banked
+      points are certain, a player mid-game carries part of his spread, a
+      finished week is 100/0. Shown as "you 58% · 42% Opp" with a bar.
+- [ ] **B. Live layout** — the projection / win-probability card moves BELOW
+      the two live team boxes.
+- [ ] **C. (#2) Position colours** — QB/RB/WR/TE/K/DEF colour chips in every
+      slot column (Live, Lineups, Roster, Wire, Advice, dialogs); FLEX neutral.
+- [ ] **D. (#3) Compact injury badges** — Q / D / O / IR / SUSP / PUP pills
+      (full word as title + aria-label) in lists; detail views keep words.
+- [ ] **E. (#6) Matchup difficulty chip** — "vs HOU · 28th vs RB" coloured
+      soft/avg/tough from the engine's own defense-vs-position numbers, on
+      Lineups, Advice and Roster rows.
+- [ ] **F. (#7) Trending on the Wire** — ESPN ownership % + weekly change
+      (already in the downloaded projection data) on free-agent rows, plus a
+      "Trending" filter sorted by the change.
+- [ ] **G. (#8) One player card** — tapping/long-pressing any player opens one
+      sheet: this week (kickoff, projection + how built, matchup, injury note,
+      Claude), stat line + scoring breakdown + Adjust, season average, game
+      log, ESPN's written outlook, % rostered. Replaces the separate pre-game
+      card / stat-line card / long-press "View stats" menu.
+- [ ] **H. (#9) Inactives alert** — opt-in closed-app check ~75-85 min before
+      each kickoff that involves one of his starters; warns if a starter is
+      ruled OUT/doubtful. Pure scheduling logic in a plain-Java class tested
+      with the desktop JDK; Alerts.java wires it.
+- [ ] **I. (#10) Data -> League order** — Standings first; "Enter week N scores"
+      below, collapsed until that week has kicked off.
+- [ ] **J. Tests + regression + ship v8.7** (named test per item, every suite by
+      exit code AND output, crawls, build).
+- [ ] **K. FULL TEST (standing protocol, whole app, max depth)** after the
+      features land, then ship again if it finds anything.
 
 ## When Tj asks for something new
 
@@ -161,7 +82,10 @@ at cost on every cold start, forever.
 
 ## Waiting on Tj
 
-- [ ] **NEW 2026-09-24 — ideas from ESPN / Sleeper / Yahoo / FantasyPros, need
+- [x] **ANSWERED 2026-09-24T19:27Z: "Add recommended features 1, 2, 3, 6, 7, 8,
+      9, 10"** (+ move the Live projection card to the bottom) — now the
+      current job. 4 (light theme) and 5 (league scoreboard) not picked.
+      **Ideas from ESPN / Sleeper / Yahoo / FantasyPros, need
       your yes.** Reply with the numbers you want. Mockups of 1-4 were sent
       with the v8.6 message (scratchpad proposals-mockups.jpg — not shipped).
       1. **Win probability on Live** (ESPN, Sleeper, Yahoo): "you 58% · 42%

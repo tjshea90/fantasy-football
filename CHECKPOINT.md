@@ -1,12 +1,12 @@
-# CHECKPOINT 125 — read me first, then TASKS.md
+# CHECKPOINT 127 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T19:09:09Z · **version:** 8.6 · **tests:** all 26 suites green
+**Written:** 2026-09-24T19:29:35Z · **version:** 8.6 · **tests:** all 26 suites green
 
 ## Just done
-Full test + competitor survey (2026-09-24) complete: v8.6 Release published and verified (FFTracker-v8.6.apk). 17 findings fixed (F1-F17), each with a test failing on v8.5; live game clock + Standings playoff line shipped; proposals 1-10 written under TASKS 'Waiting on Tj'.
+Wrote Tj's 2026-09-24b request into TASKS.md (A-K: proposals 1,2,3,6,7,8,9,10 + Live projection card to the bottom + full test); archived the finished v8.6 job to LADDER.md §43.
 
 ## Do this next
-Nothing in flight. Waiting on Tj's pick from proposals 1-10 (TASKS 'Waiting on Tj'). Mockup method for future design work: node tools/perf.js --state S --inject mock.js --shots DIR.
+Item A+B: win probability on Live + move the projection/win-prob card below the team boxes (ui.js myMatchupCard; sim.js positionCV for spread).
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M LADDER.md
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  17e9448 ckpt 125: Full test + competitor survey (2026-09-24) complete: v8.6 Release published an
   9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
   249189d ckpt 122: ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR f
   2dc714b ckpt 121: Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colou
@@ -36,7 +38,6 @@ request in his own words and `git log` carries every step already taken.
   8edc7cf ckpt 99: Small polish from the competitor survey: live game clock on the schedule badge 
   4c4845e ckpt 92: Fixed F1-F8, F12, F13 (ui.js/recommend.js/sim.js) + F6 sim random pairing for u
   93d7c82 ckpt 81: F11 fixed: new JsonSlim.java (plain-Java JSON member cutter) used by NativeBrid
-  2434fca ckpt 70: F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write
 ```
 
 (1 automatic checkpoint(s) since the last deliberate one — the
