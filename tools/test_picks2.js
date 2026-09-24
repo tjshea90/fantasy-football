@@ -339,6 +339,12 @@ console.log('\n-- #7 trending on the Wire --');
   var got = names.filter(function (n) { return want.indexOf(n) >= 0; });
   ok(JSON.stringify(got.slice(0, want.length)) === JSON.stringify(want) && names.length === want.length,
      'Trending lists only risers, biggest first: ' + got.join(', '));
+  var fine = all(h.ids.view, function (n) { return hasClass(n, 'hint') && /Everyone active on one of the 32/.test(text(n)); })[0];
+  ok(!!fine && /ordered by how fast ESPN leagues are adding them/.test(text(fine)) && !/grouped by position/.test(text(fine)),
+     'the fine print under Trending describes Trending, not "grouped by position"');
+  click(button(h.ids.view, 'Best value'));
+  fine = all(h.ids.view, function (n) { return hasClass(n, 'hint') && /Everyone active on one of the 32/.test(text(n)); })[0];
+  ok(!!fine && !/grouped by position/.test(text(fine)), '... and under Best value');
 }());
 
 /* ============================================================= #8 player card */
