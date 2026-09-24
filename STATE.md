@@ -1,6 +1,56 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-24** · **v8.6**, shipped · APK builds, signed, all 26 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-24** · **v8.7**, shipped · APK builds, signed, all 28 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.7 — Tj's picks 1, 2, 3, 6, 7, 8, 9, 10 + Live layout, 2026-09-24
+
+Tj: "Add recommended features 1, 2, 3, 6, 7, 8, 9, 10. For the live tab, move
+the projection/win probability card to the bottom of the section under the
+live team tracking. Then run full tests on the app". Every item has a named
+test that fails on v8.6 (tools/test_picks2.js unless noted). No real device
+here: UI checked in headless Chromium on real ESPN week 1-2 data (crawls 313 +
+258 actions, 0 errors; screenshots of every tab plus Data > App, Wire >
+Trending and the player card via new `perf.js --views` / `--evalshot`).
+
+- **#1 win probability** (Sim.matchupOdds, normal approximation: banked +
+  proj x part of the game left, variance from Sim.positionCV;
+  Schedule.remaining reads the game clock). The projected finish uses the same
+  model, so a live game is no longer dropped from it.
+- **Live layout**: team boxes first, the projection / win-probability card under them.
+- **#2 position colours** (.pc-QB ... .pc-DEF; FLEX stays neutral) on Live,
+  Lineups, Roster, Wire, Advice, Stats search.
+- **#3 compact badges** Q / D / O / IR / SUSP / PUP (full word as title and
+  aria-label) — Roster, Live, Advice, and the Wire's "Your roster — injuries"
+  card. A long-term-out drop candidate on the Wire now shows its real
+  designation (IR / PUP / SUSP), not always "IR".
+- **#6 matchup chip** "vs HOU 5th" (fantasy points allowed to the position in
+  this league's scoring, rank 1 = toughest, 2-game minimum; Recommend.matchupRank).
+- **#7 Trending** Wire chip + "N% rostered ▲x" on free-agent rows — from the
+  ESPN projection payload already downloaded (no extra request). Verified on a
+  live ESPN refresh: 257 players with ownership, 119 with a weekly change.
+- **#8 one player card** (openPlayerCard) replaces the pre-game card, the
+  stat-line card and the long-press menu: this week (kickoff, matchup chip,
+  projection + how built, injury, Claude), scored line + Adjust, season
+  average, ESPN outlook, game log. Roster "⋯ -> Player card"; long-press opens
+  it directly; free agents too.
+- **#9 inactives alert** (new AlertPlan.java, pure Java; tools/test_alertplan.js
+  compiles it with the desktop JDK). Opt-in in Data > App > Lineup alerts: one
+  setWindow alarm 85-75 min before each distinct kickoff among his starters
+  (after inactives are announced), naming any starter ESPN has Out / Doubtful /
+  IR / suspended / PUP. Covers only kickoffs <= 90 min away (the 4:05 check
+  does not pre-empt 4:25), catches up a missed window, never checks a kickoff
+  twice, retries a failed fetch every 10 min while there is time to act. The
+  page hands Java the starters' kickoff list on every __appPause
+  (Schedule.starterKicks -> Native.alertsKickoffs), only when it changed.
+  Its own slot: re-arming it never moves the daily alarms.
+- **#10 Data > League**: Standings first; "Enter week N scores" under it,
+  collapsed until the week kicks off (open for a past week, a started game, a
+  typed score, or when opened by hand).
+
+Also fixed on the way (found by the screenshots): the Lineup-alerts copy said
+"Sunday ... and Thursday at 4pm" (it has run every day + 4pm since v4.x); its
+hour/minute boxes were split to opposite edges (.kv span{flex:1}); the Wire
+fine print said "grouped by position" under Best value and Trending.
 
 ## v8.6 — full test + "what the big apps have" survey, 2026-09-24
 
