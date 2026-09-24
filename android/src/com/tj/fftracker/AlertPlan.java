@@ -107,14 +107,14 @@ final class AlertPlan {
     if (status == null) return false;
     String u = status.toUpperCase(Locale.US);
     return u.contains("OUT") || u.contains("INJURED RESERVE") || u.contains("SUSPEN")
-        || u.contains("PUP") || u.contains("DOUBT");
+        || u.contains("PUP") || u.contains("UNABLE TO PERFORM") || u.contains("DOUBT");
   }
 
   static String word(String status) {
     String u = status == null ? "" : status.toUpperCase(Locale.US);
     if (u.contains("INJURED RESERVE")) return "on injured reserve";
     if (u.contains("SUSPEN")) return "SUSPENDED";
-    if (u.contains("PUP")) return "on the PUP list";
+    if (u.contains("PUP") || u.contains("UNABLE TO PERFORM")) return "on the PUP list";
     if (u.contains("DOUBT")) return "DOUBTFUL";
     if (u.contains("OUT")) return "OUT";
     return u;

@@ -75,6 +75,8 @@ app/assets/value.js
 app/assets/teamreport.js
 tools/test_teamreport.js
 android/src/com/tj/fftracker/Alerts.java
+android/src/com/tj/fftracker/AlertPlan.java
+tools/test_alertplan.js
 app/assets/recap.js
 RELEASE_NOTES.md
 tools/test_integration.js
