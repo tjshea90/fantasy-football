@@ -382,6 +382,30 @@
      a glance. `label` is what the column prints (QB, RB1, WR3, #4, FLEX...);
      `pos` names the colour when the label does not (a "#4" rank on the Wire).
      FLEX stays neutral: it is a slot, not a position. */
+  /* ---- matchup difficulty chip (2026-09-24b, Tj's pick #6) ---------------
+     "vs HOU 28th": the opponent and its rank against his position in points
+     allowed this season, in this league's scoring (Recommend.matchupRank;
+     1st = toughest, as ESPN numbers it). Coloured so the number cannot be
+     misread: green soft, amber middling, red tough. Nothing until the
+     opponent has two games in the table. */
+  function ordinal(n) {
+    var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+  function matchupChip(pos, nfl, wk) {
+    if (!window.Recommend || !Recommend.matchupRank) return null;
+    var m = null;
+    try { m = Recommend.matchupRank(wk === undefined ? week : wk, pos, nfl); } catch (e) { m = null; }
+    if (!m) return null;
+    var c = el('span', 'mchip ' + m.tier);
+    c.appendChild(document.createTextNode('vs ' + m.opp + ' '));
+    c.appendChild(el('b', null, ordinal(m.rank)));
+    var what = m.tier === 'soft' ? 'a soft matchup' : (m.tier === 'tough' ? 'a tough matchup' : 'an average matchup');
+    c.title = m.opp + ' allows ' + (Math.round(m.fpa * 10) / 10) + ' pts a game to ' + pos + 's in this league\'s scoring — ' +
+      ordinal(m.rank) + ' of ' + m.of + ' (1st = allows the fewest): ' + what + '.';
+    c.setAttribute('aria-label', c.title);
+    return c;
+  }
   var POS_COLOURED = { QB: 1, RB: 1, WR: 1, TE: 1, K: 1, DEF: 1 };
   function posClass(p) { return POS_COLOURED[p] ? ' pc pc-' + p : ''; }
   function slotEl(label, pos) {
@@ -1993,6 +2017,7 @@
              undefined, so this badge never showed on the Lineups tab. */
           markPlayer(lab, lp.player.name, lp.player.pos, lp.player.nfl);
           var lb = gameBadge(lp.player.nfl); if (lb) lab.appendChild(lb);
+          var mcl = matchupChip(lp.player.pos, lp.player.nfl); if (mcl) lab.appendChild(mcl);
           appendHealthTags(lab, flagsById[L[k.key]]);
         }
       }
@@ -2203,6 +2228,7 @@
          says "bye 7 Thu" (full test 2026-09-24) */
       var gb1 = gameBadge(p.nfl);
       if (gb1) { gb1.textContent = ' · ' + gb1.textContent.replace(/^\s+/, ''); nm.appendChild(gb1); }
+      var mc1 = matchupChip(p.pos, p.nfl); if (mc1) nm.appendChild(mc1);
       /* the "· bye N" text just above already says so; skip the flag that
          would say it again as a second, identical-meaning tag */
       appendHealthTags(nm, (flagsById[p.id] || []).filter(function (f) {
@@ -3361,7 +3387,7 @@
       jobEnd: jobEnd, jobRunning: jobRunning, rerender: render,
       handoffCard: handoffCard, adviceHandoff: adviceHandoff,
       gameBadge: gameBadge, earlyGameCard: earlyGameCard, markPlayer: markPlayer,
-      slotEl: slotEl, healthTag: healthTag });
+      slotEl: slotEl, healthTag: healthTag, matchupChip: matchupChip });
   }
   /* ---------- LINEUPS = set lineups + advice (2026-09-23b) ---------------
    * Tj's pick #3: "Merge Advice into Lineups (7 tabs -> 6)". Start/sit advice

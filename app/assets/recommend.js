@@ -1443,8 +1443,10 @@
            * in the app," and this is the one screen that never wired it). */
           if (ctx.markPlayer) ctx.markPlayer(row, s.pick.p.name, s.pick.p.pos, s.pick.p.nfl);
           nm.appendChild(document.createTextNode(s.pick.p.name));
+          var mcA = ctx.matchupChip ? ctx.matchupChip(s.pick.p.pos, s.pick.p.nfl) : null;
           nm.appendChild(el('small', null, '  ' + s.pick.p.pos + ' ' + s.pick.p.nfl +
-            (s.pick.opp ? ' vs ' + s.pick.opp : '')));
+            (s.pick.opp && !mcA ? ' vs ' + s.pick.opp : '')));
+          if (mcA) nm.appendChild(mcA);
           /* the kickoff, on the screen where he decides who to start — AFTER
              the team, as on every other screen (it used to sit between the
              name and the position: "Jonathan Taylor Sun 1p RB IND vs HOU") */
@@ -1513,7 +1515,9 @@
           r.appendChild(ctx.slotEl ? ctx.slotEl(x.p.pos) : el('div', 'slot', x.p.pos));
           var nm2 = el('div', 'nm');
           nm2.appendChild(document.createTextNode(x.p.name));
-          nm2.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp ? ' vs ' + x.opp : '')));
+          var mcB = ctx.matchupChip ? ctx.matchupChip(x.p.pos, x.p.nfl) : null;
+          nm2.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp && !mcB ? ' vs ' + x.opp : '')));
+          if (mcB) nm2.appendChild(mcB);
           x.flags.forEach(function (f) {
             nm2.appendChild(ctx.healthTag ? ctx.healthTag(f) : el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
                                f.text.split(' — ')[0].split(':')[0]));
@@ -1576,7 +1580,9 @@
             r2.appendChild(ctx.slotEl ? ctx.slotEl(x.p.pos) : el('div', 'slot', x.p.pos));
             var nm3 = el('div', 'nm');
             nm3.appendChild(document.createTextNode(x.p.name));
-            nm3.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp ? ' vs ' + x.opp : '')));
+            var mcC = ctx.matchupChip ? ctx.matchupChip(x.p.pos, x.p.nfl) : null;
+            nm3.appendChild(el('small', null, '  ' + x.p.nfl + (x.opp && !mcC ? ' vs ' + x.opp : '')));
+            if (mcC) nm3.appendChild(mcC);
             x.flags.forEach(function (f) {
               nm3.appendChild(ctx.healthTag ? ctx.healthTag(f) : el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
                                  f.text.split(' — ')[0].split(':')[0]));

@@ -307,3 +307,10 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .tag.inj.q{color:var(--accent);background:rgba(240,169,43,.18)}
 .tag.inj.d{color:#ff8c3c;background:rgba(255,140,60,.20)}
 .tag.inj.o{color:var(--bad);background:rgba(248,81,73,.20)}
+/* ---- 2026-09-24b: matchup difficulty chip (Tj's pick #6) ----------------- */
+.mchip{display:inline-block;margin-left:5px;padding:0 6px;border-radius:8px;font-size:10px;font-weight:600;
+  line-height:16px;white-space:nowrap;background:var(--panel2);color:var(--dim);border:1px solid var(--line)}
+.mchip b{font-weight:800}
+.mchip.soft{color:var(--good);border-color:#1f4529;background:rgba(46,160,67,.12)}
+.mchip.avg{color:var(--accent);border-color:#5a4415;background:rgba(240,169,43,.10)}
+.mchip.tough{color:var(--bad);border-color:#5a2b28;background:rgba(248,81,73,.12)}
