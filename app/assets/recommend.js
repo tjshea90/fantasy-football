@@ -194,6 +194,97 @@
                   pos + 's (' + d[pos].n + ' player-games measured)' };
   }
 
+  /* ---- MATCHUP DIFFICULTY (2026-09-24b, Tj's pick #6) --------------------
+   * "vs HOU · 28th vs RB" — the opponent rank ESPN, Yahoo and Sleeper print
+   * beside a player. It is the standard fantasy-points-allowed table, built
+   * here in THIS league's points from the league book (every player ESPN
+   * reported in every scored week, not just the ~150 rostered — the
+   * defenseProfile above is rostered-only and far too sparse to rank 32
+   * defenses). Each player's position comes from the player database.
+   *   fpa[D][POS] = points POS-players scored against defense D, per game D
+   *                 played; for DEF it is D/ST points scored against offense D.
+   * Ranked 1..N per position the way ESPN does it: 1st allows the FEWEST
+   * (toughest), Nth the most (softest). A team needs two games in the table
+   * before it is ranked at all — one game is an anecdote. Memoised on the
+   * week, the store generation and the player database, so it costs one pass
+   * over the book per sync, not per render. */
+  var FPA_POS = { QB: 1, RB: 1, WR: 1, TE: 1, K: 1, DEF: 1 };
+  var _posIdx = null, _fpaMemo = null;
+  function posIndex() {
+    var db = root.PlayerDB ? root.PlayerDB.get() : null;
+    var key = db ? (db.players.length + '|' + (db.updated || '')) : 'none';
+    if (_posIdx && _posIdx.key === key) return _posIdx.map;
+    var map = {}, i;
+    if (db) for (i = 0; i < db.players.length; i++) {
+      var r = db.players[i];
+      if (r && r.n && FPA_POS[r.p]) map[norm(r.n)] = r.p;
+    }
+    _posIdx = { key: key, map: map };
+    return map;
+  }
+  function fpaTable(uptoWeek) {
+    var gen = root.Store.generation ? root.Store.generation() : 0;
+    var pidx = posIndex();
+    var key = uptoWeek + '|' + gen + '|' + (_posIdx ? _posIdx.key : '');
+    if (_fpaMemo && _fpaMemo.key === key) return _fpaMemo.val;
+    var S = root.Store.get(), acc = {}, games = {}, w, k;
+    for (w = 1; w < uptoWeek; w++) {
+      if (!root.Store.weekIsScored(w)) continue;
+      var opp = S.weekMeta[String(w)] && S.weekMeta[String(w)].opponents;
+      if (!opp) continue;
+      var book = root.Store.bookWeek(w);
+      for (k in opp) if (Object.prototype.hasOwnProperty.call(opp, k)) games[opp[k]] = (games[opp[k]] || 0) + 1;
+      for (k in book) {
+        if (!Object.prototype.hasOwnProperty.call(book, k)) continue;
+        var row = book[k], pos, d;
+        if (!row || !row.t) continue;
+        if (k.indexOf('DEF:') === 0) { pos = 'DEF'; d = opp[row.t]; }
+        else { pos = pidx[norm(row.n || k)] || pidx[k]; d = opp[row.t]; }
+        if (!pos || !d) continue;
+        if (!acc[d]) acc[d] = {};
+        acc[d][pos] = (acc[d][pos] || 0) + (Number(row.p) || 0);
+      }
+    }
+    var rank = {}, fpa = {}, of = {}, pos2;
+    for (pos2 in FPA_POS) {
+      if (!Object.prototype.hasOwnProperty.call(FPA_POS, pos2)) continue;
+      var list = [], dd;
+      for (dd in games) {
+        if (!Object.prototype.hasOwnProperty.call(games, dd) || games[dd] < 2) continue;
+        var v = ((acc[dd] && acc[dd][pos2]) || 0) / games[dd];
+        list.push({ d: dd, v: v });
+        if (!fpa[dd]) fpa[dd] = {};
+        fpa[dd][pos2] = v;
+      }
+      list.sort(function (a, b) { return a.v - b.v || (a.d < b.d ? -1 : 1); });
+      rank[pos2] = {};
+      list.forEach(function (x, i2) { rank[pos2][x.d] = i2 + 1; });
+      of[pos2] = list.length;
+    }
+    var val = { rank: rank, fpa: fpa, of: of, games: games };
+    _fpaMemo = { key: key, val: val };
+    return val;
+  }
+  /* The chip's data for one player this week, or null when the opponent or
+     enough history is not known yet. */
+  function matchupRank(week, pos, nfl) {
+    if (!FPA_POS[pos] || !nfl) return null;
+    var S = root.Store.get(), T = String(nfl).toUpperCase(), opp = null;
+    var wm = S.weekMeta[String(week)];
+    if (wm && wm.opponents && wm.opponents[T]) opp = wm.opponents[T];
+    if (!opp && root.Schedule && root.Schedule.forTeam) {
+      var g = root.Schedule.forTeam(T, week);
+      if (g && g.opp) opp = g.opp;
+    }
+    if (!opp) return null;
+    var tb = fpaTable(week);
+    var r = tb.rank[pos] && tb.rank[pos][opp];
+    if (!r) return null;
+    var n = tb.of[pos];
+    var tier = r > Math.round(n * 2 / 3) ? 'soft' : (r <= Math.round(n / 3) ? 'tough' : 'avg');
+    return { opp: opp, pos: pos, rank: r, of: n, fpa: tb.fpa[opp][pos], games: tb.games[opp], tier: tier };
+  }
+
   /* ---- ESPN injury feed ------------------------------------------------ */
 
   /* WHY THIS EXISTS (Tj's screenshots, 2026-09-07).
@@ -1564,6 +1655,7 @@
                         (possibly days old) as if it were current (v5.5b) */
                      newsCache: function () { return newsCache; },
                      injuryCode: injuryCode,
+                     matchupRank: matchupRank, _fpaTable: fpaTable,
                      rosterContext: rosterContext,
                      /* exported so value.js's free-agent board can apply the
                         EXACT same OUT/IR/SUSPENDED/PUP exclusion this file
