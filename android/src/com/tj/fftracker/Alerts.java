@@ -117,10 +117,125 @@ public class Alerts {
   public static void rearm(Context ctx) {
     android.content.SharedPreferences p =
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    armInactives(ctx);                    /* its own switch — see below */
     if (!p.getBoolean("on", false)) return;
     int h = p.getInt("hour", 11), m = p.getInt("minute", 30);
     scheduleDaily(ctx, h, m, 0);          /* every morning, at his time */
     scheduleDaily(ctx, 16, 0, 1);         /* every afternoon, before a night game */
+  }
+
+  /* ---- the inactives check (v8.7) --------------------------------------
+   * One extra alarm per kickoff that involves a starter, 85..75 minutes out,
+   * after the inactives are announced. AlertPlan decides WHEN (pure Java,
+   * tested on the desktop JDK); this only arms it. Its own opt-in switch
+   * ("inact"), independent of the daily check, and its own slot, so arming it
+   * never touches the daily alarms (re-arming slot 0 inside its own half-hour
+   * window would push a not-yet-delivered morning check to tomorrow). */
+  static final int SLOT_INACTIVES = 2;
+
+  public static void armInactives(Context ctx) {
+    android.content.SharedPreferences p =
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    long at = 0;
+    if (p.getBoolean("inact", false)) {
+      at = AlertPlan.nextAt(System.currentTimeMillis(),
+          AlertPlan.parseKicks(p.getString("kicks", "")),
+          p.getLong("inactDone", 0), p.getLong("inactHold", 0));
+    }
+    AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+    if (am != null) {
+      if (at > 0) am.setWindow(AlarmManager.RTC_WAKEUP, at, AlertPlan.WINDOW_MS,
+                               intentFor(ctx, SLOT_INACTIVES));
+      else am.cancel(intentFor(ctx, SLOT_INACTIVES));
+    }
+    p.edit().putLong("inactAt", at).apply();
+  }
+
+  /** The inactives alarm fired: check the starters whose game is next. */
+  static void inactivesFired(Context ctx) {
+    android.content.SharedPreferences pf =
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    long now = System.currentTimeMillis();
+    Map<String, String> inj;
+    try { inj = fetchInjuries(); } catch (Throwable t) { inj = null; }
+    if (inj == null) {
+      /* The report did not answer. Saying nothing would read as "all clear",
+         so hold and try again — AlertPlan.nextAt stops retrying once there is
+         no longer time to act. */
+      pf.edit().putLong("inactHold", now + AlertPlan.RETRY_MS)
+        .putLong("inactLastAt", now)
+        .putString("inactLast", "ESPN's injury report did not answer — trying again in 10 minutes")
+        .apply();
+      return;
+    }
+    String[] out = inactivesCheck(ctx, now, inj);   /* { title, message } or null */
+    long done = Math.max(pf.getLong("inactDone", 0),
+        AlertPlan.coveredThrough(now, AlertPlan.parseKicks(pf.getString("kicks", ""))));
+    pf.edit().putLong("inactDone", done).putLong("inactHold", 0)
+      .putLong("inactLastAt", now)
+      .putString("inactLast", out == null ? "no starter ruled out" : out[1])
+      .apply();
+    if (out != null) postNote(ctx, out[0], out[1], 7003);
+  }
+
+  /** Reads the saved state for the current week's starters and asks
+   *  AlertPlan who, among those whose game is next, is ruled out. */
+  static String[] inactivesCheck(Context ctx, long now, Map<String, String> inj) {
+    String raw = readState(ctx);
+    if (raw == null) return null;
+    try {
+      JSONObject S = new JSONObject(raw);
+      JSONObject league = S.optJSONObject("league");
+      JSONObject settings = S.optJSONObject("settings");
+      if (league == null || settings == null) return null;
+      String me = league.optString("me", "");
+      if (me.isEmpty()) return null;              /* see check() */
+      int week = settings.optInt("currentWeek", 1);
+      Map<String, JSONObject> byId = new HashMap<String, JSONObject>();
+      JSONArray teams = S.optJSONArray("teams");
+      for (int i = 0; teams != null && i < teams.length(); i++) {
+        JSONObject t = teams.optJSONObject(i);
+        if (t == null || !me.equals(t.optString("id"))) continue;
+        JSONArray ps = t.optJSONArray("players");
+        for (int k = 0; ps != null && k < ps.length(); k++) {
+          JSONObject p = ps.optJSONObject(k);
+          if (p != null) byId.put(p.optString("id"), p);
+        }
+      }
+      JSONObject lw = S.optJSONObject("lineups");
+      JSONObject wk = lw == null ? null : lw.optJSONObject(String.valueOf(week));
+      JSONObject mine = wk == null ? null : wk.optJSONObject(me);
+      JSONObject wm = S.optJSONObject("weekMeta");
+      JSONObject wmw = wm == null ? null : wm.optJSONObject(String.valueOf(week));
+      JSONObject gs = wmw == null ? null : wmw.optJSONObject("kickoffs");
+      if (mine == null || gs == null || byId.isEmpty()) return null;
+      List<String> names = new ArrayList<String>(), slots = new ArrayList<String>(),
+                   stats = new ArrayList<String>();
+      List<Long> kicks = new ArrayList<Long>();
+      java.util.Iterator<String> it = mine.keys();
+      while (it.hasNext()) {
+        String slot = it.next();
+        JSONObject p = byId.get(mine.optString(slot, ""));
+        if (p == null) continue;
+        JSONObject g = gs.optJSONObject(p.optString("nfl", "").toUpperCase(java.util.Locale.US));
+        if (g == null) continue;
+        names.add(p.optString("name", ""));
+        slots.add(slot);
+        kicks.add(parseIso(g.optString("kick", "")));
+        String st = inj.get(norm(p.optString("name", "")));
+        stats.add(st == null ? "" : st);
+      }
+      long[] k = new long[kicks.size()];
+      for (int i = 0; i < k.length; i++) k[i] = kicks.get(i);
+      String[] st = stats.toArray(new String[0]);
+      String msg = AlertPlan.message(now, week, names.toArray(new String[0]),
+          slots.toArray(new String[0]), k, st, java.util.TimeZone.getDefault());
+      if (msg.isEmpty()) return null;
+      return new String[] { AlertPlan.title(AlertPlan.hits(now, k, st).size()), msg };
+    } catch (Throwable t) {
+      android.util.Log.w("FFT", "inactives parse failed: " + t);
+      return null;
+    }
   }
 
   /* ---- the receiver ---------------------------------------------------- */
@@ -140,6 +255,15 @@ public class Alerts {
       final PendingResult pr = goAsync();
       new Thread(new Runnable() {
         public void run() {
+          if (slot == SLOT_INACTIVES) {
+            try { inactivesFired(ctx); }
+            catch (Throwable t) { android.util.Log.w("FFT", "inactives check failed: " + t); }
+            finally {
+              armInactives(ctx);   /* only its own alarm — see SLOT_INACTIVES */
+              pr.finish();
+            }
+            return;
+          }
           try {
             String msg = check(ctx, true);
             android.content.SharedPreferences pf =
@@ -438,7 +562,18 @@ public class Alerts {
     return t;
   }
 
+  /** The daily check's view: whatever could be read (empty on failure). */
   static Map<String, String> injuries() {
+    try { return fetchInjuries(); }
+    catch (Throwable t) {
+      android.util.Log.w("FFT", "injury fetch failed: " + t);
+      return new HashMap<String, String>();
+    }
+  }
+
+  /** Throws when the report could not be read, so the inactives check can
+   *  tell "nobody is out" from "ESPN did not answer". */
+  static Map<String, String> fetchInjuries() throws Exception {
     Map<String, String> out = new HashMap<String, String>();
     HttpURLConnection c = null;
     try {
@@ -476,8 +611,6 @@ public class Alerts {
           if (nm.length() > 0 && st.length() > 0) out.put(norm(nm), st);
         }
       }
-    } catch (Throwable t) {
-      android.util.Log.w("FFT", "injury fetch failed: " + t);
     } finally {
       if (c != null) c.disconnect();
     }
