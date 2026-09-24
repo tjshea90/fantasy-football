@@ -146,7 +146,13 @@ function pts(h, name) {
   var p = me.players.filter(function (x) { return x.name === name; })[0];
   return St.playerPoints(1, p.id);
 }
-function sync(h) { h.ids.syncBtn._h.click(); return wait(40); }
+/* back to week 1 first: a boot on a finished week 1 rightly auto-advances */
+function sync(h) {
+  var g = 0;
+  while (h.W.Store.get().settings.currentWeek > 1 && g++ < 20) h.ids.wkPrev._h.click();
+  h.ids.syncBtn._h.click();
+  return wait(40);
+}
 
 var disk = {};
 var h1 = session(disk, false, 200);
@@ -154,7 +160,7 @@ sync(h1).then(function () {
   console.log('\n-- 1. a clean sync (the baseline) --');
   var wm = h1.W.Store.get().weekMeta['1'];
   ok(wm && wm.synced && wm.allFinal, 'week 1 synced and final');
-  ok(pts(h1, 'Matthew Stafford') === 42, 'Stafford 42 (20 cmp + 200 yds/20 + 2 TD)');
+  ok(pts(h1, 'Matthew Stafford') === 47, 'Stafford 47 (20 cmp + 200 yds/20 + 2 TD + the +5 longest completion, his team\'s)');
   ok(pts(h1, 'Davante Adams') === 20, 'Adams 20 (5 rec + 100 yds/10 + the +5 longest reception)');
   ok(pts(h1, 'Jonathan Taylor') === 21, 'Taylor 21 (100 yds/10 + TD + the +5 longest rush)');
   h1.W.Store.flush();
@@ -168,7 +174,7 @@ sync(h1).then(function () {
      'Taylor keeps his 21 — his game could not be refetched, so his line is not wiped (' +
      pts(h2, 'Jonathan Taylor') + ')  <-- v8.5: 0');
   ok(pts(h2, 'Davante Adams') === 20, 'Adams keeps his +5 — no bonus pass on a week with a game missing (' + pts(h2, 'Davante Adams') + ')');
-  ok(pts(h2, 'Matthew Stafford') === 43, 'the game that DID arrive is updated (Stafford 42 -> ' + pts(h2, 'Matthew Stafford') + ')');
+  ok(pts(h2, 'Matthew Stafford') === 48, 'the game that DID arrive is updated, bonus kept (Stafford 47 -> ' + pts(h2, 'Matthew Stafford') + ')');
   ok(wm.allFinal && !wm.failed && wm.fetchFailed === 1 && wm.kept >= 1,
      'the week stays final — the kept lines ARE its final numbers (failed ' + wm.failed + ', fetchFailed ' +
      wm.fetchFailed + ', kept ' + wm.kept + ')');
