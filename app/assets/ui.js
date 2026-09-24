@@ -1479,16 +1479,39 @@
     try { b = Schedule.badge(d.player.nfl, week); } catch (e) { b = null; }
     return !!(b && b.done);
   }
+  /* ONE LIVE MODEL for the projected finish AND the win probability
+     (2026-09-24b, Tj's pick #1). Each starter is:
+       - banked: whatever he has scored (res.total carries it);
+       - still to come: his full-game projection times the part of his game
+         left (Schedule.remaining — 1 before kickoff, the game clock's
+         fraction while it is live, 0 once it is over).
+     Before kickoff this is exactly the old projected finish. Mid-game it used
+     to count ONLY the banked points of a man whose game was still running,
+     so at halftime the "projection" had quietly dropped half his game — and a
+     win probability built on it would have been biased the same way. */
+  function liveSide(res, byId) {
+    var players = [];
+    res.detail.forEach(function (d) {
+      if (!d.pid || d.onBye || !d.player || doneNoLine(d)) return;
+      var rem = null;
+      if (window.Schedule) { try { rem = Schedule.remaining(d.player.nfl, week); } catch (e) { rem = null; } }
+      /* no schedule known: unplayed counts as all to come, played as done */
+      if (rem === null || rem === undefined) rem = d.played ? 0 : 1;
+      /* he has a line but the scoreboard still says "pre" (a stale schedule
+         mid-sync): trust the line — the game is under way */
+      if (d.played && rem >= 1) rem = 0.5;
+      var pj = byId[d.pid];
+      players.push({ pos: d.player.pos, proj: Number(pj && pj.proj) || 0, rem: rem });
+    });
+    return { banked: res.total, players: players };
+  }
   function projectedFinish(teamId, res, byIdIn) {
     var wm = S.weekMeta[String(week)];
     if (wm && wm.allFinal) return null;          /* the week is over: no guessing */
-    var yet = res.detail.filter(function (d) {
-      return d.pid && !d.played && !d.onBye && !doneNoLine(d);
-    });
-    if (!yet.length || !window.Recommend || !Recommend.projectAll) return null;
-    var byId = byIdIn || weekProjById(teamId), add = 0;
-    yet.forEach(function (d) { add += Number(byId[d.pid] && byId[d.pid].proj) || 0; });
-    return res.total + add;
+    if (!window.Recommend || !Recommend.projectAll) return null;
+    var side = liveSide(res, byIdIn || weekProjById(teamId)), add = 0, any = false;
+    side.players.forEach(function (p) { if (p.rem > 0) { any = true; add += p.proj * p.rem; } });
+    return any ? res.total + add : null;
   }
   function myMatchupCard(meId, oppId) {
     var A = Store.team(meId), B = Store.team(oppId);
@@ -1496,12 +1519,25 @@
     var ja = weekProjById(meId), jb = weekProjById(oppId);
     var pa = projectedFinish(meId, ra, ja), pb = projectedFinish(oppId, rb, jb);
     var wrap = el('div');
+    /* the live team boxes FIRST, the projection / win-probability card under
+       them (Tj, 2026-09-24b: "move the projection/win probability card to
+       the bottom of the section under the live team tracking") */
+    var cols = el('div', 'mu2');
+    cols.appendChild(liveScoreBox(A, ra, true, pa, ja));
+    cols.appendChild(liveScoreBox(B, rb, false, pb, jb));
+    wrap.appendChild(cols);
+
     var head = el('div', 'card me');
     head.appendChild(el('h2', null, 'Your matchup · week ' + week));
+    var wm = S.weekMeta[String(week)], over = !!(wm && wm.allFinal && wm.synced);
     var diff = ra.total - rb.total;
     var started = ra.detail.concat(rb.detail).some(function (d) { return d.played; });
     var banner;
-    if (!started && diff === 0 && pa !== null && pb !== null) {
+    if (over) {
+      banner = el('div', 'banner' + (diff > 0 ? ' good' : (diff < 0 ? ' bad' : '')));
+      banner.textContent = 'Final · ' + (Math.abs(diff) < 0.005 ? 'a tie' :
+        (diff > 0 ? 'you won by ' + fmt(diff) : 'you lost by ' + fmt(-diff)));
+    } else if (!started && diff === 0 && pa !== null && pb !== null) {
       var pd = pa - pb;
       banner = el('div', 'banner');
       banner.textContent = 'Projected ' + fmt(pa) + ' – ' + fmt(pb) +
@@ -1510,15 +1546,41 @@
       banner = el('div', 'banner' + (diff > 0 ? ' good' : (diff < 0 ? ' bad' : '')));
       banner.textContent = diff === 0 ? 'Level' :
         (diff > 0 ? 'You lead by ' + fmt(diff) : 'You trail by ' + fmt(-diff));
+      if (pa !== null && pb !== null) {
+        banner.appendChild(el('small', 'bproj', 'projected ' + fmt(pa) + ' – ' + fmt(pb)));
+      }
     }
     head.appendChild(banner);
+    if (!over) {
+      var wp = winProbBar(ra, rb, ja, jb, B.name);
+      if (wp) head.appendChild(wp);
+    }
     wrap.appendChild(head);
-
-    var cols = el('div', 'mu2');
-    cols.appendChild(liveScoreBox(A, ra, true, pa, ja));
-    cols.appendChild(liveScoreBox(B, rb, false, pb, jb));
-    wrap.appendChild(cols);
     return wrap;
+  }
+  /* "Win probability · you 58% · 42% Tugdude" and a bar (Tj's pick #1 —
+     ESPN, Sleeper and Yahoo all show it). Sim.matchupOdds on the same live
+     model as the projected finish above; nothing when there is nothing left
+     to decide or no projections to decide it with. */
+  function winProbBar(ra, rb, ja, jb, oppName) {
+    if (!window.Sim || !Sim.matchupOdds) return null;
+    var o;
+    try { o = Sim.matchupOdds(liveSide(ra, ja), liveSide(rb, jb), week); } catch (e) { return null; }
+    if (!o || !isFinite(o.pA)) return null;
+    var pct = Math.round(o.pA * 100);
+    /* never print 100% or 0% while a game is still being played */
+    if (o.sd > 1e-9) pct = Math.max(1, Math.min(99, pct));
+    var box = el('div', 'wp');
+    var lab = el('div', 'wplab');
+    var l = el('span', null, 'Win probability · you '); l.appendChild(el('b', null, pct + '%'));
+    var r = el('span'); r.appendChild(el('b', null, (100 - pct) + '%')); r.appendChild(document.createTextNode(' ' + oppName));
+    lab.appendChild(l); lab.appendChild(r);
+    box.appendChild(lab);
+    var bar = el('div', 'wpbar'); bar.setAttribute('role', 'img');
+    bar.setAttribute('aria-label', 'Win probability ' + pct + ' percent');
+    var fill = el('i'); fill.style.width = pct + '%';
+    bar.appendChild(fill); box.appendChild(bar);
+    return box;
   }
   /* One team's live score box: name, running total, how many starters are
      still to play, then that team's lineup — open, and every row tappable

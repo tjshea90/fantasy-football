@@ -282,3 +282,10 @@ textarea:focus-visible,[tabindex]:focus-visible{
   opacity:1;white-space:nowrap}
 /* the two-chip switch at the top of Lineups (Set lineups | Advice) */
 .subnav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+/* ---- 2026-09-24b: Live win probability (Tj's pick #1) ------------------- */
+.wp{margin-top:10px}
+.wplab{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim);margin-bottom:5px}
+.wplab b{color:var(--fg);font-size:14px;font-variant-numeric:tabular-nums}
+.wpbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.wpbar i{display:block;height:100%;background:var(--accent)}
+.banner .bproj{display:block;font-size:11px;font-weight:500;color:var(--dim);margin-top:2px}
