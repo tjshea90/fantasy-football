@@ -3225,7 +3225,7 @@
     thead.appendChild(tr); t.appendChild(thead);
     var tb = el('tbody');
     rows.forEach(function (r) {
-      var x = el('tr'); if (r.me) x.className = 'me';
+      var x = el('tr'); if (r.me || r.cls) x.className = (r.me ? 'me' : '') + (r.cls ? (r.me ? ' ' : '') + r.cls : '');
       r.cells.forEach(function (c, i) { x.appendChild(el('td', i ? 'num' : null, c)); });
       tb.appendChild(x);
     });
@@ -3369,9 +3369,14 @@
     var c = el('div', 'card');
     c.appendChild(el('h2', null, 'Standings'));
     var st = Store.standings(Math.max(week, 1));
+    /* the playoff line under the last seed in, as ESPN and Yahoo draw it —
+       top 6 of 10 make it (RULES_2026.md §LEAGUE STRUCTURE; Sim.PLAYOFF_TEAMS) */
+    var cut = (window.Sim && Sim.PLAYOFF_TEAMS) || 6;
     c.appendChild(table(['Team', 'W', 'L', 'T', 'Points'], st.byRecord.map(function (r, i) {
-      return { me: r.id === S.league.me, cells: [(i + 1) + '. ' + r.name, r.w, r.l, r.t, fmt(r.pts)] };
+      return { me: r.id === S.league.me, cls: (i === cut - 1 && st.byRecord.length > cut) ? 'cut' : '',
+               cells: [(i + 1) + '. ' + r.name, r.w, r.l, r.t, fmt(r.pts)] };
     })));
+    c.appendChild(el('p', 'hint', 'Top ' + cut + ' make the playoffs (the line); the top 2 get a first-round bye.'));
     return c;
   }
 
