@@ -12,8 +12,8 @@ research survey. Standing preference: no MAJOR change (moving/merging/removing
 a tab or feature, a new feature) without Tj's yes — SMALL polish ships, MAJOR
 ideas become numbered proposals under "Waiting on Tj".
 
-- [ ] **1. Floor:** every tools/test_*.js + check_es2018.js (exit code AND output).
-- [ ] **2. Static cross-checks:** every CSS class the JS builds vs app.css
+- [x] **1. Floor:** DONE at start — 23/23 green by exit code AND output (0 FAIL lines).
+- [x] **2. Static cross-checks:** DONE — CSS 0 missing / 0 dead (re-run after changes: still 0/0); load order unchanged; manifest agrees. every CSS class the JS builds vs app.css
       (missing + dead rules), script load order vs top-level dependencies,
       stale copy, MANIFEST.
 - [x] **3. Dynamic crawl in Chromium** DONE on state G (real weeks 1-2 +
