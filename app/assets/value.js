@@ -922,11 +922,11 @@
     for (i = 0; i < allProj.length; i++) {
       var x = allProj[i];
       if (x.onBye) {
-        out.push({ name: x.p.name, pos: x.p.pos, nfl: x.p.nfl, status: 'BYE',
+        out.push({ name: x.p.name, pos: x.p.pos, nfl: x.p.nfl, status: 'BYE', code: 'BYE',
                    note: 'on bye in week ' + week, onBye: true });
       } else if (x.h && x.h.label) {
         out.push({ name: x.p.name, pos: x.p.pos, nfl: x.p.nfl, status: x.h.label,
-                   note: x.h.note || '', onBye: false });
+                   code: x.h.code || '', note: x.h.note || '', onBye: false });
       }
     }
     return out;

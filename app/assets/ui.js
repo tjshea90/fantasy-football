@@ -2775,8 +2775,10 @@
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(x.name));
       nm.appendChild(el('small', null, '  ' + x.nfl));
-      nm.appendChild(el('span', (x.status === 'OUT' || x.status === 'BYE') ? 'tag out' : 'tag warn',
-                         x.status));
+      /* the compact badge (Tj's pick #3), like every other list — the full
+         word is its title, and ESPN's note is spelled out right below */
+      nm.appendChild(healthTag({ code: x.code, text: x.status,
+                                 kind: (x.status === 'OUT' || x.status === 'BYE') ? 'out' : '' }));
       r.appendChild(nm);
       c.appendChild(r);
       /* the note itself, ALWAYS visible (it is the reason this card exists) —
@@ -3015,7 +3017,7 @@
         /* Tj, 2026-09-18d: same position is the default, so the exceptions are
            worth flagging on the row rather than only in the "why". */
         if (u.crossPos) nm.appendChild(el('span', 'tag', u.fa.pos + ' for ' + u.drop.pos));
-        if (u.drop.longTermOut) nm.appendChild(el('span', 'tag', 'IR'));
+        if (u.drop.longTermOut) nm.appendChild(healthTag({ code: 'IR', text: 'Out long-term', kind: 'out' }));
         if (u.fa.healthLabel) nm.appendChild(healthTag({ kind: 'warn', text: u.fa.healthLabel }));
         r.appendChild(nm);
         var b = el('button', 'btn sm', 'Add + drop ' + u.drop.name);

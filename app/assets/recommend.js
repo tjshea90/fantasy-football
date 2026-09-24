@@ -435,7 +435,8 @@
     if (!rec) return { f: 1, label: '', note: '' };
     var s = String(rec.status || ''), f = 1, lab = '';
     if (s.indexOf('OUT') >= 0 || s.indexOf('INJURED RESERVE') >= 0 ||
-        s.indexOf('SUSPEND') >= 0 || s.indexOf('PUP') >= 0) { f = HEALTH.OUT; lab = 'OUT'; }
+        s.indexOf('SUSPEND') >= 0 || s.indexOf('PUP') >= 0 ||
+        s.indexOf('UNABLE TO PERFORM') >= 0) { f = HEALTH.OUT; lab = 'OUT'; }
     else if (s.indexOf('DOUBT') >= 0) { f = HEALTH.DOUBTFUL; lab = 'DOUBTFUL'; }
     else if (s.indexOf('QUEST') >= 0) { f = HEALTH.QUESTIONABLE; lab = 'QUESTIONABLE'; }
     else if (s.indexOf('PROB') >= 0) { f = HEALTH.PROBABLE; lab = 'PROBABLE'; }
@@ -450,7 +451,7 @@
     if (!s) return '';
     if (s.indexOf('INJURED RESERVE') >= 0 || /(^|[^A-Z])IR([^A-Z]|$)/.test(s)) return 'IR';
     if (s.indexOf('SUSPEND') >= 0) return 'SUSP';
-    if (s.indexOf('PUP') >= 0) return 'PUP';
+    if (s.indexOf('PUP') >= 0 || s.indexOf('UNABLE TO PERFORM') >= 0) return 'PUP';
     if (s.indexOf('OUT') >= 0) return 'O';
     if (s.indexOf('DOUBT') >= 0) return 'D';
     if (s.indexOf('QUEST') >= 0) return 'Q';
