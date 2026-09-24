@@ -1,12 +1,12 @@
-# CHECKPOINT 122 — read me first, then TASKS.md
+# CHECKPOINT 125 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T19:05:56Z · **version:** 8.5 · **tests:** all 26 suites green
+**Written:** 2026-09-24T19:09:09Z · **version:** 8.6 · **tests:** all 26 suites green
 
 ## Just done
-ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; a failed box score no longer zeroes a game's players or stamps the week final; manual adjustments survive restarts; live poll no longer rewrites the season file every 45 s or rotates out all backups; injury feed 8.8 MB -> 0.9 MB before parsing (JsonSlim.java); failed projection refresh keeps the set on hand and no longer loops offline; playoff odds with unentered matchups; live game clock; playoff line; 10 UI/copy fixes
+Full test + competitor survey (2026-09-24) complete: v8.6 Release published and verified (FFTracker-v8.6.apk). 17 findings fixed (F1-F17), each with a test failing on v8.5; live game clock + Standings playoff line shipped; proposals 1-10 written under TASKS 'Waiting on Tj'.
 
 ## Do this next
-verify on the phone
+Nothing in flight. Waiting on Tj's pick from proposals 1-10 (TASKS 'Waiting on Tj'). Mockup method for future design work: node tools/perf.js --state S --inject mock.js --shots DIR.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
+  249189d ckpt 122: ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR f
   2dc714b ckpt 121: Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colou
   c3b1759 ckpt 116: F17 fixed: a failed injury-feed fetch no longer wipes (and saves) an empty inj
   58a69eb ckpt 110: F15 (a failed projection refresh wiped this week's/season's loaded projections
@@ -35,6 +37,7 @@ request in his own words and `git log` carries every step already taken.
   4c4845e ckpt 92: Fixed F1-F8, F12, F13 (ui.js/recommend.js/sim.js) + F6 sim random pairing for u
   93d7c82 ckpt 81: F11 fixed: new JsonSlim.java (plain-Java JSON member cutter) used by NativeBrid
   2434fca ckpt 70: F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write
-  b639867 ckpt 60: Full test steps 3-5 done: crawl 275 actions/0 problems on state G; v8.5 diff cl
-  fc9c4a3 ckpt 58: Full test steps 1 (floor 23/23 green, exit code + output) and 2 (CSS cross-chec
 ```
+
+(1 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)

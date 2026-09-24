@@ -37,7 +37,7 @@ ideas become numbered proposals under "Waiting on Tj".
 - [x] **8. Fix everything found + do the SMALL items** DONE (F1-F17 below), each with a named test
       confirmed to FAIL pre-fix (source-text pin where no harness reaches).
 - [x] **9. Full regression** DONE — 26 suites exit 0 / 0 FAIL lines, ES2018 green, CSS 0/0; final crawls on the shipped code: real-data 275 actions / cold 220, 0 problems; build.sh green (29 classes). No real device.
-- [ ] **10. Ship**, publish the Release, send Tj the link + the proposals.
+- [x] **10. Ship** DONE — v8.6 via ship.sh; publish-release.yml dispatched; verified via get_release_by_tag (FFTracker-v8.6.apk, 350486 bytes, not a draft). Link + proposals + mockups sent.
 
 ### Findings so far (not yet fixed — fix in step 8)
 Test state for all of this: `perf.js --sync 1,2 --save F`, then
