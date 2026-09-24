@@ -45,7 +45,7 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
       below, collapsed until that week has kicked off.
 - [x] **J. Tests + regression + ship v8.7** DONE (all 28 suites green by exit code + output; crawls 313 + 258 actions 0 errors; build.sh green; ship.sh) (named test per item, every suite by
       exit code AND output, crawls, build).
-- [ ] **K. FULL TEST (standing protocol, whole app, max depth)** after the
+- [x] **K. FULL TEST (standing protocol, whole app, max depth)** DONE (STATE.md v8.8 entry: 6 fixes landed in v8.7 from the visual pass, dead Stats.openPlayerModal removed after it — test_picks2 #8 pin; crawls 0 errors on 3 states; netlog unchanged; shipped v8.8) after the
       features land, then ship again if it finds anything.
 
 ## When Tj asks for something new

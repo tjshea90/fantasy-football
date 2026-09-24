@@ -1,6 +1,35 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-24** · **v8.7**, shipped · APK builds, signed, all 28 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-24** · **v8.8**, shipped · APK builds, signed, all 28 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.8 — full test after the v8.7 features, 2026-09-24
+
+CLAUDE.md's Full-tests protocol, whole app, after Tj's picks landed. No real
+device: headless Chromium (4x throttle) on real ESPN week 1-2 data plus a live
+ESPN projection refresh (state with ownership + outlooks), crawls of every
+control on three states (313 + 258 + 313 actions, 0 errors), screenshots of
+every tab and sub-view, netlog (boot + 15 s idle: 2 requests, same as v8.6 —
+the new features fetch nothing), render timings (Wire > Trending 70 ms at 4x
+vs 49 ms All positions: ownership lookups over every free agent, acceptable),
+every CSS class the JS builds cross-checked against app.css (none missing),
+adversarial read of the whole v8.6..v8.7 diff (ui.js, recommend.js,
+projections.js, sim.js, schedule.js, stats.js, Alerts/AlertPlan/NativeBridge).
+
+Found and fixed BEFORE v8.7 shipped (the visual pass; listed in v8.7 above):
+Wire "Your roster — injuries" still spelled QUESTIONABLE/OUT; long-term-out
+badge always said IR; "Physically Unable to Perform" not read as PUP; alert
+hour/minute boxes split to opposite edges; alert copy said Sunday/Thursday;
+Wire fine print said "grouped by position" under Best value / Trending.
+
+Found after v8.7: `Stats.openPlayerModal` (the long-press menu's game-log
+modal) had no callers once the player card replaced the menu — removed, with
+the stats.js header that still described it (pin: test_picks2 #8).
+
+Checked and left as is: fpaTable's memo is keyed on the store generation, so a
+live-poll tick invalidates it — but only views with matchup chips recompute it
+(once per visit, ~2 ms desktop at week 3), not the Live tab; curScroll's large
+profile self-time is the forced layout of the freshly built view, which the
+next frame would pay anyway.
 
 ## v8.7 — Tj's picks 1, 2, 3, 6, 7, 8, 9, 10 + Live layout, 2026-09-24
 
