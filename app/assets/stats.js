@@ -107,8 +107,8 @@
   /* ---- the one shared "here is this player's stats" view -----------------
    * player: {name, pos, nfl}. Used by the Stats tab's own search AND every
    * long-press "View stats" menu elsewhere in the app. */
-  function playerDetail(ctx, player, state, host) {
-    host.appendChild(ctx.el('h2', null, player.name + '  ·  ' + player.pos + ' ' + (player.nfl || '')));
+  function playerDetail(ctx, player, state, host, noHeader) {
+    if (!noHeader) host.appendChild(ctx.el('h2', null, player.name + '  ·  ' + player.pos + ' ' + (player.nfl || '')));
     if (state.loading) { host.appendChild(ctx.el('p', 'muted', 'Loading this season’s games…')); return; }
     if (state.error) {
       host.appendChild(ctx.el('p', 'warnText', 'Could not load: ' + state.error));
@@ -141,6 +141,23 @@
     });
   }
 
+  /* The game log drawn into any host — the player card's "Game log"
+     section (2026-09-24b, Tj's pick #8). Same loader and the same table as
+     the Stats tab; when the load lands it redraws ONLY this host, not the
+     whole tab sitting behind the card (ctx.rerender is not called). */
+  function logInto(ctx, player, host) {
+    var quiet = {}, k;
+    for (k in ctx) if (Object.prototype.hasOwnProperty.call(ctx, k)) quiet[k] = ctx[k];
+    quiet.rerender = function () { };
+    function draw() {
+      host.innerHTML = '';
+      var key = player.pos + ':' + player.nfl + ':' + player.name;
+      playerDetail(quiet, player, playerLog.key === key ? playerLog : { loading: true }, host, true);
+    }
+    var p = loadPlayerLog(quiet, player);
+    draw();
+    return p.then(draw, draw);
+  }
   /* Opens the same detail as the Stats tab's search, in a modal — the one
    * entry point long-press menus everywhere else in the app call. */
   function openPlayerModal(ctx, player) {
@@ -409,7 +426,7 @@
     return Promise.resolve();
   }
 
-  var API = { render: render, refresh: refresh, openPlayerModal: openPlayerModal };
+  var API = { render: render, refresh: refresh, openPlayerModal: openPlayerModal, logInto: logInto };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.Stats = API;
 })(typeof window !== 'undefined' ? window : this);
