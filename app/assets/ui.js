@@ -1456,15 +1456,22 @@
     } catch (e) { /* no projections: the scores still render */ }
     return byId;
   }
+  /* His game is over and he has no line — inactive, a DNP: he adds nothing
+     more, whatever he was projected for. projectedFinish() has always said
+     so; the rows and the "yet to play" count under it now agree (full test
+     2026-09-24: an inactive starter read "1 yet to play", in the pending
+     style, with "p 14.2" under his 0.0, long after his game had ended). */
+  function doneNoLine(d) {
+    if (!d.pid || d.played || d.onBye || !d.player || !window.Schedule) return false;
+    var b = null;
+    try { b = Schedule.badge(d.player.nfl, week); } catch (e) { b = null; }
+    return !!(b && b.done);
+  }
   function projectedFinish(teamId, res, byIdIn) {
     var wm = S.weekMeta[String(week)];
     if (wm && wm.allFinal) return null;          /* the week is over: no guessing */
     var yet = res.detail.filter(function (d) {
-      if (!d.pid || d.played || d.onBye) return false;
-      /* his game is already over and he has no line (inactive, a DNP):
-         he adds nothing more, whatever he was projected for */
-      var b = (window.Schedule && d.player) ? Schedule.badge(d.player.nfl, week) : null;
-      return !(b && b.done);
+      return d.pid && !d.played && !d.onBye && !doneNoLine(d);
     });
     if (!yet.length || !window.Recommend || !Recommend.projectAll) return null;
     var byId = byIdIn || weekProjById(teamId), add = 0;
@@ -1509,7 +1516,9 @@
     var c = el('div', 'card halfbox' + (isMine ? ' me' : ''));
     c.appendChild(el('h2', null, team.name));
     c.appendChild(el('div', 'bigfig', fmt(res.total)));
-    var yet = res.detail.filter(function (d) { return d.pid && !d.played && !d.onBye; }).length;
+    var yet = res.detail.filter(function (d) {
+      return d.pid && !d.played && !d.onBye && !doneNoLine(d);
+    }).length;
     c.appendChild(el('div', 'sub muted', yet + ' yet to play' +
       (proj !== null && proj !== undefined ? ' · proj ' + fmt(proj) : '')));
     c.appendChild(openLineup(team, res, projById));
@@ -1581,11 +1590,12 @@
         }));
       }
       r.appendChild(nm);
-      var p = el('div', 'pts' + (x.onBye ? ' bye' : (x.played ? '' : ' pend')), x.onBye ? '0.0' : fmt(x.pts));
+      var over = doneNoLine(x);
+      var p = el('div', 'pts' + (x.onBye ? ' bye' : (x.played || over ? '' : ' pend')), x.onBye ? '0.0' : fmt(x.pts));
       /* Until his game starts, his projection sits under the 0.0 (2026-09-23b,
-         Tj's pick #2 — ESPN and Sleeper both do this). Once he has played,
-         only the real points show. */
-      var pj = (projById && x.pid && !x.played && !x.onBye) ? projById[x.pid] : null;
+         Tj's pick #2 — ESPN and Sleeper both do this). Once he has played —
+         or his game has ended without him — only the real points show. */
+      var pj = (projById && x.pid && !x.played && !x.onBye && !over) ? projById[x.pid] : null;
       if (pj) {
         p.classList.add('hasproj');
         var pp = el('small', 'pproj', 'p ' + fmt(pj.proj));
