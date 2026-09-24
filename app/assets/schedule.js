@@ -331,6 +331,36 @@
    * finished game's final line has not been captured and the week is not
    * already stored as synced-and-final. A captured final is never refetched,
    * so on a Friday this costs one box score (Thursday's), once. */
+  /* ---- the inactives alarm's plan (v8.7, Tj's pick #9) --------------------
+   * Every distinct kickoff still to come among `teamId`'s STARTERS this week,
+   * as epoch ms, ascending — the whole 1:00 slate is one entry. ui.js hands it
+   * to the Java shell when the app is backgrounded (Native.alertsKickoffs),
+   * and AlertPlan.java arms one check 85..75 minutes before each, just after
+   * the inactives are announced. Reads the stored lineup WITHOUT creating
+   * one: Store.getLineup adds an empty object to the state as a side effect,
+   * which a read on the way to the background has no business doing. */
+  function starterKicks(week, teamId) {
+    var S = root.Store.get(), w = String(week);
+    var L = (S && S.lineups && S.lineups[w]) ? S.lineups[w][teamId] : null;
+    var g = get(week), t = root.Store.team(teamId);
+    if (!L || !g || !t) return [];
+    var byId = {}, seen = {}, out = [], now = Date.now(), i, k;
+    for (i = 0; i < t.players.length; i++) byId[t.players[i].id] = t.players[i];
+    for (k in L) {
+      if (!Object.prototype.hasOwnProperty.call(L, k)) continue;
+      var p = byId[L[k]];
+      if (!p || !p.nfl) continue;
+      var e = g[String(p.nfl).toUpperCase()];
+      if (!e || (e.state && e.state !== 'pre')) continue;     /* started or done */
+      var ms = new Date(e.kick).getTime();
+      if (isNaN(ms) || ms <= now || seen[ms]) continue;
+      seen[ms] = true;
+      out.push(ms);
+    }
+    out.sort(function (a, b) { return a - b; });
+    return out;
+  }
+
   function needsSync(games, meta, captured) {
     var i, uncaptured = 0;
     for (i = 0; i < (games || []).length; i++) {
@@ -345,7 +375,7 @@
   root.Schedule = {
     ingest: ingest, refresh: refresh, get: get, at: at, stale: stale,
     forTeam: forTeam, badge: badge, earlyAlert: earlyAlert, needsSync: needsSync,
-    remaining: remaining, _remainingOf: remainingOf,
+    remaining: remaining, _remainingOf: remainingOf, starterKicks: starterKicks,
     STALE_MS: STALE_MS, _clock: clock, _liveClock: liveClock, _DAYS: DAYS
   };
 })(typeof window !== 'undefined' ? window : this);
