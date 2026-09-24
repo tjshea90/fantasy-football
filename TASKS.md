@@ -16,9 +16,9 @@ ideas become numbered proposals under "Waiting on Tj".
 - [ ] **2. Static cross-checks:** every CSS class the JS builds vs app.css
       (missing + dead rules), script load order vs top-level dependencies,
       stale copy, MANIFEST.
-- [ ] **3. Dynamic crawl in Chromium** (`perf.js --state F --crawl` on a
-      real-data state and an Advice-synced state; screenshots of every tab).
-      No real device — say so.
+- [x] **3. Dynamic crawl in Chromium** DONE on state G (real weeks 1-2 +
+      generated schedule + Advice sync): 275 actions over 12 screens, 0 page
+      errors, 0 error cards. Screenshots of every tab read. No real device.
 - [ ] **4. Review the v8.5 diff adversarially** (Gamelog dirty/flush,
       afterPaint/fillAfterPaint, Names.cmp, freshenSchedule stand-down).
 - [ ] **5. Data retention + network + battery** (unbounded caches, lost
@@ -56,6 +56,19 @@ is just "No opponent set").
   schedule is complete).
 - F7 header says "Rosters", tab says "Roster".
 - F8 Wire injury card: ESPN's note is an unclamped ~10-line paragraph.
+- F9 DATA LOSS: Live player card "Adjust" -> Save does `line.manualAdj = x;
+  Store.save()` — stat lines live in the ARCHIVE file, which save() writes
+  only when archiveDirty (markArchive). Nothing marks it, so on a final week
+  (no more syncs) the adjustment never reaches disk and is gone on the next
+  cold start. Fix: Store.setAdj() that marks the archive.
+- F10 WRITE STORM (same class as v8.5's gamelog fix): every quiet live-poll
+  doSync (45 s while any game is in progress) calls setBook -> archive
+  rewritten whole (~200 KB now, ~1.5-1.9 MB late season) + main state; and
+  each of those saves counts toward the every-10-saves autoBackup (~1.5 MB
+  snapshot, 8 kept) — an hour of live polling rotates out EVERY older backup.
+  Fix: in-progress quiet syncs mark the archive lazily (written <=5 min
+  later / on flush / at once when final or on a manual sync) and do not
+  count toward the backup cadence.
 
 ## When Tj asks for something new
 
