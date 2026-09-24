@@ -393,6 +393,84 @@ console.log('\n-- #8 one player card --');
   ok(/free agent/.test(text(lastDialog())), 'a free agent gets the card too, marked as a free agent (' + fa.n + ')');
 }());
 
+/* ======================================================================== #9 */
+console.log('\n-- #9 inactives alert: the page hands Java the week\'s starter kickoffs --');
+(function () {
+  var h = buildHarness();
+  var calls = { kick: [], inact: [] }, status = { on: false, hour: 11, minute: 30, inact: false, inactAt: 0 };
+  h.W.Native.alertsSet = function () { return true; };
+  h.W.Native.alertsStatus = function () { return JSON.stringify(status); };
+  h.W.Native.alertsTest = function () { };
+  h.W.Native.alertsKickoffs = function (csv) {
+    calls.kick.push(csv);
+    return csv ? Number(csv.split(',')[0]) - 85 * 60000 : 0;
+  };
+  h.W.Native.alertsInactives = function (on) { calls.inact.push(on); return 0; };
+  h.docHandlers.DOMContentLoaded();
+  var W = h.W, St = W.Store, S = St.get(), me = S.league.me, wk = S.settings.currentWeek || 1;
+  rerender(h, 'lineups');
+  var L = St.getLineup(wk, me), team = St.team(me), slotOf = {}, teams = [], k;
+  for (k in L) if (L[k]) slotOf[L[k]] = k;
+  team.players.forEach(function (p) {
+    if (slotOf[p.id] && p.nfl && teams.indexOf(p.nfl) < 0) teams.push(p.nfl);
+  });
+  var benchP = team.players.filter(function (p) { return !slotOf[p.id] && p.nfl && teams.indexOf(p.nfl) < 0; })[0];
+  ok(teams.length >= 4 && !!benchP, 'fixture: ' + teams.length + ' starter NFL teams and a bench player on another team (' + (benchP && benchP.nfl) + ')');
+  var now = Date.now(), H = 3600e3;
+  function at(ms) { return new Date(Math.floor(ms / 60000) * 60000).toISOString(); }
+  var t1 = at(now + 3 * H), t2 = at(now + 6 * H);
+  var games = [], opp = 0;
+  function game(abbr, iso, state) {
+    games.push({ id: 'g' + games.length, date: iso, state: state, detail: '',
+      teams: [{ abbr: abbr, homeAway: 'home' }, { abbr: 'ZZ' + (opp++), homeAway: 'away' }] });
+  }
+  game(teams[0], t1, 'pre'); game(teams[1], t1, 'pre');       /* the 1:00 slate: one entry */
+  game(teams[2], t2, 'pre');                                  /* the night game */
+  game(teams[3], at(now - H), 'in');                          /* already started */
+  for (var i = 4; i < teams.length; i++) game(teams[i], at(now - 4 * H), 'post');
+  game(benchP.nfl, at(now + H), 'pre');                       /* bench only: not his problem */
+  W.Schedule.ingest(wk, games);
+  var want = [Date.parse(t1), Date.parse(t2)].join(',');
+  ok(W.Schedule.starterKicks(wk, me).join(',') === want,
+     'Schedule.starterKicks: one entry per distinct starter kickoff still to come (' + W.Schedule.starterKicks(wk, me).length + ')');
+  ok(W.Schedule.starterKicks(99, me).length === 0 && S.lineups['99'] === undefined,
+     'reading a week with no lineup returns nothing and creates no lineup');
+
+  W.__appPause();
+  ok(calls.kick.length === 1 && calls.kick[0] === want,
+     'leaving the app hands Java the plan: ' + JSON.stringify(calls.kick) + '  <-- v8.6 had no inactives check');
+  W.__appResume(); W.__appPause();
+  ok(calls.kick.length === 1, 'leaving again with nothing changed sends nothing (' + calls.kick.length + ' calls)');
+  W.__appResume();
+  for (k in L) {
+    if (L[k] && St.playerById(L[k]) && St.playerById(L[k]).player.nfl === teams[2]) St.setSlot(wk, me, k, null, true);
+  }
+  W.__appPause();
+  ok(calls.kick.length === 2 && calls.kick[1] === String(Date.parse(t1)),
+     'bench the night-game starter and the next pause re-plans without it (' + calls.kick[1] + ')');
+  W.__appResume();
+
+  /* Data -> App: the opt-in switch */
+  h.clickTab('data');
+  click(button(h.ids.view, 'App'));
+  var lab = all(h.ids.view, function (n) { return n.tagName === 'LABEL' && /Inactives check before each/.test(text(n)); })[0];
+  var cb = lab ? all(lab, function (n) { return n.tagName === 'INPUT'; })[0] : null;
+  ok(!!cb && cb.type === 'checkbox' && !cb.checked, 'Data -> App -> Lineup alerts has an inactives switch, off by default (opt-in)');
+  var card = lab ? lab.parentNode : null;
+  ok(/every day at/.test(text(card)) && !/Thursday at 4pm/.test(text(card)) && !/on Sunday at/.test(text(card)),
+     'the daily check\'s copy matches what Alerts.rearm does (every day + 4pm), not "Sunday / Thursday"');
+  var nk = calls.kick.length;
+  cb.checked = true; cb._h.change.call(cb);
+  ok(calls.inact[calls.inact.length - 1] === true && calls.kick.length === nk + 1,
+     'turning it on sets the switch AND sends the current plan even though it did not change');
+  var hint = all(card, function (n) { return hasClass(n, 'hint') && /inactives check/i.test(text(n)); })[0];
+  ok(!!hint && /^Next inactives check: \w{3} /.test(text(hint)), 'and says when the next check is: ' + (hint && text(hint)));
+  status.inact = true; status.inactAt = 0;
+  rerender(h, 'data');
+  card = all(h.ids.view, function (n) { return hasClass(n, 'card') && /Lineup alerts/.test(text(n)); })[0];
+  ok(/Nothing is armed right now/.test(text(card)), 'on with nothing to arm says so, rather than implying a check is coming');
+}());
+
 setTimeout(function () {
   pending.forEach(function (f) { f(); });
   console.log(fails ? ('\n  ' + fails + ' picks2 check(s) FAILED') : '\n  picks2 checks pass');
