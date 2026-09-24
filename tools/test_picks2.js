@@ -206,6 +206,61 @@ console.log('\n-- #1 win probability, and the card under the live team boxes --'
   ok(all(h.ids.view, function (n) { return hasClass(n, 'wp'); }).length === 0, 'and no win probability is shown for it');
 }());
 
+/* ====================================================== #2 colours + #3 badges */
+console.log('\n-- #2 position colours and #3 compact injury badges --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var W = h.W, St = W.Store, S = St.get(), wk = S.settings.currentWeek || 1;
+  St.setMatchups(wk, [[S.league.me, 'tugdude']]);
+  /* an injury feed naming two of my players */
+  var feed = { injuries: [{ id: '1', displayName: 'x', injuries: [
+    { status: 'Questionable', longComment: 'Warren (knee) was limited.', athlete: { displayName: 'Jaylen Warren' },
+      type: { name: 'INJURY_STATUS_QUESTIONABLE', description: 'questionable' }, details: {}, date: '2026-09-24T01:00Z' },
+    { status: 'Injured Reserve', longComment: 'Tracy is on IR with a foot injury.', athlete: { displayName: 'Tyrone Tracy Jr.' },
+      type: { name: 'INJURY_STATUS_IR', description: 'injured reserve' }, details: { returnDate: '2026-10-20' }, date: '2026-09-20T01:00Z' }
+  ] }] };
+  W.Espn._httpGetH = W.Espn._httpGet = function () { return Promise.resolve(JSON.parse(JSON.stringify(feed))); };
+  pending.push(function () { /* placeholder so ordering stays obvious */ });
+  W.Recommend.loadNews(null, { force: true }).then(function () {
+    h.clickTab('rosters');
+    var slots = all(h.ids.view, function (n) { return hasClass(n, 'slot') && /^(QB|RB|WR|TE|K|DEF)$/.test(n.textContent); });
+    ok(slots.length >= 17 && slots.every(function (n) { return hasClass(n, 'pc') && hasClass(n, 'pc-' + n.textContent); }),
+       'Roster: every position chip carries its colour class (' + slots.length + ')  <-- v8.6: plain grey');
+    var q = all(h.ids.view, function (n) { return hasClass(n, 'inj') && n.textContent === 'Q'; })[0];
+    ok(!!q && /QUESTIONABLE/.test(q.title) && /questionable/.test(q.getAttribute('aria-label')),
+       'a questionable player shows a "Q" badge, full word as its title/aria-label (' + (q && q.title) + ')');
+    var ir = all(h.ids.view, function (n) { return hasClass(n, 'inj') && n.textContent === 'IR'; })[0];
+    ok(!!ir && hasClass(ir, 'o'), 'injured reserve reads "IR" (red), not the same "O" as a one-week out');
+    var long = all(h.ids.view, function (n) { return hasClass(n, 'tag') && /^(QUESTIONABLE|DOUBTFUL|ESPN has him OUT)$/.test(n.textContent); });
+    ok(long.length === 0, 'no spelled-out injury word left in the roster list (' + long.length + ')');
+
+    rerender(h, 'live');
+    var flex = all(h.ids.view, function (n) { return hasClass(n, 'slot') && n.textContent === 'FLEX'; });
+    var rb1 = all(h.ids.view, function (n) { return hasClass(n, 'slot') && n.textContent === 'RB1'; });
+    ok(flex.length === 2 && flex.every(function (n) { return !hasClass(n, 'pc'); }), 'Live: FLEX stays neutral (a slot, not a position)');
+    ok(rb1.length === 2 && rb1.every(function (n) { return hasClass(n, 'pc-RB'); }), 'Live: RB1 is coloured as an RB');
+
+    h.clickTab('lineups');
+    var chips = all(h.ids.view, function (n) { return hasClass(n, 'pchip'); });
+    ok(chips.length >= 10 && chips.filter(function (n) { return hasClass(n, 'pc'); }).length === chips.length - chips.filter(function (n) { return n.textContent === 'FLEX'; }).length,
+       'Lineups: each slot label carries a coloured chip (' + chips.length + ')');
+
+    /* Advice uses the same helpers (ctx.slotEl / ctx.healthTag) */
+    var P = W.Projections, bn = {};
+    bn[W.Espn.normName('Jaylen Warren')] = { pos: 'RB', week: 9.5 };
+    P._setCacheForTest({ at: Date.now(), week: wk, season: S.settings.season, byName: bn, count: 1, weekly: 1, error: '', route: 't', notes: [] });
+    var sub = all(h.ids.view, function (n) { return n.tagName === 'BUTTON' && n.textContent === 'Advice'; })[0];
+    click(sub);
+    var aslots = all(h.ids.view, function (n) { return hasClass(n, 'slot') && hasClass(n, 'pc'); });
+    var abadge = all(h.ids.view, function (n) { return hasClass(n, 'inj'); });
+    ok(aslots.length >= 10, 'Advice rows are coloured too (' + aslots.length + ')');
+    ok(abadge.length >= 1, 'and use the compact badges (' + abadge.map(function (n) { return n.textContent; }).join(',') + ')');
+    var tagClaude = all(h.ids.view, function (n) { return hasClass(n, 'tag') && /^Claude$/i.test(n.textContent); });
+    ok(tagClaude.length === 0, 'no bare "CLAUDE" tag (a Claude "out" verdict is an O badge with the sentence on it)');
+  }).catch(function (e) { ok(false, 'threw: ' + (e && e.stack || e)); });
+}());
+
 setTimeout(function () {
   pending.forEach(function (f) { f(); });
   console.log(fails ? ('\n  ' + fails + ' picks2 check(s) FAILED') : '\n  picks2 checks pass');
