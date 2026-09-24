@@ -126,6 +126,15 @@ final class AlertPlan {
     return f.format(new java.util.Date(t));
   }
 
+  /** The starters this check should name: kickoff covered, and ruled out. */
+  static List<Integer> hits(long now, long[] kicks, String[] statuses) {
+    List<Integer> hit = new ArrayList<Integer>();
+    for (int i = 0; i < kicks.length; i++) {
+      if (covers(now, kicks[i]) && ruledOut(statuses[i])) hit.add(i);
+    }
+    return hit;
+  }
+
   /**
    * The notification text, or "" when nobody due is ruled out.
    * Parallel arrays, one entry per STARTER (Alerts reads them from the saved
@@ -133,12 +142,7 @@ final class AlertPlan {
    */
   static String message(long now, int week, String[] names, String[] slots,
                         long[] kicks, String[] statuses, TimeZone tz) {
-    List<Integer> hit = new ArrayList<Integer>();
-    for (int i = 0; i < names.length; i++) {
-      if (!covers(now, kicks[i])) continue;
-      if (!ruledOut(statuses[i])) continue;
-      hit.add(i);
-    }
+    List<Integer> hit = hits(now, kicks, statuses);
     if (hit.isEmpty()) return "";
     boolean oneKick = true;
     for (int i : hit) if (kicks[i] != kicks[hit.get(0)]) oneKick = false;
@@ -156,10 +160,7 @@ final class AlertPlan {
     return sb.toString();
   }
 
-  static String title(String message) {
-    if (message == null || message.isEmpty()) return "";
-    int n = 1, at = 0;
-    while ((at = message.indexOf(" · ", at)) >= 0) { n++; at += 3; }
-    return n == 1 ? "A starter is out or doubtful" : n + " starters are out or doubtful";
+  static String title(int n) {
+    return n <= 1 ? "A starter is out or doubtful" : n + " starters are out or doubtful";
   }
 }
