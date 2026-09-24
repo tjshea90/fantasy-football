@@ -314,3 +314,8 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .mchip.soft{color:var(--good);border-color:#1f4529;background:rgba(46,160,67,.12)}
 .mchip.avg{color:var(--accent);border-color:#5a4415;background:rgba(240,169,43,.10)}
 .mchip.tough{color:var(--bad);border-color:#5a2b28;background:rgba(248,81,73,.12)}
+/* ---- 2026-09-24b: trending / % rostered (Tj's pick #7) ------------------- */
+.ochip{display:inline-block;margin-left:5px;padding:0 6px;border-radius:8px;font-size:10px;font-weight:600;
+  line-height:16px;white-space:nowrap;color:var(--dim);background:var(--panel2);border:1px solid var(--line)}
+.ochip.up{color:var(--good);border-color:#1f4529}
+.ochip.down{color:var(--dim)}

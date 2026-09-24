@@ -3213,9 +3213,9 @@
      * picking up a free agent wants QB1-40. Sections per position, plus one
      * genuinely comparable mixed ranking on value-over-replacement. */
     var chips = el('div', 'fchips');
-    ['ALL', 'VALUE'].concat(Value.POS).forEach(function (k) {
+    ['ALL', 'VALUE', 'TREND'].concat(Value.POS).forEach(function (k) {
       var b = el('button', 'fchip' + (faPos === k ? ' on' : ''),
-                 k === 'VALUE' ? 'Best value' : (k === 'ALL' ? 'All positions' : k));
+                 k === 'VALUE' ? 'Best value' : (k === 'ALL' ? 'All positions' : (k === 'TREND' ? 'Trending' : k)));
       b.setAttribute('data-fk', 'faChip|' + k);
       b.setAttribute('aria-pressed', k === faPos ? 'true' : 'false');
       b.addEventListener('click', function () { faPos = k; render(); });
@@ -3248,6 +3248,10 @@
         : fmt(f.v) + ' proj';
       nm2.appendChild(el('small', null, '  ' + f.nfl + (f.onBye ? ' · ON BYE this week' : '') +
         ' · ' + season + vor));
+      /* % rostered on ESPN and this week's move (Tj's pick #7) — Sleeper's
+         "Trending" and ESPN's "Most added", from data already downloaded */
+      var ow = ownershipOf(f);
+      if (ow) nm2.appendChild(ownChip(ow));
       /* The basis and the usage trail are fine print, clamped to two lines —
          tap to read the rest. They used to be full-size text under every
          row, which made each free agent five or six lines tall and the
@@ -3265,7 +3269,27 @@
       return r2;
     }
 
-    if (faPos === 'VALUE') {
+    if (faPos === 'TREND') {
+      /* Trending (Tj's pick #7): the free agents whose ESPN % rostered rose
+         the most this week — what other leagues are picking up. Every row
+         still carries this league's own rest-of-season number. */
+      var pool = [];
+      Value.POS.forEach(function (k) { (groups[k] || []).forEach(function (f) {
+        var ow = ownershipOf(f);
+        if (ow && ow.chg >= 0.5) pool.push({ f: f, chg: ow.chg });
+      }); });
+      pool.sort(function (a, b) { return b.chg - a.chg; });
+      c.appendChild(el('p', 'muted',
+        'Free agents whose share of ESPN leagues rostering them rose the most this week — the ' +
+        'pickups everyone else is making. A rising number is a signal to look, not a verdict: ' +
+        'the season points beside each name are this league\'s own.'));
+      if (!pool.length) {
+        c.appendChild(el('p', 'hint', 'No ownership data on hand yet — it arrives with the next ' +
+          'projection refresh (Lineups → Advice → Sync advice, or opening this tab when the ' +
+          'season set is stale).'));
+      }
+      pool.slice(0, 25).forEach(function (x) { c.appendChild(faRow(x.f, true)); });
+    } else if (faPos === 'VALUE') {
       c.appendChild(el('p', 'muted',
         'Ranked by REST-OF-SEASON points above the best free agent at the same ' +
         'position. This is the only ranking on this screen that compares a QB ' +
@@ -3300,6 +3324,20 @@
       'here does not tell your league site anything; do the real add there.'));
     return c;
   }
+  function ownershipOf(f) {
+    if (!window.Projections || !Projections.ownership) return null;
+    try { return Projections.ownership({ name: f.name, pos: f.pos }); } catch (e) { return null; }
+  }
+  function ownChip(ow) {
+    var up = ow.chg >= 0.5, down = ow.chg <= -0.5;
+    var s = el('span', 'ochip' + (up ? ' up' : (down ? ' down' : '')));
+    s.textContent = Math.round(ow.own) + '% rostered' +
+      (up ? ' ▲' + fmtChg(ow.chg) : (down ? ' ▼' + fmtChg(-ow.chg) : ''));
+    s.title = 'Rostered in ' + ow.own + '% of ESPN leagues' +
+      (ow.chg ? ', ' + (ow.chg > 0 ? 'up ' : 'down ') + Math.abs(ow.chg) + ' points this week' : '') + '.';
+    return s;
+  }
+  function fmtChg(x) { return x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10); }
   function finePrint(text) {
     var d = el('div', 'fine', text);
     d.addEventListener('click', function (e) {
