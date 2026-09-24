@@ -1,12 +1,12 @@
-# CHECKPOINT 180 — read me first, then TASKS.md
+# CHECKPOINT 184 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T20:34:01Z · **version:** 8.6 · **tests:** all 28 suites green
+**Written:** 2026-09-24T20:38:50Z · **version:** 8.7 · **tests:** all 28 suites green
 
 ## Just done
-Features done (A-I) + visual pass fixes (Wire injury card badges, long-term-out badge from outLabel, PUP wording, alert time row, Wire fine print per chip); perf.js --views/--evalshot; STATE.md v8.7
+v8.7 shipped + Release verified (asset FFTracker-v8.7.apk). K full test started: ui.js diff reviewed; CSS classes all defined; dead Stats.openPlayerModal removed (+ stale stats.js header) with a pin
 
 ## Do this next
-ship.sh v8.7, publish-release 8.7, verify, then K: full test of the whole app
+K continues: sweep the rest (Advice/recommend.js diff, projections.js diff, sim.js/schedule.js, Android shell, index.html load order), network/battery/race checks, then ckpt + ship v8.8 if anything was fixed, publish-release, message Tj with BOTH links
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  4331bae ship v8.7: v8.7: Tj's picks 1,2,3,6,7,8,9,10 + Live layout (win probability, position co
+  2eb03e9 ckpt 180: Features done (A-I) + visual pass fixes (Wire injury card badges, long-term-ou
   be7a263 ckpt 168: Item I done: Data -> League puts Standings first; 'Enter week N scores' under 
   a7a8654 ckpt 164: Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alar
   f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
@@ -34,9 +36,7 @@ request in his own words and `git log` carries every step already taken.
   d8f32eb ckpt 136: Items C+D done: position colour chips (slotEl/posClass; FLEX neutral; Lineups 
   19ecaa6 ckpt 132: Items A+B done: Live win probability (Sim.matchupOdds: banked + proj x game-le
   2b6781b ckpt 127: Wrote Tj's 2026-09-24b request into TASKS.md (A-K: proposals 1,2,3,6,7,8,9,10 
-  17e9448 ckpt 125: Full test + competitor survey (2026-09-24) complete: v8.6 Release published an
-  9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
 ```
 
-(11 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
