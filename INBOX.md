@@ -892,3 +892,12 @@ Run a full test on this app and see what other popular fantasy football apps hav
 <summary>Background command "Wait for crawls and build to finish" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-24T19:27:01Z
+```
+Add recommended features 1, 2, 3, 6, 7, 8, 9, 10.
+
+For the live tab, move the projection/win probability card to the bottom of the section under the live team tracking.
+
+Then run full tests on the app using the full power of opus 5.5 ultracode
+```
