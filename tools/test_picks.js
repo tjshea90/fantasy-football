@@ -342,6 +342,120 @@ var pendingEst = null;
   };
 }());
 
+/* ================================================ FULL TEST 2026-09-24 */
+console.log('\n-- full test 2026-09-24: Live, an inactive starter whose game is over --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var St = h.W.Store, S = St.get(), wk = S.settings.currentWeek || 1;
+  St.setMatchups(wk, [[S.league.me, 'tugdude']]);
+  var mine = St.teamWeekPoints(wk, S.league.me).detail.filter(function (d) { return d.pid && !d.onBye; });
+  var gone = mine[0].player;                 /* inactive: his team's game is FINAL, he has no line */
+  h.W.Schedule.ingest(wk, [{ id: 'g1', date: new Date(Date.now() - 5 * 3600e3).toISOString(), state: 'post',
+    detail: 'Final', teams: [{ abbr: gone.nfl, score: 20, homeAway: 'home' }, { abbr: 'ZZZ', score: 10, homeAway: 'away' }] }]);
+  var stillToPlay = mine.filter(function (d) { return d.player.nfl !== gone.nfl; }).length;
+  rerender(h, 'live');
+  var box = all(h.ids.view, function (n) { return hasClass(n, 'halfbox') && hasClass(n, 'me'); })[0];
+  var sub = box ? all(box, function (n) { return hasClass(n, 'sub'); })[0] : null;
+  var said = sub ? parseInt(sub.textContent, 10) : -1;
+  ok(said === stillToPlay, '"' + (sub && sub.textContent) + '" counts only starters whose game has not ended (' +
+     stillToPlay + ')  <-- v8.5 counted the inactive man as still to play');
+  var row = all(box, function (n) { return n.getAttribute && /^/.test('') && n.getAttribute('data-player') &&
+    n.getAttribute('data-player').indexOf(gone.name + '|') === 0; })[0];
+  var pts = row ? all(row, function (n) { return hasClass(n, 'pts'); })[0] : null;
+  ok(pts && !hasClass(pts, 'pend'), 'his 0.0 is not drawn in the "still to play" style');
+  ok(pts && all(pts, function (n) { return hasClass(n, 'pproj'); }).length === 0,
+     'and no "p N.N" projection sits under it for a game that has already happened  <-- v8.5 showed one');
+}());
+
+console.log('\n-- full test 2026-09-24: Lineups "Reset to auto" resets THAT team only --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var St = h.W.Store, S = St.get(), wk = S.settings.currentWeek || 1;
+  St.setMatchups(wk, [[S.league.me, 'tugdude']]);
+  S.settings.autoFill = false;                               /* Auto-default: OFF */
+  var other = S.teams.filter(function (t) { return t.id !== S.league.me && t.id !== 'tugdude'; })[0];
+  var keys = St.slotKeys();
+  keys.forEach(function (k) { St.setSlot(wk, other.id, k.key, '', false); });   /* an empty roster elsewhere */
+  var me = St.team(S.league.me), qb = me.players.filter(function (p) { return p.pos === 'QB'; });
+  St.setSlot(wk, S.league.me, 'QB', qb[qb.length - 1].id, true);                 /* one hand-pick */
+  h.clickTab('lineups');
+  var reset = all(h.ids.view, function (n) { return n.tagName === 'BUTTON' && n.textContent === 'Reset to auto' && !n.disabled; })[0];
+  ok(!!reset, 'my card offers "Reset to auto" (I hand-picked a slot)');
+  click(reset);
+  var L = St.getLineup(wk, other.id), filled = keys.filter(function (k) { return L[k.key]; }).length;
+  ok(filled === 0, 'an unrelated team\'s lineup was left alone (' + filled + ' slots filled)  <-- v8.5 refilled all ten rosters, Auto-default OFF or not');
+  ok(!St.isManual(wk, S.league.me, 'QB'), 'my own hand-pick was reset');
+}());
+
+console.log('\n-- full test 2026-09-24: odds when future matchups were never entered --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var St = h.W.Store, S = St.get(), Sim = h.W.Sim, reg = S.league.regularSeasonWeeks;
+  var ids = S.teams.map(function (t) { return t.id; });
+  var arr = ids.slice(), w, i;
+  for (w = 1; w <= 3; w++) {                                  /* weeks 1-2 played + only week 3 entered */
+    var pairs = [];
+    for (i = 0; i < arr.length / 2; i++) pairs.push([arr[i], arr[arr.length - 1 - i]]);
+    St.setMatchups(w, pairs);
+    arr = [arr[0], arr[arr.length - 1]].concat(arr.slice(1, arr.length - 1));
+  }
+  [1, 2].forEach(function (wk) {
+    ids.forEach(function (id, k) { St.setManualScore(wk, id, 140 + (k % 9) * 4 + ((wk * 7 + k * 13) % 11)); });
+    S.weekMeta[String(wk)] = { synced: true, allFinal: true, at: new Date().toISOString(), games: 16 };
+  });
+  var v = Sim.season(reg);
+  var hi = Math.max.apply(null, v.rows.map(function (r) { return r.playoff; }));
+  var lo = Math.min.apply(null, v.rows.map(function (r) { return r.playoff; }));
+  ok(v.weeksLeft === reg - 2 && v.randomWeeks === reg - 3,
+     'all ' + (reg - 2) + ' unplayed weeks are played, ' + v.randomWeeks + ' of them against random opponents');
+  ok(hi < 0.99 && lo > 0.01, 'after two weeks nobody is locked in or written off (' + (lo * 100).toFixed(0) + '%..' +
+     (hi * 100).toFixed(0) + '%)  <-- v8.5 skipped unentered weeks: 100% / 0%');
+  function sum(f) { return v.rows.reduce(function (a, r) { return a + r[f]; }, 0); }
+  ok(Math.abs(sum('playoff') - 6) < 0.01 && Math.abs(sum('title') - 1) < 0.01, 'still a true distribution (6 spots, 1 title)');
+  var ui = fs.readFileSync(A('ui.js'), 'utf8');
+  ok(/v\.randomWeeks\s*\? 'Matchups are missing in '/.test(ui), 'the card says which weeks were drawn at random');
+}());
+
+console.log('\n-- full test 2026-09-24: copy and layout --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var St = h.W.Store, S = St.get();
+  /* F1: the Live "Set up matchup" button lands on League, wherever Data was left */
+  h.clickTab('data');
+  click(button(h.ids.view, 'App'));
+  h.clickTab('live');
+  var set = all(h.ids.view, function (n) { return n.tagName === 'BUTTON' && /^Set up week \d+ matchup$/.test(n.textContent); })[0];
+  ok(!!set, 'Live offers "Set up week N matchup" when there is no opponent');
+  click(set);
+  ok(!!button(h.ids.view, 'Add matchup'), 'and it opens Data -> League, where "Add matchup" is  <-- v8.5 reopened Data -> App');
+  /* F7 */
+  h.clickTab('rosters');
+  ok(h.ids.title.textContent === 'Roster', 'the header reads "Roster", like its tab (' + h.ids.title.textContent + ')');
+  /* F2: every pointer names the screen, never a bare "the Data tab" */
+  var loose = [];
+  ['ui.js', 'recommend.js', 'ai.js', 'stats.js', 'handoff.js', 'value.js'].forEach(function (f) {
+    var src = fs.readFileSync(A(f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    var re = /'[^'\n]*Data tab[^'\n]*'/g, m;
+    while ((m = re.exec(src))) loose.push(f + ': ' + m[0]);
+  });
+  ok(!loose.length, 'no copy points at "the Data tab" without naming the screen' + (loose.length ? ':\n         ' + loose.join('\n         ') : ''));
+  /* F3: the kickoff badge on a Roster row is separated from "bye N" */
+  var ui = fs.readFileSync(A('ui.js'), 'utf8');
+  ok(/gb1\.textContent = ' · ' \+ gb1\.textContent/.test(ui), 'Roster rows read "CHI · bye 7 · Thu 8:20p", not "bye 7 Thu 8:20p"');
+  /* F12 + F13: the Advice card */
+  var rc = fs.readFileSync(A('recommend.js'), 'utf8');
+  var at = rc.indexOf("nm.appendChild(document.createTextNode(s.pick.p.name));");
+  var seg = rc.slice(at, at + 900);
+  ok(at > 0 && seg.indexOf("s.pick.p.pos + ' ' + s.pick.p.nfl") < seg.indexOf('ctx.gameBadge(s.pick.p.nfl)'),
+     'Advice rows read "name  RB IND vs HOU · Sun 1p" (kickoff after the team, as everywhere else)');
+  ok(rc.indexOf('Tap any player to see each source') < 0 && /Open any player\\'s "why" to see each source/.test(rc),
+     'Advice no longer says "tap any player" for a row with no tap action — it points at "why"');
+}());
+
 setTimeout(function () {
   if (pendingOdds) pendingOdds();
   if (pendingEst) pendingEst();
