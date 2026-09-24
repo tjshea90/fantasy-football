@@ -26,7 +26,7 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
       slot column (Live, Lineups, Roster, Wire, Advice, dialogs); FLEX neutral.
 - [x] **D. (#3) Compact injury badges** DONE (same block: Q, IR distinct from O, no spelled-out words in lists, tooltip/aria full text) — — Q / D / O / IR / SUSP / PUP pills
       (full word as title + aria-label) in lists; detail views keep words.
-- [ ] **E. (#6) Matchup difficulty chip** — "vs HOU · 28th vs RB" coloured
+- [x] **E. (#6) Matchup difficulty chip** DONE (test_picks2 '#6', 7 checks; fantasy-points-allowed from the league book + PlayerDB positions, rank 1 = toughest, 2-game minimum) — — "vs HOU · 28th vs RB" coloured
       soft/avg/tough from the engine's own defense-vs-position numbers, on
       Lineups, Advice and Roster rows.
 - [ ] **F. (#7) Trending on the Wire** — ESPN ownership % + weekly change
