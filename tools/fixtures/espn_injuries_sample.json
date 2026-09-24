@@ -1,0 +1,3726 @@
+{
+ "timestamp": "2026-09-24T18:04:26Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "name": "Regular Season",
+  "displayName": "2026"
+ },
+ "injuries": [
+  {
+   "id": "22",
+   "displayName": "Arizona Cardinals",
+   "injuries": [
+    {
+     "id": "638949",
+     "longComment": "Melton suffered a toe injury during the team's 31-7 loss to Seattle in Week 2, and he is considered day-to-day. The cornerback will have two more chances to return to practice prior to Sunday's matchup with the 49ers. If he can't play this week, Kalen King would be a top candidate to draw a start at slot cornerback versus San Francisco.",
+     "shortComment": "Melton (toe) did not participate at the Cardinals' practice Wednesday, Josh Weinfuss of ESPN.com reports.",
+     "status": "Questionable",
+     "date": "2026-09-24T02:12Z",
+     "athlete": {
+      "firstName": "Max",
+      "lastName": "Melton",
+      "displayName": "Max Melton",
+      "shortName": "M. Melton",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4698113/max-melton",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4698113/max-melton",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4698113&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4698113/max-melton",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4698113/max-melton",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4698113&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4698113/max-melton",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4698113&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4698113/max-melton",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4698113&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4698113/max-melton",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4698113",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4698113.png",
+       "alt": "Max Melton"
+      },
+      "position": {
+       "id": "29",
+       "name": "Cornerback",
+       "displayName": "Cornerback",
+       "abbreviation": "CB",
+       "leaf": true
+      },
+      "team": {
+       "id": "22",
+       "uid": "s:20~l:28~t:22",
+       "slug": "arizona-cardinals",
+       "name": "Cardinals",
+       "abbreviation": "ARI",
+       "displayName": "Arizona Cardinals",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/ari/arizona-cardinals",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/ari/arizona-cardinals",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/ari/arizona-cardinals",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/ari",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/ari",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/arizona-cardinals-tickets--sports-nfl-football/performer/40?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/ari/arizona-cardinals",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/ari",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/ari",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/ari",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "638949",
+         "type": "news",
+         "date": "2026-09-24T02:12Z",
+         "headline": "Melton (toe) did not participate at the Cardinals' practice Wednesday, Josh Weinfuss of ESPN.com reports.",
+         "text": "Melton suffered a toe injury during the team's 31-7 loss to Seattle in Week 2, and he is considered day-to-day. The cornerback will have two more chances to return to practice prior to Sunday's matchup with the 49ers. If he can't play this week, Kalen King would be a top candidate to draw a start at slot cornerback versus San Francisco.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4698113/injuries/638949?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Toe",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Left",
+      "returnDate": "2026-09-27"
+     }
+    },
+    {
+     "id": "638947",
+     "longComment": "Williams has yet to make his season debut as he continues to work his way back from an Achilles injury he suffered in December, but he appears to be nearing a return to action. With fellow cornerback Will Johnson (neck) expected to miss the remainder of the 2026 campaign, Williams will have a chance to step into a starting role once he's healthy. The 25-year-old will have two more opportunities to log a full practice before Sunday's matchup with San Francisco.",
+     "shortComment": "Williams (Achilles) was a limited participant at the Cardinals' practice Wednesday, Josh Weinfuss of ESPN.com reports.",
+     "status": "Questionable",
+     "date": "2026-09-24T02:08Z",
+     "athlete": {
+      "firstName": "Garrett",
+      "lastName": "Williams",
+      "displayName": "Garrett Williams",
+      "shortName": "G. Williams",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4568506/garrett-williams",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4568506/garrett-williams",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4568506&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4568506/garrett-williams",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4568506/garrett-williams",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4568506&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4568506/garrett-williams",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4568506&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4568506/garrett-williams",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4568506&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4568506/garrett-williams",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4568506",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4568506.png",
+       "alt": "Garrett Williams"
+      },
+      "position": {
+       "id": "29",
+       "name": "Cornerback",
+       "displayName": "Cornerback",
+       "abbreviation": "CB",
+       "leaf": true
+      },
+      "team": {
+       "id": "22",
+       "uid": "s:20~l:28~t:22",
+       "slug": "arizona-cardinals",
+       "name": "Cardinals",
+       "abbreviation": "ARI",
+       "displayName": "Arizona Cardinals",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/ari/arizona-cardinals",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/ari/arizona-cardinals",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/ari/arizona-cardinals",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/ari",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/ari",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/arizona-cardinals-tickets--sports-nfl-football/performer/40?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/ari/arizona-cardinals",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/ari",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/ari",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/ari",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "638947",
+         "type": "news",
+         "date": "2026-09-24T02:08Z",
+         "headline": "Williams (Achilles) was a limited participant at the Cardinals' practice Wednesday, Josh Weinfuss of ESPN.com reports.",
+         "text": "Williams has yet to make his season debut as he continues to work his way back from an Achilles injury he suffered in December, but he appears to be nearing a return to action. With fellow cornerback Will Johnson (neck) expected to miss the remainder of the 2026 campaign, Williams will have a chance to step into a starting role once he's healthy. The 25-year-old will have two more opportunities to log a full practice before Sunday's matchup with San Francisco.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4568506/injuries/638947?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Achilles",
+      "location": "Leg",
+      "detail": "Surgery",
+      "side": "Not Specified",
+      "returnDate": "2026-09-27"
+     }
+    }
+   ]
+  },
+  {
+   "id": "1",
+   "displayName": "Atlanta Falcons",
+   "injuries": [
+    {
+     "id": "638876",
+     "longComment": "Ebukam was not able to practice during the week, and he'll now have to miss at least one game as he recovers from the hamstring injury he suffered during Atlanta's loss versus the Panthers in Week 2. In his absence, Jared Ivey figures to see increased reps on the edge.",
+     "shortComment": "Ebukam (hamstring) is officially listed as out for Thursday's game against the Packers, Tori McElhaney of the Falcons' official site reports.",
+     "status": "Out",
+     "date": "2026-09-23T23:26Z",
+     "athlete": {
+      "firstName": "Samson",
+      "lastName": "Ebukam",
+      "displayName": "Samson Ebukam",
+      "shortName": "S. Ebukam",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/3045527/samson-ebukam",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/3045527/samson-ebukam",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:3045527&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/3045527/samson-ebukam",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/3045527/samson-ebukam",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:3045527&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/3045527/samson-ebukam",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:3045527&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/3045527/samson-ebukam",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:3045527&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/3045527/samson-ebukam",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:3045527",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/3045527.png",
+       "alt": "Samson Ebukam"
+      },
+      "position": {
+       "id": "31",
+       "name": "Defensive End",
+       "displayName": "Defensive End",
+       "abbreviation": "DE",
+       "leaf": true
+      },
+      "team": {
+       "id": "1",
+       "uid": "s:20~l:28~t:1",
+       "slug": "atlanta-falcons",
+       "name": "Falcons",
+       "abbreviation": "ATL",
+       "displayName": "Atlanta Falcons",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-02-13T03:12Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/atl/atlanta-falcons",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/atl/atlanta-falcons",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/atl",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/atl",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/atlanta-falcons-tickets--sports-nfl-football/performer/51?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/atl/atlanta-falcons",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/atl",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/atl",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/atl",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "638876",
+         "type": "news",
+         "date": "2026-09-23T23:26Z",
+         "headline": "Ebukam (hamstring) is officially listed as out for Thursday's game against the Packers, Tori McElhaney of the Falcons' official site reports.",
+         "text": "Ebukam was not able to practice during the week, and he'll now have to miss at least one game as he recovers from the hamstring injury he suffered during Atlanta's loss versus the Panthers in Week 2. In his absence, Jared Ivey figures to see increased reps on the edge.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/3045527/injuries/638876?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "OUT",
+       "abbreviation": "OUT"
+      },
+      "type": "Hamstring",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-10-05"
+     }
+    },
+    {
+     "id": "638873",
+     "longComment": "Atlanta only held a walkthrough practice Wednesday, but Bowman was estimated as a full participant, so it seems he's trending in a positive direction ahead of Thursday's contest. If he's not able to make his 2026 debut in Week 3, however, rookie second-rounder Avieon Terrell could continue to see an expanded role in the secondary.",
+     "shortComment": "Bowman (Achilles) is officially listed as questionable for Thursday's game at Green Bay, Tori McElhaney of the Falcons' official site reports.",
+     "status": "Questionable",
+     "date": "2026-09-23T23:21Z",
+     "athlete": {
+      "firstName": "Billy",
+      "lastName": "Bowman Jr.",
+      "displayName": "Billy Bowman Jr.",
+      "shortName": "B. Bowman Jr.",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4431194/billy-bowman-jr",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4431194/billy-bowman-jr",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4431194&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4431194/billy-bowman-jr",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4431194/billy-bowman-jr",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4431194&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4431194/billy-bowman-jr",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4431194&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4431194/billy-bowman-jr",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4431194&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4431194/billy-bowman-jr",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4431194",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4431194.png",
+       "alt": "Billy Bowman Jr."
+      },
+      "position": {
+       "id": "29",
+       "name": "Cornerback",
+       "displayName": "Cornerback",
+       "abbreviation": "CB",
+       "leaf": true
+      },
+      "team": {
+       "id": "1",
+       "uid": "s:20~l:28~t:1",
+       "slug": "atlanta-falcons",
+       "name": "Falcons",
+       "abbreviation": "ATL",
+       "displayName": "Atlanta Falcons",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/atl.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-02-13T03:12Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/49fd392a-86fe-4df3-1b77-9bbfa18b2ad5/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/atl/atlanta-falcons",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/atl/atlanta-falcons",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/atl",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/atl",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/atlanta-falcons-tickets--sports-nfl-football/performer/51?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/atl/atlanta-falcons",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/atl",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/atl",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/atl",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:1&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "638873",
+         "type": "news",
+         "date": "2026-09-23T23:21Z",
+         "headline": "Bowman (Achilles) is officially listed as questionable for Thursday's game at Green Bay, Tori McElhaney of the Falcons' official site reports.",
+         "text": "Atlanta only held a walkthrough practice Wednesday, but Bowman was estimated as a full participant, so it seems he's trending in a positive direction ahead of Thursday's contest. If he's not able to make his 2026 debut in Week 3, however, rookie second-rounder Avieon Terrell could continue to see an expanded role in the secondary.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4431194/injuries/638873?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Achilles",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-09-24"
+     }
+    }
+   ]
+  },
+  {
+   "id": "33",
+   "displayName": "Baltimore Ravens",
+   "injuries": [
+    {
+     "id": "638971",
+     "longComment": "Flowers has yet to resume officially participating in practice since sustaining a hamstring injury during Baltimore's season-opening win over the Colts. The speedy wide receiver sat out the Week 2 loss to the Saints and is in danger of missing a second consecutive game Sunday against the Cowboys. Flowers would likely need to practice in at least some capacity Friday to have a chance to play Sunday.",
+     "shortComment": "Flowers (hamstring) isn't practicing Thursday, though he worked out on his own prior to practice, Kyle Goon of The Baltimore Banner reports.",
+     "status": "Questionable",
+     "date": "2026-09-24T17:04Z",
+     "athlete": {
+      "firstName": "Zay",
+      "lastName": "Flowers",
+      "displayName": "Zay Flowers",
+      "shortName": "Z. Flowers",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4429615/zay-flowers",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4429615/zay-flowers",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4429615&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4429615/zay-flowers",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4429615/zay-flowers",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4429615&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4429615/zay-flowers",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4429615&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4429615/zay-flowers",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4429615&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4429615/zay-flowers",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4429615",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4429615.png",
+       "alt": "Zay Flowers"
+      },
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "id": "33",
+       "uid": "s:20~l:28~t:33",
+       "slug": "baltimore-ravens",
+       "name": "Ravens",
+       "abbreviation": "BAL",
+       "displayName": "Baltimore Ravens",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:45Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:53Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/bal/baltimore-ravens",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/bal/baltimore-ravens",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/bal/baltimore-ravens",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/bal",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/bal",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/baltimore-ravens-tickets--sports-nfl-football/performer/60?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/bal/baltimore-ravens",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/bal",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/bal",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/bal",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "638971",
+         "type": "news",
+         "date": "2026-09-24T17:04Z",
+         "headline": "Flowers (hamstring) isn't practicing Thursday, though he worked out on his own prior to practice, Kyle Goon of The Baltimore Banner reports.",
+         "text": "Flowers has yet to resume officially participating in practice since sustaining a hamstring injury during Baltimore's season-opening win over the Colts. The speedy wide receiver sat out the Week 2 loss to the Saints and is in danger of missing a second consecutive game Sunday against the Cowboys. Flowers would likely need to practice in at least some capacity Friday to have a chance to play Sunday.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4429615/injuries/638971?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Hamstring",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Left",
+      "returnDate": "2026-09-27"
+     }
+    },
+    {
+     "id": "-2013755",
+     "longComment": "questionable",
+     "shortComment": "questionable",
+     "status": "Questionable",
+     "date": "2026-09-24T17:01Z",
+     "athlete": {
+      "firstName": "Chris",
+      "lastName": "Moore",
+      "displayName": "Chris Moore",
+      "shortName": "C. Moore",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/2576581/chris-moore",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/2576581/chris-moore",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:2576581&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/2576581/chris-moore",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/2576581/chris-moore",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:2576581&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/2576581/chris-moore",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:2576581&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/2576581/chris-moore",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:2576581&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/2576581/chris-moore",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:2576581",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/2576581.png",
+       "alt": "Chris Moore"
+      },
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "id": "33",
+       "uid": "s:20~l:28~t:33",
+       "slug": "baltimore-ravens",
+       "name": "Ravens",
+       "abbreviation": "BAL",
+       "displayName": "Baltimore Ravens",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:45Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/bal.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:53Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/38248455-3da4-84e4-8090-98b5cc38ffdc/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/bal/baltimore-ravens",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/bal/baltimore-ravens",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/bal/baltimore-ravens",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/bal",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/bal",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/baltimore-ravens-tickets--sports-nfl-football/performer/60?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/bal/baltimore-ravens",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/bal",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/bal",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/bal",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2013755",
+         "type": "news",
+         "date": "2026-09-24T17:01Z",
+         "headline": "questionable",
+         "text": "questionable",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/2576581/injuries/-2013755?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Ankle",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-09-27"
+     }
+    }
+   ]
+  }
+ ]
+}
