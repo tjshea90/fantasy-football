@@ -325,3 +325,11 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .pcard .pcsec .subhd{margin:2px 0 4px}
 .pcard .pcline{margin:3px 0;font-size:13px;line-height:1.45}
 .pcard .pcpre{white-space:pre-wrap;font-size:13px;margin:0 0 8px;font-family:inherit;line-height:1.5}
+
+/* Data -> League: the score-entry card collapses before kickoff (v8.7, #10).
+   A card's own <details> needs no rule above it, and its h2 sits inline in
+   the summary so the heading reads as the card's title. */
+details.wsc{border-top:0;padding:0}
+details.wsc>summary h2{margin:0}
+details.wsc>summary .hint{display:block;margin-top:4px}
+details.wsc[open]>summary{margin-bottom:10px}

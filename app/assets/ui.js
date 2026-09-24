@@ -3574,9 +3574,39 @@
    * total, shown greyed-out in an otherwise-empty box) are both gone — they
    * were exactly what made an intentionally blank, ready-to-type field read
    * as clutter. One row per team: its name, then its box. Nothing else. */
+  /* Tj's pick #10 (v8.7): Standings come first on Data -> League, and this
+     card sits under them COLLAPSED until the week has kicked off — before
+     that there is nothing to enter, and nine empty boxes pushed the table he
+     opens the tab for below the fold. Open once any game of the week has
+     started (or it is a past week), whenever a score is already entered
+     (never hide data he typed), or when he opened it himself. */
+  var scoresOpened = {};
+  function weekKickedOff(w) {
+    if (w < (S.settings.currentWeek || 1) || Store.weekIsScored(w)) return true;
+    var g = Schedule.get(w), now = Date.now(), k;
+    if (!g) return false;
+    for (k in g) {
+      if (!Object.prototype.hasOwnProperty.call(g, k) || !g[k]) continue;
+      if (g[k].state && g[k].state !== 'pre') return true;
+      var t = new Date(g[k].kick).getTime();
+      if (!isNaN(t) && t <= now) return true;
+    }
+    return false;
+  }
   function weeklyScoresCard() {
     var c = el('div', 'card');
-    c.appendChild(el('h2', null, 'Enter week ' + week + ' scores'));
+    var wk = week;
+    var entered = S.teams.some(function (t) {
+      return t.id !== S.league.me && Store.getManualScore(wk, t.id) !== null;
+    });
+    var d = el('details', 'wsc');
+    d.open = entered || !!scoresOpened[wk] || weekKickedOff(wk);
+    var sm = el('summary');
+    sm.appendChild(el('h2', null, 'Enter week ' + wk + ' scores'));
+    if (!d.open) sm.appendChild(el('span', 'hint', 'Opens once week ' + wk + ' kicks off \u2014 tap to enter now \u25be'));
+    d.appendChild(sm);
+    d.addEventListener('toggle', function () { scoresOpened[wk] = d.open; });
+    c.appendChild(d);
     S.teams.forEach(function (t) {
       if (t.id === S.league.me) return;
       var row = el('div', 'row');
@@ -3590,7 +3620,7 @@
         render();
       });
       row.appendChild(inp);
-      c.appendChild(row);
+      d.appendChild(row);
     });
     return c;
   }
@@ -3813,8 +3843,8 @@
     return c;
   }
   function viewDataLeague(root) {
+    addSafe(root, 'Standings', standingsCard);          /* first: Tj's pick #10 */
     addSafe(root, 'Weekly scores', weeklyScoresCard);
-    addSafe(root, 'Standings', standingsCard);
     addSafe(root, 'Power rankings', powerCard);
     /* matchups */
     var c = el('div', 'card');
