@@ -24,6 +24,7 @@
  *   node tools/perf.js --state S --advice --save S2   # run Lineups>Advice "Sync advice" first
  *   node tools/perf.js --state S --dark 0       # light theme (prefers-color-scheme)
  *   node tools/perf.js --state S --eval "JS" --save S2   # run page JS after boot (e.g. Recap.generateSchedule({}))
+ *   node tools/perf.js --state S --inject mock.js --shots DIR   # design mockups: extra page script before boot
  *
  * Dev tool only: not a test_*.js, so ckpt.sh/ship.sh never run it (it needs
  * Chromium and the network). ES2018 rules do not apply to this file — it runs
@@ -139,6 +140,10 @@ function curl(url, headersJson, body) {
     }).observe(document, { childList: true, subtree: true });
   }, initial);
 
+  /* --inject FILE: a script run in the page before anything else (e.g. a
+     mockup's extra CSS + a MutationObserver that restyles each render) —
+     for design mockups only, never shipped (2026-09-24) */
+  if (opt('inject', false)) await page.addInitScript({ path: path.resolve(String(opt('inject'))) });
   const cdp = await ctx.newCDPSession(page);
   if (THROTTLE > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
 
