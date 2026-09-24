@@ -365,6 +365,21 @@
           if (sc[A[j]] > sc[B[j]]) wins[A[j]]++;
           else if (sc[B[j]] > sc[A[j]]) wins[B[j]]++;
         }
+        /* the week's unentered games: a fresh random pairing each run */
+        var fr = freeT[f];
+        if (fr.length) {
+          var m = fr.length, q, tmp;
+          shuf.length = 0;
+          for (q = 0; q < m; q++) shuf.push(fr[q]);
+          for (q = m - 1; q > 0; q--) {
+            k = Math.floor(r() * (q + 1));
+            tmp = shuf[q]; shuf[q] = shuf[k]; shuf[k] = tmp;
+          }
+          for (q = 0; q + 1 < m; q += 2) {
+            if (sc[shuf[q]] > sc[shuf[q + 1]]) wins[shuf[q]]++;
+            else if (sc[shuf[q + 1]] > sc[shuf[q]]) wins[shuf[q + 1]]++;
+          }
+        }
       }
       /* wins, then points — the league's own tiebreak (a points title pays) */
       order.length = 0;
