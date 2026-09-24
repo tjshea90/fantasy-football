@@ -19,10 +19,13 @@ ideas become numbered proposals under "Waiting on Tj".
 - [x] **3. Dynamic crawl in Chromium** DONE on state G (real weeks 1-2 +
       generated schedule + Advice sync): 275 actions over 12 screens, 0 page
       errors, 0 error cards. Screenshots of every tab read. No real device.
-- [ ] **4. Review the v8.5 diff adversarially** (Gamelog dirty/flush,
-      afterPaint/fillAfterPaint, Names.cmp, freshenSchedule stand-down).
-- [ ] **5. Data retention + network + battery** (unbounded caches, lost
-      writes, duplicate fetches, timers alive while backgrounded, Android shell).
+- [x] **4. Review the v8.5 diff adversarially** DONE — Gamelog dirty/flush,
+      afterPaint/fillAfterPaint, Names.cmp (ICU tie/case/punctuation order
+      re-derived), freshenSchedule stand-down (tick always fetches the
+      scoreboard; busy re-arms in 15 s): no defects.
+- [x] **5. Data retention + network + battery** DONE — findings F9, F10,
+      F11 below. Sleep path (pause flushes Store+Gamelog, pauseTimers, no
+      wakelocks) unchanged and fine. Scoreboard poll 22 KB gz, fine.
 - [ ] **6. Engine/logic spot-checks vs RULES_2026.md** (fresh players, not the
       five checked on 2026-09-23c).
 - [ ] **7. Research: ESPN, Sleeper, Yahoo, NFL Fantasy, CBS, FantasyPros,
@@ -69,6 +72,20 @@ is just "No opponent set").
   Fix: in-progress quiet syncs mark the archive lazily (written <=5 min
   later / on flush / at once when final or on a manual sync) and do not
   count toward the backup cadence.
+- F11 SPEED/MEMORY: ESPN /injuries is 8.76 MB of JSON (355 KB gzipped);
+  8.76 MB of it is athlete.links (player-card URLs the app never reads).
+  The page pulls it over the bridge in 46 x 192 KB chunks and JSON.parses
+  it: 45-145 ms at 4x on the JS thread + ~17 MB string + parse garbage,
+  every 10 min while the app is open (freshenInjuries on the live poll),
+  on every Advice sync and every "Ask Claude about the wire". Fix: the Java
+  bridge drops `links` members on the pool thread before the page sees the
+  body (opt-in request header X-FFT-Drop-Keys, never sent to ESPN; any
+  failure returns the raw body). New plain-Java JsonSlim class so it is
+  testable with desktop javac against real feed records.
+- F12 Advice recommended-lineup rows read "Jonathan Taylor Sun 1p RB IND vs
+  HOU" — kickoff before pos/team, unlike every other screen.
+- F13 Advice "How this is calculated" says "Tap any player to see each
+  source's number" — Advice rows have no tap handler; it is the "why ▾".
 
 ## When Tj asks for something new
 

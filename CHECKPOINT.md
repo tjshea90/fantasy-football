@@ -1,12 +1,12 @@
-# CHECKPOINT 58 — read me first, then TASKS.md
+# CHECKPOINT 60 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T18:01:46Z · **version:** 8.5 · **tests:** all 23 suites green
+**Written:** 2026-09-24T18:07:25Z · **version:** 8.5 · **tests:** all 23 suites green
 
 ## Just done
-Full test steps 1 (floor 23/23 green, exit code + output) and 2 (CSS cross-check clean) done; v8.5 diff reviewed (no defects). Crawl running on real-data+schedule state G. Findings F1-F8 written into TASKS.md. perf.js gained --eval.
+Full test steps 3-5 done: crawl 275 actions/0 problems on state G; v8.5 diff clean; data/network/battery review found F9 (manual adjustment never persisted), F10 (live-poll archive+backup write storm), F11 (8.76 MB injuries feed parsed on the JS thread every 10 min). F12/F13 copy/order nits. All in TASKS.md.
 
 ## Do this next
-Finish reading ui.js Data sub-screens + recommend.js render + stats.js; collect crawl result; then fix F1-F8 with tests; then research write-up (step 7).
+Step 8 fixes in this order: F9, F10 (store.js lazy archive + saveLive), F11 (JsonSlim.java + NativeBridge + recommend.js header), F6 (sim random pairing), F4, F5, F1/F2, F3/F7/F8/F12/F13 — each with a test failing on v8.5. Then step 7 research write-up.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,9 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  fc9c4a3 ckpt 58: Full test steps 1 (floor 23/23 green, exit code + output) and 2 (CSS cross-chec
   ba62218 ckpt 53: Wrote Tj's 2026-09-24 'full test + what other popular FF apps have (incl. UI/ap
   5ae3e5d ckpt 153: Full test (2026-09-23c) complete: v8.5 Release published and verified. 5 findi
   7e01358 ckpt 152: v8.5 shipped via ship.sh (23 suites + ES2018 + dex gate green, main fast-forwa
@@ -35,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   57d29a6 ckpt 144: Full test: step 4 done (no further defects in v8.3/v8.4 diff); step 5 finding 
   9fdbc7e ckpt 140: Full-test speed finding fixed: cost-estimate lines + playoff odds now fill aft
   40bc77e ckpt 131: Full test step 3 done: perf.js --crawl (and --advice prep) — 511 actions ove
-  0ea7228 ckpt 128: Full test steps 1-2 done: floor 23/23 green; CSS cross-check clean; fixed 6 st
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
