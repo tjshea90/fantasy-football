@@ -645,8 +645,11 @@ var injuryCardBlock = uiX.slice(uiX.indexOf('function rosterInjuryCard'),
                                  uiX.indexOf('function freeAgentCard'));
 ok(!/x\.note \? ' — ' \+ x\.note/.test(injuryCardBlock),
    'the injury note is no longer crammed into the row\'s own nowrap <small>  <-- the reported bug');
-ok(/nk\.appendChild\(el\('span', null, x\.note\)\)/.test(injuryCardBlock),
-   'it is a sibling .kv line instead, which wraps properly (verified by rendering it, not just asserted)');
+/* 2026-09-24: still its own .kv line, now clamped to three lines with a tap
+   to open (a ten-line ESPN note pushed the board a screen down) */
+ok(/var nt = el\('span', 'clamp', x\.note\);[\s\S]{0,160}nk\.appendChild\(nt\)/.test(injuryCardBlock) &&
+   /nt\.classList\.toggle\('open'\)/.test(injuryCardBlock),
+   'it is a sibling .kv line instead, which wraps properly (verified by rendering it, not just asserted) -- clamped to 3 lines, tap to open');
 
 /* ---- 2026-09-19 sweep: "your roster — injuries" now shows the SAME fact
  * the Wire tab does, and via the same, now-fixed call. Before this, health()

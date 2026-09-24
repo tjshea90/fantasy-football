@@ -1171,7 +1171,7 @@
                       ' players reviewed, ' + ago(aiCache.at) +
                       (aiCache.week && aiCache.week !== week ? ' (for week ' + aiCache.week + ')' : '')
                     : 'key set, not run yet')
-      : 'no API key — add one under Data → Claude → API key for news-aware reasoning',
+      : 'no API key (add one at Data → Claude → API key) — news-aware reasoning is off',
       !(root.Ai && root.Ai.configured()));
     head.appendChild(st);
 
