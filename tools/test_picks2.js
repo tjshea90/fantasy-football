@@ -405,6 +405,8 @@ console.log('\n-- #8 one player card --');
   })[0];
   h.docHandlers.contextmenu({ target: (function () { var e = { nodeType: 1, getAttribute: function (k) { return k === 'data-player' ? fa.n + '|WR|' + fa.t : null; }, parentNode: null }; return e; }()), preventDefault: function () { } });
   ok(/free agent/.test(text(lastDialog())), 'a free agent gets the card too, marked as a free agent (' + fa.n + ')');
+  ok(typeof W.Stats.openPlayerModal === 'undefined' && typeof W.Stats.logInto === 'function',
+     'the old game-log modal is gone (nothing called it once the card replaced the menu); logInto remains');
 }());
 
 /* ======================================================================== #9 */
