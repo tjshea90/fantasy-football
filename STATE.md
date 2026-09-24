@@ -1,6 +1,66 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-23** · **v8.5**, shipped · APK builds, signed, all 23 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-24** · **v8.6**, shipped · APK builds, signed, all 26 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.6 — full test + "what the big apps have" survey, 2026-09-24
+
+Tj: "Run a full test on this app and see what other popular fantasy football
+apps have that may be good in this app, including ui and appearance".
+CLAUDE.md's Full-tests protocol on the whole app, plus a survey of ESPN,
+Sleeper, Yahoo and FantasyPros. No real device here: dynamic checks ran in
+headless Chromium (4x CPU throttle) on real ESPN week 1-2 data with a full
+generated schedule (new `perf.js --eval`), crawled 275 + 220 actions, 0 errors.
+
+### Findings fixed — each with a test that fails on v8.5
+- **F17 injuries wiped on a failed fetch (accuracy).** One failed /injuries
+  fetch replaced the saved list with an empty one: every OUT/IR player looked
+  healthy to auto-lineup, Advice and the Wire until a later fetch worked.
+  Kept now, with its real age + the error. test_retention.js §3.
+- **F14 a failed box score zeroed a game's players (data loss).** doSync wiped
+  every line of the week and rebuilt from what arrived; the week was still
+  stamped final, so nothing retried. Now a team whose game did not arrive keeps
+  its lines + book rows, no bonus pass on a week with a hole (flags carried),
+  final only when complete; header says "N box score(s) missing"; the closing
+  sync retries. test_syncfail.js.
+- **F9 a hand adjustment was lost on the next cold start** (never reached the
+  archive file). Store.setAdj. test_retention.js §1.
+- **F10 live-poll write storm.** Every 45 s quiet sync rewrote the whole archive
+  (~0.2 MB now, ~1.5-1.9 MB late season) and counted toward the 10-save backup
+  (an hour of polling rotated out all 8 backups). Lazy archive (<=5 min / flush
+  / immediate when final or manual) + Store.saveLive. test_retention.js §2.
+- **F11 injury feed 8.76 MB parsed on the JS thread every 10 min.** New
+  JsonSlim.java (plain-Java JSON member cutter) drops links/logos/headshot/
+  notes on the bridge's pool thread (request header X-FFT-Drop-Keys, never sent)
+  -> 0.91 MB, identical results on all 799 live records; Alerts.java too.
+  test_jsonslim.js (compiles it with the desktop JDK).
+- **F15/F16 projections.** A failed refresh replaced the week's/season's loaded
+  projections with nothing; offline on the Wire tab the season refresh looped
+  (~88 ESPN + 88 Sleeper requests and renders in 2 s). Kept on failure, one
+  in flight, 10-min cooldown, re-render only on new data. test_picks.
+- **F6 playoff odds froze standings** when future matchups were not entered
+  (">99%"/"0%" after 2 weeks); unentered games are now drawn at random per
+  simulated season (full schedule: byte-identical odds). test_picks.
+- **F4** an inactive starter whose game ended still counted "yet to play" with a
+  "p 14.2" under his 0.0; **F5** per-team "Reset to auto" refilled all ten
+  rosters (even with Auto-default OFF); **F1** Live "Set up matchup" could open
+  Data -> App; **F2** four "the Data tab" pointers now name the screen; **F3**
+  Roster rows read "bye 10 Sun 8:20p"; **F7** header "Rosters" vs tab "Roster";
+  **F8** 10-line injury notes clamped (tap to open); **F12/F13** Advice row
+  order and stale "tap any player" copy. test_picks / test_boot.
+
+### Small polish from the survey (shipped)
+Live game clock on the kickoff badge ("Q3 7:33", Half, End Q2, OT; else LIVE)
+— off the scoreboard the poll already fetches; a playoff cut line + caption in
+Standings (top 6; top 2 bye).
+
+### Proposals for Tj (not built): TASKS.md "Waiting on Tj" 1-10
+Win probability, position colours, compact Q/D/O badges, light theme, league
+scoreboard, matchup-difficulty chip, trending (ESPN ownership % is already in
+the downloaded data), one player card (ESPN outlooks also already downloaded),
+inactives alert, Data -> League order. Mockups via `perf.js --inject`.
+
+Engine spot-check: 7 fresh week-2 lines hand-computed vs RULES_2026.md, all
+exact; weekly +5s went to the league-wide longest rush/rec both weeks.
 
 ## v8.5 — full test (standing protocol), 2026-09-23c
 
