@@ -560,6 +560,18 @@
     return S.stats[w];
   }
   function setLine(week, pid, line) { getStats(week)[pid] = line; markArchive(); }
+  /* A hand adjustment to one stat line — the Live tab's player card. The line
+     lives in the ARCHIVE file, so the write must mark it: the card used to set
+     line.manualAdj and call save(), which wrote only the main file, and on a
+     finished week (no later sync to mark the archive) the adjustment was gone
+     at the next cold start (full test 2026-09-24, test_retention.js). */
+  function setAdj(week, pid, pts) {
+    var l = lineFor(week, pid);
+    if (!l) return false;
+    l.manualAdj = Number(pts) || 0;
+    markArchive();
+    return save();
+  }
   function lineFor(week, pid) {
     var st = getStats(week);
     return st[pid] ? st[pid] : null;
