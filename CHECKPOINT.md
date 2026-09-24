@@ -1,12 +1,12 @@
-# CHECKPOINT 164 — read me first, then TASKS.md
+# CHECKPOINT 168 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T20:09:36Z · **version:** 8.6 · **tests:** all 28 suites green
+**Written:** 2026-09-24T20:13:28Z · **version:** 8.6 · **tests:** all 28 suites green
 
 ## Just done
-Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alarm 85..75 min before each distinct starter kickoff, covers <=90 min, catch-up, retry, done-tracking, message) + Alerts.java slot 2 (own switch, re-arms only itself) + bridge alertsInactives/alertsKickoffs + ui.js pushAlertPlan on __appPause + Data->App switch; test_alertplan.js + test_picks2 #9; build.sh green
+Item I done: Data -> League puts Standings first; 'Enter week N scores' under it in a details.wsc, collapsed until the week kicks off (open when a game started / past week / score typed / opened by hand); test_picks2 #10
 
 ## Do this next
-Item I: Data -> League order — Standings first; 'Enter week N scores' (weeklyScoresCard) below it, collapsed until week N has kicked off; then J ship v8.7, K full test
+Item J: visual crawl in Chromium (perf.js --state G --crawl --shots; Live, Wire TREND, player card, Data League/App), STATE.md v8.7 entry, ship.sh 'v8.7', publish-release 8.7, verify, message Tj; then K full test
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,10 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  a7a8654 ckpt 164: Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alar
   f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
   d9412f0 ckpt 146: Item F done: ESPN ownership (percentOwned/percentChange) + written outlooks ca
   3b2fbaa ckpt 141: Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the 
@@ -36,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   17e9448 ckpt 125: Full test + competitor survey (2026-09-24) complete: v8.6 Release published an
   9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
   249189d ckpt 122: ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR f
-  2dc714b ckpt 121: Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colou
 ```
 
-(10 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
