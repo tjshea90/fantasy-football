@@ -360,7 +360,7 @@ console.log('\n-- full test 2026-09-24: Live, an inactive starter whose game is 
   var said = sub ? parseInt(sub.textContent, 10) : -1;
   ok(said === stillToPlay, '"' + (sub && sub.textContent) + '" counts only starters whose game has not ended (' +
      stillToPlay + ')  <-- v8.5 counted the inactive man as still to play');
-  var row = all(box, function (n) { return n.getAttribute && /^/.test('') && n.getAttribute('data-player') &&
+  var row = all(box, function (n) { return n.getAttribute && n.getAttribute('data-player') &&
     n.getAttribute('data-player').indexOf(gone.name + '|') === 0; })[0];
   var pts = row ? all(row, function (n) { return hasClass(n, 'pts'); })[0] : null;
   ok(pts && !hasClass(pts, 'pend'), 'his 0.0 is not drawn in the "still to play" style');
