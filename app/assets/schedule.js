@@ -319,6 +319,6 @@
   root.Schedule = {
     ingest: ingest, refresh: refresh, get: get, at: at, stale: stale,
     forTeam: forTeam, badge: badge, earlyAlert: earlyAlert, needsSync: needsSync,
-    STALE_MS: STALE_MS, _clock: clock, _DAYS: DAYS
+    STALE_MS: STALE_MS, _clock: clock, _liveClock: liveClock, _DAYS: DAYS
   };
 })(typeof window !== 'undefined' ? window : this);
