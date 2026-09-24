@@ -436,8 +436,45 @@ public class NativeBridge {
              ",\"hour\":" + p.getInt("hour", 11) +
              ",\"minute\":" + p.getInt("minute", 30) +
              ",\"lastRun\":" + p.getLong("lastRun", 0) +
-             ",\"lastResult\":" + org.json.JSONObject.quote(p.getString("lastResult", "")) + "}";
+             ",\"lastResult\":" + org.json.JSONObject.quote(p.getString("lastResult", "")) +
+             ",\"inact\":" + p.getBoolean("inact", false) +
+             ",\"inactAt\":" + p.getLong("inactAt", 0) +
+             ",\"inactLastAt\":" + p.getLong("inactLastAt", 0) +
+             ",\"inactLast\":" + org.json.JSONObject.quote(p.getString("inactLast", "")) + "}";
     } catch (Throwable t) { return "{}"; }
+  }
+
+  /* ---- the inactives check (v8.7) ---------------------------------------
+   * Its own opt-in switch, and the page's list of the week's starter
+   * kickoffs (epoch ms, comma-separated) — see AlertPlan. Both only touch
+   * SharedPreferences and one alarm: cheap enough to run on the bridge
+   * thread, no file read, no network. Returns the time armed (0 = none). */
+  @JavascriptInterface
+  public double alertsInactives(boolean on) {
+    try {
+      android.content.SharedPreferences p =
+          ctx.getSharedPreferences(Alerts.PREFS, Context.MODE_PRIVATE);
+      p.edit().putBoolean("inact", on).apply();
+      Alerts.armInactives(ctx);
+      return (double) p.getLong("inactAt", 0);
+    } catch (Throwable t) {
+      android.util.Log.w("FFT", "alertsInactives failed: " + t);
+      return -1;
+    }
+  }
+
+  @JavascriptInterface
+  public double alertsKickoffs(String csv) {
+    try {
+      android.content.SharedPreferences p =
+          ctx.getSharedPreferences(Alerts.PREFS, Context.MODE_PRIVATE);
+      p.edit().putString("kicks", csv == null ? "" : csv).apply();
+      Alerts.armInactives(ctx);
+      return (double) p.getLong("inactAt", 0);
+    } catch (Throwable t) {
+      android.util.Log.w("FFT", "alertsKickoffs failed: " + t);
+      return -1;
+    }
   }
 
   /** Run the real check now and post the real notification — the only way to
