@@ -185,7 +185,7 @@
       hint.textContent = hits.length ? (hits.length + ' match' + (hits.length === 1 ? '' : 'es')) : 'No match.';
       hits.forEach(function (p) {
         var row = ctx.el('div', 'res');
-        row.appendChild(ctx.el('div', 'pos', p.p));
+        row.appendChild(ctx.el('div', 'pos' + ({ QB: 1, RB: 1, WR: 1, TE: 1, K: 1, DEF: 1 }[p.p] ? ' pc pc-' + p.p : ''), p.p));
         var nm = ctx.el('div', 'nm');
         nm.appendChild(document.createTextNode(p.n));
         nm.appendChild(ctx.el('small', null, '  ' + (p.t || '?')));

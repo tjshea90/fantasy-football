@@ -289,3 +289,21 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .wpbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
 .wpbar i{display:block;height:100%;background:var(--accent)}
 .banner .bproj{display:block;font-size:11px;font-weight:500;color:var(--dim);margin-top:2px}
+/* ---- 2026-09-24b: position colours (Tj's pick #2) ------------------------
+   Sleeper's palette, lifted a touch for contrast on this dark panel; a tint
+   behind, the colour on the text. FLEX has no class and stays neutral. */
+.pc{border-radius:6px;font-weight:800;letter-spacing:.02em}
+.row .slot.pc,.res .pos.pc{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 3px}
+.halfbox .row .slot.pc{height:18px;padding:0 2px}
+.pchip{display:inline-block;padding:1px 6px;margin-right:2px;border-radius:6px;font-weight:800;letter-spacing:.02em}
+.pc-QB{color:#ff5c8f;background:rgba(252,43,109,.16)}
+.pc-RB{color:#2fd9c3;background:rgba(32,206,184,.15)}
+.pc-WR{color:#6fd0fa;background:rgba(86,201,248,.15)}
+.pc-TE{color:#ffb866;background:rgba(254,174,88,.16)}
+.pc-K{color:#d38bff;background:rgba(201,108,255,.16)}
+.pc-DEF{color:#d9906f;background:rgba(191,117,93,.20)}
+/* ---- 2026-09-24b: compact injury badges (Tj's pick #3) ------------------ */
+.tag.inj{min-width:18px;text-align:center;font-weight:800;padding:1px 5px;border-radius:9px;letter-spacing:0;border-color:transparent}
+.tag.inj.q{color:var(--accent);background:rgba(240,169,43,.18)}
+.tag.inj.d{color:#ff8c3c;background:rgba(255,140,60,.20)}
+.tag.inj.o{color:var(--bad);background:rgba(248,81,73,.20)}

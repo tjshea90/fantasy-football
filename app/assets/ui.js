@@ -355,10 +355,38 @@
   }
   function appendHealthTags(host, flags) {
     if (!flags) return;
-    flags.forEach(function (f) {
-      host.appendChild(el('span', f.kind === 'out' ? 'tag out' : 'tag warn',
-                          f.text.split(' — ')[0].split(':')[0]));
-    });
+    flags.forEach(function (f) { host.appendChild(healthTag(f)); });
+  }
+  /* ---- compact injury badges (2026-09-24b, Tj's pick #3) -----------------
+     Q / D / O / IR / SUSP / PUP pills in every LIST, the way Sleeper and ESPN
+     draw them: "QUESTIONABLE" spelled out wrapped a roster row onto a third
+     line. The full sentence rides along as the tooltip and the accessible
+     name, and every detail view (the injury card, Flagged, the player card)
+     still says it in words. `f` is a recommend.js flag {kind, code, text}. */
+  var INJ_WORD = { Q: 'questionable', D: 'doubtful', O: 'out', IR: 'on injured reserve',
+                   SUSP: 'suspended', PUP: 'on the PUP list', P: 'probable', LTD: 'limited',
+                   BYE: 'on a bye' };
+  function healthTag(f) {
+    var code = f.code || (window.Recommend && Recommend.injuryCode ? Recommend.injuryCode(f.text) : '');
+    var full = String(f.text || '').split(' — ')[0];
+    if (!code) return el('span', f.kind === 'out' ? 'tag out' : 'tag warn', full.split(':')[0]);
+    var sev = f.kind === 'out' || code === 'O' || code === 'IR' || code === 'SUSP' || code === 'PUP' || code === 'BYE'
+      ? 'o' : (code === 'D' ? 'd' : 'q');
+    var s = el('span', 'tag inj ' + sev, code);
+    s.title = full;
+    s.setAttribute('aria-label', INJ_WORD[code] ? full + ' (' + INJ_WORD[code] + ')' : full);
+    return s;
+  }
+  /* ---- position colours (2026-09-24b, Tj's pick #2) ----------------------
+     Sleeper's colour per position in every slot column, so a lineup scans at
+     a glance. `label` is what the column prints (QB, RB1, WR3, #4, FLEX...);
+     `pos` names the colour when the label does not (a "#4" rank on the Wire).
+     FLEX stays neutral: it is a slot, not a position. */
+  var POS_COLOURED = { QB: 1, RB: 1, WR: 1, TE: 1, K: 1, DEF: 1 };
+  function posClass(p) { return POS_COLOURED[p] ? ' pc pc-' + p : ''; }
+  function slotEl(label, pos) {
+    var p = pos || String(label === null || label === undefined ? '' : label).replace(/\d+$/, '');
+    return el('div', 'slot' + posClass(p), label);
   }
   function weekOpponents() {
     return (S.weekMeta[String(week)] && S.weekMeta[String(week)].opponents) || null;
@@ -402,7 +430,7 @@
       a.shouldStart.forEach(function (r) {
         var row = el('div', 'row');
         markPlayer(row, r.name, r.pos, r.nfl);
-        row.appendChild(el('div', 'slot', r.pos));
+        row.appendChild(slotEl(r.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(r.name));
         nm.appendChild(el('small', null, '  ' + r.nfl + ' ' + r.opp));
@@ -434,7 +462,7 @@
       a.starting.forEach(function (r) {
         var row = el('div', 'row');
         markPlayer(row, r.name, r.pos, r.nfl);
-        row.appendChild(el('div', 'slot', r.slot || r.pos));
+        row.appendChild(slotEl(r.slot || r.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(r.name));
         nm.appendChild(el('small', null, '  ' + r.nfl + ' ' + r.opp));
@@ -1637,7 +1665,7 @@
     var flagsById = healthFlags(team.id, weekOpponents());
     res.detail.forEach(function (x) {
       var r = el('div', 'row');
-      r.appendChild(el('div', 'slot', x.slot));
+      r.appendChild(slotEl(x.slot));
       var nm = el('div', 'nm');
       if (!x.pid) { nm.appendChild(el('span', 'muted', '— empty —')); }
       else {
@@ -1950,8 +1978,10 @@
       /* "locked" beats "yours"/"auto" in the label: once he has kicked off,
          who chose him stopped mattering and whether he can still be changed
          is the only question the row is being asked. */
-      var lab = el('label', 'f', k.label +
-        (isLock ? '  · ● started' : (isMan ? '  · yours' : (L[k.key] ? '  · auto' : ''))));
+      var lab = el('label', 'f');
+      lab.appendChild(el('span', 'pchip' + posClass(k.pos), k.label));
+      lab.appendChild(document.createTextNode(
+        (isLock ? '  · ● started' : (isMan ? '  · yours' : (L[k.key] ? '  · auto' : '')))));
       /* WHEN DOES THE MAN IN THIS SLOT ACTUALLY PLAY? On the Lineups tab this
          is the single most useful fact on the row: a Thursday starter is a
          decision with a deadline, and every other slot can wait. */
@@ -2163,7 +2193,7 @@
     }).forEach(function (p) {
       var r = el('div', 'row');
       markPlayer(r, p.name, p.pos, p.nfl);
-      r.appendChild(el('div', 'slot', p.pos));
+      r.appendChild(slotEl(p.pos));
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(p.name));
       nm.appendChild(el('small', null, '  ' + p.nfl + (p.bye ? ' · bye ' + p.bye : '')));
@@ -2521,7 +2551,7 @@
         var owner = have(p.n);
         var row = el('div', 'res');
         markPlayer(row, p.n, p.p, p.t);
-        row.appendChild(el('div', 'pos', p.p));
+        row.appendChild(el('div', 'pos' + posClass(p.p), p.p));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(p.n));
         nm.appendChild(el('small', null, '  ' + (p.t || '?') + (p.b ? ' · bye ' + p.b : '')));
@@ -2652,7 +2682,7 @@
     list.forEach(function (x) {
       var r = el('div', 'row');
       markPlayer(r, x.name, x.pos, x.nfl);
-      r.appendChild(el('div', 'slot', x.pos));
+      r.appendChild(slotEl(x.pos));
       var nm = el('div', 'nm');
       nm.appendChild(document.createTextNode(x.name));
       nm.appendChild(el('small', null, '  ' + x.nfl));
@@ -2872,7 +2902,7 @@
       ups.slice(0, 6).forEach(function (u) {
         var r = el('div', 'row wrap');
         markPlayer(r, u.fa.name, u.fa.pos, u.fa.nfl);
-        r.appendChild(el('div', 'slot', u.fa.pos));
+        r.appendChild(slotEl(u.fa.pos));
         var nm = el('div', 'nm');
         nm.appendChild(document.createTextNode(u.fa.name));
         nm.appendChild(el('small', null, '  ' + u.fa.nfl + ' · ' +
@@ -2897,7 +2927,7 @@
            worth flagging on the row rather than only in the "why". */
         if (u.crossPos) nm.appendChild(el('span', 'tag', u.fa.pos + ' for ' + u.drop.pos));
         if (u.drop.longTermOut) nm.appendChild(el('span', 'tag', 'IR'));
-        if (u.fa.healthLabel) nm.appendChild(el('span', 'tag warn', u.fa.healthLabel));
+        if (u.fa.healthLabel) nm.appendChild(healthTag({ kind: 'warn', text: u.fa.healthLabel }));
         r.appendChild(nm);
         var b = el('button', 'btn sm', 'Add + drop ' + u.drop.name);
         b.addEventListener('click', function () { addFreeAgentSwap(u.fa, u.drop.name); });
@@ -3071,7 +3101,7 @@
         seen[k].forEach(function (a) {
           var r = el('div', 'row');
           markPlayer(r, a.name, a.pos, a.nfl);
-          r.appendChild(el('div', 'slot', '#' + a.rank));
+          r.appendChild(slotEl('#' + a.rank, a.pos));
           var nm = el('div', 'nm');
           nm.appendChild(document.createTextNode(a.name));
           var bits = [a.nfl];
@@ -3174,7 +3204,7 @@
     function faRow(f, showPos, rank) {
       var r2 = el('div', 'row');
       markPlayer(r2, f.name, f.pos, f.nfl);
-      r2.appendChild(el('div', 'slot', showPos ? f.pos : (rank ? '#' + rank : (f.nfl || f.pos))));
+      r2.appendChild(slotEl(showPos ? f.pos : (rank ? '#' + rank : (f.nfl || f.pos)), f.pos));
       var nm2 = el('div', 'nm');
       nm2.appendChild(document.createTextNode(f.name));
       /* THE HEADLINE NUMBER IS THE SEASON, NOT THE WEEK (Tj, 2026-09-18).
@@ -3201,7 +3231,7 @@
       /* OUT/IR/SUSPENDED/PUP never reach this row at all (Value.freeAgents
          excludes them entirely) — DOUBTFUL/QUESTIONABLE still show up here,
          just visibly tagged rather than silently offered as if healthy. */
-      if (f.healthLabel) nm2.appendChild(el('span', 'tag warn', f.healthLabel));
+      if (f.healthLabel) nm2.appendChild(healthTag({ kind: 'warn', text: f.healthLabel }));
       r2.appendChild(nm2);
       var b2 = el('button', 'btn sm', 'Add');
       b2.addEventListener('click', function () { addFreeAgent(f); });
@@ -3330,7 +3360,8 @@
       fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
       jobEnd: jobEnd, jobRunning: jobRunning, rerender: render,
       handoffCard: handoffCard, adviceHandoff: adviceHandoff,
-      gameBadge: gameBadge, earlyGameCard: earlyGameCard, markPlayer: markPlayer });
+      gameBadge: gameBadge, earlyGameCard: earlyGameCard, markPlayer: markPlayer,
+      slotEl: slotEl, healthTag: healthTag });
   }
   /* ---------- LINEUPS = set lineups + advice (2026-09-23b) ---------------
    * Tj's pick #3: "Merge Advice into Lineups (7 tabs -> 6)". Start/sit advice
