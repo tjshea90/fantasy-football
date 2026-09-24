@@ -856,7 +856,12 @@
      was the only thing that ever moved the generation. It was survivable
      while the board leaned mostly on projections; it is not now that a
      player's own scored games are half the estimate. */
-  function setBook(week, rows) { S.book[String(week)] = rows; bumpGen(); markArchive(); }
+  /* `lazy`: a quiet live-poll sync of a week still in progress — see
+     markArchiveLazy for why that one is written later rather than now. */
+  function setBook(week, rows, lazy) {
+    S.book[String(week)] = rows; bumpGen();
+    if (lazy) markArchiveLazy(); else markArchive();
+  }
   function bookWeek(week) { var w = String(week); return S.book[w] || {}; }
   /* playerAvg(player, throughWeek) — his season average per game PLAYED, in
    * this league's scoring (the Roster tab's AVG column, 2026-09-23b; ESPN's
@@ -932,7 +937,7 @@
     return seen;
   }
   root.Store = { generation: function () { return _gen; },
-    init: init, get: get, save: save, saveSoon: saveSoon, flush: flush,
+    init: init, get: get, save: save, saveSoon: saveSoon, saveLive: saveLive, flush: flush,
     team: team, allPlayers: allPlayers,
     playerById: playerById, addPlayer: addPlayer, removePlayer: removePlayer,
     slotKeys: slotKeys, eligible: eligible,
@@ -940,7 +945,7 @@
     isManual: isManual, clearManual: clearManual, applyAuto: applyAuto,
     isLocked: isLocked, lockedSlots: lockedSlots, gameStarted: gameStarted,
     getMatchups: getMatchups, setMatchups: setMatchups, addMatchup: addMatchup,
-    getStats: getStats, setLine: setLine, lineFor: lineFor,
+    getStats: getStats, setLine: setLine, setAdj: setAdj, lineFor: lineFor,
     playerPoints: playerPoints, teamWeekPoints: teamWeekPoints, isOnBye: isOnBye,
     getManualScore: getManualScore, setManualScore: setManualScore, teamWeekScore: teamWeekScore,
     inferLineup: inferLineup,
