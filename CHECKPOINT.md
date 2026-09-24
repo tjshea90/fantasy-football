@@ -1,12 +1,12 @@
-# CHECKPOINT 121 — read me first, then TASKS.md
+# CHECKPOINT 122 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T19:01:43Z · **version:** 8.5 · **tests:** all 26 suites green
+**Written:** 2026-09-24T19:05:56Z · **version:** 8.5 · **tests:** all 26 suites green
 
 ## Just done
-Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colours, Q/D/O badges, light theme, scoreboard, matchup chip, trending, one player card, inactives alert, Data order) + mockups via new perf.js --inject. STATE.md v8.6 entry written. Final regression: 26 suites green by exit code + output; CSS 0/0.
+ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; a failed box score no longer zeroes a game's players or stamps the week final; manual adjustments survive restarts; live poll no longer rewrites the season file every 45 s or rotates out all backups; injury feed 8.8 MB -> 0.9 MB before parsing (JsonSlim.java); failed projection refresh keeps the set on hand and no longer loops offline; playoff odds with unentered matchups; live game clock; playoff line; 10 UI/copy fixes
 
 ## Do this next
-Waiting on the final crawls (real-data + cold) and build.sh; then bash ship.sh, trigger publish-release.yml for 8.6, verify, send Tj the link + mockups + proposals.
+verify on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,9 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  2dc714b ckpt 121: Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colou
   c3b1759 ckpt 116: F17 fixed: a failed injury-feed fetch no longer wipes (and saves) an empty inj
   58a69eb ckpt 110: F15 (a failed projection refresh wiped this week's/season's loaded projections
   dfaf97e ckpt 105: F14 fixed (doSync: a failed box score no longer wipes that game's stored lines
@@ -35,8 +37,4 @@ request in his own words and `git log` carries every step already taken.
   2434fca ckpt 70: F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write
   b639867 ckpt 60: Full test steps 3-5 done: crawl 275 actions/0 problems on state G; v8.5 diff cl
   fc9c4a3 ckpt 58: Full test steps 1 (floor 23/23 green, exit code + output) and 2 (CSS cross-chec
-  ba62218 ckpt 53: Wrote Tj's 2026-09-24 'full test + what other popular FF apps have (incl. UI/ap
 ```
-
-(4 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
