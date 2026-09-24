@@ -179,11 +179,11 @@ console.log('\n-- 3. a failed injury-feed refresh keeps the designations it had 
   const feed = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'espn_injuries_sample.json'), 'utf8'));
   const who = feed.injuries[0].injuries[0].athlete.displayName, status = String(feed.injuries[0].injuries[0].status).toUpperCase();
   let sb = bootNews();
-  sb.Espn._httpGetH = () => Promise.resolve(JSON.parse(JSON.stringify(feed)));
+  sb.Espn._httpGetH = sb.Espn._httpGet = () => Promise.resolve(JSON.parse(JSON.stringify(feed)));
   return sb.Recommend.loadNews(null, { force: true }).then(function (nc) {
     const n0 = nc.count;
     ok(n0 === 6, 'a good fetch: ' + n0 + ' records (' + who + ' is ' + status + ')');
-    sb.Espn._httpGetH = () => Promise.reject(new Error('offline'));
+    sb.Espn._httpGetH = sb.Espn._httpGet = () => Promise.reject(new Error('offline'));
     return sb.Recommend.loadNews(null, { force: true }).then(function (bad) {
       const now = sb.Recommend.newsCache();
       ok(now.count === n0 && !!now.error, 'a failed refresh KEEPS the ' + now.count + ' records and records the error' +
