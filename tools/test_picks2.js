@@ -234,6 +234,14 @@ console.log('\n-- #2 position colours and #3 compact injury badges --');
     ok(!!ir && hasClass(ir, 'o'), 'injured reserve reads "IR" (red), not the same "O" as a one-week out');
     var long = all(h.ids.view, function (n) { return hasClass(n, 'tag') && /^(QUESTIONABLE|DOUBTFUL|ESPN has him OUT)$/.test(n.textContent); });
     ok(long.length === 0, 'no spelled-out injury word left in the roster list (' + long.length + ')');
+    /* the Wire tab's "Your roster — injuries" card is a roster list too */
+    h.clickTab('wire');
+    var injCard = all(h.ids.view, function (n) { return hasClass(n, 'card') && /Your roster — injuries/.test(text(n)); })[0];
+    var wl = injCard ? all(injCard, function (n) { return hasClass(n, 'tag') && /^(QUESTIONABLE|DOUBTFUL|OUT|PROBABLE)$/.test(n.textContent); }) : [];
+    var wb = injCard ? all(injCard, function (n) { return hasClass(n, 'inj'); }) : [];
+    ok(!!injCard && wl.length === 0 && wb.length >= 2 && wb.some(function (n) { return n.textContent === 'IR'; }),
+       'Wire -> Your roster — injuries uses the same badges (' + wb.map(function (n) { return n.textContent; }).join(',') + ')' +
+       '  <-- v8.7 draft still spelled out QUESTIONABLE / OUT there');
 
     rerender(h, 'live');
     var flex = all(h.ids.view, function (n) { return hasClass(n, 'slot') && n.textContent === 'FLEX'; });
