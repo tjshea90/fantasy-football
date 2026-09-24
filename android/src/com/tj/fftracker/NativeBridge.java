@@ -224,8 +224,8 @@ public class NativeBridge {
    *  A header named X-FFT-* is an instruction to THIS class, never sent to the
    *  server. The only one is X-FFT-Drop-Keys: a comma list of JSON member names
    *  to cut out of the response before the page sees it (see JsonSlim — the
-   *  8.76 MB ESPN injury feed is 8.4 MB of `links`). Returned to the caller;
-   *  null when absent. */
+   *  8.76 MB ESPN injury feed is ~90% URLs and logo sets the page never
+   *  reads). Returned to the caller; null when absent. */
   private static String applyHeaders(HttpURLConnection c, String json) {
     String drop = null;
     if (json == null || json.length() < 2) return drop;

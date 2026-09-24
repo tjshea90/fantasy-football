@@ -239,6 +239,7 @@
               (newsCache.count || 0) > 0 &&
               (Date.now() - newsCache.at) < NEWS_FRESH_MS);
   }
+  var INJURY_DROP = 'links,logos,headshot,notes';
   function loadNews(onStep, opts) {
     if (!(opts && opts.force) && newsFresh()) {
       newsCache.reused = Math.max(1, Math.round((Date.now() - newsCache.at) / 60000));
@@ -249,11 +250,13 @@
     var url = root.Espn.BASE + '/injuries';
     if (onStep) onStep('Injury report…', 15);
     /* X-FFT-Drop-Keys is read by the Java bridge, never sent to ESPN: it cuts
-       every `links` member (the athlete's card/stats/news URLs — 8.4 MB of
-       the feed's 8.76 MB, read by nothing here) on the bridge's own thread,
-       so this parse is ~350 KB instead of 8.76 MB (full test 2026-09-24).
-       Nothing below reads `links`; a body that arrives uncut parses the same. */
-    return root.Espn._httpGetH(url, { 'X-FFT-Drop-Keys': 'links' }).then(function (j) {
+       these members on the bridge's own thread — player-card URLs (links),
+       every team's logo set repeated on every record (logos), photo URLs
+       (headshot) and a second copy of the comments below (athlete.notes) —
+       so this parse is ~0.9 MB instead of 8.76 MB (full test 2026-09-24).
+       Nothing below reads any of the four; a body that arrives uncut (an
+       older shell, a slimming failure) parses to the same result. */
+    return root.Espn._httpGetH(url, { 'X-FFT-Drop-Keys': INJURY_DROP }).then(function (j) {
       var byName = {}, i, k;
       var groups = j.injuries || j.items || [];
       for (i = 0; i < groups.length; i++) {

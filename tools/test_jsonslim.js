@@ -97,14 +97,15 @@ function slim(text, drop) {
 console.log('\n-- 1. real ESPN injury records --');
 {
   const raw = fs.readFileSync(path.join(__dirname, 'fixtures', 'espn_injuries_sample.json'), 'utf8');
-  const r = slim(raw, 'links');
+  const DROP = 'links,logos,headshot,notes';
+  const r = slim(raw, DROP);
   ok(!r.err, 'the real feed sample slims without error' + (r.err ? ': ' + r.err : ''));
   if (!r.err) {
-    const want = strip(JSON.parse(raw), new Set(['links']));
+    const want = strip(JSON.parse(raw), new Set(DROP.split(',')));
     const got = JSON.parse(r.out);
-    ok(same(got, want), 'parses to exactly the original minus every `links` member, at every depth');
-    ok(r.out.indexOf('"links"') < 0, 'no `links` member survives anywhere');
-    ok(r.out.length < raw.length * 0.6,
+    ok(same(got, want), 'parses to exactly the original minus every ' + DROP + ' member, at every depth');
+    ok(!/"(links|logos|headshot|notes)"\s*:/.test(r.out), 'none of the four survives anywhere');
+    ok(r.out.length < raw.length * 0.3,
        'and it is much smaller: ' + raw.length + ' -> ' + r.out.length + ' chars');
     const it = got.injuries[0].injuries[0];
     ok(it.athlete && it.athlete.displayName && it.status !== undefined && it.details !== undefined,
@@ -165,13 +166,16 @@ console.log('\n-- 4. wired where the feed is read --');
      /catch \(Throwable t\) \{ android\.util\.Log\.w\("FFT", "JsonSlim failed, sending the raw body/.test(nb),
      'NativeBridge: cuts on the pool thread, raw body on any failure');
   const al = fs.readFileSync(path.join(ROOT, 'android', 'src', 'com', 'tj', 'fftracker', 'Alerts.java'), 'utf8');
-  ok(/JsonSlim\.dropKeys\(sb, JsonSlim\.parseList\("links"\)\)/.test(al) && /catch \(Throwable slimFail\) \{ body = sb\.toString\(\); \}/.test(al),
+  ok(/JsonSlim\.dropKeys\(sb, JsonSlim\.parseList\("links,logos,headshot,notes"\)\)/.test(al) && /catch \(Throwable slimFail\) \{ body = sb\.toString\(\); \}/.test(al),
      'Alerts.java: the closed-app check slims before org.json, raw on failure');
   const rc = fs.readFileSync(path.join(ROOT, 'app', 'assets', 'recommend.js'), 'utf8');
-  ok(/_httpGetH\(url, \{ 'X-FFT-Drop-Keys': 'links' \}\)/.test(rc),
-     'recommend.js loadNews asks the bridge to drop `links`');
-  ok(!/\.links\b/.test(rc.slice(rc.indexOf('function loadNews'), rc.indexOf('function health('))),
-     'and loadNews reads nothing called links');
+  ok(/var INJURY_DROP = 'links,logos,headshot,notes';/.test(rc) &&
+     /_httpGetH\(url, \{ 'X-FFT-Drop-Keys': INJURY_DROP \}\)/.test(rc),
+     'recommend.js loadNews asks the bridge to drop links,logos,headshot,notes');
+  const body = rc.slice(rc.indexOf('function loadNews'), rc.indexOf('function health('));
+  const code = body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  ok(!/\.(links|logos|headshot|notes)\b|\[['"](links|logos|headshot|notes)['"]\]/.test(code),
+     'and loadNews reads none of the four (code, comments excluded)');
 }
 
 try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* tmp */ }

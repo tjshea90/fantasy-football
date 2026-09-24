@@ -455,10 +455,11 @@ public class Alerts {
       int k;
       while ((k = r.read(buf)) > 0) sb.append(buf, 0, k);
       r.close();
-      /* 8.76 MB as served, 8.4 MB of it `athlete.links` that is never read:
-         cut before org.json builds it (JsonSlim; the raw body if that fails) */
+      /* 8.76 MB as served, ~90% of it URLs, logo sets and duplicated notes
+         that are never read: cut before org.json builds it (JsonSlim, the
+         same list recommend.js asks for; the raw body if that fails) */
       String body;
-      try { body = JsonSlim.dropKeys(sb, JsonSlim.parseList("links")); }
+      try { body = JsonSlim.dropKeys(sb, JsonSlim.parseList("links,logos,headshot,notes")); }
       catch (Throwable slimFail) { body = sb.toString(); }
       sb = null;
       JSONObject j = new JSONObject(body);

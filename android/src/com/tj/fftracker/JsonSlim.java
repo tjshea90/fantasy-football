@@ -6,14 +6,15 @@ import java.util.Set;
  *  removed, at any depth — without building the document.
  *
  *  WHY (full test, 2026-09-24). ESPN's /injuries feed is 8.76 MB of JSON, and
- *  8.76 MB of that is `athlete.links`: a dozen player-card/stats/news URLs per
- *  record that nothing in this app reads. The page used to receive all of it:
- *  46 synchronous 192 KB bridge round trips, a 17 MB string, and a JSON.parse
- *  measured at 45-145 ms on the JS thread at Moto G speed — every ten minutes
- *  the app is open, on every Advice sync, and on every "Ask Claude about the
- *  wire". Dropping `links` here, on the bridge's pool thread, leaves ~350 KB.
- *  Alerts.java's closed-app check parses the same feed with org.json and gets
- *  the same saving.
+ *  ~90% of it is never read by this app: per record, a dozen player-card URLs
+ *  (links, 4.5 MB), the team's whole logo set (logos, 3.0 MB), a photo URL
+ *  (headshot) and a second copy of the comments (athlete.notes). The page
+ *  used to receive all of it: 46 synchronous 192 KB bridge round trips, a
+ *  17 MB string, and a JSON.parse measured at 45-145 ms on the JS thread at
+ *  Moto G speed — every ten minutes the app is open, on every Advice sync, and
+ *  on every "Ask Claude about the wire". Cutting those four here, on the
+ *  bridge's pool thread, leaves ~0.9 MB. Alerts.java's closed-app check parses
+ *  the same feed with org.json and gets the same saving.
  *
  *  Deliberately a plain copier with no Android imports, so it can be compiled
  *  and tested with a desktop JDK against real feed records
