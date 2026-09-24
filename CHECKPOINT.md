@@ -1,12 +1,12 @@
-# CHECKPOINT 99 — read me first, then TASKS.md
+# CHECKPOINT 105 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T18:31:19Z · **version:** 8.5 · **tests:** all 25 suites green
+**Written:** 2026-09-24T18:39:11Z · **version:** 8.5 · **tests:** all 26 suites green
 
 ## Just done
-Small polish from the competitor survey: live game clock on the schedule badge ('Q3 7:33' / Half / End Q2 / OT, else LIVE; test_schedule 3 checks) and a playoff cut line + caption under Standings (test_picks). All suites green.
+F14 fixed (doSync: a failed box score no longer wipes that game's stored lines, strips bonuses, or stamps an incomplete week final; header says 'N box score(s) missing'; closing sync retries). tools/test_syncfail.js (16 checks, 8 fail on v8.5). Step 6 engine spot-checks: 7 fresh week-2 lines exact.
 
 ## Do this next
-Step 6 engine spot-checks vs RULES_2026.md (fresh week-2 players); then step 7 proposals write-up (+ mockup screenshots for the appearance items); then full regression + ship.
+Step 7: write the competitor-survey proposals into TASKS 'Waiting on Tj' + make mockup screenshots for the appearance ideas (position colours, compact injury badges, win probability, light theme); then step 9 full regression + crawl + build; then ship v8.6.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  8edc7cf ckpt 99: Small polish from the competitor survey: live game clock on the schedule badge 
   4c4845e ckpt 92: Fixed F1-F8, F12, F13 (ui.js/recommend.js/sim.js) + F6 sim random pairing for u
   93d7c82 ckpt 81: F11 fixed: new JsonSlim.java (plain-Java JSON member cutter) used by NativeBrid
   2434fca ckpt 70: F9 (manual adjustment lost on cold start) + F10 (live-poll archive/backup write
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   5ae3e5d ckpt 153: Full test (2026-09-23c) complete: v8.5 Release published and verified. 5 findi
   7e01358 ckpt 152: v8.5 shipped via ship.sh (23 suites + ES2018 + dex gate green, main fast-forwa
   53ebd79 ship v8.5: v8.5: full test -- game-log cache no longer rewritten whole per game every li
-  ca42071 ckpt 150: Full test steps 6-8 done: engine spot-checks exact; 5 findings fixed and teste
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(5 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
