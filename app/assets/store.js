@@ -88,7 +88,7 @@
       obj.book = book; obj.stats = stats;
     }
     if (ok && archiveDirty) {
-      if (writeKey(ARCHIVE_KEY, { book: book, stats: stats })) archiveDirty = false;
+      if (writeKey(ARCHIVE_KEY, { book: book, stats: stats })) { archiveDirty = false; clearLazy(); }
       else ok = false;   /* retried on the next save; the flag stays set */
     }
     return ok;
