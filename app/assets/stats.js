@@ -6,11 +6,11 @@
  * Gamelog/PlayerDB/Scoring directly; ctx only carries the DOM/UI helpers
  * (el, table, fmt, modal, toast, rerender) that ui.js already has.
  *
- * ALSO the target of long-press "View stats" anywhere else in the app
- * (ui.js wires that) — openPlayerModal() is the one code path both the
- * Stats tab's own search and every long-press menu use, so "just like in
- * the stats tab" (Tj's words) is true by construction, not by keeping two
- * renderers in sync by hand.
+ * ALSO the game log on ui.js's player card (every tap / long-press on a
+ * player anywhere): logInto() draws the Stats tab's own loader and table
+ * into the card, so "just like in the stats tab" (Tj's words) is true by
+ * construction, not by keeping two renderers in sync by hand. (v8.7 retired
+ * openPlayerModal, the long-press "View stats" menu's modal, with the menu.)
  */
 (function (root) {
   'use strict';
@@ -157,21 +157,6 @@
     var p = loadPlayerLog(quiet, player);
     draw();
     return p.then(draw, draw);
-  }
-  /* Opens the same detail as the Stats tab's search, in a modal — the one
-   * entry point long-press menus everywhere else in the app call. */
-  function openPlayerModal(ctx, player) {
-    selPlayer = player;
-    var body = ctx.el('div');
-    playerDetail(ctx, player, playerLog, body);
-    var close = ctx.modal(player.name + ' — game log', null, body);
-    loadPlayerLog(ctx, player).then(function () {
-      /* the tab's own render() already repaints via ctx.rerender(); a modal
-         opened from elsewhere needs its OWN body refreshed in place */
-      body.innerHTML = '';
-      playerDetail(ctx, player, playerLog, body);
-    });
-    return close;
   }
 
   /* ---- search mode --------------------------------------------------------
@@ -426,7 +411,7 @@
     return Promise.resolve();
   }
 
-  var API = { render: render, refresh: refresh, openPlayerModal: openPlayerModal, logInto: logInto };
+  var API = { render: render, refresh: refresh, logInto: logInto };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.Stats = API;
 })(typeof window !== 'undefined' ? window : this);
