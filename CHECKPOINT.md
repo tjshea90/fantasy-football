@@ -1,12 +1,12 @@
-# CHECKPOINT 168 — read me first, then TASKS.md
+# CHECKPOINT 180 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T20:13:28Z · **version:** 8.6 · **tests:** all 28 suites green
+**Written:** 2026-09-24T20:34:01Z · **version:** 8.6 · **tests:** all 28 suites green
 
 ## Just done
-Item I done: Data -> League puts Standings first; 'Enter week N scores' under it in a details.wsc, collapsed until the week kicks off (open when a game started / past week / score typed / opened by hand); test_picks2 #10
+Features done (A-I) + visual pass fixes (Wire injury card badges, long-term-out badge from outLabel, PUP wording, alert time row, Wire fine print per chip); perf.js --views/--evalshot; STATE.md v8.7
 
 ## Do this next
-Item J: visual crawl in Chromium (perf.js --state G --crawl --shots; Live, Wire TREND, player card, Data League/App), STATE.md v8.7 entry, ship.sh 'v8.7', publish-release 8.7, verify, message Tj; then K full test
+ship.sh v8.7, publish-release 8.7, verify, then K: full test of the whole app
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  be7a263 ckpt 168: Item I done: Data -> League puts Standings first; 'Enter week N scores' under 
   a7a8654 ckpt 164: Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alar
   f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
   d9412f0 ckpt 146: Item F done: ESPN ownership (percentOwned/percentChange) + written outlooks ca
@@ -35,8 +36,7 @@ request in his own words and `git log` carries every step already taken.
   2b6781b ckpt 127: Wrote Tj's 2026-09-24b request into TASKS.md (A-K: proposals 1,2,3,6,7,8,9,10 
   17e9448 ckpt 125: Full test + competitor survey (2026-09-24) complete: v8.6 Release published an
   9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
-  249189d ckpt 122: ship: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR f
 ```
 
-(3 automatic checkpoint(s) since the last deliberate one — the
+(11 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
