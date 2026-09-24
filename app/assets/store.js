@@ -255,21 +255,38 @@
     soonTimer = setTimeout(function () { soonTimer = null; persist(); }, SOON_MS);
   }
   function flush() {
-    if (soonTimer === null) return true;
-    return persist();
+    var ok = true;
+    if (soonTimer !== null) ok = persist();
+    /* and the live poll's deferred archive write (see markArchiveLazy) — this
+       runs from __appPause, the last moment Android guarantees us */
+    if (archLazy && S) {
+      clearLazy();
+      if (!writeKey(ARCHIVE_KEY, { book: S.book, stats: S.stats })) { markArchive(); ok = false; }
+    }
+    return ok;
   }
-  function persist() {
+  /* `live`: a quiet in-progress sync's save (saveLive). It is not an EDIT, so
+     it does not count toward the every-tenth-edit snapshot below — an hour of
+     45-second polling used to take ~8 full snapshots and rotate every older
+     one out of the 8 kept (full test 2026-09-24). */
+  function persist(live) {
     if (soonTimer !== null) { clearTimeout(soonTimer); soonTimer = null; }
     S.settings.savedAt = nowISO();
-    S.settings.saveCount = (S.settings.saveCount || 0) + 1;
+    if (!live) S.settings.saveCount = (S.settings.saveCount || 0) + 1;
     var ok = rawSave(S);
     /* Every tenth edit, drop a snapshot into the invisible auto-backup store.
      * The phone is the only place this data exists; a corrupt save or a bad
      * import would otherwise take the season with it. Silent — it must never
      * interrupt what the user is doing, and (since v4.2) it never shows up in
      * Downloads either — see NativeBridge.backupAuto. */
-    if (ok && S.settings.saveCount % 10 === 0) autoBackup(false);
+    if (ok && !live && S.settings.saveCount % 10 === 0) autoBackup(false);
     return ok;
+  }
+  /* The save for a quiet live-poll sync of a week still in progress: same
+     write of the main state, not counted as an edit (see persist). */
+  function saveLive() {
+    bumpGen();
+    return persist(true);
   }
   function autoBackup(force) {
     try {
