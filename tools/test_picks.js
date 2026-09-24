@@ -461,9 +461,55 @@ console.log('\n-- full test 2026-09-24: copy and layout --');
      'Advice no longer says "tap any player" for a row with no tap action — it points at "why"');
 }());
 
+console.log('\n-- full test 2026-09-24: a failed projection fetch --');
+var pendingLoop = null;
+(function () {
+  /* 1. the Wire tab with no signal must not retry in a loop */
+  var h = buildHarness();
+  var season = 0, other = 0;
+  function fake(u) {
+    if (/leaguedefaults|sleeper\.app\/projections/.test(String(u))) season++; else other++;
+    return new Promise(function (_, rej) { setTimeout(function () { rej(new Error('offline')); }, 5); });
+  }
+  h.W.Espn._httpGetH = fake; h.W.Espn._httpGet = fake;
+  h.docHandlers.DOMContentLoaded();
+  h.clickTab('wire');
+  pendingLoop = function () {
+    ok(season <= 2, 'offline on the Wire tab: ' + season + ' season-projection requests in ~0.5 s  <-- v8.5 looped (~90 a second, a re-render each)');
+  };
+
+  /* 2. a failed refresh keeps the set already on hand */
+  var h2 = buildHarness();
+  h2.docHandlers.DOMContentLoaded();
+  var P = h2.W.Projections, St = h2.W.Store, S = St.get(), wk = S.settings.currentWeek || 1;
+  var espnOk = true;
+  h2.W.Espn._httpGetH = function (u) {
+    if (!espnOk) return Promise.reject(new Error('offline'));
+    return Promise.resolve({ players: [] });
+  };
+  h2.W.Espn._httpGet = function () { return Promise.reject(new Error('offline')); };
+  /* seed both caches the way a good sync leaves them */
+  var byName = {}; byName[h2.W.Espn.normName('Matthew Stafford')] = { pos: 'QB', week: 41.1, season: 700 };
+  P._setCacheForTest && P._setCacheForTest({ at: Date.now() - 3 * 3600e3, week: wk, season: S.settings.season,
+    byName: byName, count: 1, weekly: 1, error: '', route: 'test', notes: [] });
+  P._setSeasonForTest && P._setSeasonForTest({ at: Date.now() - 13 * 3600e3, season: S.settings.season,
+    byName: byName, count: 1, error: '', route: 'test', notes: [] });
+  ok(!!P._setCacheForTest && !!P._setSeasonForTest, 'projections.js exposes test seams for its caches');
+  espnOk = false;
+  P.refresh(S.settings.season, wk, null, { force: true }).then(function (c) {
+    ok(P.meta().weekly === 1 && P.meta().week === wk && !!c.failedNow,
+       'every weekly route failing KEEPS this week\'s set (weekly ' + P.meta().weekly + ') and says the attempt failed  <-- v8.5 replaced it with nothing');
+    return P.refreshSeason(S.settings.season, null, { user: true });
+  }).then(function (sc) {
+    ok(P.seasonMeta().count === 1 && !!sc.failedNow,
+       'and the full-season set survives a failed season fetch too (count ' + P.seasonMeta().count + ')');
+  }).catch(function (e) { ok(false, 'refresh threw: ' + (e && e.stack || e)); });
+}());
+
 setTimeout(function () {
   if (pendingOdds) pendingOdds();
   if (pendingEst) pendingEst();
+  if (pendingLoop) pendingLoop();
   console.log(fails ? ('\n  ' + fails + ' picks check(s) FAILED') : '\n  picks checks pass');
   process.exit(fails ? 1 : 0);
-}, 400);
+}, 700);
