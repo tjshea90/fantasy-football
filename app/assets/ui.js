@@ -3523,10 +3523,15 @@
         tr.children[4].textContent = pct(o.title);
       }
       var remaining = reg - scored;
-      left.textContent = v.weeksLeft < remaining
-        ? 'Only ' + v.weeksLeft + ' of the ' + remaining + ' unplayed regular-season weeks have ' +
-          'matchups entered, so the odds treat the rest as unplayed — add them under the ' +
-          'week\'s matchups below (or "Generate the whole season").'
+      /* Sim.season plays EVERY unplayed week now (2026-09-24): an opponent
+         nobody entered is drawn at random in each simulated season, rather
+         than the game being skipped (which froze today's standings into
+         ">99%" and "0%"). Say so, since the real schedule would be sharper. */
+      left.textContent = v.randomWeeks
+        ? 'Matchups are missing in ' + v.randomWeeks + ' of the ' + remaining + ' unplayed ' +
+          'regular-season week' + (remaining === 1 ? '' : 's') + ', so those games are ' +
+          'simulated against random opponents. Enter the real ones under the week\'s ' +
+          'matchups below for odds on your actual schedule.'
         : '';
       left.hidden = !left.textContent;
     }
