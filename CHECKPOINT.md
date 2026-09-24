@@ -1,12 +1,12 @@
-# CHECKPOINT 187 — read me first, then TASKS.md
+# CHECKPOINT 189 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T20:48:10Z · **version:** 8.7 · **tests:** all 28 suites green
+**Written:** 2026-09-24T20:51:11Z · **version:** 8.8 · **tests:** all 28 suites green
 
 ## Just done
-K full test done: findings recorded in STATE.md v8.8; job archived to LADDER.md §44
+v8.7 and v8.8 shipped; both GitHub Releases verified with APK assets; job archived (LADDER §44)
 
 ## Do this next
-ship v8.8, publish-release 8.8, verify, message Tj with the v8.8 link (v8.7 also published)
+Nothing open. Next: whatever Tj asks (write it into TASKS.md first). Phone checks worth asking him for: the inactives switch in Data > App (needs a real Sunday), win probability during a live game
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  af25eb4 ship v8.8: v8.8: full test after the v8.7 features — dead long-press game-log modal re
+  b303067 ckpt 187: K full test done: findings recorded in STATE.md v8.8; job archived to LADDER.m
   147f562 ckpt 184: v8.7 shipped + Release verified (asset FFTracker-v8.7.apk). K full test starte
   4331bae ship v8.7: v8.7: Tj's picks 1,2,3,6,7,8,9,10 + Live layout (win probability, position co
   2eb03e9 ckpt 180: Features done (A-I) + visual pass fixes (Wire injury card badges, long-term-ou
@@ -34,9 +36,4 @@ request in his own words and `git log` carries every step already taken.
   f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
   d9412f0 ckpt 146: Item F done: ESPN ownership (percentOwned/percentChange) + written outlooks ca
   3b2fbaa ckpt 141: Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the 
-  d8f32eb ckpt 136: Items C+D done: position colour chips (slotEl/posClass; FLEX neutral; Lineups 
-  19ecaa6 ckpt 132: Items A+B done: Live win probability (Sim.matchupOdds: banked + proj x game-le
 ```
-
-(2 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
