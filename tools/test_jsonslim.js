@@ -174,14 +174,15 @@ console.log('\n-- 2b. Recommend.loadNews: slim and raw feeds give identical resu
       return { byName: nc.byName, count: nc.count, asked: asked };
     });
   }
-  return Promise.all([newsFrom(raw), newsFrom(r.out)]).then(([a, b]) => {
+  Promise.all([newsFrom(raw), newsFrom(r.out)]).catch((e) => {
+    ok(false, 'loadNews threw: ' + (e && e.stack || e)); finish(); throw e;
+  }).then(([a, b]) => {
     ok(a.count > 0 && a.count === b.count, 'same record count (' + a.count + ' / ' + b.count + ')');
     ok(same(a.byName, b.byName), 'identical per-player status, note, return date and fantasy status');
     ok(a.asked && a.asked['X-FFT-Drop-Keys'] === 'links,logos,headshot,notes',
        'loadNews sends the drop list to the bridge');
     finish();
   });
-}
 }
 function finish() {
 /* ---- 3. malformed input throws, so callers fall back to the raw body ------ */
