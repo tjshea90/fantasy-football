@@ -125,6 +125,9 @@ function curl(url, headersJson, body) {
       httpForget: (id) => { delete results[id]; },
       httpChunk: () => null, httpRelease: () => {},
       alertsSet: () => true, alertsStatus: () => '{}', alertsTest: () => {},
+      /* v8.7 inactives check: echo back the time Java would arm */
+      alertsInactives: (on) => (on ? Date.now() + 3600e3 : 0),
+      alertsKickoffs: (csv) => (csv ? Number(String(csv).split(',')[0]) - 85 * 60000 : 0),
       share: () => true, copy: () => true, export: () => true, exportShare: () => true,
       exportFile: () => true, pickFile: () => false
     };
@@ -267,7 +270,7 @@ function curl(url, headersJson, body) {
     }
     /* buttons, selects, text boxes, <details> toggles — and the tappable
        player rows (Live's lineups open the player card) */
-    const CTRL = '#view button, #view select, #view input[type=text], #view input[type=number], #view input:not([type]), #view summary, #view .halfbox .row, #view .res';
+    const CTRL = '#view button, #view select, #view input[type=text], #view input[type=number], #view input[type=checkbox], #view input:not([type]), #view summary, #view .halfbox .row, #view .res';
     function controls() {
       return page.evaluate((CTRL) => Array.prototype.map.call(
         document.querySelectorAll(CTRL),
@@ -287,6 +290,8 @@ function curl(url, headersJson, body) {
           if (n.disabled) return { skipped: 'disabled' };
           if (n.tagName === 'SELECT') {
             if (n.options.length > 1) { n.selectedIndex = (n.selectedIndex + 1) % n.options.length; n.dispatchEvent(new Event('change', { bubbles: true })); }
+          } else if (n.tagName === 'INPUT' && n.type === 'checkbox') {
+            n.click();
           } else if (n.tagName === 'INPUT') {
             n.focus(); n.value = n.type === 'number' ? '123.4' : 'kupp';
             n.dispatchEvent(new Event('input', { bubbles: true })); n.dispatchEvent(new Event('change', { bubbles: true }));
