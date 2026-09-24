@@ -41,24 +41,24 @@ Test state for all of this: `perf.js --sync 1,2 --save F`, then
 `--state F --eval "Recap.generateSchedule({force:true}); Store.save()" --advice --save G`
 (new `--eval` option in perf.js; the seed has NO matchups, so without it Live
 is just "No opponent set").
-- F1 Live "Set up week N matchup" does goTab('data') — lands on whatever Data
+- [x] FIXED (test_picks 'full test 2026-09-24: copy and layout') F1 Live "Set up week N matchup" does goTab('data') — lands on whatever Data
   sub-screen was last open (Claude/Sync/App), not League where matchups live.
-- F2 pointers not in "Data → Screen → Control" form, so test_boot's pointer
+- [x] FIXED (test_picks: no bare 'the Data tab'; test_boot pointer check now 14) F2 pointers not in "Data → Screen → Control" form, so test_boot's pointer
   check misses them: recommend.js "add one on the Data tab", ui.js 'Data tab,
   "Claude"' (x2), Live/Lineups "Add this week's matchup on the Data tab".
-- F3 Roster row reads "DEN · bye 10 Sun 8:20p" — no separator before the
+- [x] FIXED (test_picks pin) F3 Roster row reads "DEN · bye 10 Sun 8:20p" — no separator before the
   kickoff badge, so it reads "bye 10 Sun".
-- F4 Live: a starter whose game is FINAL with no line (inactive) still counts
+- [x] FIXED (test_picks 'an inactive starter whose game is over', 3 checks) F4 Live: a starter whose game is FINAL with no line (inactive) still counts
   in "N yet to play", keeps the pending style and shows "p 14.2" under 0.0 —
   projectedFinish() already excludes him, the rows/count do not.
-- F5 Lineups per-team "Reset to auto" calls autoFillWeek() = refills EVERY
+- [x] FIXED (test_picks 'Reset to auto resets THAT team only') F5 Lineups per-team "Reset to auto" calls autoFillWeek() = refills EVERY
   team in the league, even with Auto-default OFF. Should be that team only.
-- F6 Power card playoff odds: unplayed weeks with no matchups entered are
+- [x] FIXED (test_picks 'odds when future matchups were never entered'; full schedule verified byte-identical to v8.5) F6 Power card playoff odds: unplayed weeks with no matchups entered are
   treated as never played → ">99%" / "0%" after 2 weeks. Unentered pairs
   should be drawn at random per simulated season (identical output when the
   schedule is complete).
-- F7 header says "Rosters", tab says "Roster".
-- F8 Wire injury card: ESPN's note is an unclamped ~10-line paragraph.
+- [x] FIXED (test_picks) F7 header says "Rosters", tab says "Roster".
+- [x] FIXED (test_boot pin updated: clamp + tap to open) F8 Wire injury card: ESPN's note is an unclamped ~10-line paragraph.
 - [x] FIXED (test_retention.js §1, 3 checks fail on v8.5) F9 DATA LOSS: Live player card "Adjust" -> Save does `line.manualAdj = x;
   Store.save()` — stat lines live in the ARCHIVE file, which save() writes
   only when archiveDirty (markArchive). Nothing marks it, so on a final week
@@ -82,9 +82,9 @@ is just "No opponent set").
   body (opt-in request header X-FFT-Drop-Keys, never sent to ESPN; any
   failure returns the raw body). New plain-Java JsonSlim class so it is
   testable with desktop javac against real feed records.
-- F12 Advice recommended-lineup rows read "Jonathan Taylor Sun 1p RB IND vs
+- [x] FIXED (test_picks) F12 Advice recommended-lineup rows read "Jonathan Taylor Sun 1p RB IND vs
   HOU" — kickoff before pos/team, unlike every other screen.
-- F13 Advice "How this is calculated" says "Tap any player to see each
+- [x] FIXED (test_picks) F13 Advice "How this is calculated" says "Tap any player to see each
   source's number" — Advice rows have no tap handler; it is the "why ▾".
 
 ## When Tj asks for something new
