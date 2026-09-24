@@ -29,7 +29,7 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
 - [x] **E. (#6) Matchup difficulty chip** DONE (test_picks2 '#6', 7 checks; fantasy-points-allowed from the league book + PlayerDB positions, rank 1 = toughest, 2-game minimum) — — "vs HOU · 28th vs RB" coloured
       soft/avg/tough from the engine's own defense-vs-position numbers, on
       Lineups, Advice and Roster rows.
-- [ ] **F. (#7) Trending on the Wire** — ESPN ownership % + weekly change
+- [x] **F. (#7) Trending on the Wire** DONE (test_picks2 '#7', 5 checks; projections.js captures ownership + outlooks from the same response) — — ESPN ownership % + weekly change
       (already in the downloaded projection data) on free-agent rows, plus a
       "Trending" filter sorted by the change.
 - [ ] **G. (#8) One player card** — tapping/long-pressing any player opens one

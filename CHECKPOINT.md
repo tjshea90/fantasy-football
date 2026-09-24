@@ -1,12 +1,12 @@
-# CHECKPOINT 141 — read me first, then TASKS.md
+# CHECKPOINT 146 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T19:44:28Z · **version:** 8.6 · **tests:** all 27 suites green
+**Written:** 2026-09-24T19:48:40Z · **version:** 8.6 · **tests:** all 27 suites green
 
 ## Just done
-Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the league book; ui matchupChip on Roster, Lineups labels, Advice rows).
+Item F done: ESPN ownership (percentOwned/percentChange) + written outlooks captured from the projection responses already downloaded (Projections.ownership/outlook); Wire FA rows show 'N% rostered ▲x'; new 'Trending' filter (risers, biggest first).
 
 ## Do this next
-Item F: capture ESPN ownership.percentOwned/percentChange in projections.js ingest; show on Wire FA rows + a Trending filter chip.
+Item G: one player card (openPlayerCard) replacing showPlayer/showPlayerPreGame/long-press menu; embed Stats game log; ESPN outlook; ownership; Adjust via Store.setAdj.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  3b2fbaa ckpt 141: Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the 
   d8f32eb ckpt 136: Items C+D done: position colour chips (slotEl/posClass; FLEX neutral; Lineups 
   19ecaa6 ckpt 132: Items A+B done: Live win probability (Sim.matchupOdds: banked + proj x game-le
   2b6781b ckpt 127: Wrote Tj's 2026-09-24b request into TASKS.md (A-K: proposals 1,2,3,6,7,8,9,10 
@@ -36,7 +37,6 @@ request in his own words and `git log` carries every step already taken.
   2dc714b ckpt 121: Step 7 done: proposals 1-10 in TASKS 'Waiting on Tj' (win prob, position colou
   c3b1759 ckpt 116: F17 fixed: a failed injury-feed fetch no longer wipes (and saves) an empty inj
   58a69eb ckpt 110: F15 (a failed projection refresh wiped this week's/season's loaded projections
-  dfaf97e ckpt 105: F14 fixed (doSync: a failed box score no longer wipes that game's stored lines
 ```
 
 (4 automatic checkpoint(s) since the last deliberate one — the
