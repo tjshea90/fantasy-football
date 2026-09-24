@@ -299,6 +299,39 @@ console.log('\n-- #6 matchup difficulty chip --');
   ok(all(h.ids.view, function (n) { return hasClass(n, 'mchip'); }).length >= 1, 'Lineups shows it on the slot label too');
 }());
 
+/* ================================================================ #7 trending */
+console.log('\n-- #7 trending on the Wire --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var W = h.W, St = W.Store, S = St.get(), wk = S.settings.currentWeek || 1;
+  var groups = W.Value.byPos(wk, 0), fas = [];
+  W.Value.POS.forEach(function (k) { (groups[k] || []).slice(0, 3).forEach(function (f) { fas.push(f); }); });
+  ok(fas.length >= 6, 'the harness wire has free agents to work with (' + fas.length + ')');
+  /* ESPN ownership rides in on the season projection set */
+  var bn = {}, chg = [12.4, 0.2, -3, 25, 7.5, 0.9];
+  fas.slice(0, 6).forEach(function (f, i) {
+    bn[W.Espn.normName(f.name)] = { pos: f.pos, season: 100, gp: 17, src: 'espn', own: 20 + i * 7, ownChg: chg[i] };
+  });
+  W.Projections._setSeasonForTest({ at: Date.now(), season: S.settings.season, byName: bn, count: 6, error: '', route: 't', notes: [] });
+  var o0 = W.Projections.ownership({ name: fas[0].name, pos: fas[0].pos });
+  ok(o0 && o0.own === 20 && o0.chg === 12.4, 'Projections.ownership reads % rostered and the weekly change');
+  h.clickTab('wire');
+  var chips = all(h.ids.view, function (n) { return hasClass(n, 'ochip'); });
+  ok(chips.length >= 1 && chips.some(function (n) { return /^\d+% rostered ▲12\.4$/.test(n.textContent) && hasClass(n, 'up'); }),
+     'free-agent rows show "N% rostered ▲12.4" (' + chips.map(function (n) { return n.textContent; }).slice(0, 3).join(' | ') + ')');
+  var trend = button(h.ids.view, 'Trending');
+  ok(!!trend, 'the filter row has a "Trending" chip');
+  click(trend);
+  var rows = all(h.ids.view, function (n) { return n.getAttribute && n.getAttribute('data-player') && hasClass(n, 'row'); });
+  var names = rows.map(function (n) { return n.getAttribute('data-player').split('|')[0]; });
+  var want = fas.slice(0, 6).map(function (f, i) { return { n: f.name, c: chg[i] }; })
+    .filter(function (x) { return x.c >= 0.5; }).sort(function (a, b) { return b.c - a.c; }).map(function (x) { return x.n; });
+  var got = names.filter(function (n) { return want.indexOf(n) >= 0; });
+  ok(JSON.stringify(got.slice(0, want.length)) === JSON.stringify(want) && names.length === want.length,
+     'Trending lists only risers, biggest first: ' + got.join(', '));
+}());
+
 setTimeout(function () {
   pending.forEach(function (f) { f(); });
   console.log(fails ? ('\n  ' + fails + ' picks2 check(s) FAILED') : '\n  picks2 checks pass');
