@@ -95,6 +95,19 @@ is just "No opponent set").
   lines + book rows; no bonus pass on a week with a hole (flags carried);
   final only when complete (or already complete before); otherwise stays
   open, header says "N box score(s) missing", closing sync retries.
+- [x] FIXED (test_picks 'a failed projection fetch', 4 checks; v8.5: 42 requests in 0.5 s) F16 BATTERY/NETWORK LOOP:
+  on the Wire tab with no signal (or an ESPN/Sleeper outage) the season-
+  projection refresh failed -> render() -> refresh again, with no cooldown:
+  ~88 ESPN + 88 Sleeper requests, as many full Wire renders and cache writes
+  in 2 s, for as long as the tab stayed open. Now: one attempt in flight,
+  10-min retry cooldown for background callers (a sync he starts, opts.user,
+  still goes out), and the Wire tab re-renders only when a new set landed.
+- [x] FIXED (same block) F15 DATA LOSS: Projections.refresh / refreshSeason
+  replaced this week's (this season's) already-loaded projections with an
+  EMPTY set whenever every source failed — one pull-to-refresh with no
+  signal and every lineup call fell back to rough averages. Now the set on
+  hand is kept (its real age still shows) and the sync report says
+  "FAILED this time — kept the set from N min ago".
 - [x] Step 6 engine spot-checks DONE: 7 fresh week-2 lines hand-computed vs
   RULES_2026.md — Nix 41, Schultz 26, Swift 12.9 (fumble -2), Bates 7,
   Texans D 15 (5 sacks, 20 PA tier), Wan'Dale 1.9, Goff 67.05: all exact.
