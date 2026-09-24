@@ -323,6 +323,7 @@
       if (newsCache && (newsCache.count || 0) > 0 && newsCache.byName) {
         newsCache.error = msg;
         newsCache.failedAt = Date.now();
+        delete newsCache.reused;          /* this was an attempt, not a reuse */
       } else {
         newsCache = { at: Date.now(), byName: {}, count: 0, error: msg };
       }
