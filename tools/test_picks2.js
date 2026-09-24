@@ -261,6 +261,45 @@ console.log('\n-- #2 position colours and #3 compact injury badges --');
   }).catch(function (e) { ok(false, 'threw: ' + (e && e.stack || e)); });
 }());
 
+/* ================================================================ #6 matchup */
+console.log('\n-- #6 matchup difficulty chip --');
+(function () {
+  var h = buildHarness();
+  h.docHandlers.DOMContentLoaded();
+  var W = h.W, St = W.Store, S = St.get(), R = W.Recommend;
+  h.ids.wkNext._h.click(); h.ids.wkNext._h.click();           /* to week 3 */
+  var rbs = W.PlayerDB.get().players.filter(function (p) { return p.p === 'RB'; }).slice(0, 4);
+  /* weeks 1-2: KC, BUF, SF, DAL (and IND, HOU so IND has an opponent) */
+  var opp1 = { KC: 'BUF', BUF: 'KC', SF: 'DAL', DAL: 'SF', IND: 'HOU', HOU: 'IND' };
+  var opp2 = { KC: 'SF', SF: 'KC', BUF: 'DAL', DAL: 'BUF', IND: 'HOU', HOU: 'IND' };
+  function bk(rows) { var o = {}; rows.forEach(function (r) { o[W.Espn.normName(r[0])] = { n: r[0], t: r[1], p: r[2] }; }); return o; }
+  /* RB points allowed: SF gives up the most, KC the fewest */
+  St.setBook(1, bk([[rbs[0].n, 'KC', 30], [rbs[1].n, 'BUF', 4], [rbs[2].n, 'SF', 12], [rbs[3].n, 'DAL', 26]]));
+  St.setBook(2, bk([[rbs[0].n, 'KC', 28], [rbs[1].n, 'BUF', 11], [rbs[2].n, 'SF', 9], [rbs[3].n, 'DAL', 13]]));
+  S.weekMeta['1'] = { synced: true, allFinal: true, games: 3, opponents: opp1, at: '' };
+  S.weekMeta['2'] = { synced: true, allFinal: true, games: 3, opponents: opp2, at: '' };
+  S.weekMeta['3'] = { opponents: { IND: 'SF', SF: 'IND', KC: 'DAL', DAL: 'KC' } };
+  St.save();
+  var tb = R._fpaTable(3);
+  /* allowed to RBs per game: BUF (30+26)/2=28? no: KC's RB scored vs BUF(30) and vs SF(28) */
+  ok(tb.of.RB === 4, 'four defenses with two games are ranked for RBs (' + tb.of.RB + ')');
+  var m = R.matchupRank(3, 'RB', 'IND');
+  ok(!!m && m.opp === 'SF', 'IND plays SF in week 3');
+  /* SF faced the KC RB (30... wait wk1 SF faced DAL: 26; wk2 SF faced KC: 28) -> 27/gm, the most */
+  ok(m && m.rank === 4 && m.tier === 'soft' && near(m.fpa, 27), 'SF allows the most to RBs (27/gm): 4th of 4, soft (' + JSON.stringify(m) + ')');
+  var m2 = R.matchupRank(3, 'RB', 'SF');
+  ok(m2 === null, 'no chip when the opponent (IND) has fewer than two games in the table');
+  h.clickTab('rosters');
+  var chip = all(h.ids.view, function (n) { return hasClass(n, 'mchip'); });
+  var taylorChip = chip.filter(function (n) { return /vs SF/.test(text(n)); })[0];
+  ok(!!taylorChip && hasClass(taylorChip, 'soft') && /4th/.test(text(taylorChip)),
+     'Roster: Jonathan Taylor (IND) shows "' + (taylorChip ? text(taylorChip) : 'none') + '" in green');
+  ok(taylorChip && /SF allows 27 pts a game to RBs/.test(taylorChip.title) && /1st = allows the fewest/.test(taylorChip.title),
+     'and its tooltip explains the number: ' + (taylorChip && taylorChip.title));
+  h.clickTab('lineups');
+  ok(all(h.ids.view, function (n) { return hasClass(n, 'mchip'); }).length >= 1, 'Lineups shows it on the slot label too');
+}());
+
 setTimeout(function () {
   pending.forEach(function (f) { f(); });
   console.log(fails ? ('\n  ' + fails + ' picks2 check(s) FAILED') : '\n  picks2 checks pass');
