@@ -467,6 +467,11 @@ console.log('\n-- #9 inactives alert: the page hands Java the week\'s starter ki
   var card = lab ? lab.parentNode : null;
   ok(/every day at/.test(text(card)) && !/Thursday at 4pm/.test(text(card)) && !/on Sunday at/.test(text(card)),
      'the daily check\'s copy matches what Alerts.rearm does (every day + 4pm), not "Sunday / Thursday"');
+  var nums = all(card, function (n) { return n.tagName === 'INPUT' && n.type === 'number'; });
+  var css = fs.readFileSync(A('app.css'), 'utf8');
+  ok(nums.length === 2 && nums[0].parentNode === nums[1].parentNode && nums[0].parentNode.className === 'timeRow' &&
+     /\.timeRow\{display:flex;align-items:center;/.test(css),
+     'the hour and minute boxes sit together in a .timeRow  <-- was .kv, whose span{flex:1} pushed the minutes to the far edge');
   var nk = calls.kick.length;
   cb.checked = true; cb._h.change.call(cb);
   ok(calls.inact[calls.inact.length - 1] === true && calls.kick.length === nk + 1,
