@@ -1374,7 +1374,9 @@
     $('wkLabel').textContent = 'Wk ' + week;
     var m = S.weekMeta[String(week)];
     if (!m || !m.synced) $('syncText').textContent = 'not synced · ' + liveText();
-    else $('syncText').textContent = (m.allFinal ? 'final' : 'in progress') +
+    else $('syncText').textContent = (m.allFinal ? 'final'
+        : (m.failed && !m.inProgress ? m.failed + ' box score' + (m.failed === 1 ? '' : 's') + ' missing'
+                                     : 'in progress')) +
         ' · ' + m.games + ' games · updated ' +
         (live.at ? new Date(live.at).toTimeString().slice(0, 5) : m.at.slice(11, 16) + 'Z') +
         (m.estFG ? ' · FG est' : '') + ' · ' + liveText();
@@ -4452,6 +4454,11 @@
     function step(t, p) { if (!quiet) jobStep(t, p); }
     var season = S.settings.season, allLines = [], oppMap = {}, twoPtSeen = 0, stSource = 'groups';
     var meta = { games: 0, allFinal: true, estFG: false, inProgress: 0 };
+    /* NFL teams whose game has started but whose box score this sync could
+       not get (a failed fetch with nothing cached) — see "A BOX SCORE THAT
+       DID NOT ARRIVE" below */
+    var missingTeams = {};
+    function failedAny() { for (var k in missingTeams) { if (Object.prototype.hasOwnProperty.call(missingTeams, k)) return true; } return false; }
     return Espn.weekGames(season, syncedWeek, syncedWeek > 18 ? 3 : 2).then(function (games) {
       meta.games = games.length;
       games.forEach(function (g) {
@@ -4509,7 +4516,12 @@
         games.forEach(function (g) {
           var c = gcache.byId[g.id];
           if (c && c.r) perGame.push({ g: g, r: c.r });
-          else if (g.state !== 'pre') failed++;
+          else if (g.state !== 'pre') {
+            failed++;
+            (g.teams || []).forEach(function (tm) {
+              if (tm && tm.abbr) missingTeams[String(tm.abbr).toUpperCase()] = 1;
+            });
+          }
         });
         meta.failed = failed;
         return perGame;
@@ -4533,12 +4545,38 @@
          a variable that was never declared, so it threw a ReferenceError on
          the FIRST matched player of EVERY sync since the v4.2 baseline,
          leaving the "0 of N matched" banner stuck no matter what. */
-      var keepAdj = {};
+      var keepAdj = {}, keepBonus = {};
       Object.keys(stats).forEach(function (k) {
         if (stats[k] && stats[k].manualAdj) keepAdj[k] = stats[k].manualAdj;
+        if (stats[k] && stats[k].bonus) keepBonus[k] = stats[k].bonus;
       });
-      /* wipe this week's lines so a re-sync is idempotent */
-      Object.keys(stats).forEach(function (k) { delete stats[k]; });
+      /* ---- A BOX SCORE THAT DID NOT ARRIVE (full test 2026-09-24) ---------
+       * The wipe below used to clear EVERY line of the week and rebuild from
+       * whatever this sync fetched. One failed box score (a flaky connection
+       * on a Tuesday re-sync, say) therefore deleted that game's players'
+       * already-correct lines — 0.0 for them — and, every game being over,
+       * the week was still stamped final, so nothing ever retried it. Now:
+       *  - a player whose NFL team's game could not be fetched KEEPS his
+       *    stored line (and his league-book row, below);
+       *  - the three +5 longest-play bonuses are not recomputed from a week
+       *    with a game missing (the missing game may hold the longest play);
+       *    everyone keeps the flags the last complete sync gave him;
+       *  - the week is final only if it really is complete: every game over
+       *    and either nothing missing, or it was already complete before
+       *    this sync (the kept lines ARE its final numbers). Otherwise it
+       *    stays open, so the live poll's closing sync fetches the missing
+       *    game on its next tick, and the header says what is missing. */
+      var pidTeam = function (pid) {
+        var rec = Store.playerById(pid);
+        return rec && rec.player ? String(rec.player.nfl || '').toUpperCase() : '';
+      };
+      var kept = 0;
+      /* wipe this week's lines so a re-sync is idempotent — except those
+         whose game could not be refetched this time (above) */
+      Object.keys(stats).forEach(function (k) {
+        if (failedAny() && missingTeams[pidTeam(k)]) { seenPid[k] = 1; kept++; return; }
+        delete stats[k];
+      });
 
       perGame.forEach(function (pg) {
         var r = pg.r, key;
@@ -4582,7 +4620,14 @@
        * real play text before it could replace this. Left as the best
        * available proxy; a two-QB game is the one case where the +5 can land
        * on the wrong man. */
-      if (meta.allFinal && allLines.length) {
+      var prevComplete = !!(S.weekMeta[String(syncedWeek)] && S.weekMeta[String(syncedWeek)].synced &&
+                            S.weekMeta[String(syncedWeek)].allFinal && !S.weekMeta[String(syncedWeek)].failed);
+      var complete = meta.allFinal && (!meta.failed || prevComplete);
+      if (meta.failed) {
+        /* no bonus pass on a week with a hole in it: everyone keeps the
+           flags the last complete sync gave him */
+        Object.keys(keepBonus).forEach(function (k) { if (stats[k]) stats[k].bonus = keepBonus[k]; });
+      } else if (meta.allFinal && allLines.length) {
         var qbKey = null, bestLong = -1;
         perGame.forEach(function (pg) {
           var k2;
@@ -4625,7 +4670,15 @@
          (store.js markArchiveLazy) and the save is not counted as an edit
          (saveLive). A manual sync or the week's closing, final sync is
          written at once, exactly as before. */
-      var lazyArch = quiet && !meta.allFinal;
+      var lazyArch = quiet && !complete;
+      /* the missing game's players keep last time's book rows too */
+      if (meta.failed) {
+        var prevBook = Store.bookWeek(syncedWeek);
+        Object.keys(prevBook).forEach(function (k) {
+          var row = prevBook[k];
+          if (row && !book[k] && missingTeams[String(row.t || '').toUpperCase()]) book[k] = row;
+        });
+      }
       Store.setBook(syncedWeek, book, lazyArch);
 
       /* ---- the feed-shape canary -----------------------------------------
@@ -4643,7 +4696,10 @@
       var expected = 0;
       Store.allPlayers().forEach(function (x) {
         var ab3 = String(x.player.nfl || '').toUpperCase();
-        if (ab3 && oppMap[ab3] !== undefined) expected++;
+        /* a team whose box score did not arrive cannot be "matched" this
+           time — counting it would raise the name-matching alarm for what
+           is only a failed fetch */
+        if (ab3 && oppMap[ab3] !== undefined && !missingTeams[ab3]) expected++;
       });
       var feedWarn = '';
       if (shapeMissing.length) {
@@ -4677,7 +4733,7 @@
       if (!wm) wm = S.weekMeta[String(syncedWeek)] = {};
       var prevOpp = wm.opponents;
       wm.synced = true; wm.at = new Date().toISOString(); wm.games = meta.games;
-      wm.allFinal = meta.allFinal; wm.estFG = meta.estFG; wm.matched = matched;
+      wm.allFinal = complete; wm.estFG = meta.estFG; wm.matched = matched; wm.kept = kept;
       wm.inProgress = meta.inProgress; wm.twoPt = twoPtSeen; wm.stSource = stSource;
       wm.rostered = Store.allPlayers().length; wm.unmatched = unmatched;
       wm.opponents = (prevOpp && Object.keys(prevOpp).length) ? prevOpp : oppMap;
@@ -4689,7 +4745,7 @@
       if (lazyArch) Store.saveLive(); else Store.save();
       /* only spend a Downloads write on a settled week — a live poll every 45s
          would otherwise fill the folder with near-identical copies */
-      if (!quiet || meta.allFinal) Store.autoBackup(true);
+      if (!quiet || complete) Store.autoBackup(true);
       autoFillWeek(syncedWeek);
       /* projections and measured spread both just changed */
       if (window.Sim) Sim.invalidate();
@@ -4697,7 +4753,11 @@
       render();
       if (!quiet) {
         toast('Week ' + syncedWeek + ': ' + matched + ' players scored' +
-              (meta.allFinal ? ' (final)' : ' (live)'));
+              (meta.failed
+                ? ' · ' + meta.failed + ' box score' + (meta.failed === 1 ? '' : 's') + ' did not load' +
+                  (kept ? ', kept the last good numbers for ' + kept + ' player' + (kept === 1 ? '' : 's') : '') +
+                  (complete ? '' : ' — will retry')
+                : (complete ? ' (final)' : ' (live)')), meta.failed ? 7000 : undefined);
       }
       return meta;
     }).catch(function (e) {
