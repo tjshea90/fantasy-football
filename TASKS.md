@@ -32,7 +32,7 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
 - [x] **F. (#7) Trending on the Wire** DONE (test_picks2 '#7', 5 checks; projections.js captures ownership + outlooks from the same response) — — ESPN ownership % + weekly change
       (already in the downloaded projection data) on free-agent rows, plus a
       "Trending" filter sorted by the change.
-- [ ] **G. (#8) One player card** — tapping/long-pressing any player opens one
+- [x] **G. (#8) One player card** DONE (test_picks2 '#8': Live tap, Roster ⋯ -> Player card, long-press direct, free agent; Adjust -> Store.setAdj; test_boot/test_picks pins) — — tapping/long-pressing any player opens one
       sheet: this week (kickoff, projection + how built, matchup, injury note,
       Claude), stat line + scoring breakdown + Adjust, season average, game
       log, ESPN's written outlook, % rostered. Replaces the separate pre-game
