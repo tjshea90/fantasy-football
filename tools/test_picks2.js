@@ -18,7 +18,7 @@ function A(f) { return path.join(__dirname, '..', 'app/assets', f); }
 
 function makeEl(tag) {
   var e = {
-    tagName: String(tag || 'div').toUpperCase(),
+    nodeType: 1, tagName: String(tag || 'div').toUpperCase(),
     children: [], style: {}, dataset: {}, attributes: {},
     className: '', textContent: '', value: '', hidden: false,
     disabled: false, selectedIndex: 0, options: [],
