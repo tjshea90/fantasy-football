@@ -449,6 +449,27 @@
     return out;
   }
 
+  /* ---- riding along on the same response (2026-09-24b, Tj's picks #7, #8)
+     ESPN's player objects already carry what two of the big-app features need,
+     so nothing extra is fetched: ownership.percentOwned / percentChange (ESPN
+     leagues' % rostered and its change this week — the "Trending" signal) and
+     the written outlooks (outlooks.outlooksByWeek[week], seasonOutlook).
+     Outlooks are cut at a sentence end near 360 characters: a card snippet,
+     not an article, and the cache is rewritten on every sync. */
+  function ownOf(p) {
+    var o = p && p.ownership;
+    if (!o || typeof o.percentOwned !== 'number') return null;
+    return { own: Math.round(o.percentOwned * 10) / 10,
+             chg: typeof o.percentChange === 'number' ? Math.round(o.percentChange * 10) / 10 : 0 };
+  }
+  function snippet(s, max) {
+    s = String(s === null || s === undefined ? '' : s).replace(/\s+/g, ' ').trim();
+    if (s.length <= max) return s;
+    var cut = s.slice(0, max), end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+    if (end > max * 0.5) return cut.slice(0, end + 1);
+    var sp = cut.lastIndexOf(' ');
+    return (sp > max * 0.5 ? cut.slice(0, sp) : cut) + '…';
+  }
   function ingest(j, season, week) {
     var list = j.players || j.items || (j.player ? [j] : []);
     var byName = {}, count = 0, weekly = 0, i, k;
@@ -482,6 +503,10 @@
       var rec = { pos: pos, espnId: String(p.id === undefined ? '' : p.id) };
       if (wk) { var a = scoreProjected(wk, pos); rec.week = a.pts; rec.weekLine = a.line; weekly++; }
       if (sea) { var b = scoreProjected(sea, pos); rec.season = b.pts; }
+      var ow = ownOf(p);
+      if (ow) { rec.own = ow.own; rec.ownChg = ow.chg; }
+      var obw = p.outlooks && p.outlooks.outlooksByWeek;
+      if (obw && obw[String(week)]) rec.outlook = snippet(obw[String(week)], 360);
       byName[root.Espn.normName(p.fullName)] = rec;
       count++;
     }
@@ -587,9 +612,11 @@
       if (!sea) continue;
       var a = scoreProjected(sea, pos);
       if (!(a.pts > 0)) continue;
-      byName[root.Espn.normName(p.fullName)] = {
-        pos: pos, season: a.pts, seasonLine: a.line, gp: 17, src: 'espn'
-      };
+      var srec = { pos: pos, season: a.pts, seasonLine: a.line, gp: 17, src: 'espn' };
+      var ow2 = ownOf(p);
+      if (ow2) { srec.own = ow2.own; srec.ownChg = ow2.chg; }
+      if (p.seasonOutlook) srec.outlook = snippet(p.seasonOutlook, 360);
+      byName[root.Espn.normName(p.fullName)] = srec;
       count++;
     }
     return { byName: byName, count: count, note: count + ' season projections' };
@@ -736,6 +763,22 @@
     return seasonInFlight;
   }
 
+  /* % rostered on ESPN and this week's change, for a player the wire shows —
+     the weekly set is fresher (an Advice sync), the season set is what the
+     Wire tab keeps current on its own. null when neither knows him. */
+  function ownership(player) {
+    var w = find(player), s = findSeason(player);
+    var r = (w && typeof w.own === 'number') ? w : ((s && typeof s.own === 'number') ? s : null);
+    return r ? { own: r.own, chg: r.ownChg || 0 } : null;
+  }
+  /* ESPN's written outlook: this week's if the weekly set holds one for the
+     week asked about, else the season outlook. */
+  function outlook(player, week) {
+    var w = find(player, week), s = findSeason(player);
+    if (w && w.outlook) return { text: w.outlook, kind: 'week ' + cache.week };
+    if (s && s.outlook) return { text: s.outlook, kind: 'season' };
+    return null;
+  }
   /* No week guard, deliberately — see the block comment above. */
   function findSeason(player) {
     if (!seasonCache.byName) return null;
@@ -843,6 +886,7 @@
     _ingest: ingest,
     /* full-season projections — their own fetch and their own cache */
     refreshSeason: refreshSeason, findSeason: findSeason, seasonMeta: seasonMeta,
+    ownership: ownership, outlook: outlook, _snippet: snippet,
     loadSeasonCache: loadSeasonCache, seasonFresh: seasonFresh,
     SEASON_FRESH_MS: SEASON_FRESH_MS,
     _ingestSeasonEspn: ingestSeasonEspn,
