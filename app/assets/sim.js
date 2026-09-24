@@ -306,20 +306,38 @@
       if (!root.Store.weekIsScored(w)) continue;
       for (i = 0; i < T; i++) basePts[i] += root.Store.teamWeekScore(w, ids[i]).total;
     }
-    /* which weeks are still to play, and who plays whom in them */
-    var pairsA = [], pairsB = [];
+    /* which weeks are still to play, and who plays whom in them.
+     *
+     * EVERY unplayed regular-season week is played (full test 2026-09-24).
+     * A week whose matchups were never entered used to be skipped outright —
+     * as if those games would never happen — so with only the current week's
+     * pairing typed in, the odds froze today's standings for the rest of the
+     * season: ">99%" and "0%" after two weeks. Every team does play every
+     * week, so the teams a week has no entered opponent for are paired AT
+     * RANDOM in each simulated season instead: the honest average over the
+     * schedules it could be. A week with its full slate entered draws nothing
+     * extra, so a league with the whole season entered gets exactly the odds
+     * it always did. */
+    var pairsA = [], pairsB = [], freeT = [], randomWeeks = 0;
     for (w = 1; w <= reg; w++) {
       if (root.Store.weekIsScored(w)) continue;
       var mus = root.Store.getMatchups(w);
-      if (!mus.length) continue;
-      var a = [], b = [];
+      var a = [], b = [], busy = {};
       for (j = 0; j < mus.length; j++) {
         if (idx[mus[j][0]] === undefined || idx[mus[j][1]] === undefined) continue;
+        if (busy[mus[j][0]] || busy[mus[j][1]]) continue;   /* a team plays once a week */
+        busy[mus[j][0]] = busy[mus[j][1]] = 1;
         a.push(idx[mus[j][0]]); b.push(idx[mus[j][1]]);
       }
-      pairsA.push(a); pairsB.push(b);
+      var free = [];
+      for (i = 0; i < T; i++) if (!busy[ids[i]]) free.push(i);
+      if (free.length < 2) free = [];                        /* an odd team out sits */
+      if (!a.length && !free.length) continue;
+      if (free.length) randomWeeks++;
+      pairsA.push(a); pairsB.push(b); freeT.push(free);
     }
     var F = pairsA.length;
+    var shuf = [];
     var pm = new Float64Array(T), psd = new Float64Array(T);
     for (i = 0; i < T; i++) { pm[i] = post.teams[ids[i]].postMean; psd[i] = post.teams[ids[i]].postSd; }
     var sigma = post.sigma;
