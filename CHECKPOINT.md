@@ -1,12 +1,12 @@
-# CHECKPOINT 184 — read me first, then TASKS.md
+# CHECKPOINT 187 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T20:38:50Z · **version:** 8.7 · **tests:** all 28 suites green
+**Written:** 2026-09-24T20:48:10Z · **version:** 8.7 · **tests:** all 28 suites green
 
 ## Just done
-v8.7 shipped + Release verified (asset FFTracker-v8.7.apk). K full test started: ui.js diff reviewed; CSS classes all defined; dead Stats.openPlayerModal removed (+ stale stats.js header) with a pin
+K full test done: findings recorded in STATE.md v8.8; job archived to LADDER.md §44
 
 ## Do this next
-K continues: sweep the rest (Advice/recommend.js diff, projections.js diff, sim.js/schedule.js, Android shell, index.html load order), network/battery/race checks, then ckpt + ship v8.8 if anything was fixed, publish-release, message Tj with BOTH links
+ship v8.8, publish-release 8.8, verify, message Tj with the v8.8 link (v8.7 also published)
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -26,6 +26,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  147f562 ckpt 184: v8.7 shipped + Release verified (asset FFTracker-v8.7.apk). K full test starte
   4331bae ship v8.7: v8.7: Tj's picks 1,2,3,6,7,8,9,10 + Live layout (win probability, position co
   2eb03e9 ckpt 180: Features done (A-I) + visual pass fixes (Wire injury card badges, long-term-ou
   be7a263 ckpt 168: Item I done: Data -> League puts Standings first; 'Enter week N scores' under 
@@ -35,7 +36,6 @@ request in his own words and `git log` carries every step already taken.
   3b2fbaa ckpt 141: Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the 
   d8f32eb ckpt 136: Items C+D done: position colour chips (slotEl/posClass; FLEX neutral; Lineups 
   19ecaa6 ckpt 132: Items A+B done: Live win probability (Sim.matchupOdds: banked + proj x game-le
-  2b6781b ckpt 127: Wrote Tj's 2026-09-24b request into TASKS.md (A-K: proposals 1,2,3,6,7,8,9,10 
 ```
 
 (2 automatic checkpoint(s) since the last deliberate one — the
