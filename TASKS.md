@@ -22,9 +22,9 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
       finished week is 100/0. Shown as "you 58% · 42% Opp" with a bar.
 - [x] **B. Live layout** DONE (test_picks2: boxes index 0, card index 1) — — the projection / win-probability card moves BELOW
       the two live team boxes.
-- [ ] **C. (#2) Position colours** — QB/RB/WR/TE/K/DEF colour chips in every
+- [x] **C. (#2) Position colours** DONE (test_picks2 '#2 ... #3', Roster/Live/Lineups/Advice) — — QB/RB/WR/TE/K/DEF colour chips in every
       slot column (Live, Lineups, Roster, Wire, Advice, dialogs); FLEX neutral.
-- [ ] **D. (#3) Compact injury badges** — Q / D / O / IR / SUSP / PUP pills
+- [x] **D. (#3) Compact injury badges** DONE (same block: Q, IR distinct from O, no spelled-out words in lists, tooltip/aria full text) — — Q / D / O / IR / SUSP / PUP pills
       (full word as title + aria-label) in lists; detail views keep words.
 - [ ] **E. (#6) Matchup difficulty chip** — "vs HOU · 28th vs RB" coloured
       soft/avg/tough from the engine's own defense-vs-position numbers, on

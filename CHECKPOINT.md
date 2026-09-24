@@ -1,12 +1,12 @@
-# CHECKPOINT 132 — read me first, then TASKS.md
+# CHECKPOINT 136 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T19:34:49Z · **version:** 8.6 · **tests:** all 27 suites green
+**Written:** 2026-09-24T19:39:28Z · **version:** 8.6 · **tests:** all 27 suites green
 
 ## Just done
-Items A+B done: Live win probability (Sim.matchupOdds: banked + proj x game-left, measured position spread, normal approx) + Schedule.remaining (game-clock fraction); the projected finish now uses the same live model (a mid-game player's rest of game counts); the projection/win-prob card moved under the team boxes; a final week reads 'Final · you won by X'. New tools/test_picks2.js.
+Items C+D done: position colour chips (slotEl/posClass; FLEX neutral; Lineups label chips; Stats search) + compact injury badges (healthTag; recommend.js flags carry code Q/D/O/IR/SUSP/PUP/LTD/BYE via injuryCode; full sentence as title + aria-label). test_picks2 +10 checks.
 
 ## Do this next
-Items C+D: position colour chips (post-render tint pass over .slot) + compact Q/D/O/IR injury badges (shared helper; ctx.healthTag for recommend.js).
+Item E: matchup difficulty chip from Recommend.defenseProfile/matchupFactor ranks.
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,11 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M MANIFEST.txt
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  19ecaa6 ckpt 132: Items A+B done: Live win probability (Sim.matchupOdds: banked + proj x game-le
   2b6781b ckpt 127: Wrote Tj's 2026-09-24b request into TASKS.md (A-K: proposals 1,2,3,6,7,8,9,10 
   17e9448 ckpt 125: Full test + competitor survey (2026-09-24) complete: v8.6 Release published an
   9e19564 ship v8.6: v8.6: full test -- a failed injury fetch no longer clears every OUT/IR flag; 
@@ -37,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   58a69eb ckpt 110: F15 (a failed projection refresh wiped this week's/season's loaded projections
   dfaf97e ckpt 105: F14 fixed (doSync: a failed box score no longer wipes that game's stored lines
   8edc7cf ckpt 99: Small polish from the competitor survey: live game clock on the schedule badge 
-  4c4845e ckpt 92: Fixed F1-F8, F12, F13 (ui.js/recommend.js/sim.js) + F6 sim random pairing for u
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(3 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
