@@ -152,9 +152,24 @@
   }
 
   /* The badge that sits next to a player's name.
-     `text`  — "Thu 8:20p", "LIVE", "final"
+     `text`  — "Thu 8:20p", "Q3 5:21" (or "LIVE"), "final"
      `early` — kicks off before Sunday, i.e. the lineup is due sooner than he
                probably thinks. This is what the UI colours. */
+  /* ESPN's in-game status line -> the compact game clock every fantasy app
+     puts next to a live player (ESPN, Sleeper and Yahoo all do; full test
+     2026-09-24): "7:33 - 2nd" -> "Q2 7:33", "Halftime" -> "Half",
+     "End of 3rd" -> "End Q3", "2:10 - OT" -> "OT 2:10". It rides the
+     scoreboard the live poll already fetches every tick (kickoffs[].detail,
+     kept in memory by ingest), so it costs no request. Anything it does not
+     recognise — a delay, a new ESPN wording — still reads LIVE. */
+  function liveClock(detail) {
+    var s = String(detail || '').trim(), m;
+    if ((m = /^(\d{1,2}:\d{2})\s*-\s*(1st|2nd|3rd|4th)$/i.exec(s))) return 'Q' + m[2].charAt(0) + ' ' + m[1];
+    if ((m = /^(\d{1,2}:\d{2})\s*-\s*(\d?OT)$/i.exec(s))) return m[2].toUpperCase() + ' ' + m[1];
+    if (/^half/i.test(s)) return 'Half';
+    if ((m = /^end of (?:the )?(1st|2nd|3rd|4th)\b/i.exec(s))) return 'End Q' + m[1].charAt(0);
+    return 'LIVE';
+  }
   function badge(nfl, week) {
     var g = forTeam(nfl, week);
     if (!g) return null;
@@ -168,7 +183,7 @@
       opp: (g.home ? 'vs ' : '@ ') + g.opp,
       text: DAYS[day] + ' ' + clock(d)
     };
-    if (g.state === 'in') { out.text = 'LIVE'; out.live = true; out.early = false; }
+    if (g.state === 'in') { out.text = liveClock(g.detail); out.live = true; out.early = false; }
     else if (g.state === 'post') { out.text = 'final'; out.done = true; out.early = false; }
     else if (out.at < Date.now()) { out.text = DAYS[day] + ' ' + clock(d); out.early = false; }
     return out;
