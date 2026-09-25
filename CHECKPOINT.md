@@ -1,12 +1,12 @@
-# CHECKPOINT 189 — read me first, then TASKS.md
+# CHECKPOINT 52 — read me first, then TASKS.md
 
-**Written:** 2026-09-24T20:51:11Z · **version:** 8.8 · **tests:** all 28 suites green
+**Written:** 2026-09-25T01:25:25Z · **version:** 8.8 · **tests:** all 28 suites green
 
 ## Just done
-v8.7 and v8.8 shipped; both GitHub Releases verified with APK assets; job archived (LADDER §44)
+logged Tj's 2026-09-25 request (vivid position colours + light tests) in TASKS.md
 
 ## Do this next
-Nothing open. Next: whatever Tj asks (write it into TASKS.md first). Phone checks worth asking him for: the inactives switch in Data > App (needs a real Sunday), win probability during a live game
+1a: re-pick .pc-* palette in app/assets/app.css
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,9 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  8c06bae ckpt 189: v8.7 and v8.8 shipped; both GitHub Releases verified with APK assets; job arch
   af25eb4 ship v8.8: v8.8: full test after the v8.7 features — dead long-press game-log modal re
   b303067 ckpt 187: K full test done: findings recorded in STATE.md v8.8; job archived to LADDER.m
   147f562 ckpt 184: v8.7 shipped + Release verified (asset FFTracker-v8.7.apk). K full test starte
@@ -35,5 +37,7 @@ request in his own words and `git log` carries every step already taken.
   a7a8654 ckpt 164: Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alar
   f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
   d9412f0 ckpt 146: Item F done: ESPN ownership (percentOwned/percentChange) + written outlooks ca
-  3b2fbaa ckpt 141: Item E done: matchup difficulty chip (Recommend.matchupRank/fpaTable from the 
 ```
+
+(1 automatic checkpoint(s) since the last deliberate one — the
+session was still mid-step. `git diff` against it shows what changed.)

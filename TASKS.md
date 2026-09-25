@@ -1,6 +1,23 @@
 # TASKS — the current job, in Tj's words
 
-## Current job — none open
+## Current job — 2026-09-25: vivid position colours, then light tests
+
+> "I like the new features of this app, but the color scheme for the players
+> positions (qb rb1 wr1 etc.) is dull and the different positions don't stand
+> out in color. Make these colors more vibrant and easy to tell the different
+> positions by contrast. Then do light test protocol"
+
+(His screenshot: Live tab, both lineup columns — QB/RB1/WR1/TE/K/DEF chips
+read as muted tints; RB vs WR and TE vs DEF are hard to tell apart.)
+
+- [ ] 1a. Re-pick the six .pc-* colours (app.css) so each position is a
+      vivid, clearly distinct hue — no two neighbours in hue (RB/WR, TE/DEF,
+      QB/K were the close pairs) — with a stronger chip fill, text still
+      legible on the dark panel. Test pins the new palette + a hue-distance
+      and contrast check.
+- [ ] 1b. Light test protocol (CLAUDE.md "Light tests") on this change.
+
+## Previous job — none open
 
 The 2026-09-24b job (Tj's picks 1, 2, 3, 6, 7, 8, 9, 10 + the Live layout,
 then a full test) is finished: shipped as v8.7 (features) and v8.8 (the full
