@@ -23,7 +23,15 @@ read as muted tints; RB vs WR and TE vs DEF are hard to tell apart.)
       chip. Test: test_picks2 '#2 follow-up: vivid, distinct position
       colours' (9 checks; confirmed FAIL on v8.8's app.css and on a
       specificity/width regression).
-- [ ] 1b. Light test protocol (CLAUDE.md "Light tests") on this change.
+- [x] 1b. Light test protocol (CLAUDE.md "Light tests") on this change.
+      DONE: 28/28 suites + ES2018 green by exit code (twice). Every .pc call
+      site checked in headless Chromium (Roster, Live halves, Lineups labels,
+      Wire, player card header; search rows share the same rule). Found +
+      fixed: at the phone's larger text sizes (setTextZoom up to 130%) a
+      fixed 28x18 Live chip would let "WR1" spill past its solid fill — chips
+      now size with min-width/min-height (unchanged at 100%). Test:
+      test_picks2 'chips size with min-width/min-height' (FAILs on the
+      fixed-size CSS). No device/emulator here — Chromium only.
 
 ## Previous job — none open
 

@@ -1,12 +1,12 @@
-# CHECKPOINT 57 — read me first, then TASKS.md
+# CHECKPOINT 60 — read me first, then TASKS.md
 
-**Written:** 2026-09-25T01:33:33Z · **version:** 8.8 · **tests:** all 28 suites green
+**Written:** 2026-09-25T01:39:26Z · **version:** 8.8 · **tests:** all 28 suites green
 
 ## Just done
-1a done: vivid solid position chips (min OKLab dE 16.7, was 2.2), chip-text cascade bug fixed, Live slot 28px; test_picks2 '#2 follow-up'
+light test: all green; Live chips now min-width/min-height so 130% phone text grows the chip instead of spilling (test_picks2); every chip call site checked in Chromium
 
 ## Do this next
-1b: light test protocol on this change, then ship v8.9
+ship v8.9 (vivid position colours), publish Release, archive job to LADDER
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  cabcd64 ckpt 57: 1a done: vivid solid position chips (min OKLab dE 16.7, was 2.2), chip-text cas
   ae16865 ckpt 52: logged Tj's 2026-09-25 request (vivid position colours + light tests) in TASKS.
   8c06bae ckpt 189: v8.7 and v8.8 shipped; both GitHub Releases verified with APK assets; job arch
   af25eb4 ship v8.8: v8.8: full test after the v8.7 features — dead long-press game-log modal re
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   2eb03e9 ckpt 180: Features done (A-I) + visual pass fixes (Wire injury card badges, long-term-ou
   be7a263 ckpt 168: Item I done: Data -> League puts Standings first; 'Enter week N scores' under 
   a7a8654 ckpt 164: Item H done: inactives alert — AlertPlan.java (pure Java: one setWindow alar
-  f24d47b ckpt 153: Item G done: one player card (openPlayerCard) replaces pre-game card / stat-li
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
