@@ -10,11 +10,19 @@
 (His screenshot: Live tab, both lineup columns — QB/RB1/WR1/TE/K/DEF chips
 read as muted tints; RB vs WR and TE vs DEF are hard to tell apart.)
 
-- [ ] 1a. Re-pick the six .pc-* colours (app.css) so each position is a
+- [x] 1a. Re-pick the six .pc-* colours (app.css) so each position is a
       vivid, clearly distinct hue — no two neighbours in hue (RB/WR, TE/DEF,
       QB/K were the close pairs) — with a stronger chip fill, text still
       legible on the dark panel. Test pins the new palette + a hue-distance
       and contrast check.
+      DONE: solid fills + dark text (QB #fb3c82, RB #78fd67, WR #25b1fb,
+      TE #f4791d, K #a178fa, DEF #e1c527); min OKLab ΔE 16.7 (was 2.2 for
+      the old tint fills). Also fixed a v8.7 cascade bug: `.row .slot`
+      (0,2,0) overrode the .pc-XX text colour, so Roster/Live/search chips
+      printed grey text. Live half-card slot 26->28px so "WR1" fits in its
+      chip. Test: test_picks2 '#2 follow-up: vivid, distinct position
+      colours' (9 checks; confirmed FAIL on v8.8's app.css and on a
+      specificity/width regression).
 - [ ] 1b. Light test protocol (CLAUDE.md "Light tests") on this change.
 
 ## Previous job — none open
