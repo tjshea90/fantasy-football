@@ -297,8 +297,12 @@ textarea:focus-visible,[tabindex]:focus-visible{
    colour-blind eyes separate them: min pairwise ΔE 16.7 normal vision, 12.0
    protanopia, 6.1 deuteranopia, 8.4 tritanopia (Machado 2009). Dark text on
    every fill is >= 5.4:1. test_picks2 pins these numbers.
+   The text colour sits on the (0,3,0) selector on purpose: v8.7 put it on
+   .pc-XX (0,1,0), so `.row .slot{color:var(--dim)}` (0,2,0) won and every
+   Roster/Live/search chip printed grey text — half of why it looked dull.
    FLEX has no class and stays neutral: a slot, not a position. */
-.pc{border-radius:6px;font-weight:800;letter-spacing:.02em;color:#0e1116}
+.pc{border-radius:6px;font-weight:800;letter-spacing:.02em}
+.row .slot.pc,.res .pos.pc,.pchip.pc{color:#0e1116}
 .row .slot.pc,.res .pos.pc{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 3px}
 .halfbox .row .slot.pc{height:18px;padding:0 2px}
 .pchip{display:inline-block;padding:1px 6px;margin-right:2px;border-radius:6px;font-weight:800;letter-spacing:.02em}
