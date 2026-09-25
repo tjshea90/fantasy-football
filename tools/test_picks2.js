@@ -269,6 +269,82 @@ console.log('\n-- #2 position colours and #3 compact injury badges --');
   }).catch(function (e) { ok(false, 'threw: ' + (e && e.stack || e)); });
 }());
 
+/* ============================================ #2 follow-up: vivid colours */
+/* 2026-09-25, Tj: "the color scheme for the players positions ... is dull and
+   the different positions don't stand out ... Make these colors more vibrant
+   and easy to tell the different positions by contrast." Read straight from
+   app.css: every position a solid fill, far apart from every other one (OKLab
+   ΔE, also through Machado-2009 colour-blind simulations), dark text legible
+   on each, and that text actually winning the cascade on a slot chip. */
+console.log('\n-- #2 follow-up: vivid, distinct position colours --');
+(function () {
+  var css = fs.readFileSync(A('app.css'), 'utf8');
+  var POS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'], fill = {};
+  POS.forEach(function (p) {
+    var m = new RegExp('\\.pc-' + p + '\\{[^}]*background:(#[0-9a-fA-F]{6})[;}]').exec(css);
+    fill[p] = m ? m[1] : null;
+  });
+  ok(POS.every(function (p) { return !!fill[p]; }),
+     'every position is a solid (opaque) fill: ' + POS.map(function (p) { return p + ' ' + fill[p]; }).join(', ') +
+     '  <-- v8.7: 15% rgba tints that all came out dark grey');
+  if (!POS.every(function (p) { return !!fill[p]; })) return;
+
+  function rgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.substr(i, 2), 16) / 255; }); }
+  function lin(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function unlin(c) { c = Math.max(0, Math.min(1, c)); return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055; }
+  function lum(c) { var l = c.map(lin); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; }
+  function contrast(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function oklab(c) {
+    var r = lin(c[0]), g = lin(c[1]), b = lin(c[2]);
+    var l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b),
+        m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b),
+        s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+  }
+  function dE(a, b) { var A1 = oklab(a), B1 = oklab(b); return 100 * Math.hypot(A1[0] - B1[0], A1[1] - B1[1], A1[2] - B1[2]); }
+  var CVD = {
+    protanopia: [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+    deuteranopia: [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]],
+    tritanopia: [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.303900]]
+  };
+  function sim(c, M) { var l = c.map(lin); return M.map(function (r) { return unlin(r[0] * l[0] + r[1] * l[1] + r[2] * l[2]); }); }
+  function minPair(view) {
+    var best = { d: 1e9, pair: '' };
+    for (var i = 0; i < POS.length; i++) for (var j = i + 1; j < POS.length; j++) {
+      var a = rgb(fill[POS[i]]), b = rgb(fill[POS[j]]);
+      if (view) { a = sim(a, CVD[view]); b = sim(b, CVD[view]); }
+      var d = dE(a, b);
+      if (d < best.d) best = { d: d, pair: POS[i] + '/' + POS[j] };
+    }
+    return best;
+  }
+  /* floors sit just under what the shipped palette measures (16.7 / 12.0 /
+     6.1 / 8.4); v8.7's tinted chips measured 2.2 (RB/WR) with normal vision */
+  [['', 15], ['protanopia', 10], ['deuteranopia', 5], ['tritanopia', 7]].forEach(function (c) {
+    var r = minPair(c[0]);
+    ok(r.d >= c[1], (c[0] || 'normal vision') + ': the closest two positions are still ΔE ' + r.d.toFixed(1) +
+       ' apart (' + r.pair + ', floor ' + c[1] + ')');
+  });
+  ok(POS.every(function (p) { var o = oklab(rgb(fill[p])); return Math.hypot(o[1], o[2]) >= 0.15; }),
+     'every fill is vivid (OKLCH chroma >= 0.15), not a greyed pastel');
+
+  /* the text colour must live on a selector that out-ranks `.row .slot`
+     (0,2,0, color:var(--dim)) — v8.7 put it on .pc-XX (0,1,0) and lost */
+  var rule = /(?:^|\})\s*([^{}]*\.row \.slot\.pc[^{}]*)\{[^}]*\bcolor:(#[0-9a-fA-F]{6})/m.exec(css);
+  ok(!!rule && /\.res \.pos\.pc/.test(rule[1]) && /\.pchip\.pc/.test(rule[1]),
+     'the chip text colour sits on .row .slot.pc / .res .pos.pc / .pchip.pc  <-- v8.7: grey text on every Roster/Live chip');
+  var ink = rule ? rgb(rule[2]) : null;
+  var worst = ink ? POS.map(function (p) { return { p: p, c: contrast(ink, rgb(fill[p])) }; })
+    .sort(function (a, b) { return a.c - b.c; })[0] : null;
+  ok(!!worst && worst.c >= 4.5, 'the chip text reads on every fill (worst ' + (worst ? worst.p + ' ' + worst.c.toFixed(2) + ':1' : '?') + ', AA needs 4.5)');
+
+  /* a solid fill shows its edges: "WR1" must fit inside the Live half-card chip */
+  var hw = /\.halfbox \.row \.slot\{width:(\d+)px/.exec(css);
+  ok(!!hw && +hw[1] >= 28, 'Live half-card slot is ' + (hw && hw[1]) + 'px wide, room for "WR1" inside its chip  <-- 26px: it spilled past the fill');
+}());
+
 /* ================================================================ #6 matchup */
 console.log('\n-- #6 matchup difficulty chip --');
 (function () {
