@@ -2621,3 +2621,36 @@ accuracy lost. Each item gets a named test; checkpoint after every item.
       exit code AND output, crawls, build).
 - [x] **K. FULL TEST (standing protocol, whole app, max depth)** DONE (STATE.md v8.8 entry: 6 fixes landed in v8.7 from the visual pass, dead Stats.openPlayerModal removed after it — test_picks2 #8 pin; crawls 0 errors on 3 states; netlog unchanged; shipped v8.8) after the
       features land, then ship again if it finds anything.
+
+## 45. Archived from TASKS.md on 2026-09-25 — vivid position colours + light test (shipped v8.9)
+
+> "I like the new features of this app, but the color scheme for the players
+> positions (qb rb1 wr1 etc.) is dull and the different positions don't stand
+> out in color. Make these colors more vibrant and easy to tell the different
+> positions by contrast. Then do light test protocol"
+
+(His screenshot: Live tab, both lineup columns — QB/RB1/WR1/TE/K/DEF chips
+read as muted tints; RB vs WR and TE vs DEF are hard to tell apart.)
+
+- [x] 1a. Re-pick the six .pc-* colours (app.css) so each position is a
+      vivid, clearly distinct hue — no two neighbours in hue (RB/WR, TE/DEF,
+      QB/K were the close pairs) — with a stronger chip fill, text still
+      legible on the dark panel. Test pins the new palette + a hue-distance
+      and contrast check.
+      DONE: solid fills + dark text (QB #fb3c82, RB #78fd67, WR #25b1fb,
+      TE #f4791d, K #a178fa, DEF #e1c527); min OKLab ΔE 16.7 (was 2.2 for
+      the old tint fills). Also fixed a v8.7 cascade bug: `.row .slot`
+      (0,2,0) overrode the .pc-XX text colour, so Roster/Live/search chips
+      printed grey text. Live half-card slot 26->28px so "WR1" fits in its
+      chip. Test: test_picks2 '#2 follow-up: vivid, distinct position
+      colours' (9 checks; confirmed FAIL on v8.8's app.css and on a
+      specificity/width regression).
+- [x] 1b. Light test protocol (CLAUDE.md "Light tests") on this change.
+      DONE: 28/28 suites + ES2018 green by exit code (twice). Every .pc call
+      site checked in headless Chromium (Roster, Live halves, Lineups labels,
+      Wire, player card header; search rows share the same rule). Found +
+      fixed: at the phone's larger text sizes (setTextZoom up to 130%) a
+      fixed 28x18 Live chip would let "WR1" spill past its solid fill — chips
+      now size with min-width/min-height (unchanged at 100%). Test:
+      test_picks2 'chips size with min-width/min-height' (FAILs on the
+      fixed-size CSS). No device/emulator here — Chromium only.

@@ -1,6 +1,42 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-24** · **v8.8**, shipped · APK builds, signed, all 28 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-25** · **v8.9**, shipped · APK builds, signed, all 28 test suites green · now on GitHub, worked across three Claude accounts
+
+## v8.9 — vivid position colours, then a light test, 2026-09-25
+
+Tj (with a Live screenshot): "the color scheme for the players positions (qb
+rb1 wr1 etc.) is dull and the different positions don't stand out in color.
+Make these colors more vibrant and easy to tell the different positions by
+contrast. Then do light test protocol."
+
+- **Measured why it looked dull.** v8.7's chips were 15% rgba tints on the
+  dark panel: the six fills came out as near-identical dark grey-greens
+  (OKLab ΔE 2.2 between RB and WR). Worse, a cascade bug: the colour was on
+  `.pc-XX` (0,1,0) but `.row .slot{color:var(--dim)}` is (0,2,0), so every
+  Roster/Live/search slot chip printed plain grey text (confirmed with
+  getComputedStyle in headless Chromium). Only the Lineups labels and the
+  player-card header ever showed the coloured text.
+- **Now:** solid fills with dark (#0e1116) text — QB #fb3c82 pink, RB #78fd67
+  green, WR #25b1fb blue, TE #f4791d orange, K #a178fa violet, DEF #e1c527
+  gold. Picked by a search over OKLCH hue/lightness maximizing the closest
+  pair: ΔE 16.7 normal vision, 12.0 protanopia, 6.1 deuteranopia, 8.4
+  tritanopia (Machado 2009 simulation); every fill chroma >= 0.15; dark text
+  >= 5.47:1 on every fill. Text colour moved to `.row .slot.pc, .res
+  .pos.pc, .pchip.pc` (0,3,0).
+- **Live half-cards:** slot 26 -> 28px (a solid fill shows its edges, and
+  "WR1" was spilling past the old box), chip padding 1px, no letter-spacing.
+- **Light test found one more:** MainActivity passes the phone's font scale
+  to setTextZoom (85-130%); letters grow, a px box does not. Chips now size
+  with min-width/min-height, so at 130% the chip widens instead of letting
+  the label spill past the fill. Identical at 100%.
+- Tests: test_picks2 "#2 follow-up: vivid, distinct position colours" (10
+  checks), each confirmed to FAIL on v8.8's app.css or on a targeted
+  regression (fixed-size chips, colour back on `.pc`, 26px slot).
+- Light test: 28/28 suites + ES2018 green by exit code, twice. Every `.pc`
+  call site (ui.js slot/pchip/search, stats.js search) checked in headless
+  Chromium at 412px: Roster, Live halves, Lineups, Wire, player card. No
+  device or emulator here. FLEX left neutral on purpose (a slot, not a
+  position).
 
 ## v8.8 — full test after the v8.7 features, 2026-09-24
 
