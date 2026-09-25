@@ -44,6 +44,9 @@ contrast. Then do light test protocol."
   Release was triggered; the BUILDLOG line was removed, `build.sh` run, and
   `ship.sh` re-run so v8.9 carries a real APK. **Always `bash build.sh`
   first, and check `ship.sh` printed "apk committed at releases/..."**.
+  v8.9 APK: build.sh clean (30 classes, signature OK, 359K, minSdk 29 /
+  target 36); verified to carry the new app.css (#fb3c82, min-width:28px)
+  and APP_VERSION "8.9" by unzipping it before shipping.
 
 ## v8.8 — full test after the v8.7 features, 2026-09-24
 
