@@ -901,3 +901,8 @@ For the live tab, move the projection/win probability card to the bottom of the 
 
 Then run full tests on the app using the full power of opus 5.5 ultracode
 ```
+
+## 2026-09-25T01:23:42Z
+```
+I like the new features of this app, but the color scheme for the players positions (qb rb1 wr1 etc.)  is dull and the different positions don't stand out in color. Make these colors more vibrant and easy to tell the different positions by contrast. Then do light test protocol
+```
