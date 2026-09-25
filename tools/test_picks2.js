@@ -343,6 +343,11 @@ console.log('\n-- #2 follow-up: vivid, distinct position colours --');
   /* a solid fill shows its edges: "WR1" must fit inside the Live half-card chip */
   var hw = /\.halfbox \.row \.slot\{width:(\d+)px/.exec(css);
   ok(!!hw && +hw[1] >= 28, 'Live half-card slot is ' + (hw && hw[1]) + 'px wide, room for "WR1" inside its chip  <-- 26px: it spilled past the fill');
+  /* ... and grows rather than spills when the phone's text size is up
+     (MainActivity passes fontScale to setTextZoom, up to 130%) */
+  ok(/\.halfbox \.row \.slot\.pc\{[^}]*width:auto;min-width:\d+px/.test(css) && !/\.halfbox \.row \.slot\.pc\{[^}]*[^-]height:\d/.test(css) &&
+     !/\.row \.slot\.pc,\.res \.pos\.pc\{[^}]*[^-]height:\d/.test(css),
+     'chips size with min-width/min-height, so a larger phone text size widens the chip instead of spilling past it');
 }());
 
 /* ================================================================ #6 matchup */
