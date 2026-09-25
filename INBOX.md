@@ -917,3 +917,22 @@ I like the new features of this app, but the color scheme for the players positi
 <summary>Background command "Run the release gate and build v8.9" completed (exit code 0)</summary>
 </task-notification>
 ```
+
+## 2026-09-25T01:41:31Z
+```
+<task-notification>
+<task-id>bpie33oix</task-id>
+<tool-use-id>toolu_01FguW9TfA9R8pnFR7BSuN7B</tool-use-id>
+<output-file>/tmp/claude-0/-home-user-fantasy-football/9244d11a-77d9-5c01-980f-36801c2894b4/tasks/bpie33oix.output</output-file>
+<status>completed</status>
+<summary>Monitor "ship.sh v8.9 completion (exit code + key lines)" stream ended</summary>
+<event>OK    version bumped v8.8 -&gt; v8.9
+OK    version v8.9 (code 809)
+OK    main fast-forwarded too (this session shipped from 'claude/player-position-colors-vibrant-mib4k4')
+== shipped v8.9 ==
+1. Trigger the Release: mcp__github__actions_run_trigger,
+https://github.com/tjshea90/fantasy-football/releases/tag/v8.9
+https://github.com/tjshea90/fantasy-football/raw/main/releases/FFTracker-v8.9.apk
+exit 0</event>
+</task-notification>
+```
