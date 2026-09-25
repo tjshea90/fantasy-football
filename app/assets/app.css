@@ -199,7 +199,7 @@ summary::-webkit-details-marker{display:none}
 .halfbox .sub{font-size:11px;margin:1px 0 6px}
 .halfbox .bigfig{font-size:23px;margin:2px 0}
 .halfbox .row{padding:6px 0;gap:5px}
-.halfbox .row .slot{width:26px;font-size:10px}
+.halfbox .row .slot{width:28px;font-size:10px}
 .halfbox .row .nm{font-size:12px}
 .halfbox .row .nm small{font-size:9px}
 .halfbox .row .pts{width:36px;font-size:12px}
@@ -304,7 +304,7 @@ textarea:focus-visible,[tabindex]:focus-visible{
 .pc{border-radius:6px;font-weight:800;letter-spacing:.02em}
 .row .slot.pc,.res .pos.pc,.pchip.pc{color:#0e1116}
 .row .slot.pc,.res .pos.pc{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 3px}
-.halfbox .row .slot.pc{height:18px;padding:0 2px}
+.halfbox .row .slot.pc{height:18px;padding:0 1px;letter-spacing:0}
 .pchip{display:inline-block;padding:1px 6px;margin-right:2px;border-radius:6px;font-weight:800;letter-spacing:.02em}
 .pc-QB{background:#fb3c82}
 .pc-RB{background:#78fd67}
