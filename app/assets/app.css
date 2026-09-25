@@ -303,8 +303,12 @@ textarea:focus-visible,[tabindex]:focus-visible{
    FLEX has no class and stays neutral: a slot, not a position. */
 .pc{border-radius:6px;font-weight:800;letter-spacing:.02em}
 .row .slot.pc,.res .pos.pc,.pchip.pc{color:#0e1116}
-.row .slot.pc,.res .pos.pc{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 3px}
-.halfbox .row .slot.pc{height:18px;padding:0 1px;letter-spacing:0}
+.row .slot.pc,.res .pos.pc{display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:0 3px}
+/* min-, not fixed, sizes: the phone's text-size setting reaches the WebView
+   as setTextZoom (up to 130%), which grows the letters but not a px box — a
+   solid fill would show "WR1" spilling past its edges. At 100% every Live
+   chip is still exactly 28 x 18. */
+.halfbox .row .slot.pc{min-height:18px;width:auto;min-width:28px;padding:0 1px;letter-spacing:0}
 .pchip{display:inline-block;padding:1px 6px;margin-right:2px;border-radius:6px;font-weight:800;letter-spacing:.02em}
 .pc-QB{background:#fb3c82}
 .pc-RB{background:#78fd67}
