@@ -37,6 +37,13 @@ contrast. Then do light test protocol."
   Chromium at 412px: Roster, Live halves, Lineups, Wire, player card. No
   device or emulator here. FLEX left neutral on purpose (a slot, not a
   position).
+- **Ship trap hit (and undone):** in a fresh container `ship.sh` was run
+  before `build.sh`. It only WARNs "no APK in build/", then still bumps
+  VERSION, writes a BUILDLOG line and prints the Release instructions — a
+  hollow v8.9 with no APK and an unstamped version.js. Caught before any
+  Release was triggered; the BUILDLOG line was removed, `build.sh` run, and
+  `ship.sh` re-run so v8.9 carries a real APK. **Always `bash build.sh`
+  first, and check `ship.sh` printed "apk committed at releases/..."**.
 
 ## v8.8 — full test after the v8.7 features, 2026-09-24
 
