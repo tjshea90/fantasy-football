@@ -2711,3 +2711,61 @@ read as muted tints; RB vs WR and TE vs DEF are hard to tell apart.)
       signature OK) BEFORE ship.sh; ship.sh re-stamped to v9.0; APK unzipped
       and verified (APP_VERSION "9.0", all three fixes inside). Release via
       publish-release.yml run #29.
+
+## 47. Archived from TASKS.md on 2026-09-27 — the resume/checkpoint system, after it lost a session's work (tooling only, no APK)
+
+> "Continue doing what you are doing, but note that the Claude resume
+> checkpoint system completely failed. Most of these tasks are already
+> completed in a prior Claude session. The checkpoint system is important and
+> I must be able to resume Claude work without losing data or wasting usage"
+
+(v9.0 itself is done and archived — LADDER.md §46. This job is the tooling.)
+
+- [x] 2a. Diagnose where the prior session's work went. FOUND: the session
+      that took the 17:19Z request ran on another account (not visible from
+      this one). Its hooks and pushes worked — inbox capture 972bcc6 and
+      "ckpt 52" 515598e (17:21:24Z) both reached GitHub, on its branch
+      claude/lineup-persistence-live-scoring-wpjlve AND main. Nothing after
+      17:21:24 ever did; this session started 17:31:06 from 515598e. Its
+      checkpoint said "Do this next: 1a: find why the lineup reverts", so the
+      likeliest story is ~9 minutes of READ-ONLY analysis (Read/Grep/Bash
+      reads) that autosave never saves — findings lived only in its context
+      and died with the usage cap. The other possible story: edits made in a
+      git worktree / isolated subagent copy, which autosave never looks at.
+      Both are holes; both get closed below.
+- [x] 2b. Findings journal: WORKLOG.md + `tools/note.sh "finding"` (append,
+      commit, push in one step). resume.sh prints its tail. CLAUDE.md: note
+      what you learned AS you learn it, not only what you changed.
+- [x] 2c. Automatic backstop that needs no discipline: a PostToolUse hook on
+      EVERY tool (reads included) saves Claude's own recent messages from the
+      session transcript to SESSIONLOG.md and pushes it (throttled), and
+      after a run of research calls with nothing saved it tells the session
+      to write a note.
+- [x] 2d. autosave also commits+pushes edits made inside git worktrees, AND
+      fast-forwards main on every save (it only pushed the session's own
+      branch; main moved only on ckpt.sh — and new sessions start from main,
+      so a cut-off session's autosaved edits were invisible to the next one).
+      build-apk.yml: skip Markdown-only pushes, cancel superseded runs.
+- [x] 2e. resume.sh: (1) flag other branches carrying recent commits this
+      checkout does not have (stranded work); (2) inbox-only commits no longer
+      count as "INTERRUPTED MID-CHANGE".
+- [x] 2g. Stop wasting usage at every start: the briefing measured 42,656
+      chars, re-sent every turn — 25,245 of it "Waiting on Tj" (a dozen
+      phone-confirm asks v5.5-v7.4 that later versions superseded, plus two
+      "Decide" items v6.7 already resolved). Keep the full text in WAITING.md
+      (not printed); TASKS.md keeps only the live asks. And INBOX.md captured
+      harness <task-notification>s as if Tj sent them (34 of 68 entries),
+      crowding his real messages out of the briefing's inbox tail.
+- [x] 2f. Named test (tools/test_checkpoint.js) driving the real scripts in a
+      scratch repo with a bare "GitHub" remote; confirmed to fail on the old
+      scripts. Then light test, ckpt, onto main.
+      DONE: 42 checks — read-only session reaches branch+main, redaction,
+      throttle (~70 ms/quiet call), nudge (per session, reset by an edit),
+      main ff (never over a diverged main), worktrees, note.sh, loud push
+      failure, resume.sh (stranded branches, inbox-only != interrupted, the
+      "kept working" block only when tool calls followed the ckpt, WORKLOG
+      tail), inbox skips notifications, Waiting-on-Tj size guard, hooks
+      wired. 19 FAILs against f928e43's scripts + settings. Full suite 30/30
+      + ES2018 green. Live: this session's own hook delivered a CHECKPOINT
+      NUDGE as additionalContext (the channel works). Briefing 42,656 ->
+      ~13k chars at a clean resume.

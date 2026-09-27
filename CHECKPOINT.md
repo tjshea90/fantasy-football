@@ -1,12 +1,12 @@
-# CHECKPOINT 105 — read me first, then TASKS.md
+# CHECKPOINT 107 — read me first, then TASKS.md
 
-**Written:** 2026-09-27T18:20:24Z · **version:** 9.0 · **tests:** all 31 suites green
+**Written:** 2026-09-27T18:22:23Z · **version:** 9.0 · **tests:** all 31 suites green
 
 ## Just done
-checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG + nudge, autosave every tool + main ff + worktrees, resume.sh stranded branches + inbox exclusion + kept-working block, briefing 42.6k->~13k chars (WAITING.md), inbox skips task notifications. tools/test_checkpoint.js (19 FAILs pre-fix)
+light test of the tooling change: every caller of autosave/push/secretscan/resume/capture_inbox checked; suite 31/31; job archived (LADDER §47)
 
 ## Do this next
-light test of the tooling change; then report to Tj (no APK — no app code changed)
+nothing queued — wait for Tj; confirm v9.0 on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,11 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M STATE.md
+     M LADDER.md
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  ed746a0 ckpt 105: checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG 
   f683ae6 ckpt 72: logged Tj's 2026-09-27b request (checkpoint system failed) in TASKS.md; 2a diag
   f432b24 ckpt 70: v9.0 shipped + GitHub Release verified (asset FFTracker-v9.0.apk, run #29); job
   4504331 ship v9.0: v9.0: lineup edits saved exactly as set through restarts (whole lineup pinned
@@ -37,8 +38,7 @@ request in his own words and `git log` carries every step already taken.
   515598e ckpt 52: logged Tj's 2026-09-27 request (lineup persistence, live DEF PA tier, quarter o
   a9c5369 ckpt 71: v8.9 shipped + GitHub Release verified (asset FFTracker-v8.9.apk, run #28); job
   a147300 ship v8.9: v8.9: vivid position colours — solid, clearly distinct QB/RB/WR/TE/K/DEF ch
-  4c0f0de ckpt 69: v8.9 APK built and verified (new CSS inside, stamped 8.9); STATE.md notes the s
 ```
 
-(32 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
