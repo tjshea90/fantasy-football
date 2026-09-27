@@ -122,3 +122,4 @@ tools/note.sh
 tools/test_checkpoint.js
 WORKLOG.md
 SESSIONLOG.md
+WAITING.md
