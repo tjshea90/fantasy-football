@@ -1,57 +1,9 @@
 # TASKS — the current job, in Tj's words
 
-## Current job — the 2026-09-27 request (lineup persistence + live scoring)
+## Current job
 
-> "For this app, make sure if I adjust my weekly lineup or my opponent's
-> weekly lineup, it saves it. I think I changed it then closed the app and
-> when I went back to the app it defaulted back to a different lineup. Every
-> time I alter any part of my lineup it should auto save and persist even
-> after app restart.
->
-> For the live scoring defense, it is showing 10 points scored at the
-> beginning of the game because the team the defense is playing has 0 points.
-> Do not add points for this until the game is final. A defense should not
-> begin a game with 10 fantasy points, that makes no sense.
->
-> For the players in the live scoring section, make sure it tells me what
-> quarter they are in if it is live. Right now it just says 10:32 but doesn't
-> tell me what quarter"
-
-- [x] 1a. Lineups: every change to MY weekly lineup AND the OPPONENT's weekly
-      lineup is saved to disk immediately and survives an app restart.
-      CAUSE: the edit itself always reached disk, but only the ONE slot changed
-      was marked his — boot/sync auto-fill re-picked the other nine from fresh
-      projections on every start (and could EMPTY a slot whose new favourite
-      sat in one of his); "— empty —" un-marked the slot so boot refilled it;
-      "Copy wk N-1" marked nothing. FIX: Store.pinLineup — any hand edit
-      (dropdown, Advice Apply, Copy) pins every slot of that team-week exactly
-      as shown; Reset to auto / Re-default un-pin; copy is now exact + no
-      duplicates; a failed write toasts "Could not save". PROVED BY
-      tools/test_lineupsave.js (real UI, edit -> sync -> reboot a second
-      instance from the same disk), confirmed 9 FAILs against pre-fix store.js.
-- [x] 1b. Live DEF: points-allowed tier (0 allowed = +10 etc.) is NOT
-      credited until the game is final — RULES_2026.md: "Points allowed (per
-      game)". Espn.gameStats(id, state) holds pointsAllowed at null unless the
-      SCOREBOARD state (the same one doSync uses to cache a game as final) is
-      'post'; doSync and gamelog.js pass it. Sacks/INT/FR/TDs still live.
-      PROVED BY tools/test_livescore.js (real doSync, faked ESPN answers:
-      kickoff 0-0 = 0 pts, Q2 = sacks only, final = +7 tier) — 6 FAILs on
-      the pre-fix code incl. "kickoff, 0-0: got 10".
-- [x] 1c. Live player rows: quarter with the clock. The text was already
-      "Q2 10:32", but `.row .nm small{white-space:pre-line}` let it wrap at
-      its space and out-ranked .gLive's green, so "Q2" hid at the end of a
-      grey line and "10:32" sat alone below (seen in Chromium at 360px).
-      FIX: no-break space in liveClock; app.css keeps row badges nowrap and
-      coloured; unknown ESPN wording falls back to scoreboard period +
-      displayClock ("Q3 5:12") instead of "LIVE". PROVED BY
-      tools/test_livescore.js (1c block) + test_schedule.js; 9 FAILs pre-fix.
-      Chromium (real index.html, live game injected): 0 splits at 320/360/412
-      px x 100%/130% text. Residual: at <=320px, or 360px at 130% text, the
-      column is narrower than "Q2 10:32", so it shows "Q2 10…" (quarter kept)
-      — the same ellipsis player names already get there.
-- [~] 1d. Light test protocol on the changes, then ship + Release + link.
-      Light test DONE (30/30 green, callers checked, Chromium checks — see
-      STATE.md v9.0). Ship + Release pending.
+None — the 2026-09-27 request (lineup persistence, live DEF, quarter on the
+clock) shipped as v9.0 and is archived in LADDER.md §46.
 
 ## When Tj asks for something new
 
