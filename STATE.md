@@ -1,6 +1,6 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-27** · **v9.0**, shipping · APK builds, signed, all 30 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-27** · **v9.0**, shipped (GitHub Release v9.0 verified, run #29) · APK builds, signed, all 30 test suites green · now on GitHub, worked across three Claude accounts
 
 ## v9.0 — lineups that stay saved, live DEF, the quarter on the clock, 2026-09-27
 
