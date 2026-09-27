@@ -961,3 +961,12 @@ exit 0</event>
 exit 0</event>
 </task-notification>
 ```
+
+## 2026-09-27T17:19:40Z
+```
+For this app, make sure if I adjust my weekly lineup or my opponent's weekly lineup, it saves it. I think I changed it  then closed the app and when I went back to the app it defaulted back to a different lineup. Every time I alter any part of my lineup it should auto save and persist even after app restart. 
+
+For the live scoring defense, it is showing 10 points scored at the beginning of the game because the team the defense is playing has 0 points. Do not add points for this until the game is final. A defense should not begin a game with 10 fantasy points, that makes no sense. 
+
+For the players in the live scoring section, make sure it tells me what quarter they are in if it is live. Right now it just says 10:32 but doesn't tell me what quarter
+```
