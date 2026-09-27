@@ -269,11 +269,16 @@
      it does not count toward the every-tenth-edit snapshot below — an hour of
      45-second polling used to take ~8 full snapshots and rotate every older
      one out of the 8 kept (full test 2026-09-24). */
+  /* Whether the most recent write actually landed. A lineup edit reads it so a
+     failed write (full storage) is said out loud instead of looking saved and
+     quietly vanishing at the next restart (2026-09-27). */
+  var lastSaveOk = true;
   function persist(live) {
     if (soonTimer !== null) { clearTimeout(soonTimer); soonTimer = null; }
     S.settings.savedAt = nowISO();
     if (!live) S.settings.saveCount = (S.settings.saveCount || 0) + 1;
     var ok = rawSave(S);
+    lastSaveOk = ok;
     /* Every tenth edit, drop a snapshot into the invisible auto-backup store.
      * The phone is the only place this data exists; a corrupt save or a bad
      * import would otherwise take the season with it. Silent — it must never
@@ -988,6 +993,7 @@
   }
   root.Store = { generation: function () { return _gen; },
     init: init, get: get, save: save, saveSoon: saveSoon, saveLive: saveLive, flush: flush,
+    lastSaveOk: function () { return lastSaveOk; },
     team: team, allPlayers: allPlayers,
     playerById: playerById, addPlayer: addPlayer, removePlayer: removePlayer,
     slotKeys: slotKeys, eligible: eligible,
