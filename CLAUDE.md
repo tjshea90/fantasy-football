@@ -64,9 +64,11 @@ again:
   has, someone else's finished work is sitting there uninherited — pull it in
   before adding more on top, the same way you would if `CHECKPOINT.md` had
   described an interrupted session.
-- **When you finish something worth keeping, get it onto `main`.** If you are
-  already on `main`, this is automatic (`ckpt.sh`/`ship.sh` already push
-  there). If a fresh session finds itself on some other branch, fast-forward
+- **When you finish something worth keeping, get it onto `main`.** Since
+  2026-09-27b this is automatic from any branch: `autosave.sh` fast-forwards
+  `main` on every save and `ckpt.sh`/`ship.sh` push there too. Fast-forward
+  only — if `main` has diverged it is left alone, the save still lands on your
+  branch, and the next session's briefing names that branch. If a fresh session finds itself on some other branch, fast-forward
   or merge that branch's work into `main` before ending the session — do not
   leave it stranded on a branch nobody else will think to look at.
 - **If you discover another branch with real, uninherited work on it** (the
