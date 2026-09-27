@@ -162,9 +162,10 @@ contain a class for every Java source. Use at real versions, not mid-task.
 ## Before your usage runs out
 
 You will usually get no warning, which is why level 2 is per-step rather than
-per-session. If you *do* notice you are running low, spend the remaining
-budget on `tools/ckpt.sh` with an honest, specific "what comes next" — not on
-one more edit.
+per-session — and why level 1½ is per-finding. If you *do* notice you are
+running low, spend the remaining budget on `tools/ckpt.sh` with an honest,
+specific "what comes next" (or at least `tools/note.sh` with what you know) —
+not on one more edit or one more read.
 
 ## Building the APK
 
