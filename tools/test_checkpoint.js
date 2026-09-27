@@ -127,13 +127,13 @@ ok(per < 1500, 'a quiet tool call costs ' + Math.round(per) + ' ms');
 /* ============ 4. the nudge =================================================== */
 console.log('\n-- 4. a long research run is told to save a note --');
 var nudged = [], i, rr;
-for (i = 1; i <= 12; i++) {
+for (i = 1; i <= 14; i++) {
   rr = sh(W, 'autosave.sh', hook('PostToolUse', 'bbbb2222-session', 'Grep'));
   var j = parse(rr.out);
   if (j && j.hookSpecificOutput && /CHECKPOINT NUDGE/.test(j.hookSpecificOutput.additionalContext || '')) nudged.push(i);
 }
-/* the first call of a new session sees the log commits above as "new" and resets */
-ok(nudged.length === 1 && nudged[0] >= 11, 'one nudge after a run of quiet calls (call ' + nudged.join(',') + ')');
+/* a session's first call sets the baseline; 12 quiet calls after it = one nudge */
+ok(nudged.length === 1 && nudged[0] === 13, 'exactly one nudge, after 12 quiet calls (call ' + nudged.join(',') + ')');
 j = parse(rr.out);
 ok(!j || !j.hookSpecificOutput || j.hookSpecificOutput.hookEventName === 'PostToolUse',
    'delivered as PostToolUse additionalContext (the documented channel to Claude)');
