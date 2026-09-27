@@ -549,10 +549,30 @@
     if (changed && !deferSave) save();
     return changed;
   }
-  /* Copy last week's lineup forward — the single most-used convenience. */
+  /* Copy last week's lineup forward — the single most-used convenience.
+   * A copy is his edit like any other, so it pins (see pinLineup): it used to
+   * mark nothing, and the next boot's auto-fill put the default straight back.
+   * It is also an exact copy now — slots empty last week are emptied here —
+   * because copying only the filled ones could leave one player in two slots
+   * (last week's FLEX on top of this week's WR1). Players no longer on the
+   * roster are skipped, and a slot whose player has already kicked off this
+   * week keeps him, the same way auto-fill leaves a started slot alone. */
   function copyLineup(fromWeek, toWeek, teamId) {
-    var src = getLineup(fromWeek, teamId), dst = getLineup(toWeek, teamId), k;
-    for (k in src) if (Object.prototype.hasOwnProperty.call(src, k)) dst[k] = src[k];
+    var src = getLineup(fromWeek, teamId), dst = getLineup(toWeek, teamId);
+    var t = team(teamId), onRoster = {}, keys = slotKeys(), taken = {}, i, k;
+    if (t) for (i = 0; i < t.players.length; i++) onRoster[t.players[i].id] = 1;
+    for (i = 0; i < keys.length; i++) {
+      k = keys[i].key;
+      if (dst[k] && isLocked(toWeek, dst[k])) taken[dst[k]] = 1;
+    }
+    for (i = 0; i < keys.length; i++) {
+      k = keys[i].key;
+      if (dst[k] && isLocked(toWeek, dst[k])) continue;
+      var want = src[k] || null;
+      if (want && (!onRoster[want] || taken[want])) want = null;
+      if (want) { dst[k] = want; taken[want] = 1; } else delete dst[k];
+    }
+    pinLineup(toWeek, teamId);
     save(); return dst;
   }
 
