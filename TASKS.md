@@ -29,7 +29,11 @@
       session transcript to SESSIONLOG.md and pushes it (throttled), and
       after a run of research calls with nothing saved it tells the session
       to write a note.
-- [ ] 2d. autosave also commits+pushes edits made inside git worktrees.
+- [ ] 2d. autosave also commits+pushes edits made inside git worktrees, AND
+      fast-forwards main on every save (it only pushed the session's own
+      branch; main moved only on ckpt.sh — and new sessions start from main,
+      so a cut-off session's autosaved edits were invisible to the next one).
+      build-apk.yml: skip Markdown-only pushes, cancel superseded runs.
 - [ ] 2e. resume.sh: (1) flag other branches carrying recent commits this
       checkout does not have (stranded work); (2) inbox-only commits no longer
       count as "INTERRUPTED MID-CHANGE".
