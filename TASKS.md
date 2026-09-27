@@ -1,9 +1,41 @@
 # TASKS — the current job, in Tj's words
 
-## Current job
+## Current job — the 2026-09-27b request (the resume/checkpoint system failed)
 
-None — the 2026-09-27 request (lineup persistence, live DEF, quarter on the
-clock) shipped as v9.0 and is archived in LADDER.md §46.
+> "Continue doing what you are doing, but note that the Claude resume
+> checkpoint system completely failed. Most of these tasks are already
+> completed in a prior Claude session. The checkpoint system is important and
+> I must be able to resume Claude work without losing data or wasting usage"
+
+(v9.0 itself is done and archived — LADDER.md §46. This job is the tooling.)
+
+- [x] 2a. Diagnose where the prior session's work went. FOUND: the session
+      that took the 17:19Z request ran on another account (not visible from
+      this one). Its hooks and pushes worked — inbox capture 972bcc6 and
+      "ckpt 52" 515598e (17:21:24Z) both reached GitHub, on its branch
+      claude/lineup-persistence-live-scoring-wpjlve AND main. Nothing after
+      17:21:24 ever did; this session started 17:31:06 from 515598e. Its
+      checkpoint said "Do this next: 1a: find why the lineup reverts", so the
+      likeliest story is ~9 minutes of READ-ONLY analysis (Read/Grep/Bash
+      reads) that autosave never saves — findings lived only in its context
+      and died with the usage cap. The other possible story: edits made in a
+      git worktree / isolated subagent copy, which autosave never looks at.
+      Both are holes; both get closed below.
+- [ ] 2b. Findings journal: WORKLOG.md + `tools/note.sh "finding"` (append,
+      commit, push in one step). resume.sh prints its tail. CLAUDE.md: note
+      what you learned AS you learn it, not only what you changed.
+- [ ] 2c. Automatic backstop that needs no discipline: a PostToolUse hook on
+      EVERY tool (reads included) saves Claude's own recent messages from the
+      session transcript to SESSIONLOG.md and pushes it (throttled), and
+      after a run of research calls with nothing saved it tells the session
+      to write a note.
+- [ ] 2d. autosave also commits+pushes edits made inside git worktrees.
+- [ ] 2e. resume.sh: (1) flag other branches carrying recent commits this
+      checkout does not have (stranded work); (2) inbox-only commits no longer
+      count as "INTERRUPTED MID-CHANGE".
+- [ ] 2f. Named test (tools/test_checkpoint.js) driving the real scripts in a
+      scratch repo with a bare "GitHub" remote; confirmed to fail on the old
+      scripts. Then light test, ckpt, onto main.
 
 ## When Tj asks for something new
 
