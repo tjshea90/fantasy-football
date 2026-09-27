@@ -3,7 +3,17 @@ name: Build APK
 on:
   push:
     branches: [main]
+    # main now moves on EVERY autosave (tools/autosave.sh, 2026-09-27b), and
+    # most of those are INBOX/SESSIONLOG/WORKLOG/CHECKPOINT/TASKS — Markdown
+    # the APK does not contain. Nothing to build for those.
+    paths-ignore:
+      - '**.md'
   workflow_dispatch: {}
+
+# A burst of saves only needs its newest commit built.
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
