@@ -49,7 +49,9 @@
       px x 100%/130% text. Residual: at <=320px, or 360px at 130% text, the
       column is narrower than "Q2 10:32", so it shows "Q2 10…" (quarter kept)
       — the same ellipsis player names already get there.
-- [ ] 1d. Light test protocol on the changes, then ship + Release + link.
+- [~] 1d. Light test protocol on the changes, then ship + Release + link.
+      Light test DONE (30/30 green, callers checked, Chromium checks — see
+      STATE.md v9.0). Ship + Release pending.
 
 ## When Tj asks for something new
 

@@ -1,6 +1,66 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-25** · **v8.9**, shipped · APK builds, signed, all 28 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-09-27** · **v9.0**, shipping · APK builds, signed, all 30 test suites green · now on GitHub, worked across three Claude accounts
+
+## v9.0 — lineups that stay saved, live DEF, the quarter on the clock, 2026-09-27
+
+Tj: "make sure if I adjust my weekly lineup or my opponent's weekly lineup, it
+saves it ... it defaulted back to a different lineup" / "live scoring defense
+... showing 10 points scored at the beginning of the game ... Do not add points
+for this until the game is final" / "make sure it tells me what quarter they
+are in if it is live. Right now it just says 10:32".
+
+- **Lineups (1a).** The edit always reached disk (setSlot saves synchronously;
+  test_locks.js has proved one slot survives a restart since v4.7). What did
+  not survive was the rest of the lineup: only the touched slot was marked
+  his, and autoFillWeek re-derives every other slot on each boot, sync and
+  live poll — so a projection or injury refresh between sessions re-picked
+  them. Worse, bestLineup ignores manual placements, so an auto slot whose new
+  favourite already sat in one of his slots was EMPTIED (applyAuto `taken`).
+  "— empty —" un-marked a slot (boot refilled it) and "Copy wk N-1" marked
+  nothing. **Decision: any hand edit pins the whole team-week lineup exactly
+  as shown** (Store.pinLineup: every slot key in lineupManual, filled or
+  deliberately empty). Auto-fill never touches it; Reset to auto / Re-default
+  (clearManual) hand it back; dropPlayer still un-pins just the dropped
+  man's slot. Trade-off accepted per Tj's words: a pinned lineup is NOT
+  auto-swapped if a starter is later ruled out — the early-game/inactives
+  alerts are the safety net. copyLineup is now exact (empties copied, no
+  player in two slots, off-roster skipped, started slots kept) and pins. A
+  failed write toasts "Could not save" (Store.lastSaveOk). Labels: "yours" /
+  "left empty"; status "saved as you set it"; header copy says so.
+  tools/test_lineupsave.js: real UI, dropdown edit of my AND the opponent's
+  lineup, a sync that moves every projection, then a second app instance
+  booted from the same disk — 9 FAILs on the pre-fix store.js.
+- **Live DEF (1b).** RULES_2026.md pays points allowed "per game". The parser
+  set pointsAllowed from the live running score, so every defence opened a
+  game at 0 allowed = +10. Espn.gameStats(id, state) now holds it at null
+  unless the SCOREBOARD state is 'post' — the same g.state doSync uses to
+  cache a game as final, so a game is never cached final with its tier
+  missing (gating on the summary header's own status would race that).
+  doSync and gamelog.ensureEvent pass it; no state = old behaviour (the Data
+  diagnostic, test fixtures). Sacks/INT/FR/TDs still count live. The league
+  book's DEF rows follow automatically (same r). test_livescore.js drives the
+  real doSync with faked ESPN answers: kickoff 0-0 = 0 (was 10), Q2 = sacks
+  only, final = +7 tier.
+- **Quarter on the clock (1c).** liveClock already returned "Q2 10:32" (the
+  real feed, checked live 2026-09-27: shortDetail "12:59 - 2nd", period 2,
+  displayClock "12:59"). But `.row .nm small{white-space:pre-line}` let the
+  badge wrap at its space and out-ranked .gLive's green, so in the narrow Live
+  columns "Q2" ended a grey line and "10:32" sat alone below — reproduced in
+  headless Chromium at 360px. Fix: NO-BREAK space inside liveClock's output,
+  `.row .nm small.gX{white-space:nowrap}` plus the live/early colours at row
+  specificity, and a period/displayClock fallback (Espn.weekGames now keeps
+  both) so unknown wording still reads "Q3 5:12" rather than "LIVE".
+  Chromium on the real index.html: 0 splits at 320/360/412px x 100/130% text;
+  other tabs' badge rows unchanged (same ellipsis counts, heights +-2px).
+  **Residual, not fixable by layout:** at <=320px, or 360px with 130% phone
+  text, the Live half-column is narrower than "Q2 10:32" itself, so it reads
+  "Q2 10…" — the quarter always shows, the minutes can clip like names do.
+- Light test: 30/30 suites + ES2018 green by exit code and zero FAIL lines;
+  callers of every touched function re-checked (recommend.js Apply now pins —
+  intended; handoff.js puts badge text in the Claude file — NBSP harmless;
+  Alerts.java reads kickoffs — two extra JSON fields ignored). No device or
+  emulator here; the bridge and network were faked, not exercised.
 
 ## v8.9 — vivid position colours, then a light test, 2026-09-25
 

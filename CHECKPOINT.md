@@ -1,12 +1,12 @@
-# CHECKPOINT 66 — read me first, then TASKS.md
+# CHECKPOINT 67 — read me first, then TASKS.md
 
-**Written:** 2026-09-27T17:53:50Z · **version:** 8.9 · **tests:** all 30 suites green
+**Written:** 2026-09-27T17:57:05Z · **version:** 8.9 · **tests:** all 30 suites green
 
 ## Just done
-1b+1c done: live DEF points-allowed held until final (Espn.gameStats state gate); live clock never splits from its quarter (NBSP + nowrap/colour CSS, period/clock fallback). tools/test_livescore.js (15 FAILs pre-fix)
+light test: 30/30 green, callers of setSlot/copyLineup/gameStats/liveClock re-checked, Chromium before/after on all badge tabs clean; STATE.md v9.0 written
 
 ## Do this next
-1d: light test protocol on this session's changes, then ship v9.0 + Release + link
+1d: bash build.sh (first!), then ship.sh, publish Release v9.0, send link
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M STATE.md
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  73f42b6 ckpt 66: 1b+1c done: live DEF points-allowed held until final (Espn.gameStats state gate
   411c312 ckpt 59: 1a done: lineup edits pin the whole lineup (Store.pinLineup) so a restart/sync 
   515598e ckpt 52: logged Tj's 2026-09-27 request (lineup persistence, live DEF PA tier, quarter o
   a9c5369 ckpt 71: v8.9 shipped + GitHub Release verified (asset FFTracker-v8.9.apk, run #28); job
@@ -36,8 +38,4 @@ request in his own words and `git log` carries every step already taken.
   618783a ckpt 60: light test: all green; Live chips now min-width/min-height so 130% phone text g
   cabcd64 ckpt 57: 1a done: vivid solid position chips (min OKLab dE 16.7, was 2.2), chip-text cas
   ae16865 ckpt 52: logged Tj's 2026-09-25 request (vivid position colours + light tests) in TASKS.
-  8c06bae ckpt 189: v8.7 and v8.8 shipped; both GitHub Releases verified with APK assets; job arch
 ```
-
-(6 automatic checkpoint(s) since the last deliberate one — the
-session was still mid-step. `git diff` against it shows what changed.)
