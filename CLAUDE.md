@@ -97,7 +97,7 @@ hook (`tools/capture_inbox.sh`) already writes every message Tj sends to
 you have read a single file. That used to be the failure: a session spent
 its whole budget reading the codebase for a new feature, was cut off before
 ever writing the request to `TASKS.md`, and the `PostToolUse` autosave hook
-(which only fires on `Edit|Write|NotebookEdit|Bash`) never fired either,
+(which then only fired on `Edit|Write|NotebookEdit|Bash`; every tool since 2026-09-27b) never fired either,
 because a pure research stretch trips none of those. Nothing reached disk,
 anywhere, and the next session opened cold with no way to know the request
 had ever been made — confirmed against this repo's own history.

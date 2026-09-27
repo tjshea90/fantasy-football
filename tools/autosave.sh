@@ -7,7 +7,7 @@
 # CHECKPOINT.md with "what I just did" and "what comes next" — the two things
 # no diff can reconstruct. It needs a session that knows its own intent.
 #
-# This runs from a hook, after every file edit and every bash command, with no
+# This runs from a hook, after EVERY tool call (reads too, since 2026-09-27b), with no
 # idea what the session is trying to do. So it does the opposite:
 #   - no test run (it fires constantly; it must take milliseconds)
 #   - it NEVER touches CHECKPOINT.md — overwriting a real "Do this next" with

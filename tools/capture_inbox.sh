@@ -10,7 +10,7 @@
 # cap does not wait for a good moment. A session ran a long research phase
 # on a new feature request, was cut off before ever writing it down, and
 # the PostToolUse autosave hook (which only fires on
-# Edit|Write|NotebookEdit|Bash) never fired either, because a pure research
+# Edit|Write|NotebookEdit|Bash then; every tool since 2026-09-27b) never fired either, because a pure research
 # stretch calls none of those. Nothing was on disk, anywhere, saying the
 # request had ever been made. The next session opened cold and had no way
 # to know — confirmed against this repo's own history: the sibling session
