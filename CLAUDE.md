@@ -38,6 +38,14 @@ Read the two warnings it can raise:
   change, checkpoint it — then start anything new.
 - **"UNCOMMITTED WORK IS PRESENT"** — the same thing, one step worse: not even
   the hook got to it. `git diff` is what was in flight.
+- **"OTHER BRANCHES CARRY RECENT COMMITS THIS CHECKOUT DOES NOT HAVE"** —
+  another session's saves never reached `main` (it was cut off, or `main` had
+  diverged). Look at them (`git log HEAD..origin/<branch>`) before redoing
+  anything, and tell Tj before merging — see "Branches".
+- **"THE LAST SESSION KEPT WORKING AFTER ITS LAST CHECKPOINT"** — it was cut
+  off mid-job; its own messages (from `SESSIONLOG.md`) are printed right
+  there, and `WORKLOG.md`'s tail has its deliberate notes. Start from what it
+  had found, not from scratch.
 
 ## Branches — `main` is the only source of truth (learned the hard way, 2026-09-12)
 
