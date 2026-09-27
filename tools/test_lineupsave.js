@@ -213,8 +213,8 @@ console.log('\n-- a dropdown change to MY lineup and my OPPONENT\'s survives a r
   var meName = St.team(base.me).name, oppName = St.team(base.opp).name;
   ok(!!cardOf(h, meName) && !!cardOf(h, oppName), 'Lineups shows my card and ' + oppName + '\'s');
   var auto0 = snap(St, WK, base.me);
-  ok(Object.keys(auto0).filter(function (k) { return auto0[k]; }).length >= 8,
-     'boot auto-filled my lineup (' + diff({}, auto0).split(' ').length + ' slots)');
+  var filled0 = Object.keys(auto0).filter(function (k) { return auto0[k]; }).length;
+  ok(filled0 >= 8, 'boot auto-filled my lineup (' + filled0 + ' slots)');
 
   /* my WR1 -> a bench receiver, the opponent's RB1 -> a bench back */
   var myPick = benchFor(St, WK, base.me, 'WR') || benchFor(St, WK, base.me, 'FLEX');
