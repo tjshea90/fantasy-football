@@ -107,11 +107,14 @@ ok(live && live.text === 'LIVE' && live.early === false,
 W.Schedule.ingest(WEEK, [{ id: '2', date: iso(dThu, 20), week: WEEK, state: 'in', detail: '7:33 - 3rd',
   teams: [{ abbr: thuTeam, homeAway: 'away' }, { abbr: 'ZZB', homeAway: 'home' }] }]);
 var clk = W.Schedule.badge(thuTeam, WEEK);
-ok(clk && clk.text === 'Q3 7:33' && clk.live === true, 'a live game shows its clock: "7:33 - 3rd" -> "' + (clk && clk.text) + '"');
+/* NB: quarter and clock are joined by a NO-BREAK space since 2026-09-27, so
+   the badge can never wrap between them (test_livescore.js) */
+var NB = '\u00a0';
+ok(clk && clk.text === 'Q3' + NB + '7:33' && clk.live === true, 'a live game shows its clock: "7:33 - 3rd" -> "' + (clk && clk.text) + '"');
 var LC = W.Schedule._liveClock;
-ok(LC('15:00 - 1st') === 'Q1 15:00' && LC('0:42 - 4th') === 'Q4 0:42' && LC('Halftime') === 'Half' &&
-   LC('End of 2nd') === 'End Q2' && LC('End of the 4th') === 'End Q4' && LC('4:12 - OT') === 'OT 4:12' &&
-   LC('4:12 - 2OT') === '2OT 4:12',
+ok(LC('15:00 - 1st') === 'Q1' + NB + '15:00' && LC('0:42 - 4th') === 'Q4' + NB + '0:42' && LC('Halftime') === 'Half' &&
+   LC('End of 2nd') === 'End' + NB + 'Q2' && LC('End of the 4th') === 'End' + NB + 'Q4' && LC('4:12 - OT') === 'OT' + NB + '4:12' &&
+   LC('4:12 - 2OT') === '2OT' + NB + '4:12',
    'every ESPN in-game wording maps (quarters, half, end of quarter, overtime)');
 ok(LC('Delayed') === 'LIVE' && LC('') === 'LIVE' && LC(null) === 'LIVE' && LC('Weather delay - 3rd') === 'LIVE',
    'anything unrecognised still reads LIVE — never blank, never a wrong clock');
