@@ -210,20 +210,22 @@ def main():
     out = ''
 
     # ---- the research nudge (tool calls only) ----
+    # per session: two sessions (or a test) in one container must not add up
+    qk, rk = 'quiet_' + sid[:8], 'last_real_' + sid[:8]
     if event == 'PostToolUse':
         pending, last = real_change_marker()
-        if pending or last != st.get('last_real'):
-            st['last_real'] = last
-            st['quiet'] = 0
+        if pending or last != st.get(rk):
+            st[rk] = last
+            st[qk] = 0
         else:
-            st['quiet'] = int(st.get('quiet', 0)) + 1
-            if st['quiet'] % NUDGE_EVERY == 0:
+            st[qk] = int(st.get(qk, 0)) + 1
+            if st[qk] % NUDGE_EVERY == 0:
                 out = ('CHECKPOINT NUDGE: %d tool calls in a row with nothing saved to GitHub '
                        'except the automatic SESSIONLOG.md. If you have learned anything a '
                        'fresh session would need (a cause, where the code is, a decision, a '
                        'dead end), save it NOW in one line: bash tools/note.sh "..." -- a usage '
                        'cap right now would lose it, and the next account would pay to find it '
-                       'again.' % st['quiet'])
+                       'again.' % st[qk])
 
     # ---- the session log (throttled) ----
     key = 'written_' + sid[:8]
