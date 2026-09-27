@@ -25,7 +25,7 @@ function ok(c, m) { if (!c) { fails++; console.log('  FAIL ' + m); } else consol
 
 var REPO = path.join(__dirname, '..');
 var FROM = process.env.CKPT_TOOLS_FROM || path.join(REPO, 'tools');
-var TOOLS = ['autosave.sh', 'push.sh', 'secretscan.sh', 'sessionlog.py', 'note.sh', 'resume.sh'];
+var TOOLS = ['autosave.sh', 'push.sh', 'secretscan.sh', 'sessionlog.py', 'note.sh', 'resume.sh', 'capture_inbox.sh'];
 var TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ckpt-test-'));
 var ENV = Object.assign({}, process.env, {
   GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t',
@@ -249,8 +249,28 @@ ok(!/KEPT WORKING/.test(clean) && !/Found it: the DEF tier/.test(clean),
 fs.writeFileSync(path.join(C, 'WORKLOG.md'), '# WORKLOG\n\n- 2026-09-27T17:25Z · b — cause: DEF tier live\n');
 ok(/WORKLOG\.md tail/.test(resumeText(C)) && /cause: DEF tier live/.test(resumeText(C)), 'WORKLOG.md findings are in the briefing');
 
-/* ============ 10. the hooks are wired ====================================== */
-console.log('\n-- 10. .claude/settings.json --');
+/* ============ 10. usage: the briefing only carries what is Tj's ============ */
+console.log('\n-- 10. the inbox and the briefing carry only what matters --');
+var before = fs.existsSync(path.join(W, 'INBOX.md')) ? fs.readFileSync(path.join(W, 'INBOX.md'), 'utf8') : '';
+sh(W, 'capture_inbox.sh', JSON.stringify({ prompt: '<task-notification>\n<task-id>b1</task-id>\n<status>completed</status>\n</task-notification>' }));
+var mid = fs.existsSync(path.join(W, 'INBOX.md')) ? fs.readFileSync(path.join(W, 'INBOX.md'), 'utf8') : '';
+ok(mid === before, 'a harness <task-notification> is not logged as a message from Tj  <-- 34 of 68 inbox entries were');
+sh(W, 'capture_inbox.sh', JSON.stringify({ prompt: 'Make the DEF wait for the final' }));
+ok(/Make the DEF wait for the final/.test(remote('refs/heads/claude/session-a', 'INBOX.md') || ''),
+   'a real message is still captured and pushed');
+fs.appendFileSync(path.join(C, 'INBOX.md'), '\n## 2026-09-27T10:00:00Z\n```\nreal ask from Tj\n```\n' +
+  '\n## 2026-09-27T10:01:00Z\n```\n<task-notification>\n<task-id>zz</task-id>\n</task-notification>\n```\n');
+var rt = resumeText(C);
+ok(/real ask from Tj/.test(rt) && !/<task-id>zz/.test(rt), 'the briefing\'s inbox tail skips notifications already on file');
+var T = fs.readFileSync(path.join(REPO, 'TASKS.md'), 'utf8');
+var wait = T.indexOf('## Waiting on Tj') >= 0 ? T.slice(T.indexOf('## Waiting on Tj')) : '';
+ok(wait.length > 0 && wait.length < 5000,
+   'TASKS.md "Waiting on Tj" stays short (' + wait.length + ' chars) — the history lives in WAITING.md  <-- it was 25,245, 59% of every briefing');
+ok(fs.existsSync(path.join(REPO, 'WAITING.md')) && /Confirm v7\.4 on the phone/.test(fs.readFileSync(path.join(REPO, 'WAITING.md'), 'utf8')),
+   'and nothing was thrown away: WAITING.md has the full old list');
+
+/* ============ 11. the hooks are wired ====================================== */
+console.log('\n-- 11. .claude/settings.json --');
 var S = JSON.parse(fs.readFileSync(path.join(REPO, '.claude/settings.json'), 'utf8')).hooks;
 var ptu = (S.PostToolUse || []).filter(function (h) { return /autosave\.sh/.test(JSON.stringify(h)); })[0];
 ok(ptu && (ptu.matcher === '*' || ptu.matcher === ''),
