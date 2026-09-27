@@ -37,6 +37,13 @@
 - [ ] 2e. resume.sh: (1) flag other branches carrying recent commits this
       checkout does not have (stranded work); (2) inbox-only commits no longer
       count as "INTERRUPTED MID-CHANGE".
+- [ ] 2g. Stop wasting usage at every start: the briefing measured 42,656
+      chars, re-sent every turn — 25,245 of it "Waiting on Tj" (a dozen
+      phone-confirm asks v5.5-v7.4 that later versions superseded, plus two
+      "Decide" items v6.7 already resolved). Keep the full text in WAITING.md
+      (not printed); TASKS.md keeps only the live asks. And INBOX.md captured
+      harness <task-notification>s as if Tj sent them (34 of 68 entries),
+      crowding his real messages out of the briefing's inbox tail.
 - [ ] 2f. Named test (tools/test_checkpoint.js) driving the real scripts in a
       scratch repo with a bare "GitHub" remote; confirmed to fail on the old
       scripts. Then light test, ckpt, onto main.
