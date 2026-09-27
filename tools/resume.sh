@@ -59,6 +59,30 @@ BRIEF="$(
       fi
     fi
 
+    # STRANDED WORK ON OTHER BRANCHES (2026-09-27b). Every session gets its own
+    # branch and new sessions start from main, so a session whose last saves
+    # never reached main (cut off before its ckpt, or main had diverged) left
+    # them on a branch nobody looks at. Anything recent that this checkout
+    # does not contain is named here, so it is merged or ruled out on purpose
+    # rather than silently re-done. "Recent" = tip within 72h of main's tip,
+    # which keeps weeks of finished branches out of the briefing.
+    MAINT="$(git log -1 --format=%ct origin/main 2>/dev/null || echo 0)"
+    NSTR=0
+    for RB in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null); do
+      case "$RB" in origin|origin/HEAD|origin/main|"origin/$CURBRANCH") continue;; esac
+      git merge-base --is-ancestor "$RB" HEAD 2>/dev/null && continue
+      RT="$(git log -1 --format=%ct "$RB" 2>/dev/null || echo 0)"
+      [ "${RT:-0}" -lt $(( ${MAINT:-0} - 259200 )) ] && continue
+      NEW="$(git rev-list --count HEAD.."$RB" 2>/dev/null || echo '?')"
+      if [ "$NSTR" -eq 0 ]; then
+        echo "  !!    OTHER BRANCHES CARRY RECENT COMMITS THIS CHECKOUT DOES NOT HAVE."
+        echo "        Possibly a cut-off session's work. Look before re-doing anything:"
+      fi
+      NSTR=$((NSTR + 1))
+      [ "$NSTR" -le 5 ] && echo "          ${RB#origin/}: $NEW commit(s), last $(git log -1 --format='%cr — %s' "$RB" 2>/dev/null | cut -c1-90)"
+    done
+    [ "$NSTR" -gt 0 ] && echo "        (git log HEAD..origin/<branch>; tell Tj before merging — CLAUDE.md 'Branches')"
+
     DIRTY="$(git status --porcelain 2>/dev/null)"
     BEHIND="$(git rev-list --count HEAD..@{u} 2>/dev/null || echo 0)"
     AHEAD="$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
