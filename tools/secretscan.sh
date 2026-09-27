@@ -17,7 +17,7 @@
 #   bash tools/secretscan.sh          # scans STAGED changes; 0 = clean
 #
 set -uo pipefail
-D="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$D" || exit 0
+D="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "${SCAN_DIR:-$D}" || exit 0
 
 # Added lines only. An existing line that already looked like this was already
 # pushed long ago; re-flagging it would wedge every future checkpoint.
