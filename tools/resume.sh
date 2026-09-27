@@ -151,7 +151,8 @@ BRIEF="$(
         echo
         echo "          git diff $(git rev-parse --short "$LASTCKPT")..HEAD"
         echo
-        git diff --stat "$LASTCKPT"..HEAD 2>/dev/null | tail -15 | sed 's/^/          /'
+        # shellcheck disable=SC2086
+        git diff --stat "$LASTCKPT"..HEAD -- . $AUTOX 2>/dev/null | tail -15 | sed 's/^/          /'
         echo
         echo "        Finish that change first, then checkpoint properly with"
         echo "        tools/ckpt.sh before starting anything new."
