@@ -419,14 +419,44 @@
     if (!S.lineupManual[w][teamId]) S.lineupManual[w][teamId] = {};
     return S.lineupManual[w][teamId];
   }
+  /* THE WHOLE LINEUP IS HIS THE MOMENT HE TOUCHES ANY OF IT (Tj, 2026-09-27:
+   * "if I adjust my weekly lineup or my opponent's weekly lineup, it saves
+   * it. I think I changed it then closed the app and when I went back to the
+   * app it defaulted back to a different lineup. Every time I alter any part
+   * of my lineup it should auto save and persist even after app restart.")
+   *
+   * The edit itself always reached disk — setSlot saves synchronously, and
+   * test_locks.js has proved a single slot survives a restart since v4.7. What
+   * did NOT survive was the REST of the lineup. Only the one slot he changed
+   * was marked his; the other nine stayed "auto", and autoFillWeek re-derives
+   * every auto slot from scratch on each boot (and after every sync, and
+   * every live poll). A projection refresh or an injury update between
+   * closing and reopening the app, and those nine re-picked themselves —
+   * worse, bestLineup does not know which players he placed by hand, so an
+   * auto slot whose new favourite was already sitting in one of his slots
+   * was not re-picked but EMPTIED (applyAuto's `taken` check). Choosing
+   * "— empty —" also un-marked the slot, so boot quietly refilled it, and
+   * "Copy wk N-1" marked nothing at all, so the copied lineup was auto-filled
+   * straight back over on the next start.
+   *
+   * So a hand edit now pins every slot of that team's lineup for that week —
+   * filled or deliberately empty — exactly as he is looking at it. Auto-fill
+   * never touches a pinned slot; "Reset to auto" / "Re-default" (clearManual)
+   * hand the lineup back. Dropping a player still un-pins just his old slot
+   * (dropPlayer) so the gap can be refilled. test_lineupsave.js. */
+  function pinLineup(week, teamId) {
+    var M = manualMap(week, teamId), keys = slotKeys(), i;
+    for (i = 0; i < keys.length; i++) M[keys[i].key] = 1;
+    return M;
+  }
   function setSlot(week, teamId, slotKey, pid, manual) {
     var L = getLineup(week, teamId), M = manualMap(week, teamId);
     /* a player can only occupy one slot */
     for (var k in L) {
-      if (L[k] === pid && k !== slotKey) { delete L[k]; delete M[k]; }
+      if (L[k] === pid && k !== slotKey) { delete L[k]; if (!manual) delete M[k]; }
     }
     if (pid) L[slotKey] = pid; else delete L[slotKey];
-    if (manual) { if (pid) M[slotKey] = 1; else delete M[slotKey]; }
+    if (manual) pinLineup(week, teamId);
     save(); return L;
   }
   function isManual(week, teamId, slotKey) { return !!manualMap(week, teamId)[slotKey]; }
