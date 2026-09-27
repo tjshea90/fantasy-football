@@ -107,6 +107,7 @@ tools/test_retention.js
 tools/test_jsonslim.js
 tools/test_syncfail.js
 tools/test_picks2.js
+tools/test_lineupsave.js
 tools/fixtures/espn_injuries_sample.json
 android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml

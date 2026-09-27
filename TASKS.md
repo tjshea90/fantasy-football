@@ -17,11 +17,18 @@
 > quarter they are in if it is live. Right now it just says 10:32 but doesn't
 > tell me what quarter"
 
-- [ ] 1a. Lineups: every change to MY weekly lineup AND the OPPONENT's weekly
-      lineup is saved to disk immediately and survives an app restart (find
-      why a restart "defaulted back to a different lineup" — auto-lineup
-      overwriting a manual one, a save not flushed before close, or the
-      opponent lineup never persisted at all). Named test proves it.
+- [x] 1a. Lineups: every change to MY weekly lineup AND the OPPONENT's weekly
+      lineup is saved to disk immediately and survives an app restart.
+      CAUSE: the edit itself always reached disk, but only the ONE slot changed
+      was marked his — boot/sync auto-fill re-picked the other nine from fresh
+      projections on every start (and could EMPTY a slot whose new favourite
+      sat in one of his); "— empty —" un-marked the slot so boot refilled it;
+      "Copy wk N-1" marked nothing. FIX: Store.pinLineup — any hand edit
+      (dropdown, Advice Apply, Copy) pins every slot of that team-week exactly
+      as shown; Reset to auto / Re-default un-pin; copy is now exact + no
+      duplicates; a failed write toasts "Could not save". PROVED BY
+      tools/test_lineupsave.js (real UI, edit -> sync -> reboot a second
+      instance from the same disk), confirmed 9 FAILs against pre-fix store.js.
 - [ ] 1b. Live DEF: points-allowed tier (0 allowed = +10 etc.) is NOT
       credited until the game is final — a defense must not start a game on
       10 points. Other DEF stats (sacks, INTs, TDs) still count live. Check
