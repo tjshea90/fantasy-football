@@ -26,7 +26,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|NotebookEdit|Bash",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -56,7 +56,18 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || echo .)}/tools/toobig.sh\" 2>/dev/null || true",
             "timeout": 60,
-            "statusMessage": "Session is large — saving before compaction..."
+            "statusMessage": "Session is large \u2014 saving before compaction..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || echo .)}/tools/autosave.sh\" 2>/dev/null || true",
+            "timeout": 60
           }
         ]
       }
