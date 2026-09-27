@@ -190,6 +190,58 @@ BRIEF="$(
     fi
   fi
 
+  # WHAT THE LAST SESSIONS LEARNED (2026-09-27b — see tools/sessionlog.py).
+  # WORKLOG.md: deliberate one-line findings (tools/note.sh), last few only.
+  # SESSIONLOG.md: the newest session's own messages — printed ONLY when that
+  # session kept working after its last deliberate checkpoint (i.e. it was cut
+  # off with findings CHECKPOINT.md does not have). Otherwise one line, so a
+  # normal resume pays nothing extra for it.
+  if [ -f WORKLOG.md ] && grep -q '^- 20' WORKLOG.md 2>/dev/null; then
+    echo "----------------------------------------------------------------"
+    echo "WORKLOG.md tail — findings saved with tools/note.sh, newest last:"
+    echo "----------------------------------------------------------------"
+    grep '^- 20' WORKLOG.md | tail -8 | cut -c1-400
+    echo
+  fi
+  if [ -f SESSIONLOG.md ] && command -v python3 >/dev/null 2>&1 && [ -d .git ]; then
+    CKT="$(git log -1 --format=%ct --extended-regexp --grep='^(ckpt [0-9]+:|ship v)' 2>/dev/null || echo 0)"
+    CKT="$CKT" python3 - <<'PYEOF' 2>/dev/null || true
+import calendar, os, re, time
+body = open('SESSIONLOG.md', encoding='utf-8').read()
+best = None
+for chunk in body.split('\n## session ')[1:]:
+    m = re.search(r'updated (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)', chunk.split('\n', 1)[0])
+    if not m:
+        continue
+    t = calendar.timegm(time.strptime(m.group(1), '%Y-%m-%dT%H:%M:%SZ'))
+    if best is None or t > best[0]:
+        best = (t, chunk)
+ckt = int(os.environ.get('CKT') or 0)
+if best and best[0] > ckt + 30:
+    head, rest = best[1].split('\n', 1)
+    print('----------------------------------------------------------------')
+    print('!!  THE LAST SESSION KEPT WORKING AFTER ITS LAST CHECKPOINT. Its own')
+    print('    words (SESSIONLOG.md), newest last — read before re-deriving:')
+    print('----------------------------------------------------------------')
+    print('session ' + head)
+    msgs = [l for l in rest.splitlines() if l.startswith('- [')]
+    out, n = [], 0
+    for l in reversed(msgs):
+        n += len(l)
+        if n > 2600:
+            break
+        out.append(l)
+    print('\n'.join(reversed(out)))
+    trail = [l for l in rest.splitlines() if l.startswith('Last ')]
+    if trail:
+        print(trail[0][:600])
+    print()
+elif best:
+    print('  OK    SESSIONLOG.md: the last session checkpointed after its last message (nothing lost).')
+    print()
+PYEOF
+  fi
+
   bash bootstrap.sh 2>&1 || true
 )"
 
