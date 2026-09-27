@@ -130,8 +130,14 @@ BRIEF="$(
     # The tell: commits after the newest 'ckpt N:' or 'ship vN:'. Those two are
     # the only ones a session makes on purpose.
     LASTCKPT="$(git log -1 --format=%H --extended-regexp --grep='^(ckpt [0-9]+:|ship v)' 2>/dev/null || true)"
+    # The automatic files do not count (2026-09-27b): every message Tj sends
+    # lands as an "auto-checkpoint" of INBOX.md, and the session log / worklog
+    # commit the same way — none of them is a half-written change, and
+    # counting them sent fresh sessions off reading diffs of their own inbox.
+    AUTOX=":(exclude)INBOX.md :(exclude)SESSIONLOG.md :(exclude)WORKLOG.md"
     if [ -n "$LASTCKPT" ]; then
-      SINCE="$(git rev-list --count "$LASTCKPT"..HEAD 2>/dev/null || echo 0)"
+      # shellcheck disable=SC2086
+      SINCE="$(git log --format=%H "$LASTCKPT"..HEAD -- . $AUTOX 2>/dev/null | wc -l | tr -d ' ')"
       if [ "${SINCE:-0}" -gt 0 ]; then
         echo
         echo "  !!    THE LAST SESSION WAS INTERRUPTED MID-CHANGE."
