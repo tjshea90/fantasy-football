@@ -167,7 +167,7 @@ def write_log(sid, branch, texts, tools, first):
     except Exception:
         pass
     now = iso(time.time())
-    lines = ['## session %s · branch %s · started %s · updated %s' % (sid[:8], branch or '?', first or '?', now), '']
+    lines = ['## session %s · branch %s · log from %s · updated %s' % (sid[:8], branch or '?', first or '?', now), '']
     lines.append("Claude's messages, oldest first:")
     lines.append('')
     for ts, t in texts:
