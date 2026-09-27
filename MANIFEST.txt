@@ -117,3 +117,8 @@ android/res/values-v31/styles.xml
 releases/FFTracker-v8.8.apk
 releases/FFTracker-v8.9.apk
 releases/FFTracker-v9.0.apk
+tools/sessionlog.py
+tools/note.sh
+tools/test_checkpoint.js
+WORKLOG.md
+SESSIONLOG.md
