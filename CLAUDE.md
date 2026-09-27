@@ -114,11 +114,38 @@ nothing else gets written down before a usage cap hits. You do not call it,
 and you should not need it if you write `TASKS.md` promptly — treat it as
 the net under the net.
 
-**1. Automatic (hooks — happens without you).** `tools/autosave.sh` commits
-and pushes after every file edit and every bash command. It has no gate and
-runs no tests: a broken half-edit that is committed is recoverable, the same
-edit uncommitted dies with the session. This is what survives a usage cap
-landing mid-change. You do not call it.
+**1. Automatic (hooks — happens without you).** `tools/autosave.sh` runs
+after EVERY tool call (reads included), on Stop and on SessionEnd. It commits
+and pushes any file change — to this session's branch AND fast-forwarded onto
+`main`, because the next session starts from `main` — plus edits made inside
+any git worktree (to that worktree's branch). It has no gate and runs no
+tests: a broken half-edit that is committed is recoverable, the same edit
+uncommitted dies with the session. You do not call it.
+
+**1½. What you have LEARNED, not just what you changed (2026-09-27b — learned
+the hard way).** The session that took the 2026-09-27 request pushed its
+"logged the request" checkpoint at 17:21Z, then spent ~9 minutes working out
+causes, edited nothing, and hit the usage cap. Autosave only ever saved files,
+so every finding died with it and the next account paid for the whole
+analysis again. Two things now close that:
+- **`bash tools/note.sh "one-line finding"`** — appends to `WORKLOG.md`,
+  commits, pushes. Use it the moment you know something the next session would
+  otherwise have to rediscover: a cause, where the code is, a decision, a dead
+  end ruled out. It costs one line; `resume.sh` prints the WORKLOG tail into
+  every new session. If a hook message says **CHECKPOINT NUDGE**, you have
+  gone 12 tool calls without saving anything real — write the note before the
+  next read.
+- **`SESSIONLOG.md` (automatic, via `tools/sessionlog.py`)** — once a minute
+  (and always on Stop/compaction) the hook copies your own visible messages
+  and a trail of the files/searches you touched from the session transcript,
+  and pushes it. Thinking and user messages are never copied; credentials and
+  emails are redacted — this repo is public. When a session kept calling tools
+  after its last deliberate checkpoint, `resume.sh` prints its messages into
+  the next briefing under **"THE LAST SESSION KEPT WORKING AFTER ITS LAST
+  CHECKPOINT"** — read that before re-deriving anything. This is the net;
+  the note is the thing you should not need the net for. So say what you
+  found in plain words as you go ("found it: X in file Y") — that sentence is
+  exactly what gets saved.
 
 **2. Deliberate — `bash tools/ckpt.sh "what I just did" "what comes next"`.**
 **Run this after every completed step, not at the end of the session.** The
