@@ -231,12 +231,15 @@ def main():
     key = 'written_' + sid[:8]
     if tpath and os.path.exists(tpath) and (event in FORCE_EVENTS or now - float(st.get(key, 0)) >= THROTTLE_S):
         texts, tools, first = read_transcript(tpath)
-        if texts or tools:
+        newest = max([t for t, _ in texts] + [t for t, _ in tools] + [''])
+        # nothing new since the last write: no rewrite, no commit, no push
+        if (texts or tools) and newest > st.get('newest_' + sid[:8], ''):
             try:
                 write_log(sid, git('branch', '--show-current'), texts, tools, first)
-                st[key] = now
+                st['newest_' + sid[:8]] = newest
             except Exception:
                 pass
+        st[key] = now
     write_state(st)
     if out:
         sys.stdout.write(out)
