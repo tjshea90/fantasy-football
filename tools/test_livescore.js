@@ -225,7 +225,10 @@ Promise.all(pending).then(function () {
     /* 2nd quarter: two sacks, 7 allowed so far */
     feed.detail = '10:32 - 2nd'; feed.period = 2; feed.clock = '10:32';
     feed.oppScore = 7; feed.sacks = 2;
-    return sync();
+    return sync().then(function () {
+      /* the live poll ingests the same scoreboard every tick (liveTick) */
+      return W.Espn.weekGames(2026, 1, 2).then(function (g) { W.Schedule.ingest(1, g); });
+    });
   }).then(function () {
     var pts = St.playerPoints(1, defPid);
     ok(pts === expect(2, null), 'mid-game the sacks count live (' + pts + ' = ' + expect(2, null) + '), the allowed tier does not');
@@ -259,7 +262,6 @@ Promise.all(pending).then(function () {
   return W.Espn.weekGames(2026, 1, 2).then(function (games) {
     ok(games[0].period === 3 && games[0].clock === '5:12', 'the scoreboard\'s period and clock are kept (' +
        games[0].period + ', ' + games[0].clock + ')');
-    W.Store.init(W.FF_SEED || W.SEED || null);
   })['catch'](function (e) { ok(false, 'weekGames: ' + e); });
 }).then(function () {
   var h = buildHarness(); h.W.Native.httpGet = fakeHttp; h.docHandlers.DOMContentLoaded();
