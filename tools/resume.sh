@@ -217,7 +217,16 @@ for chunk in body.split('\n## session ')[1:]:
     if best is None or t > best[0]:
         best = (t, chunk)
 ckt = int(os.environ.get('CKT') or 0)
-if best and best[0] > ckt + 30:
+# The signal is TOOL CALLS after the checkpoint, not messages: every finished
+# session writes its closing report after its last ckpt, and that is not lost
+# work. A session cut off mid-job keeps calling tools (reads, edits) for
+# minutes past its last ckpt — 2026-09-27's ran ~9 minutes.
+lt = 0
+if best:
+    m = re.search(r'last tool (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)', best[1].split('\n', 1)[0])
+    if m:
+        lt = calendar.timegm(time.strptime(m.group(1), '%Y-%m-%dT%H:%M:%S'))
+if best and lt > ckt + 120:
     head, rest = best[1].split('\n', 1)
     print('----------------------------------------------------------------')
     print('!!  THE LAST SESSION KEPT WORKING AFTER ITS LAST CHECKPOINT. Its own')
