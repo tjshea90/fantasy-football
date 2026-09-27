@@ -81,6 +81,10 @@ function remote(ref, file) {
   var r = run('git', ['--git-dir', BARE, 'show', ref + ':' + file]);
   return r.code === 0 ? r.out : null;
 }
+function readLog() {
+  var f = path.join(W, 'SESSIONLOG.md');
+  return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+}
 function parse(out) { try { return JSON.parse(out.trim().split('\n').pop()); } catch (e) { return null; } }
 
 /* ============ 1. a session that only READS still leaves its findings ======= */
@@ -105,7 +109,7 @@ console.log('\n-- 2. credentials and emails never reach the public log --');
 var KEY = 'sk-ant-api03-' + 'Ab9_'.repeat(20);
 addTurn('Testing with key ' + KEY + ' for someone@example.com', 'Bash', { description: 'try the key' }, 0.1);
 var r2 = sh(W, 'autosave.sh', hook('Stop'));
-log = fs.readFileSync(path.join(W, 'SESSIONLOG.md'), 'utf8');
+log = readLog();
 ok(log.indexOf(KEY) < 0 && /\[redacted\]/.test(log), 'the key is redacted');
 ok(!/someone@example\.com/.test(log) && /\[email\]/.test(log), 'the email is redacted');
 ok(!/AUTOSAVE BLOCKED/.test(r2.out) && /\[redacted\]/.test(remote('refs/heads/main', 'SESSIONLOG.md') || ''),
