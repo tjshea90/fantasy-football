@@ -1,1 +1,1 @@
-window.APP_VERSION="8.9";
+window.APP_VERSION="9.0";

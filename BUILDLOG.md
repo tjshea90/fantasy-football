@@ -76,3 +76,4 @@
 2026-09-24T20:35Z | v8.7 | step 266/268 | v8.7: Tj's picks 1,2,3,6,7,8,9,10 + Live layout (win probability, position colours, Q/D/O badges, matchup chip, Trending, one player card, inactives alert, Data League order)
 2026-09-24T20:49Z | v8.8 | step 277/279 | v8.8: full test after the v8.7 features — dead long-press game-log modal removed; all crawls/netlog/timings clean (the other six full-test fixes shipped in v8.7)
 2026-09-25T01:45Z | v8.9 | step 279/281 | v8.9: vivid position colours — solid, clearly distinct QB/RB/WR/TE/K/DEF chips (fixes v8.7's grey chip text); light test clean
+2026-09-27T17:58Z | v9.0 | step 279/281 | v9.0: lineup edits saved exactly as set through restarts (whole lineup pinned); live DEF points-allowed only at the final; live clock always shows the quarter; light test clean
