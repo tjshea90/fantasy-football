@@ -45,6 +45,11 @@ else
   PROMPT=""
 fi
 [ -z "$PROMPT" ] && exit 0
+# NOT FROM TJ (2026-09-27b): the harness delivers background-task results
+# ("<task-notification>...") through the same prompt hook. They were logged as
+# if he had sent them — 34 of the first 68 entries — and crowded his real
+# messages out of the inbox tail every session is briefed with.
+case "$PROMPT" in '<task-notification>'*) exit 0;; esac
 
 {
   echo ""

@@ -178,7 +178,22 @@ BRIEF="$(
   # something TASKS.md does not yet cover, THAT is the request that was never
   # written down, not a stale duplicate.
   if [ -f INBOX.md ]; then
-    INBOXTAIL="$(tail -c 2500 INBOX.md 2>/dev/null | sed -n '/^## /,$p')"
+    # Tj's messages only — harness <task-notification> entries (recorded
+    # before capture_inbox.sh learned to skip them) are not his (2026-09-27b).
+    INBOXTAIL="$(python3 - <<'PYEOF' 2>/dev/null
+body = open('INBOX.md', encoding='utf-8').read()
+parts = body.split('\n## 20')
+entries = ['## 20' + p for p in parts[1:] if '<task-notification>' not in p.split('\n', 3)[:3][-1]]
+out, n = [], 0
+for e in reversed(entries):
+    n += len(e)
+    if n > 2500 and out:
+        break
+    out.append(e.rstrip() + '\n')
+print('\n'.join(reversed(out))[-2600:])
+PYEOF
+)"
+    [ -z "$INBOXTAIL" ] && INBOXTAIL="$(tail -c 2500 INBOX.md 2>/dev/null | sed -n '/^## /,$p')"
     if [ -n "$INBOXTAIL" ]; then
       echo "----------------------------------------------------------------"
       echo "RAW INBOX (INBOX.md tail) — guaranteed captured, may be ahead of"
