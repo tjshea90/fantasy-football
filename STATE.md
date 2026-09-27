@@ -2,6 +2,49 @@
 
 **Last updated: 2026-09-27** · **v9.0**, shipped (GitHub Release v9.0 verified, run #29) · APK builds, signed, all 30 test suites green · now on GitHub, worked across three Claude accounts
 
+## 2026-09-27b — the resume/checkpoint system, after it lost a session's work
+
+Tj: "the Claude resume checkpoint system completely failed. Most of these
+tasks are already completed in a prior Claude session ... I must be able to
+resume Claude work without losing data or wasting usage".
+
+- **What actually happened (evidence, not guess).** The session that took the
+  17:19Z request ran on another account (its transcript is not visible from
+  this one). Its hooks and pushes worked: inbox capture 972bcc6 and "ckpt 52"
+  515598e (17:21:24Z) reached both its branch and main. Nothing after that
+  ever did. Its checkpoint read "Do this next: 1a: find why the lineup
+  reverts" — so ~9 minutes of read-only analysis that autosave (files only)
+  never saved; or edits in a worktree/isolated copy autosave never looked at.
+  Either way this account re-did 1a-1d from scratch (shipped as v9.0).
+- **Holes found, all closed** (tools/test_checkpoint.js, 19 FAILs pre-fix):
+  1. Findings were never saved -> `tools/note.sh` + WORKLOG.md (deliberate),
+     `tools/sessionlog.py` -> SESSIONLOG.md (automatic: Claude's visible
+     messages + file trail from the hook's transcript_path, once a minute and
+     on Stop/PreCompact/SessionEnd, thinking never copied, secrets/emails
+     redacted), and a CHECKPOINT NUDGE (PostToolUse additionalContext) after
+     12 tool calls with nothing real saved. Verified live: this session got
+     the nudge through its own hook.
+  2. Autosave only ran on Edit|Write|NotebookEdit|Bash -> every tool now
+     ("*"), plus SessionEnd. ~70 ms per quiet call (measured).
+  3. Autosave never moved main, and new sessions start from main -> it
+     fast-forwards main on every save (ff-only; a diverged main is left
+     alone). build-apk.yml: paths-ignore '**.md' + cancel-in-progress, since
+     main now moves on every save.
+  4. Worktree edits were invisible -> committed + pushed to their branch.
+  5. resume.sh never looked at other branches -> names any recent branch
+     HEAD lacks. And it counted inbox-only commits as "INTERRUPTED
+     MID-CHANGE" -> excluded (INBOX/SESSIONLOG/WORKLOG).
+  6. The briefing itself wasted usage: 42,656 chars every turn, 25,245 of
+     them "Waiting on Tj" (superseded v5.5-v7.4 phone asks + two items v6.7
+     resolved) -> verbatim to WAITING.md (not printed), TASKS.md keeps the 5
+     live asks. INBOX captured harness <task-notification>s as Tj's messages
+     (34 of 68) -> skipped at capture and in the briefing's tail.
+- **Design choices worth knowing.** The "LAST SESSION KEPT WORKING" block keys
+  on TOOL CALLS after the last deliberate ckpt (>2 min), not messages —
+  every finished session writes its report after its ckpt, which is not lost
+  work. SESSIONLOG keeps 3 sessions, rewritten only when the transcript has
+  something new. No app code changed: no new APK.
+
 ## v9.0 — lineups that stay saved, live DEF, the quarter on the clock, 2026-09-27
 
 Tj: "make sure if I adjust my weekly lineup or my opponent's weekly lineup, it

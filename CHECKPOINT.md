@@ -1,12 +1,12 @@
-# CHECKPOINT 72 — read me first, then TASKS.md
+# CHECKPOINT 105 — read me first, then TASKS.md
 
-**Written:** 2026-09-27T18:05:44Z · **version:** 9.0 · **tests:** all 30 suites green
+**Written:** 2026-09-27T18:20:24Z · **version:** 9.0 · **tests:** all 31 suites green
 
 ## Just done
-logged Tj's 2026-09-27b request (checkpoint system failed) in TASKS.md; 2a diagnosis recorded
+checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG + nudge, autosave every tool + main ff + worktrees, resume.sh stranded branches + inbox exclusion + kept-working block, briefing 42.6k->~13k chars (WAITING.md), inbox skips task notifications. tools/test_checkpoint.js (19 FAILs pre-fix)
 
 ## Do this next
-2b: WORKLOG.md + tools/note.sh
+light test of the tooling change; then report to Tj (no APK — no app code changed)
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M STATE.md
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  f683ae6 ckpt 72: logged Tj's 2026-09-27b request (checkpoint system failed) in TASKS.md; 2a diag
   f432b24 ckpt 70: v9.0 shipped + GitHub Release verified (asset FFTracker-v9.0.apk, run #29); job
   4504331 ship v9.0: v9.0: lineup edits saved exactly as set through restarts (whole lineup pinned
   5a447c7 ckpt 67: light test: 30/30 green, callers of setSlot/copyLineup/gameStats/liveClock re-c
@@ -36,8 +38,7 @@ request in his own words and `git log` carries every step already taken.
   a9c5369 ckpt 71: v8.9 shipped + GitHub Release verified (asset FFTracker-v8.9.apk, run #28); job
   a147300 ship v8.9: v8.9: vivid position colours — solid, clearly distinct QB/RB/WR/TE/K/DEF ch
   4c0f0de ckpt 69: v8.9 APK built and verified (new CSS inside, stamped 8.9); STATE.md notes the s
-  c6afd96 ship v8.9: v8.9: vivid position colours — solid, clearly distinct QB/RB/WR/TE/K/DEF ch
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(32 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
