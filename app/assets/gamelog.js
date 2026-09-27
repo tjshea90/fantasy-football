@@ -153,7 +153,9 @@
       }
       if (have) return Promise.resolve(bucket);
     }
-    return root.Espn.gameStats(game.id).then(function (r) { return ingestEvent(week, game, r); });
+    /* game.state: a live game's points allowed is held until the final
+       (see Espn.gameStats) */
+    return root.Espn.gameStats(game.id, game.state).then(function (r) { return ingestEvent(week, game, r); });
   }
 
   /* ---- reading it ---------------------------------------------------------

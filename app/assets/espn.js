@@ -446,7 +446,23 @@
     });
   }
 
-  function gameStats(eventId) {
+  /* `state`: the scoreboard's state for this game ('pre' | 'in' | 'post'),
+   * when the caller knows it — doSync and gamelog.js both do.
+   *
+   * POINTS ALLOWED IS A FINAL-SCORE STAT (Tj, 2026-09-27: "it is showing 10
+   * points scored at the beginning of the game because the team the defense
+   * is playing has 0 points. Do not add points for this until the game is
+   * final. A defense should not begin a game with 10 fantasy points"). The
+   * tier (RULES_2026.md: 0 -> 10, 2-10 -> 7, 11-20 -> 5, 21-30 -> 1, 31+ -> 0)
+   * is paid on what the defense allowed over the whole game, so the live
+   * running score is not a points-allowed number at all: it opens every game
+   * at the top tier and can only fall. Until the game is final it is held
+   * back (null — "not scored yet", which Scoring.score already skips);
+   * sacks, interceptions, recoveries and touchdowns still count live.
+   * Gated on the SAME scoreboard state doSync uses to mark a game final in
+   * its cache, so a game is never cached as final with its tier missing.
+   * No state (an old caller, a test fixture) keeps the old behaviour. */
+  function gameStats(eventId, state) {
     return httpGet(BASE + '/summary?event=' + eventId).then(function (sum) {
       var res = {
         eventId: String(eventId),
@@ -570,9 +586,11 @@
           }
         }
       }
+      var held = state !== undefined && state !== null && state !== 'post';
+      res.paHeld = held;
       for (i = 0; i < abbrs.length; i++) {
         var me = abbrs[i], opp = abbrs[1 - i] || '';
-        if (res.flags.scoresFound && opp) agg(me).pointsAllowed = res.teamScore[opp];
+        if (res.flags.scoresFound && opp && !held) agg(me).pointsAllowed = res.teamScore[opp];
         if (opp) agg(me).fr = agg(opp).fumblesLost;   /* their lost = our recovery */
       }
 

@@ -4820,7 +4820,9 @@
       /* Three at a time: the Java side runs a 3-thread pool that used to sit
          two-thirds idle while the page waited for one box score at a time. */
       return Espn.pool(want, 3, function (g) {
-        return Espn.gameStats(g.id).then(function (r) {
+        /* g.state: points allowed is only credited once the game is final
+           (see Espn.gameStats) — the same state that marks it final here */
+        return Espn.gameStats(g.id, g.state).then(function (r) {
           gcache.byId[g.id] = { final: g.state === 'post', r: r };
           /* FREE: gamelog.js's own ensureEvent() would otherwise issue this
              EXACT SAME Espn.gameStats(g.id) call again the first time Tj
