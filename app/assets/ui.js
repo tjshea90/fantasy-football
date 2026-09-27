@@ -1960,8 +1960,9 @@
     head.appendChild(el('p', 'muted',
       'Every roster is defaulted to its most likely starters — best projected ' +
       'legal lineup, byes and ruled-out players skipped. Change any slot with ' +
-      'its dropdown; a slot you pick yourself is marked "yours" and auto-fill ' +
-      'will never move it again.'));
+      'its dropdown and that whole lineup is saved as yours on the spot: it ' +
+      'stays exactly as you left it through a restart or a sync, and auto-fill ' +
+      'never moves any of it again. "Reset to auto" hands it back.'));
     var togg = el('button', 'btn' + (S.settings.autoFill ? ' pri' : ''),
       S.settings.autoFill ? 'Auto-default: ON' : 'Auto-default: OFF');
     togg.addEventListener('click', function () {
@@ -2004,10 +2005,14 @@
     refill.textContent = them ? 'Re-default both lineups now' : 'Re-default my lineup now';
     refill.style.marginTop = '8px';
     refill.addEventListener('click', function () {
+      /* teams whose lineup he has set by hand — since 2026-09-27 an edit pins
+         the whole lineup (Store.pinLineup), so counting slots would just say
+         "10" after one change */
       var manual = 0;
       shown.forEach(function (t) {
-        var M = (S.lineupManual[String(week)] || {})[t.id] || {}, k;
-        for (k in M) if (Object.prototype.hasOwnProperty.call(M, k)) manual++;
+        var M = (S.lineupManual[String(week)] || {})[t.id] || {}, k, any = false;
+        for (k in M) if (Object.prototype.hasOwnProperty.call(M, k)) any = true;
+        if (any) manual++;
       });
       function go() {
         shown.forEach(function (t) { Store.clearManual(week, t.id); });
@@ -2019,14 +2024,14 @@
         if (window.Sim) Sim.invalidate();
         render();
         toast(n ? (n + ' slot' + (n === 1 ? '' : 's') + ' updated'
-                     + (manual ? ' · ' + manual + ' of your picks replaced' : ''))
+                     + (manual ? ' · your saved lineup' + (manual === 1 ? '' : 's') + ' replaced' : ''))
                 : (shown.length > 1 ? 'Both teams already hold their recommended lineup'
                                      : 'Your team already holds its recommended lineup'));
       }
       if (!manual) { go(); return; }
       confirmModal('Re-default ' + (shown.length > 1 ? 'both lineups' : 'your lineup') + '?',
-        'You have hand-picked ' + manual + ' slot' + (manual === 1 ? '' : 's') +
-        ' in week ' + week + '. Re-defaulting throws ' + (manual === 1 ? 'it' : 'those') +
+        'You have set ' + (manual > 1 ? 'both lineups' : 'a lineup') + ' by hand' +
+        ' in week ' + week + '. Re-defaulting throws ' + (manual > 1 ? 'them' : 'it') +
         ' away and fills ' + (shown.length > 1 ? 'both teams' : 'your team') +
         ' with the best projected legal lineup instead.\n\n' +
         'Nothing else is touched — rosters, scores and matchups all stay as they ' +
@@ -2046,6 +2051,15 @@
       nc.appendChild(el('p', 'muted', 'Add this week\'s matchup under Data → League → Add matchup ' +
         'to see their lineup here.'));
       root.appendChild(nc);
+    }
+  }
+  /* Store.setSlot writes to disk synchronously; if that write failed (storage
+     full), say so now — otherwise the change looks saved and is simply gone
+     at the next restart, which is exactly the complaint this exists to stop
+     (2026-09-27). */
+  function lineupSaveCheck() {
+    if (Store.lastSaveOk && !Store.lastSaveOk()) {
+      toast('Could not save that lineup change — the phone\'s storage may be full');
     }
   }
   function lineupCard(t) {
@@ -2068,7 +2082,9 @@
       var lab = el('label', 'f');
       lab.appendChild(el('span', 'pchip' + posClass(k.pos), k.label));
       lab.appendChild(document.createTextNode(
-        (isLock ? '  · ● started' : (isMan ? '  · yours' : (L[k.key] ? '  · auto' : '')))));
+        (isLock ? '  · ● started'
+                : (isMan ? (L[k.key] ? '  · yours' : '  · left empty')
+                         : (L[k.key] ? '  · auto' : '')))));
       /* WHEN DOES THE MAN IN THIS SLOT ACTUALLY PLAY? On the Lineups tab this
          is the single most useful fact on the row: a Thursday starter is a
          decision with a deadline, and every other slot can wait. */
@@ -2126,6 +2142,7 @@
               Store.setSlot(week, t.id, k.key, newPid, true);
               if (window.Sim) Sim.invalidate();
               render();
+              lineupSaveCheck();
             }, true);
           self.value = prev;
           return;
@@ -2133,6 +2150,7 @@
         Store.setSlot(week, t.id, k.key, newPid, true);
         if (window.Sim) Sim.invalidate();   /* the win probability depends on it */
         render();
+        lineupSaveCheck();
       });
       c.appendChild(lab); c.appendChild(sel);
     });
@@ -2145,13 +2163,17 @@
     });
     var st = el('div', 'kv');
     st.appendChild(el('span', byeCount ? 'warnText' : null,
-      filled + '/' + keys.length + ' filled · ' + manualCount + ' set by you' +
+      filled + '/' + keys.length + ' filled · ' + (manualCount ? 'saved as you set it' : 'auto') +
       (lockCount ? '  ·  ' + lockCount + ' started' : '') +
       (byeCount ? '  ·  ' + byeCount + ' ON BYE' : '')));
     var b = el('button', 'btn sm', 'Copy wk ' + (week - 1));
     b.disabled = week <= 1;
     b.addEventListener('click', function () {
-      Store.copyLineup(week - 1, week, t.id); render(); toast('Copied');
+      Store.copyLineup(week - 1, week, t.id);
+      if (window.Sim) Sim.invalidate();
+      render();
+      if (Store.lastSaveOk && !Store.lastSaveOk()) lineupSaveCheck();
+      else toast('Copied week ' + (week - 1) + ' — saved as yours');
     });
     st.appendChild(b);
     var rb = el('button', 'btn sm', 'Reset to auto');
