@@ -29,12 +29,26 @@
       duplicates; a failed write toasts "Could not save". PROVED BY
       tools/test_lineupsave.js (real UI, edit -> sync -> reboot a second
       instance from the same disk), confirmed 9 FAILs against pre-fix store.js.
-- [ ] 1b. Live DEF: points-allowed tier (0 allowed = +10 etc.) is NOT
-      credited until the game is final — a defense must not start a game on
-      10 points. Other DEF stats (sacks, INTs, TDs) still count live. Check
-      the rule against RULES_2026.md. Named test proves it.
-- [ ] 1c. Live player rows: when the game is live, show the quarter with the
-      clock ("Q2 10:32", not "10:32"). Named test proves it.
+- [x] 1b. Live DEF: points-allowed tier (0 allowed = +10 etc.) is NOT
+      credited until the game is final — RULES_2026.md: "Points allowed (per
+      game)". Espn.gameStats(id, state) holds pointsAllowed at null unless the
+      SCOREBOARD state (the same one doSync uses to cache a game as final) is
+      'post'; doSync and gamelog.js pass it. Sacks/INT/FR/TDs still live.
+      PROVED BY tools/test_livescore.js (real doSync, faked ESPN answers:
+      kickoff 0-0 = 0 pts, Q2 = sacks only, final = +7 tier) — 6 FAILs on
+      the pre-fix code incl. "kickoff, 0-0: got 10".
+- [x] 1c. Live player rows: quarter with the clock. The text was already
+      "Q2 10:32", but `.row .nm small{white-space:pre-line}` let it wrap at
+      its space and out-ranked .gLive's green, so "Q2" hid at the end of a
+      grey line and "10:32" sat alone below (seen in Chromium at 360px).
+      FIX: no-break space in liveClock; app.css keeps row badges nowrap and
+      coloured; unknown ESPN wording falls back to scoreboard period +
+      displayClock ("Q3 5:12") instead of "LIVE". PROVED BY
+      tools/test_livescore.js (1c block) + test_schedule.js; 9 FAILs pre-fix.
+      Chromium (real index.html, live game injected): 0 splits at 320/360/412
+      px x 100%/130% text. Residual: at <=320px, or 360px at 130% text, the
+      column is narrower than "Q2 10:32", so it shows "Q2 10…" (quarter kept)
+      — the same ellipsis player names already get there.
 - [ ] 1d. Light test protocol on the changes, then ship + Release + link.
 
 ## When Tj asks for something new

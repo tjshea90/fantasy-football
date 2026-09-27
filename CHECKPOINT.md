@@ -1,12 +1,12 @@
-# CHECKPOINT 59 — read me first, then TASKS.md
+# CHECKPOINT 66 — read me first, then TASKS.md
 
-**Written:** 2026-09-27T17:42:10Z · **version:** 8.9 · **tests:** all 29 suites green
+**Written:** 2026-09-27T17:53:50Z · **version:** 8.9 · **tests:** all 30 suites green
 
 ## Just done
-1a done: lineup edits pin the whole lineup (Store.pinLineup) so a restart/sync can't re-pick it; Copy wk N-1 exact + pinned; '— empty —' stays empty; failed save toasts. tools/test_lineupsave.js (9 FAILs pre-fix, green now)
+1b+1c done: live DEF points-allowed held until final (Espn.gameStats state gate); live clock never splits from its quarter (NBSP + nowrap/colour CSS, period/clock fallback). tools/test_livescore.js (15 FAILs pre-fix)
 
 ## Do this next
-1b: live DEF points-allowed tier must not score until the game is final
+1d: light test protocol on this session's changes, then ship v9.0 + Release + link
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,11 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M MANIFEST.txt
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  411c312 ckpt 59: 1a done: lineup edits pin the whole lineup (Store.pinLineup) so a restart/sync 
   515598e ckpt 52: logged Tj's 2026-09-27 request (lineup persistence, live DEF PA tier, quarter o
   a9c5369 ckpt 71: v8.9 shipped + GitHub Release verified (asset FFTracker-v8.9.apk, run #28); job
   a147300 ship v8.9: v8.9: vivid position colours — solid, clearly distinct QB/RB/WR/TE/K/DEF ch
@@ -37,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   cabcd64 ckpt 57: 1a done: vivid solid position chips (min OKLab dE 16.7, was 2.2), chip-text cas
   ae16865 ckpt 52: logged Tj's 2026-09-25 request (vivid position colours + light tests) in TASKS.
   8c06bae ckpt 189: v8.7 and v8.8 shipped; both GitHub Releases verified with APK assets; job arch
-  af25eb4 ship v8.8: v8.8: full test after the v8.7 features — dead long-press game-log modal re
 ```
 
-(8 automatic checkpoint(s) since the last deliberate one — the
+(6 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
