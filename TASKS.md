@@ -1,10 +1,34 @@
 # TASKS — the current job, in Tj's words
 
-## Current job — none open
+## Current job — the 2026-09-27 request (lineup persistence + live scoring)
 
-The 2026-09-25 job (vivid position colours + light test) is finished: shipped
-as v8.9, archived to LADDER.md §45. Anything new from Tj goes here as
-unticked boxes, in his words, before any code.
+> "For this app, make sure if I adjust my weekly lineup or my opponent's
+> weekly lineup, it saves it. I think I changed it then closed the app and
+> when I went back to the app it defaulted back to a different lineup. Every
+> time I alter any part of my lineup it should auto save and persist even
+> after app restart.
+>
+> For the live scoring defense, it is showing 10 points scored at the
+> beginning of the game because the team the defense is playing has 0 points.
+> Do not add points for this until the game is final. A defense should not
+> begin a game with 10 fantasy points, that makes no sense.
+>
+> For the players in the live scoring section, make sure it tells me what
+> quarter they are in if it is live. Right now it just says 10:32 but doesn't
+> tell me what quarter"
+
+- [ ] 1a. Lineups: every change to MY weekly lineup AND the OPPONENT's weekly
+      lineup is saved to disk immediately and survives an app restart (find
+      why a restart "defaulted back to a different lineup" — auto-lineup
+      overwriting a manual one, a save not flushed before close, or the
+      opponent lineup never persisted at all). Named test proves it.
+- [ ] 1b. Live DEF: points-allowed tier (0 allowed = +10 etc.) is NOT
+      credited until the game is final — a defense must not start a game on
+      10 points. Other DEF stats (sacks, INTs, TDs) still count live. Check
+      the rule against RULES_2026.md. Named test proves it.
+- [ ] 1c. Live player rows: when the game is live, show the quarter with the
+      clock ("Q2 10:32", not "10:32"). Named test proves it.
+- [ ] 1d. Light test protocol on the changes, then ship + Release + link.
 
 ## When Tj asks for something new
 
