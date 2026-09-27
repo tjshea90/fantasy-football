@@ -237,6 +237,11 @@
           week: e.week ? e.week.number : week,
           state: (e.status && e.status.type) ? e.status.type.state : 'pre',
           detail: (e.status && e.status.type) ? e.status.type.shortDetail : '',
+          /* the quarter and game clock as numbers, separately from the
+             wording above — Schedule falls back on them if ESPN ever words a
+             live status in a way liveClock does not know (2026-09-27) */
+          period: (e.status && e.status.period) ? Number(e.status.period) || 0 : 0,
+          clock: (e.status && e.status.displayClock) ? String(e.status.displayClock) : '',
           teams: teams
         });
       }

@@ -235,6 +235,13 @@ summary::-webkit-details-marker{display:none}
 .gEarly{color:var(--accent);font-weight:700}
 .gLive{color:var(--good);font-weight:700}
 .gDone{color:var(--dim);font-weight:400;opacity:.65}
+/* Inside a player row, `.row .nm small` (dim, pre-line) out-ranked all four
+   above: a live "Q2 10:32" wrapped at its space and lost its green, so the
+   quarter hid at the end of one grey line and "10:32" stood alone on the
+   next (Tj, 2026-09-27). The badge is one unit, in its own colour. */
+.row .nm small.gWhen,.row .nm small.gEarly,.row .nm small.gLive,.row .nm small.gDone{white-space:nowrap}
+.row .nm small.gEarly{color:var(--accent);font-weight:700}
+.row .nm small.gLive{color:var(--good);font-weight:700}
 /* The alert card. Bordered and tinted rather than merely coloured text,
    because Tj's complaint is that he FORGETS — this has to survive being
    scrolled past at a glance. */

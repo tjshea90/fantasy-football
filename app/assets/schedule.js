@@ -70,6 +70,8 @@
           kick: g.date,
           state: g.state || 'pre',
           detail: g.detail || '',
+          period: g.period || 0,
+          clock: g.clock || '',
           home: t.homeAway === 'home',
           opp: String(other.abbr || '').toUpperCase()
         };
@@ -158,12 +160,27 @@
      scoreboard the live poll already fetches every tick (kickoffs[].detail,
      kept in memory by ingest), so it costs no request. Anything it does not
      recognise — a delay, a new ESPN wording — still reads LIVE. */
-  function liveClock(detail) {
+  /* THE QUARTER NEVER COMES OFF THE CLOCK (Tj, 2026-09-27: "make sure it
+     tells me what quarter they are in if it is live. Right now it just says
+     10:32 but doesn't tell me what quarter"). The text was always "Q2 10:32"
+     — but `.row .nm small{white-space:pre-line}` let the badge wrap at its
+     one space, so in the narrow Live columns "Q2" ended one line (in the same
+     grey as "WR DET" beside it, because that rule also out-ranked .gLive's
+     colour) and "10:32" sat alone on the next. The two halves are joined by a
+     NO-BREAK space now, so no stylesheet can split them again, and app.css
+     keeps the whole badge on one line in its own colour. test_livescore.js. */
+  var NB = '\u00a0';
+  function liveClock(detail, period, clk) {
     var s = String(detail || '').trim(), m;
-    if ((m = /^(\d{1,2}:\d{2})\s*-\s*(1st|2nd|3rd|4th)$/i.exec(s))) return 'Q' + m[2].charAt(0) + ' ' + m[1];
-    if ((m = /^(\d{1,2}:\d{2})\s*-\s*(\d?OT)$/i.exec(s))) return m[2].toUpperCase() + ' ' + m[1];
+    if ((m = /^(\d{1,2}:\d{2})\s*-\s*(1st|2nd|3rd|4th)$/i.exec(s))) return 'Q' + m[2].charAt(0) + NB + m[1];
+    if ((m = /^(\d{1,2}:\d{2})\s*-\s*(\d?OT)$/i.exec(s))) return m[2].toUpperCase() + NB + m[1];
     if (/^half/i.test(s)) return 'Half';
-    if ((m = /^end of (?:the )?(1st|2nd|3rd|4th)\b/i.exec(s))) return 'End Q' + m[1].charAt(0);
+    if ((m = /^end of (?:the )?(1st|2nd|3rd|4th)\b/i.exec(s))) return 'End' + NB + 'Q' + m[1].charAt(0);
+    /* wording it does not know (a delay, a new ESPN phrase): the scoreboard's
+       own period and clock numbers still say which quarter it is */
+    var q = Number(period) || 0, c = /^\d{1,2}:\d{2}$/.test(String(clk || '')) ? String(clk) : '';
+    if (q >= 1 && q <= 4) return 'Q' + q + (c ? NB + c : '');
+    if (q > 4) return (q === 5 ? 'OT' : (q - 4) + 'OT') + (c ? NB + c : '');
     return 'LIVE';
   }
   /* How much of a team's game is still to play, 0..1 (2026-09-24b) — for the
@@ -209,7 +226,7 @@
       opp: (g.home ? 'vs ' : '@ ') + g.opp,
       text: DAYS[day] + ' ' + clock(d)
     };
-    if (g.state === 'in') { out.text = liveClock(g.detail); out.live = true; out.early = false; }
+    if (g.state === 'in') { out.text = liveClock(g.detail, g.period, g.clock); out.live = true; out.early = false; }
     else if (g.state === 'post') { out.text = 'final'; out.done = true; out.early = false; }
     else if (out.at < Date.now()) { out.text = DAYS[day] + ' ' + clock(d); out.early = false; }
     return out;
