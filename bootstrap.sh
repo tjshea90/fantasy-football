@@ -122,3 +122,10 @@ else
     cat "$f"; echo
   done
 fi
+
+cat <<'SHORT'
+- SETUP RULE (Tj 2026-10-10, CLAUDE.md "Standing setup rules"): at session start take stock of
+  plugins/skills/connectors (ListSkills/ListPlugins/ListConnectors) and use any that improve Android 16
+  app building, UI/theming, code accuracy or Claude-usage efficiency; on conflict pick the best one.
+  Assume you can be cut off any moment: ckpt after every step so a cold session resumes losslessly.
+SHORT
