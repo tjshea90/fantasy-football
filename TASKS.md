@@ -42,4 +42,4 @@ printed at session start; read it only if one of those issues comes up again.
 - [x] 6a. Backfill S.released from past 'drop' transactions (pre-v9.1 drops)
 - [x] 6b. Lineup drop-downs for completed weeks include that team's released players
 - [x] 6c. (test_history.js) Points for released players: stat line, else league book row by name
-- [ ] 6d. Test + ship
+- [x] 6d. (v9.2 released) Test + ship
