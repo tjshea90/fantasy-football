@@ -88,6 +88,7 @@ tools/ckpt.sh
 tools/test_ai.js
 app/assets/handoff.js
 tools/test_handoff.js
+tools/test_history.js
 app/assets/schedule.js
 tools/test_schedule.js
 tools/test_net.js
