@@ -120,6 +120,7 @@ releases/FFTracker-v9.1.apk
 tools/sessionlog.py
 tools/note.sh
 tools/test_checkpoint.js
+tools/test_claudeprep.js
 WORKLOG.md
 SESSIONLOG.md
 WAITING.md

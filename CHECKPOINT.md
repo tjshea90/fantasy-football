@@ -1,6 +1,6 @@
-# CHECKPOINT 65 — read me first, then TASKS.md
+# CHECKPOINT 67 — read me first, then TASKS.md
 
-**Written:** 2026-10-22T20:48:56Z · **version:** 9.2 · **tests:** all 33 suites green
+**Written:** 2026-10-22T20:50:35Z · **version:** 9.2 · **tests:** all 33 suites green
 
 ## Just done
 ship: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters, byes, injuries, projections and scores; file is built only after
@@ -23,10 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M STATE.md
+     M MANIFEST.txt
 
 ## Last ten checkpoints
 ```
+  641c34b ckpt 65: ship: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters,
   d3d03a2 ckpt 63: Refresh-everything-before-Claude gate (all share/ask buttons) done + test_claud
   831040c ckpt 100: v9.2 shipped + Release verified: old players restorable into completed-week li
   3a00af2 ship v9.2: v9.2: restore old players into completed weeks' lineup drop-downs; points fro
@@ -36,7 +37,6 @@ request in his own words and `git log` carries every step already taken.
   d17a0d4 ckpt 82: v9.1 shipped and Release verified (asset FFTracker-v9.1.apk)
   01db40b ship v9.1: attach built APK
   2841219 ship v9.1: v9.1: dropped players keep prior weeks' points; Is-this-player-available sear
-  6b79442 ckpt 73: ship: v9.1: dropped players keep prior weeks' points; Is-this-player-available 
 ```
 
 (1 automatic checkpoint(s) since the last deliberate one — the
