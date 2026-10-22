@@ -1,12 +1,12 @@
-# CHECKPOINT 53 — read me first, then TASKS.md
+# CHECKPOINT 71 — read me first, then TASKS.md
 
-**Written:** 2026-10-10T02:14:48Z · **version:** 9.0 · **tests:** all 31 suites green
+**Written:** 2026-10-22T05:10:56Z · **version:** 9.0 · **tests:** all 32 suites green
 
 ## Just done
-Added Tj's standing setup rules (2026-10-10: use plugins/skills/connectors, Android 16, interruption-proof ladder + cold resume) to CLAUDE.md and the session-start briefing
+Done: history-safe drops (released list), availability search card, 32 DEF always present + searchable, full backup export/import with file picker. All suites green.
 
 ## Do this next
-Nothing pending from this request; continue from TASKS.md. Rule text is identical in all 5 repos - edit all five to change it
+Run ship.sh for the next version and publish the Release (see CLAUDE.md), then tick TASKS item 5
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,9 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  c6a867b ckpt 53: Added Tj's standing setup rules (2026-10-10: use plugins/skills/connectors, And
   c436fda ckpt 107: light test of the tooling change: every caller of autosave/push/secretscan/res
   ed746a0 ckpt 105: checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG 
   f683ae6 ckpt 72: logged Tj's 2026-09-27b request (checkpoint system failed) in TASKS.md; 2a diag
@@ -35,5 +37,5 @@ request in his own words and `git log` carries every step already taken.
   73f42b6 ckpt 66: 1b+1c done: live DEF points-allowed held until final (Espn.gameStats state gate
 ```
 
-(4 automatic checkpoint(s) since the last deliberate one — the
+(19 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
