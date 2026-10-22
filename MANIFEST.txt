@@ -115,8 +115,6 @@ android/res/xml/backup_rules.xml
 android/res/xml/data_extraction_rules.xml
 android/res/drawable/splash_empty.xml
 android/res/values-v31/styles.xml
-releases/FFTracker-v9.0.apk
-releases/FFTracker-v9.1.apk
 tools/sessionlog.py
 tools/note.sh
 tools/test_checkpoint.js
@@ -127,3 +125,4 @@ WAITING.md
 AGENTS.md
 releases/FFTracker-v9.2.apk
 releases/FFTracker-v9.3.apk
+releases/FFTracker-v9.4.apk
