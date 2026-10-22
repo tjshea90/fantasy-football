@@ -1,12 +1,12 @@
-# CHECKPOINT 71 — read me first, then TASKS.md
+# CHECKPOINT 73 — read me first, then TASKS.md
 
-**Written:** 2026-10-22T05:10:56Z · **version:** 9.0 · **tests:** all 32 suites green
+**Written:** 2026-10-22T05:12:40Z · **version:** 9.0 · **tests:** all 32 suites green
 
 ## Just done
-Done: history-safe drops (released list), availability search card, 32 DEF always present + searchable, full backup export/import with file picker. All suites green.
+ship: v9.1: dropped players keep prior weeks' points; Is-this-player-available search; 32 defenses always present; full-clone backup export/import
 
 ## Do this next
-Run ship.sh for the next version and publish the Release (see CLAUDE.md), then tick TASKS item 5
+verify on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
+     M STATE.md
 
 ## Last ten checkpoints
 ```
+  46e0257 ckpt 71: Done: history-safe drops (released list), availability search card, 32 DEF alwa
   c6a867b ckpt 53: Added Tj's standing setup rules (2026-10-10: use plugins/skills/connectors, And
   c436fda ckpt 107: light test of the tooling change: every caller of autosave/push/secretscan/res
   ed746a0 ckpt 105: checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG 
@@ -37,5 +38,5 @@ request in his own words and `git log` carries every step already taken.
   73f42b6 ckpt 66: 1b+1c done: live DEF points-allowed held until final (Espn.gameStats state gate
 ```
 
-(19 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)

@@ -4470,3 +4470,9 @@ for the bump after this entry was first written, hence this second commit
 to STATE.md — the ship gate checks the narrative against the LAST commit
 touching app/android, and a version stamp is exactly the kind of change
 that should not need its own separate paragraph).
+
+## 2026-10-22 - v9.1 (Tj: drops erased history, availability search, 32 DEF, clone backup)
+- **Drops were destructive.** `Store.removePlayer` stripped the man from every stored lineup and from the roster, so `playerById` could not resolve him and every past week lost his points. Now a drop is effective from `effectiveWeek()` (this week, or next once this week is final); earlier weeks - and this week if he already played/kicked off - keep him. Dropped players are parked in `S.released` (resolved by `playerById`, excluded from `allPlayers` so ownership/waiver logic is unchanged). Re-syncing a past week also re-reads released players' lines (ui.js name index). Pinned by `tools/test_history.js` (fails against v9.0 store.js).
+- **Defenses.** The bundled DB always had 32 DEF, but PlayerDB.refresh pruned every player not seen on an ESPN roster - DEF are never on one, so a refresh deleted them (why Tj typed them by hand). Refresh now never prunes DEF, `init()` re-adds any missing from the bundle, and `search` finds a defense by nickname, city, team code or "chiefs d".
+- **Is this player available?** card at the top of the Rosters tab (`availabilityCard`): same `PlayerDB.search`, shows Taken - <team> / Available; defenses are matched by NFL code so hand-typed "Chiefs D/ST" counts.
+- **Full clone backup.** `Store.exportAll()` = season state + every cache key (`EXTRA_KEYS`); `importJSON` accepts it (returns `'full'`, UI reloads) or a plain old backup. Data tab: Export backup uses the share sheet; Import backup uses the file picker (MainActivity cap raised 4 -> 12 MB) with paste fallback and a replace-confirmation.
