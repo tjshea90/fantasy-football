@@ -139,6 +139,7 @@
                             (see Store.setManualScore) */
       book: {},         /* week -> normName -> compact line for EVERY player (see setBook) */
       transactions: [],
+      released: [],     /* {teamId, player, from} - dropped players, kept so past weeks still score */
       settings: defaults(seed)
     };
   }
@@ -352,6 +353,13 @@
       _pidIndex = {};
       var a = allPlayers(), i;
       for (i = 0; i < a.length; i++) _pidIndex[a[i].player.id] = a[i];
+      /* released players resolve too, so past weeks keep their points; a
+         current roster entry always wins */
+      var rel = S.released || [];
+      for (i = 0; i < rel.length; i++) {
+        var rp = rel[i].player;
+        if (rp && !_pidIndex[rp.id]) _pidIndex[rp.id] = { team: team(rel[i].teamId), player: rp, released: true };
+      }
       _pidGen = _gen;
     }
     var hit = _pidIndex[pid];
@@ -383,22 +391,50 @@
                              pos: p.pos, week: S.settings.currentWeek });
     save(); return p;
   }
+  /* A drop is HISTORY-SAFE (Tj, 2026-10-22: "if I remove players from my team
+   * it removes them from the team for prior weeks and deducts the points they
+   * made. If a week is already final, those players are locked in and their
+   * points stay"). The old version stripped the man from EVERY stored lineup
+   * and he vanished from the roster, so playerById could no longer resolve him
+   * and every past week he started in lost his points. Now:
+   *  - the drop takes effect from `effectiveWeek` forward: this week, or next
+   *    week when this one is already final;
+   *  - lineups for earlier weeks (and this week, if the man has already played
+   *    or kicked off) keep him;
+   *  - he is parked in S.released so playerById still resolves him for those
+   *    weeks. test_history.js. */
+  function effectiveWeek() {
+    var w = Number(S.settings.currentWeek) || 1;
+    return weekIsScored(w) ? w + 1 : w;
+  }
   function removePlayer(teamId, pid) {
     var t = team(teamId); if (!t) return false;
     var i, gone = null;
-    for (i = 0; i < t.players.length; i++) if (t.players[i].id === pid) { gone = t.players.splice(i, 1)[0]; break; }
+    for (i = 0; i < t.players.length; i++) if (t.players[i].id === pid) { gone = t.players[i]; break; }
     if (!gone) return false;
-    /* pull him out of every stored lineup so nothing dangles */
+    var eff = effectiveWeek(), cur = Number(S.settings.currentWeek) || 1;
+    /* decide which weeks keep him BEFORE he leaves the roster (isLocked
+       resolves him through playerById) */
+    var keepWeek = {};
     for (var w in S.lineups) {
       if (!Object.prototype.hasOwnProperty.call(S.lineups, w)) continue;
-      var L = S.lineups[w][teamId]; if (!L) continue;
+      var wn = Number(w);
+      if (wn < eff || (wn === cur && isLocked(wn, pid))) keepWeek[w] = true;
+    }
+    t.players.splice(i, 1);
+    if (!S.released) S.released = [];
+    S.released.push({ teamId: teamId, player: gone, from: eff });
+    /* pull him out of the lineups that are still open so nothing dangles */
+    for (var w2 in S.lineups) {
+      if (!Object.prototype.hasOwnProperty.call(S.lineups, w2) || keepWeek[w2]) continue;
+      var L = S.lineups[w2][teamId]; if (!L) continue;
       for (var k in L) {
         if (L[k] !== pid) continue;
         delete L[k];
         /* and forget that the slot was hand-picked, or auto-fill would keep
            leaving it empty out of respect for a player who is gone */
-        if (S.lineupManual && S.lineupManual[w] && S.lineupManual[w][teamId]) {
-          delete S.lineupManual[w][teamId][k];
+        if (S.lineupManual && S.lineupManual[w2] && S.lineupManual[w2][teamId]) {
+          delete S.lineupManual[w2][teamId][k];
         }
       }
     }
@@ -875,6 +911,7 @@
     if (!o.book) o.book = {};
     if (!o.weekMeta) o.weekMeta = {};
     if (!o.transactions) o.transactions = [];
+    if (!o.released) o.released = [];
     if (!o.settings) o.settings = {};
     var cur = S.settings || {}, k;
     for (k in cur) {
