@@ -4219,8 +4219,8 @@
       'it never shows up in Downloads or a file manager, and the oldest ones are cleared out ' +
       'once there are more than 8, only after a new one finishes writing' +
       (ab ? ' — last one ' + ab.slice(0, 16).replace('T', ' ') + '.' : '.')));
-    c3.appendChild(el('p', 'hint', 'Cloning to another device (e.g. phone → tablet): tap "Export backup" here (it is a FULL copy of everything) ' +
-      'FULL backup" here, send the file to the other device, then tap "Import FULL backup" there. ' +
+    c3.appendChild(el('p', 'hint', 'Cloning to another device (e.g. phone → tablet): tap "Export backup" here (a FULL copy of everything), ' +
+      'send the file to the other device, then tap "Import backup" there. ' +
       'The other device becomes an exact copy, caught up to this moment.'));
     var ex = el('button', 'btn pri', 'Export backup');
     ex.addEventListener('click', function () {
