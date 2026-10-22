@@ -2236,6 +2236,7 @@
     root.appendChild(chips);
 
     var team = Store.team(rosterSel);
+    addSafe(root, 'Is this player available?', availabilityCard);
     if (team) addSafe(root, team.name + ' roster', function () { return teamRosterCard(team); });
     /* Below the roster he opened this tab to see, above the trade evaluator
        Tj asked to keep at the very bottom (2026-09-15c) — this card is about
@@ -2602,6 +2603,63 @@
     } else {
       c.appendChild(el('p', 'muted', 'Pick at least one player on each side.'));
     }
+    return c;
+  }
+
+  /* "Is this player available?" (Tj, 2026-10-22). Same PlayerDB.search the
+     add-player box uses (so defenses answer to "chiefs", "KC", "kansas city"),
+     then says who owns him in THIS league. Defenses are matched by NFL team
+     code as well as name, because a hand-typed "Chiefs D/ST" has to count. */
+  function availabilityCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h2', null, 'Is this player available?'));
+    var q = el('input'); q.type = 'text';
+    q.setAttribute('autocomplete', 'off'); q.setAttribute('autocorrect', 'off');
+    q.setAttribute('autocapitalize', 'none'); q.setAttribute('spellcheck', 'false');
+    q.setAttribute('data-fk', 'availQ');
+    q.placeholder = 'Player or team — e.g. achane, kupp, seahawks';
+    var out = el('div');
+    c.appendChild(q); c.appendChild(out);
+    function ownerOf(p) {
+      var vv = Names.variants(p.n), i, j, k, tm, rp;
+      for (i = 0; i < S.teams.length; i++) {
+        tm = S.teams[i];
+        for (j = 0; j < tm.players.length; j++) {
+          rp = tm.players[j];
+          if (p.p === 'DEF') {
+            if (rp.pos === 'DEF' && String(rp.nfl || '').toUpperCase() === p.t) return tm;
+            continue;
+          }
+          if (rp.pos === 'DEF') continue;
+          var rv = Names.variants(rp.name);
+          for (k = 0; k < vv.length; k++) if (rv.indexOf(vv[k]) >= 0) return tm;
+        }
+      }
+      return null;
+    }
+    function run() {
+      out.innerHTML = '';
+      if (!q.value.trim()) return;
+      var hits = PlayerDB.search(q.value, 'ANY', 8);
+      if (!hits.length) {
+        out.appendChild(el('p', 'hint', 'No match in the player database. Check the spelling, or refresh ' +
+                                        'it (Data → Sync & data).'));
+        return;
+      }
+      hits.forEach(function (p) {
+        var tm = ownerOf(p), row = el('div', 'res');
+        markPlayer(row, p.n, p.p, p.t);
+        row.appendChild(el('div', 'pos' + posClass(p.p), p.p));
+        var nm = el('div', 'nm');
+        nm.appendChild(document.createTextNode(p.n));
+        nm.appendChild(el('small', null, '  ' + (p.t || '?')));
+        row.appendChild(nm);
+        row.appendChild(tm ? el('span', 'tag out', 'Taken · ' + (tm.id === S.league.me ? 'your team' : tm.name))
+                           : el('span', 'tag', 'Available'));
+        out.appendChild(row);
+      });
+    }
+    q.addEventListener('input', run);
     return c;
   }
 
