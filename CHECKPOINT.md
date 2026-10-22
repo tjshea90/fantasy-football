@@ -1,6 +1,6 @@
-# CHECKPOINT 94 — read me first, then TASKS.md
+# CHECKPOINT 97 — read me first, then TASKS.md
 
-**Written:** 2026-10-22T05:36:08Z · **version:** 9.1 · **tests:** all 32 suites green
+**Written:** 2026-10-22T05:37:57Z · **version:** 9.1 · **tests:** all 32 suites green
 
 ## Just done
 ship: v9.2: restore old players into completed weeks' lineup drop-downs; points from league book
@@ -27,6 +27,7 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  a765d5d ckpt 94: ship: v9.2: restore old players into completed weeks' lineup drop-downs; points
   12437b8 ckpt 92: ship: v9.2: restore old players into completed weeks' lineup drop-downs; points
   d17a0d4 ckpt 82: v9.1 shipped and Release verified (asset FFTracker-v9.1.apk)
   01db40b ship v9.1: attach built APK
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   c6a867b ckpt 53: Added Tj's standing setup rules (2026-10-10: use plugins/skills/connectors, And
   c436fda ckpt 107: light test of the tooling change: every caller of autosave/push/secretscan/res
   ed746a0 ckpt 105: checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG 
-  f683ae6 ckpt 72: logged Tj's 2026-09-27b request (checkpoint system failed) in TASKS.md; 2a diag
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
