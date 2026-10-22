@@ -67,6 +67,24 @@ ok(Store.getLineup(6, t.id).RB2 === undefined, 'next week drops him');
 const sb2 = boot(sb.localStorage._d);
 ok(sb2.Store.playerById(star.id) !== null, 'released players survive a restart');
 
+// ---- pre-v9.1 drops: restore from transactions + league book (2026-10-22b)
+{
+  const b = boot(), St = b.Store, T = St.get(), tm = T.teams[1];
+  T.settings.currentWeek = 6;
+  T.weekMeta['3'] = { synced: true, allFinal: true };
+  T.transactions.unshift({ at: 'x', type: 'drop', team: tm.name, player: 'Old Guy', pos: 'RB', week: 4 });
+  T.book['3'] = { 'old guy': { n: 'Old Guy', t: 'DAL', p: 14.2 } };
+  ok(St.backfillReleased() === 1, 'backfill rebuilds a pre-v9.1 drop from its transaction');
+  ok(St.backfillReleased() === 0, 'backfill is idempotent');
+  const opts = St.eligible(tm.id, 'RB', 3);
+  const old = opts.find(p => p.name === 'Old Guy');
+  ok(!!old && old.nfl === 'DAL', 'completed week drop-down offers the old player (nfl from book)');
+  ok(!St.eligible(tm.id, 'RB', 6).some(p => p.name === 'Old Guy'), 'open week drop-down does not');
+  St.setSlot(3, tm.id, 'RB1', old.id, true);
+  ok(Math.abs(St.teamWeekPoints(3, tm.id).total - 14.2) < 0.01, 'restored player scores his league-book points');
+  ok(St.teamWeekPoints(3, tm.id).detail[0].played === true, 'restored player counts as played');
+}
+
 // full backup
 sb.localStorage.setItem('fftracker_usage_v1', '{"calls":[1]}');
 const js = Store.exportAll();

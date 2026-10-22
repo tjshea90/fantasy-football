@@ -641,6 +641,7 @@
         return;
       }
       S = Store.init(seed);
+      try { Store.backfillReleased(); } catch (e) { /* history restore is optional */ }
       week = S.settings.currentWeek || 1;
       /* Tj: "if I switch apps then go back to the fantasy app it
        * automatically goes back to what I was already looking at last.
