@@ -4866,6 +4866,14 @@
         var v = Names.variants(pl.name), j;
         for (j = 0; j < v.length; j++) byName[v[j]] = pl.id;
       });
+      /* Dropped players still own their earlier weeks: a re-sync of a past
+         week must re-read their lines too (current roster entries win). */
+      (Store.get().released || []).forEach(function (r) {
+        var pl = r.player;
+        if (pl.pos === 'DEF') { if (!byName['DEF:' + pl.nfl]) byName['DEF:' + pl.nfl] = pl.id; return; }
+        var v = Names.variants(pl.name), j;
+        for (j = 0; j < v.length; j++) if (!byName[v[j]]) byName[v[j]] = pl.id;
+      });
       var stats = Store.getStats(syncedWeek), matched = 0, seenPid = {};
       /* A hand-entered adjustment must survive the wipe below, or every
          re-sync (which a live poll does every 45s) silently erases it. This
