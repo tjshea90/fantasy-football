@@ -36,3 +36,10 @@ printed at session start; read it only if one of those issues comes up again.
       contained in main.
 - [ ] Standing: if a reputable free third projection source turns up, it is
       worth adding (NFL.com, FantasyPros, Yahoo, MFL rejected — LADDER.md §27).
+
+# TASKS — 2026-10-22b request (Tj)
+> "Easy way to put my old players back into the prior weeks. Prior weeks show empty slots but they had players before I removed them. For completed weeks, put all the players my team (and other teams) used to have into the lineup drop-downs so I can restore historical matchups. Recalculate/restore each player's league fantasy points from their stats for the week open in the app."
+- [ ] 6a. Backfill S.released from past 'drop' transactions (pre-v9.1 drops)
+- [ ] 6b. Lineup drop-downs for completed weeks include that team's released players
+- [ ] 6c. Points for released players: stat line, else league book row by name
+- [ ] 6d. Test + ship
