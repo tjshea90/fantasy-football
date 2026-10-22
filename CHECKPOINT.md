@@ -1,12 +1,12 @@
-# CHECKPOINT 82 — read me first, then TASKS.md
+# CHECKPOINT 92 — read me first, then TASKS.md
 
-**Written:** 2026-10-22T05:18:30Z · **version:** 9.1 · **tests:** all 32 suites green
+**Written:** 2026-10-22T05:34:33Z · **version:** 9.1 · **tests:** all 32 suites green
 
 ## Just done
-v9.1 shipped and Release verified (asset FFTracker-v9.1.apk)
+ship: v9.2: restore old players into completed weeks' lineup drop-downs; points from league book
 
 ## Do this next
-Nothing pending. Note: ship.sh skipped the APK because build/ was empty - run bash build.sh BEFORE ship.sh
+verify on the phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
+     M STATE.md
      M TASKS.md
 
 ## Last ten checkpoints
 ```
+  d17a0d4 ckpt 82: v9.1 shipped and Release verified (asset FFTracker-v9.1.apk)
   01db40b ship v9.1: attach built APK
   2841219 ship v9.1: v9.1: dropped players keep prior weeks' points; Is-this-player-available sear
   6b79442 ckpt 73: ship: v9.1: dropped players keep prior weeks' points; Is-this-player-available 
@@ -36,8 +38,7 @@ request in his own words and `git log` carries every step already taken.
   ed746a0 ckpt 105: checkpoint-system fix done (2b-2g): note.sh/WORKLOG, sessionlog.py/SESSIONLOG 
   f683ae6 ckpt 72: logged Tj's 2026-09-27b request (checkpoint system failed) in TASKS.md; 2a diag
   f432b24 ckpt 70: v9.0 shipped + GitHub Release verified (asset FFTracker-v9.0.apk, run #29); job
-  4504331 ship v9.0: v9.0: lineup edits saved exactly as set through restarts (whole lineup pinned
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(9 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
