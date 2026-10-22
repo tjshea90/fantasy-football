@@ -77,3 +77,4 @@
 2026-09-24T20:49Z | v8.8 | step 277/279 | v8.8: full test after the v8.7 features — dead long-press game-log modal removed; all crawls/netlog/timings clean (the other six full-test fixes shipped in v8.7)
 2026-09-25T01:45Z | v8.9 | step 279/281 | v8.9: vivid position colours — solid, clearly distinct QB/RB/WR/TE/K/DEF chips (fixes v8.7's grey chip text); light test clean
 2026-09-27T17:58Z | v9.0 | step 279/281 | v9.0: lineup edits saved exactly as set through restarts (whole lineup pinned); live DEF points-allowed only at the final; live clock always shows the quarter; light test clean
+2026-10-22T05:14Z | v9.1 | step 290/292 | v9.1: dropped players keep prior weeks' points; Is-this-player-available search; 32 defenses always present; full-clone backup export/import
