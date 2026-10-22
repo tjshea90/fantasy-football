@@ -2655,7 +2655,7 @@
         nm.appendChild(el('small', null, '  ' + (p.t || '?')));
         row.appendChild(nm);
         row.appendChild(tm ? el('span', 'tag out', 'Taken · ' + (tm.id === S.league.me ? 'your team' : tm.name))
-                           : el('span', 'tag', 'Available'));
+                           : el('span', 'tag ok', 'Available'));
         out.appendChild(row);
       });
     }
