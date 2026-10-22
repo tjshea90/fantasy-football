@@ -29,7 +29,7 @@ S.settings.currentWeek = 5;
 for (let w = 1; w <= 5; w++) {
   Store.setSlot(w, t.id, 'RB1', star.id, true);
   S.stats[String(w)] = S.stats[String(w)] || {};
-  S.stats[String(w)][star.id] = { played: true, rushYds: 100, rushTD: 1 };
+  S.stats[String(w)][star.id] = Object.assign(sb.Scoring.blank ? sb.Scoring.blank() : {}, { played: true, rush: { yds: 100, td: 1, twoPt: 0, long: 0 } });
 }
 for (let w = 1; w <= 4; w++) S.weekMeta[String(w)] = { synced: true, allFinal: true };
 const before = [1, 2, 3, 4].map(w => Store.teamWeekPoints(w, t.id).total);
