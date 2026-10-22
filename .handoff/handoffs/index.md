@@ -1,0 +1,1 @@
+2026-10-22T05:22:45.829Z | fftracker, released players, backup, defenses | FF Tracker v9.1 for Tj. Goal: drops no longer erase prior weeks; availability search; 32 DEF always present; full-clone | 2026-10-22/handoff-2026-10-22T05-22-45-829Z.md

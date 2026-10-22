@@ -378,3 +378,14 @@ This rule is identical in all five of Tj's repos (novig, scorebox, fantasy-footb
 4. **Make the handoff cold-resumable.** A new session on any account must be able to read, with nothing else, what is DONE, what is IN PROGRESS, what comes NEXT and HOW to resume: that is `CHECKPOINT.md` + `TASKS.md` (+ `tools/resume.sh`'s briefing at session start). If you did not see the briefing, run `bash tools/resume.sh` and tell Tj the hook didn't fire. If `tools/install-hooks.sh` exists, run it first.
 5. **Longer sessions are fine; waste is not.** Spend usage where it makes a better product or fixes a bug. Save it where it doesn't: hand mechanical or long-running work (builds, test runs, waiting on CI) to GitHub Actions rather than polling, run only the tests that matter on the way and the full suite at milestones, don't re-read finished work or re-derive established facts, and use prompt caching when calling the Claude API from app code.
 6. **If this rule and the repo's older text disagree, tell Tj in one line and follow the stricter safety (save more, not less).** To change this rule, edit it in all five repos so they stay identical.
+
+<!-- handoff:learnings:begin -->
+## Session Learnings (auto-updated by handoff)
+
+### Key Decisions
+- Decision: park dropped players in S.released, resolve via playerById, exclude from allPlayers — Reason: past weeks keep points, ownership logic unchanged
+- Decision: drop effective this week or next if week final; player who already played keeps current week — Reason: Tj rule, points locked once earned
+- Decision: refresh never prunes DEF, init restores missing DEF from bundle — Reason: DEF absent from ESPN rosters, refresh was deleting them
+- Decision: exportAll wraps state + cache keys; importJSON accepts both, returns full — Reason: clone tablet from phone
+
+<!-- handoff:learnings:end -->
