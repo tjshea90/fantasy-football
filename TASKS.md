@@ -1,41 +1,15 @@
-# TASKS — the current job, in Tj's words
+# TASKS — the 2026-10-22 request, in Tj's words
 
-## Current job
+> "Removing players from my team (and maybe other teams) removes them for prior weeks and deducts the points they made. If a week is already final, those players are locked in and their points stay for prior weeks. Adding and dropping players only affects the team after the added and dropped players."
+> "Quick section (maybe Rosters tab): 'is this player available' — search player or team with the same logic as other searches; says if taken in the league and which team has them (incl. defenses)."
+> "Add all 32 defenses to the app. Sometimes I have to type them in manually."
+> "Quick export/import full data backup of ALL app data so my tablet (weeks behind my phone) can be cloned current."
 
-None — the 2026-09-27b checkpoint-system job is archived in LADDER.md §47
-(v9.0's lineup/live-DEF/quarter job is §46).
-
-## When Tj asks for something new
-
-Write it HERE FIRST, in his own words, as unticked boxes — before writing any
-code. Until it is written into `TASKS.md` as real steps, nobody has actually
-planned the work — a message sitting in a chat window is not a task list.
-
-**You do not have to race a usage cap to get the raw request itself onto
-disk any more (learned the hard way, 2026-09-15).** A `UserPromptSubmit`
-hook (`tools/capture_inbox.sh`) already writes every message Tj sends to
-`INBOX.md`, verbatim, and commits+pushes it the instant it arrives — before
-you have read a single file. See `INBOX.md`'s own header and CLAUDE.md's
-"Saving work" for the full reasoning. This does not lower the bar on writing
-`TASKS.md` promptly — it means a forgotten or interrupted `TASKS.md` write is
-now a recoverable gap instead of a total loss.
-
-```
-# TASKS — the <date> request, in Tj's words
-
-> "<paste what he actually said, verbatim>"
-
-- [ ] 1a. <first step>
-- [ ] 1b. <second step>
-```
-
-Ticking a box means: written, tested, committed, and the test that proves it is
-named in the box. **Never tick a box you have not verified** — the next account
-will not re-check it.
-
-When a job is finished, move it to `LADDER.md` and reset this file. This file
-is printed into every session briefing, so a finished job left here is re-read
-at cost on every cold start, forever.
+- [ ] 1. Roster drop/add must not rewrite finalized past weeks (history-safe roster changes)
+- [ ] 2. "Is this player available?" search in Rosters tab (players + defenses, shows owning team)
+- [ ] 3. All 32 NFL defenses present in the player pool
+- [ ] 4. Full-data export / import backup (Data tab)
+- [ ] 5. Tests for each, ckpt, ship
 
 ## Waiting on Tj
 
