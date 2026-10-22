@@ -543,7 +543,12 @@
       return PlayerDB.refresh(function (t, p) {
         step('NFL rosters: ' + t, p === undefined ? undefined : Math.round(p * 0.3));
       }).then(function (r) {
-        if (r && (r.error || r.failed)) failed.push('NFL rosters');
+        /* r.failed is the LIST of teams that did not answer (always an array,
+           so testing it for truthiness flagged every run — 2026-10-22 bug).
+           A few slow teams out of 32 is normal on a phone; only a real outage
+           is reported. */
+        var nf = (r && r.failed && r.failed.length) || 0;
+        if (nf > 3) failed.push('NFL rosters (' + nf + ' of 32 teams did not answer)');
       })['catch'](function () { failed.push('NFL rosters'); });
     });
     add(function () {
@@ -563,6 +568,13 @@
       return doSync({ quiet: true }).then(function (m) {
         if (!m && !wasBusy) failed.push('box scores');
       })['catch'](function () { failed.push('box scores'); });
+    });
+    /* the rest of the app, so nothing needs a second manual refresh: whatever
+       Stats tab view is open is refetched too (cheap, never fails the run) */
+    add(function () {
+      step('Stats…', 95);
+      try { var sp = window.Stats && Stats.refresh && Stats.refresh(); return sp && sp.then ? sp['catch'](function () { }) : null; }
+      catch (e) { return null; }
     });
     return chain.then(function () { step('Done', 100); return { failed: failed }; });
   }
@@ -609,7 +621,7 @@
 
     var step1 = el('button', 'btn pri', '1 · Refresh everything, then make the file');
     step1.style.marginTop = '4px';
-    step1.addEventListener('click', function () { afterFreshRefresh(makeFile, 'Before making the file'); });
+    step1.addEventListener('click', function () { afterFreshRefresh(function () { render(); makeFile(); }, 'Before making the file'); });
     function makeFile() {
       var f;
       try { f = opts.build(); }
