@@ -1,12 +1,12 @@
-# CHECKPOINT 100 — read me first, then TASKS.md
+# CHECKPOINT 63 — read me first, then TASKS.md
 
-**Written:** 2026-10-22T05:41:51Z · **version:** 9.2 · **tests:** all 32 suites green
+**Written:** 2026-10-22T20:47:15Z · **version:** 9.2 · **tests:** all 33 suites green
 
 ## Just done
-v9.2 shipped + Release verified: old players restorable into completed-week lineups
+Refresh-everything-before-Claude gate (all share/ask buttons) done + test_claudeprep.js
 
 ## Do this next
-Nothing pending. Tj to test on device.
+Run ship.sh as v9.3 and publish Release; Tj to test on device
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -24,9 +24,11 @@ request in his own words and `git log` carries every step already taken.
 ## Uncommitted right now
      M CHECKPOINT.md
      M TASKS.md
+     M tools/test_gestures.js
 
 ## Last ten checkpoints
 ```
+  831040c ckpt 100: v9.2 shipped + Release verified: old players restorable into completed-week li
   3a00af2 ship v9.2: v9.2: restore old players into completed weeks' lineup drop-downs; points fro
   aad9ce9 ckpt 97: ship: v9.2: restore old players into completed weeks' lineup drop-downs; points
   a765d5d ckpt 94: ship: v9.2: restore old players into completed weeks' lineup drop-downs; points
@@ -36,8 +38,7 @@ request in his own words and `git log` carries every step already taken.
   2841219 ship v9.1: v9.1: dropped players keep prior weeks' points; Is-this-player-available sear
   6b79442 ckpt 73: ship: v9.1: dropped players keep prior weeks' points; Is-this-player-available 
   46e0257 ckpt 71: Done: history-safe drops (released list), availability search card, 32 DEF alwa
-  c6a867b ckpt 53: Added Tj's standing setup rules (2026-10-10: use plugins/skills/connectors, And
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(14 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)

@@ -43,3 +43,7 @@ printed at session start; read it only if one of those issues comes up again.
 - [x] 6b. Lineup drop-downs for completed weeks include that team's released players
 - [x] 6c. (test_history.js) Points for released players: stat line, else league book row by name
 - [x] 6d. (v9.2 released) Test + ship
+
+## 2026-10-22 — refresh everything before any prompt to Claude (Tj)
+> "whenever I press the button to ask Claude anything ... or any button to share any prompt with Claude, first refresh all data in the app ... injuries, updated rosters, NFL bye weeks, NFL full rosters from ESPN ... Do not make the prompt file until all updates and refreshes are complete."
+- [x] `refreshForClaude` / `afterFreshRefresh` in ui.js: NFL rosters (PlayerDB), schedule+byes, injuries, week projections (all reuse windows bypassed via `syncAll(..,{fresh,skipClaude})`), box scores — file/API only after all finish; failed feeds ask "Use saved data?". Wired into all 3 file buttons, team-analysis + wire + advice API buttons, advice pull-to-refresh. Test: tools/test_claudeprep.js
