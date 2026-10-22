@@ -504,6 +504,98 @@
     return c;
   }
 
+
+  /* ---------- REFRESH EVERYTHING BEFORE ANY PROMPT TO CLAUDE (Tj, 2026-10-22)
+   * "whenever I press the button to ask Claude anything ... or any button to
+   *  share any prompt with Claude, first refresh all data in the app ... player
+   *  injuries, updated rosters, NFL bye weeks, NFL full rosters from ESPN ...
+   *  Do not make the prompt file until all updates and refreshes are complete."
+   *
+   * ONE function, used by every such button (the three file exports and the two
+   * paid API asks), so "up to date" cannot mean something different per tab.
+   * Order matters only in that each step is independent and failure-tolerant:
+   *  1. the 32 NFL rosters (PlayerDB: team moves, signings, cuts, status)
+   *  2. schedule -> bye weeks + opponents, injury feed, week projections —
+   *     Recommend.syncAll with {fresh:true, skipClaude:true}: every reuse
+   *     window bypassed, and NO paid API call (this is the step in front of
+   *     the free file route; it must not spend money)
+   *  3. this week's box scores (points so far, who has played)
+   * Resolves { failed: [labels] }; never rejects. The caller builds the prompt
+   * only after this resolves, and is told which feeds fell back to saved data. */
+  var claudePrepRunning = false;
+  /* The paid-API buttons: refresh, then run `go`. If the refresh is declined
+     or refused, the button is put back exactly as it was. */
+  function claudeAsk(go, btn, label) {
+    function restore() { btn.disabled = false; btn.textContent = label; }
+    if (claudePrepRunning || job.name) { restore(); toast('Another refresh is still running — wait for it to finish'); return; }
+    var ran = false;
+    afterFreshRefresh(function () { ran = true; go(); }, 'Before asking Claude');
+    /* declined at the "use saved data?" prompt: nothing ran, re-enable */
+    setTimeout(function () { }, 0);
+    btn.__restore = restore;
+  }
+  function refreshForClaude(onStep) {
+    function step(t, p) { if (onStep) onStep(t, p); }
+    var failed = [], wk = week;
+    var chain = Promise.resolve();
+    function add(fn) { chain = chain.then(fn); }
+    add(function () {
+      step('NFL rosters from ESPN…', 5);
+      if (!window.PlayerDB || !PlayerDB.refresh) return null;
+      return PlayerDB.refresh(function (t, p) {
+        step('NFL rosters: ' + t, p === undefined ? undefined : Math.round(p * 0.3));
+      }).then(function (r) {
+        if (r && (r.error || r.failed)) failed.push('NFL rosters');
+      })['catch'](function () { failed.push('NFL rosters'); });
+    });
+    add(function () {
+      step('Schedule, byes, injuries, projections…', 32);
+      if (window.Schedule) { try { Schedule.refresh(wk, true)['catch'](function () { }); } catch (e) { } }
+      return Recommend.syncAll(wk, S.league.me, function (t, p) {
+        step(t, p === undefined ? undefined : 32 + Math.round(p * 0.45));
+      }, { fresh: true, skipClaude: true }).then(function (rep) {
+        (rep.steps || []).forEach(function (x) {
+          if (/FAILED/.test(x)) failed.push(String(x).replace(/\s+—.*$/, ''));
+        });
+      })['catch'](function (e) { failed.push('advice feeds (' + (e && e.message ? e.message : e) + ')'); });
+    });
+    add(function () {
+      step('This week\'s scores…', 80);
+      var wasBusy = busy;
+      return doSync({ quiet: true }).then(function (m) {
+        if (!m && !wasBusy) failed.push('box scores');
+      })['catch'](function () { failed.push('box scores'); });
+    });
+    return chain.then(function () { step('Done', 100); return { failed: failed }; });
+  }
+  /* Runs refreshForClaude behind its own progress bar, then calls go(). If any
+     feed fell back to saved data the user is told and chooses — never a silent
+     "up to date" claim. */
+  function afterFreshRefresh(go, jobLabel) {
+    if (claudePrepRunning || job.name) {
+      toast('Another refresh is still running — wait for it to finish');
+      return;
+    }
+    claudePrepRunning = true;
+    var t0 = Date.now(), last = 'Refreshing everything…';
+    jobStart('claudeprep', last);
+    var tick = setInterval(function () {
+      jobStep(last + '  (' + Math.round((Date.now() - t0) / 1000) + 's)');
+    }, 1000);
+    refreshForClaude(function (t, p) {
+      last = (jobLabel || 'Before asking Claude') + ': ' + t;
+      jobStep(last, p);
+    }).then(function (r) {
+      clearInterval(tick); jobEnd(); claudePrepRunning = false; render();
+      if (!r.failed.length) { go(); return; }
+      confirmModal('Some data could not refresh',
+        'These feeds failed just now, so the app is using its last saved copy of them:\n\n  • ' +
+        r.failed.join('\n  • ') +
+        '\n\nGo ahead with what the app has, or cancel and try again with a better connection?',
+        'Use saved data', go);
+    });
+  }
+
   function handoffCard(opts) {
     /* opts: { title, blurb, build(), apply(text), status() } */
     var c = el('div', 'card');
@@ -516,9 +608,10 @@
     blurb.addEventListener('click', function () { blurb.classList.toggle('open'); });
     c.appendChild(blurb);
 
-    var step1 = el('button', 'btn pri', '1 · Make the file for Claude');
+    var step1 = el('button', 'btn pri', '1 · Refresh everything, then make the file');
     step1.style.marginTop = '4px';
-    step1.addEventListener('click', function () {
+    step1.addEventListener('click', function () { afterFreshRefresh(makeFile, 'Before making the file'); });
+    function makeFile() {
       var f;
       try { f = opts.build(); }
       catch (e) {
@@ -555,7 +648,7 @@
         'briefing (' + f.text.length + ' characters). Select all, copy, and ' +
         'paste it into a Claude chat.',
         f.text, 'Done', function () { });
-    });
+    }
     c.appendChild(step1);
 
     function applyText(txt) {
@@ -2431,6 +2524,7 @@
     });
     abtn.addEventListener('click', function () {
       abtn.disabled = true; abtn.textContent = 'Comparing your team to the league…';
+      claudeAsk(function () {
       jobStart('teamanalysis', 'Comparing your team to the league…');
       Promise.resolve().then(function () {
         var ctx = TeamReport.context(week, S.league.me, weekOpponents(), S.league.season,
@@ -2448,6 +2542,7 @@
         anote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
           '  ·  the rest of the app is unaffected.';
       });
+      }, abtn, 'Ask Claude');
     });
     var arow = el('div', 'dbrow'); arow.appendChild(abtn);
     acard.appendChild(arow); acard.appendChild(anote); acard.appendChild(aest);
@@ -3171,10 +3266,9 @@
     });
     wsync.addEventListener('click', function () {
       wsync.disabled = true; wsync.textContent = 'Reading the wire…';
-      /* This IS "refreshing waiver wire information" — fired in the
-       * background alongside the injury/Claude chain below, never awaited,
-       * so it adds no latency to a call that already costs money. */
-      refreshPlayerDBIfStale();
+      /* Everything is refreshed first (claudeAsk -> refreshForClaude, which
+         includes the NFL rosters and the injury feed), THEN this runs. */
+      claudeAsk(function () {
       jobStart('waivers', 'Refreshing the injury feed…');
       /* The injury feed is refreshed FIRST, forced — a paid Claude call must
          not reason from whatever ESPN designations happen to already be
@@ -3202,6 +3296,7 @@
           wnote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
             '  ·  the ranked board above is unaffected and still works.';
         });
+      }, wsync, 'Ask Claude about the wire');
     });
     var wrow = el('div', 'dbrow'); wrow.appendChild(wsync);
     wcard.appendChild(wrow); wcard.appendChild(wnote); wcard.appendChild(west);
