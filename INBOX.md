@@ -1001,3 +1001,8 @@ Now I need an easy way to put my old players back into the prior weeks. Right no
 ```
 For this app, whenever I press the button to ask Claude anything such as advice, or if I press any button to share any prompt with Claude, first refresh all data in the app to make sure the prompt for Claude is fully up to date with all relevant information, such as player injuries, updated rosters, NFL bye weeks, NFL full rosters from ESPN, and any other relevant data for Claude to properly assess the prompt. Do not make the prompt file until all updates and refreshes are complete and ready to put in the prompt file
 ```
+
+## 2026-10-22T21:01:11Z
+```
+This came up twice, but I think the ESPN rosters worked. I'm not sure. Also, make sure when this data refreshes for Claude or the Claude prompt, it also refreshes all the data with the rest of the app so I don't have to do it more than once
+```
