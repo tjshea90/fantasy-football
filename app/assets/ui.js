@@ -1080,6 +1080,11 @@
    * have no credit left"). */
   function adviceSyncQuiet() {
     if (jobRunning('advice')) return Promise.resolve();
+    return new Promise(function (done) {
+      afterFreshRefresh(function () { adviceSyncRun().then(done, done); }, 'Before asking Claude', done, 'advice');
+    });
+  }
+  function adviceSyncRun() {
     jobStart('advice', 'Advice: starting…');
     /* bare setInterval/clearInterval, NOT root.* — ui.js is a bare
        `(function () {...})()`, unlike every other module here, so `root`
@@ -3673,6 +3678,7 @@
       fmt: fmt, toast: toast, modal: modal, jobStart: jobStart, jobStep: jobStep,
       jobEnd: jobEnd, jobRunning: jobRunning, rerender: render,
       handoffCard: handoffCard, adviceHandoff: adviceHandoff,
+      askPrep: function (go, onCancel) { afterFreshRefresh(go, 'Before asking Claude', onCancel, 'advice'); },
       gameBadge: gameBadge, earlyGameCard: earlyGameCard, markPlayer: markPlayer,
       slotEl: slotEl, healthTag: healthTag, matchupChip: matchupChip });
   }

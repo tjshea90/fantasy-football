@@ -1329,6 +1329,11 @@
     sync.disabled = running;
     sync.addEventListener('click', function () {
       sync.disabled = true; sync.textContent = 'Working…';
+      /* Tj 2026-10-22: refresh EVERYTHING (NFL rosters, byes, injuries,
+         scores) before any prompt goes to Claude; ui.js runs that first and
+         then calls this body. The bar is held under the 'advice' job from the
+         first instant, so a re-render mid-refresh still shows this running. */
+      (ctx.askPrep || function (go) { go(); })(function () {
       ctx.jobStart('advice', 'Advice: starting…');
       /* An elapsed counter, because the Claude step legitimately runs for a
          minute or two and a bar that has not moved in 90 seconds reads as a
@@ -1355,6 +1360,7 @@
           ctx.modal('Advice sync failed', (e && e.stack) ? e.stack : String(e));
           ctx.rerender();
         });
+      }, function () { sync.disabled = false; sync.textContent = 'Sync advice  ↻'; });
     });
     head.appendChild(sync);
     head.appendChild(el('p', 'hint',
