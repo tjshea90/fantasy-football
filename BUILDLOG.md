@@ -79,3 +79,4 @@
 2026-09-27T17:58Z | v9.0 | step 279/281 | v9.0: lineup edits saved exactly as set through restarts (whole lineup pinned); live DEF points-allowed only at the final; live clock always shows the quarter; light test clean
 2026-10-22T05:14Z | v9.1 | step 290/292 | v9.1: dropped players keep prior weeks' points; Is-this-player-available search; 32 defenses always present; full-clone backup export/import
 2026-10-22T05:39Z | v9.2 | step 290/292 | v9.2: restore old players into completed weeks' lineup drop-downs; points from league book
+2026-10-22T20:51Z | v9.3 | step 290/292 | v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters, byes, injuries, projections and scores; file is built only after
