@@ -9,7 +9,7 @@
 - [x] 2. (browser-checked, Rosters tab) "Is this player available?" search in Rosters tab (players + defenses, shows owning team)
 - [x] 3. (test_history.js; root cause: refresh pruned DEF) All 32 NFL defenses present in the player pool
 - [x] 4. (test_history.js) Full-data export / import backup (Data tab)
-- [ ] 5. Tests for each, ckpt, ship
+- [x] 5. (v9.1 released, asset verified) Tests for each, ckpt, ship
 
 ## Waiting on Tj
 
