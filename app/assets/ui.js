@@ -236,10 +236,10 @@
   var modalSeq = 0;
   /* A yes/no. `danger` paints the confirm button red — used for the two
      destructive ones so they do not look like every other button. */
-  function confirmModal(title, bodyText, okLabel, onOk, danger) {
+  function confirmModal(title, bodyText, okLabel, onOk, danger, onCancel) {
     dialog(title, bodyText, function (box, row, close) {
       var no = el('button', 'btn', 'Cancel');
-      no.addEventListener('click', close);
+      no.addEventListener('click', function () { close(); if (onCancel) onCancel(); });
       var yes = el('button', 'btn ' + (danger ? 'dan' : 'pri'), okLabel || 'OK');
       yes.addEventListener('click', function () { close(); onOk(); });
       row.appendChild(no); row.appendChild(yes);
@@ -583,13 +583,13 @@
       last = (jobLabel || 'Before asking Claude') + ': ' + t;
       jobStep(last, p);
     }).then(function (r) {
-      clearInterval(tick); jobEnd(); claudePrepRunning = false; render();
+      clearInterval(tick); jobEnd(); claudePrepRunning = false;
       if (!r.failed.length) { go(); return; }
       confirmModal('Some data could not refresh',
         'These feeds failed just now, so the app is using its last saved copy of them:\n\n  • ' +
         r.failed.join('\n  • ') +
         '\n\nGo ahead with what the app has, or cancel and try again with a better connection?',
-        'Use saved data', go, false, onCancel);
+        'Use saved data', go, false, function () { render(); if (onCancel) onCancel(); });
     });
   }
 
