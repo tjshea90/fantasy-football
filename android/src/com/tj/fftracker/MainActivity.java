@@ -315,7 +315,7 @@ public class MainActivity extends Activity {
         java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
         byte[] buf = new byte[8192];
         int n, total = 0;
-        final int LIMIT = 4 * 1024 * 1024;   // a reply is kilobytes; refuse a video
+        final int LIMIT = 12 * 1024 * 1024;   // a reply is kilobytes, a full-backup clone a few MB; refuse a video
         while ((n = in.read(buf)) > 0) {
           total += n;
           if (total > LIMIT) throw new java.io.IOException("that file is too large to be a reply");
