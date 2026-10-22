@@ -115,7 +115,7 @@ function wait(cond, ms) {
 }
 function stubFeeds(h, log, opts) {
   var W = h.W; opts = opts || {};
-  W.PlayerDB.refresh = function () { log.push('rosters:start'); return tick(30).then(function () { log.push('rosters:end'); if (opts.rostersFail) throw new Error('offline'); return { ok: true }; }); };
+  W.PlayerDB.refresh = function () { log.push('rosters:start'); return tick(30).then(function () { log.push('rosters:end'); if (opts.rostersFail) throw new Error('offline'); return { failed: [], added: 0 }; }); };
   W.Schedule.refresh = function (wk, force) { log.push('schedule:' + !!force); return Promise.resolve(null); };
   W.Recommend.syncAll = function (wk, tid, step, o) { log.push('syncAll:fresh=' + !!(o && o.fresh) + ',skipClaude=' + !!(o && o.skipClaude)); return tick(30).then(function () { log.push('syncAll:end'); return { steps: [] }; }); };
   W.Espn.weekGames = function () { log.push('boxscores'); return Promise.resolve([]); };
@@ -144,6 +144,8 @@ function stubFeeds(h, log, opts) {
   ok(log.indexOf('schedule:true') >= 0, 'schedule (byes) force-refreshed');
   ok(log.indexOf('syncAll:fresh=true,skipClaude=true') >= 0, 'advice feeds refreshed with every reuse window bypassed and the API skipped');
   ok(log.indexOf('API-CALL') < 0, 'no paid Claude API call was made by the file route');
+  ok(!findButtonByText(h.W.document.body, 'Use saved data'),
+     'REGRESSION (Tj screenshot): a clean roster refresh (failed: []) does not raise "Some data could not refresh"');
 
   console.log('\n-- a failed feed: the user is asked, the file is NOT built silently --');
   var h2 = buildHarness();
