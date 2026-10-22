@@ -591,7 +591,7 @@ ok(/var RATE_TIERS = \{/.test(usX) && /opus:\s*\{ inPerM: 5\.00/.test(usX) &&
    'usage.js prices Opus/Sonnet/Haiku calls at their own published rates, not one flat table');
 ok(/function tierFor\(model\)/.test(usX), 'the tier is chosen from the model string, not assumed');
 
-ok(/opponentsForWeek\(week\)\['catch'\]/.test(recX),
+ok(/opponentsForWeek\(week, fresh\)\['catch'\]/.test(recX),
    'a failed schedule no longer abandons the injury feed, projections and Claude');
 ok(/schedule FAILED/.test(recX), 'and it says so in the report rather than vanishing');
 ok(/Espn\.weekGames\(S\.settings\.season, week, week > 18 \? 3 : 2\)/.test(recX),
@@ -841,8 +841,8 @@ ok((uiN.match(/localAutoAdvance\(\);/g) || []).length === 2,
 }());
 ok(/function viewWire\(root\) \{[\s\S]{0,400}refreshPlayerDBIfStale\(\);/.test(uiN),
    'opening the Wire tab (the "see all players" screen) also nudges a stale database');
-ok(/refreshPlayerDBIfStale\(\);[\s\S]{0,80}jobStart\('waivers'/.test(uiN),
-   'pressing "Ask Claude about the wire" — the literal "refresh waiver wire information" action — does too');
+ok(/claudeAsk\(function \(\) \{[\s\S]{0,120}jobStart\('waivers'/.test(uiN) && /PlayerDB\.refresh\(function/.test(uiN),
+   'pressing "Ask Claude about the wire" refreshes the NFL rosters (and everything else) first — refreshForClaude');
 
 /* ---- the score-input width actually wins its specificity fight ----------
  * `.scoreInput{width:76px}` used to lose outright to the base
