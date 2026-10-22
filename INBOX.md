@@ -996,3 +996,8 @@ Make a quick function to export and import full data backup of all data in the a
 ```
 Now I need an easy way to put my old players back into the prior weeks. Right now the prior weeks show empty slots but they actually had players in those slots before I removed them from my roster. If possible, for completed weeks, put all of the players my team used to have (and the players other teams used to have for their respective rosters) into the drop-down boxes for the lineups so I can quickly restore the historical matchups. Have it recalculate or restore each player's fantasy points for this league based on their stats for the week that is open in the app
 ```
+
+## 2026-10-22T20:38:53Z
+```
+For this app, whenever I press the button to ask Claude anything such as advice, or if I press any button to share any prompt with Claude, first refresh all data in the app to make sure the prompt for Claude is fully up to date with all relevant information, such as player injuries, updated rosters, NFL bye weeks, NFL full rosters from ESPN, and any other relevant data for Claude to properly assess the prompt. Do not make the prompt file until all updates and refreshes are complete and ready to put in the prompt file
+```
