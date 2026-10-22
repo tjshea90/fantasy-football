@@ -42,8 +42,22 @@
      * refresh must never shrink the database */
     if (stored && stored.players && stored.players.length >= bundled.players.length) DB = stored;
     else DB = { version: bundled.version, updated: null, players: bundled.players.slice() };
+    ensureDefenses(bundled);
     dedupe();
     return DB;
+  }
+  /* All 32 team defenses must always exist, whatever an older stored copy or
+     a refresh did to the list. Missing ones are restored from the bundle. */
+  function ensureDefenses(bundled) {
+    var have = {}, i, p;
+    for (i = 0; i < DB.players.length; i++) {
+      p = DB.players[i]; if (p.p === 'DEF') have[p.t] = 1;
+    }
+    var src = (bundled && bundled.players) || [];
+    for (i = 0; i < src.length; i++) {
+      p = src[i];
+      if (p.p === 'DEF' && !have[p.t]) { DB.players.push({ n: p.n, p: 'DEF', t: p.t, b: p.b }); have[p.t] = 1; }
+    }
   }
 
   /* The database carries the same man twice under two spellings — "Kenneth
@@ -90,6 +104,16 @@
 
   /* Search: exact-ish first, then starts-with, then contains. Last-name
    * matches rank above mid-string ones so "hill" finds Hill before Hilliard. */
+  /* A defense is found by nickname ("chiefs"), city ("kansas city"), team
+     code ("kc") or with a trailing "defense"/"dst"/"d" ("chiefs d"). */
+  function defMatch(p, n) {
+    var q = n.replace(/\s+(defense|dst|d\/st|def|d)$/, '');
+    if (!q) return false;
+    if (q === norm(p.t)) return true;
+    var nm = p._n || (p._n = norm(p.n)), parts = nm.split(' ');
+    var nick = parts[parts.length - 1], city = parts.slice(0, -1).join(' ');
+    return nick.indexOf(q) === 0 || (city && city.indexOf(q) === 0);
+  }
   function search(q, posFilter, limit) {
     var d = get(), n = norm(q);
     if (!n) return [];
@@ -99,7 +123,8 @@
       if (posFilter && posFilter !== 'ANY' && p.p !== posFilter) continue;
       var nn = p._n || (p._n = norm(p.n));
       var score = -1;
-      if (nn === n) score = 0;
+      if (p.p === 'DEF' && defMatch(p, n)) score = 1;
+      else if (nn === n) score = 0;
       else if (nn.indexOf(n) === 0) score = 1;
       else {
         var parts = nn.split(' ');
@@ -290,6 +315,10 @@
       if (Object.keys(teamOk).length) {
         var kept = d.players.filter(function (p) {
           var key = p._n || norm(p.n);
+          /* team defenses are not on any ESPN roster, so "not seen" means
+             nothing for them — pruning them here is why Tj had to type
+             defenses in by hand (2026-10-22) */
+          if (p.p === 'DEF') return true;
           if (seen[key]) return true;
           return !teamOk[p.t];
         });
