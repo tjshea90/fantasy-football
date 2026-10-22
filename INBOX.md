@@ -980,3 +980,14 @@ Claude was interrupted by usage. Continue and finish where you left off
 ```
 Continue doing what you are doing, but note that the Claude resume checkpoint system completely failed. Most of these tasks are already completed in a prior Claude session. The checkpoint system is important and I must be able to resume Claude work without losing data or wasting usage
 ```
+
+## 2026-10-22T05:01:13Z
+```
+There is a glitch in this app where if I remove players from my team (and maybe other teams also), it removes them from the team for prior weeks and deducts the points they made. If a week is already final, those players are locked in and their points stay for prior weeks. Adding and dropping players only affects the team after the added and dropped players. 
+
+Also, make a quick section somewhere, maybe in rosters tab, which is "is this player available". It should allow me to search a player or team with the same logic as the other search functions in the app and it tells me if that player or defense is already taken in the league, and if so, what team has the player or team. 
+
+Finally, add all 32 defenses to the app. Sometimes I have to manually type in defenses. 
+
+Make a quick function to export and import full data backup of all data in the app up to current. My tablet is weeks behind my phone on this app and I want a simple way to clone it to bring it current with all the data
+```
