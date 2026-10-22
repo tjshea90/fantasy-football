@@ -991,3 +991,8 @@ Finally, add all 32 defenses to the app. Sometimes I have to manually type in de
 
 Make a quick function to export and import full data backup of all data in the app up to current. My tablet is weeks behind my phone on this app and I want a simple way to clone it to bring it current with all the data
 ```
+
+## 2026-10-22T05:30:22Z
+```
+Now I need an easy way to put my old players back into the prior weeks. Right now the prior weeks show empty slots but they actually had players in those slots before I removed them from my roster. If possible, for completed weeks, put all of the players my team used to have (and the players other teams used to have for their respective rosters) into the drop-down boxes for the lineups so I can quickly restore the historical matchups. Have it recalculate or restore each player's fantasy points for this league based on their stats for the week that is open in the app
+```
