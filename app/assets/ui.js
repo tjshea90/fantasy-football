@@ -4161,10 +4161,18 @@
       'it never shows up in Downloads or a file manager, and the oldest ones are cleared out ' +
       'once there are more than 8, only after a new one finishes writing' +
       (ab ? ' — last one ' + ab.slice(0, 16).replace('T', ' ') + '.' : '.')));
-    var ex = el('button', 'btn pri', 'Export backup');
+    c3.appendChild(el('p', 'hint', 'Cloning to another device (e.g. phone → tablet): tap "Export ' +
+      'FULL backup" here, send the file to the other device, then tap "Import FULL backup" there. ' +
+      'The other device becomes an exact copy, caught up to this moment.'));
+    var ex = el('button', 'btn pri', 'Export FULL backup');
     ex.addEventListener('click', function () {
-      var js = Store.exportJSON();
-      var fn = 'fftracker-backup-w' + week + '.json';
+      var js = Store.exportAll();
+      var fn = 'fftracker-full-backup-w' + week + '.json';
+      var done = false;
+      if (window.Native && Native.exportShare) {
+        try { done = Native.exportShare(fn, js, 'application/json'); } catch (e) { done = false; }
+        if (done) { toast('Saved to Downloads — pick where to send it', 4200); return; }
+      }
       if (window.Native && Native.export) { Native.export(fn, js); toast('Saved to Downloads: ' + fn); }
       else {
         textModal('Copy this backup', 'Select all and copy. This is your whole season — ' +
@@ -4173,17 +4181,39 @@
       }
     });
     c3.appendChild(ex);
-    var im = el('button', 'btn'); im.textContent = 'Import backup'; im.style.marginTop = '8px';
-    im.addEventListener('click', function () {
-      textModal('Import a backup',
-        'Paste a backup JSON. Nothing is replaced until it has been checked, so a ' +
-        'bad paste cannot damage the season you have now.',
-        '', 'Import it', function (txt) {
-        if (!txt || !txt.trim()) return;
-        try { Store.importJSON(txt); S = Store.get(); renderTop(); toast('Imported'); }
-        catch (e) { modal('That backup was not usable', String(e && e.message ? e.message : e) +
+    var im = el('button', 'btn'); im.textContent = 'Import FULL backup'; im.style.marginTop = '8px';
+    function applyBackup(txt) {
+      if (!txt || !txt.trim()) return;
+      confirmModal('Replace everything on this device?',
+        'This device will become an exact copy of the backup. Everything currently ' +
+        'here is replaced (a safety copy is kept automatically). Nothing changes if the file is bad.',
+        'Replace', function () {
+        try {
+          var r = Store.importJSON(txt); S = Store.get();
+          if (r === 'full') { toast('Imported - reloading'); setTimeout(function () { location.reload(); }, 600); }
+          else { renderTop(); toast('Imported'); }
+        } catch (e) { modal('That backup was not usable', String(e && e.message ? e.message : e) +
           '\n\nNothing was changed — the season you had is still here.'); }
-      });
+      }, true);
+    }
+    im.addEventListener('click', function () {
+      function paste() {
+        textModal('Import a backup',
+          'Paste a backup JSON. Nothing is replaced until it has been checked, so a ' +
+          'bad paste cannot damage the season you have now.', '', 'Import it', applyBackup);
+      }
+      if (window.Native && Native.pickFile) {
+        pickWaiting = function (text, err) {
+          if (err) { modal('Could not read that file', err + '\n\nYou can paste it instead.'); return; }
+          if (text === null || text === undefined) return;   /* cancelled */
+          applyBackup(text);
+        };
+        var started = false;
+        try { started = Native.pickFile(); } catch (e) { started = false; }
+        if (started) return;
+        pickWaiting = null;
+      }
+      paste();
     });
     c3.appendChild(im);
     var rb = el('button', 'btn'); rb.textContent = 'Restore from auto-backup'; rb.style.marginTop = '8px';

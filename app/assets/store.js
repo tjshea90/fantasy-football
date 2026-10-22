@@ -884,6 +884,37 @@
     }
     return out;
   }
+  /* FULL CLONE BACKUP (Tj, 2026-10-22: "export and import full data backup of
+   * all data in the app ... my tablet is weeks behind my phone"). exportJSON
+   * is the season state; this wraps it with every other cache the app keeps
+   * (game logs, player db, projections, usage, waivers, news, team analysis)
+   * so a tablet restored from a phone export is indistinguishable from it.
+   * importJSON accepts both shapes. The API key is never included. */
+  var EXTRA_KEYS = ['fftracker_gamelog_v1', 'fftracker_playerdb_v1', 'fftracker_proj_v2',
+                    'fftracker_seasonproj_v1', 'fftracker_news_v1', 'fftracker_ai_v1',
+                    'fftracker_teamanalysis_v1', 'fftracker_usage_v1', 'fftracker_waivers_v1'];
+  function rawGet(k) {
+    try {
+      if (root.Native && root.Native.load) return root.Native.load(k) || null;
+      return root.localStorage.getItem(k);
+    } catch (e) { return null; }
+  }
+  function rawSet(k, v) {
+    try {
+      if (root.Native && root.Native.save) root.Native.save(k, v);
+      else root.localStorage.setItem(k, v);
+      return true;
+    } catch (e) { return false; }
+  }
+  function exportAll() {
+    var extras = {}, i, v;
+    for (i = 0; i < EXTRA_KEYS.length; i++) {
+      v = rawGet(EXTRA_KEYS[i]);
+      if (v) extras[EXTRA_KEYS[i]] = v;
+    }
+    return JSON.stringify({ fftBackup: 2, exportedAt: nowISO(), state: JSON.parse(exportJSON()),
+                            extras: extras });
+  }
   /* v3.7: this used to assign S = o and THEN call save(), which touches
      S.settings.savedAt — so a backup with no settings key threw a TypeError
      *after* the live season had already been replaced in memory. The catch
@@ -891,7 +922,8 @@
      settings migration, so an old backup came back missing keys added since.
      Validate everything first, migrate onto a copy, and only then swap. */
   function importJSON(txt) {
-    var o = JSON.parse(txt);
+    var o = JSON.parse(txt), extras = null;
+    if (o && typeof o === 'object' && o.fftBackup && o.state) { extras = o.extras || null; o = o.state; }
     if (!o || typeof o !== 'object') throw new Error('not a tracker backup');
     if (!o.teams || !o.teams.length) throw new Error('no teams in that file');
     var i;
@@ -923,7 +955,13 @@
        not wipe the one already on this phone. An empty key in the file means
        "not included", never "clear it". */
     if (!o.settings.aiKey && cur.aiKey) o.settings.aiKey = cur.aiKey;
-    S = o; bumpGen(); markArchive(); save(); return true;
+    S = o; bumpGen(); markArchive(); save();
+    /* the other caches come along only after the season itself validated */
+    if (extras) for (k in extras) {
+      if (Object.prototype.hasOwnProperty.call(extras, k) && EXTRA_KEYS.indexOf(k) >= 0 &&
+          typeof extras[k] === 'string') rawSet(k, extras[k]);
+    }
+    return extras ? 'full' : true;
   }
   function resetToSeed(seed) { S = fromSeed(seed); markArchive(); save(); return S; }
 
@@ -1032,7 +1070,7 @@
     init: init, get: get, save: save, saveSoon: saveSoon, saveLive: saveLive, flush: flush,
     lastSaveOk: function () { return lastSaveOk; },
     team: team, allPlayers: allPlayers,
-    playerById: playerById, addPlayer: addPlayer, removePlayer: removePlayer,
+    exportAll: exportAll, playerById: playerById, addPlayer: addPlayer, removePlayer: removePlayer,
     slotKeys: slotKeys, eligible: eligible,
     getLineup: getLineup, setSlot: setSlot, copyLineup: copyLineup,
     isManual: isManual, clearManual: clearManual, applyAuto: applyAuto,
