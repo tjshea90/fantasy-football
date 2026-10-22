@@ -82,7 +82,7 @@ ok(sb2.Store.playerById(star.id) !== null, 'released players survive a restart')
   ok(!St.eligible(tm.id, 'RB', 6).some(p => p.name === 'Old Guy'), 'open week drop-down does not');
   St.setSlot(3, tm.id, 'RB1', old.id, true);
   ok(Math.abs(St.teamWeekPoints(3, tm.id).total - 14.2) < 0.01, 'restored player scores his league-book points');
-  ok(St.teamWeekPoints(3, tm.id).detail[0].played === true, 'restored player counts as played');
+  ok(St.teamWeekPoints(3, tm.id).detail.find(d => d.pid === old.id).played === true, 'restored player counts as played');
 }
 
 // full backup
