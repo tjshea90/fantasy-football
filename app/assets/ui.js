@@ -526,13 +526,9 @@
   /* The paid-API buttons: refresh, then run `go`. If the refresh is declined
      or refused, the button is put back exactly as it was. */
   function claudeAsk(go, btn, label) {
-    function restore() { btn.disabled = false; btn.textContent = label; }
-    if (claudePrepRunning || job.name) { restore(); toast('Another refresh is still running — wait for it to finish'); return; }
-    var ran = false;
-    afterFreshRefresh(function () { ran = true; go(); }, 'Before asking Claude');
-    /* declined at the "use saved data?" prompt: nothing ran, re-enable */
-    setTimeout(function () { }, 0);
-    btn.__restore = restore;
+    afterFreshRefresh(go, 'Before asking Claude', function () {
+      btn.disabled = false; btn.textContent = label;
+    });
   }
   function refreshForClaude(onStep) {
     function step(t, p) { if (onStep) onStep(t, p); }
@@ -571,9 +567,10 @@
   /* Runs refreshForClaude behind its own progress bar, then calls go(). If any
      feed fell back to saved data the user is told and chooses — never a silent
      "up to date" claim. */
-  function afterFreshRefresh(go, jobLabel) {
+  function afterFreshRefresh(go, jobLabel, onCancel) {
     if (claudePrepRunning || job.name) {
       toast('Another refresh is still running — wait for it to finish');
+      if (onCancel) onCancel();
       return;
     }
     claudePrepRunning = true;
@@ -592,7 +589,7 @@
         'These feeds failed just now, so the app is using its last saved copy of them:\n\n  • ' +
         r.failed.join('\n  • ') +
         '\n\nGo ahead with what the app has, or cancel and try again with a better connection?',
-        'Use saved data', go);
+        'Use saved data', go, false, onCancel);
     });
   }
 
