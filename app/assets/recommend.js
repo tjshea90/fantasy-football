@@ -939,10 +939,10 @@
   }
 
   /* ---- week opponents -------------------------------------------------- */
-  function opponentsForWeek(week) {
+  function opponentsForWeek(week, force) {
     var S = root.Store.get();
     var m = S.weekMeta[String(week)];
-    if (m && m.opponents) return Promise.resolve(m.opponents);
+    if (!force && m && m.opponents) return Promise.resolve(m.opponents);
     /* 2026-09-15e sweep: this was a hardcoded 2 (regular season) where every
      * other weekGames call site in this app (doSync, liveTick — ui.js) uses
      * week > 18 ? 3 : 2. Currently inert: LAST_WEEK is 17, so `week` here
@@ -998,8 +998,13 @@
     return aiCache;
   }
 
-  function syncAll(week, teamId, onStep) {
+  function syncAll(week, teamId, onStep, opts) {
+    /* opts.fresh: bypass every reuse window (schedule, injury feed, weekly
+       projections) — the Claude-handoff refresh needs data as of NOW.
+       opts.skipClaude: never make the paid API call (the handoff file is the
+       free route; the refresh in front of it must not spend money). */
     var S = root.Store.get(), report = { steps: [] };
+    var fresh = !!(opts && opts.fresh), skipClaude = !!(opts && opts.skipClaude);
     function step(t, p) { if (onStep) onStep(t, p); }
 
     step('Week ' + week + ' schedule…', 8);
@@ -1008,7 +1013,7 @@
        map. A transient schedule endpoint cost the entire advice refresh.
        loadNews already models the right shape: catch internally, record the
        reason, carry on with what still works. */
-    return opponentsForWeek(week)['catch'](function (e) {
+    return opponentsForWeek(week, fresh)['catch'](function (e) {
       report.steps.push('schedule FAILED: ' + ((e && e.message) ? e.message : e) +
                         ' — matchup strength is unavailable, everything else still ran');
       return {};
@@ -1018,7 +1023,7 @@
         report.steps.push(report.opponents + ' games scheduled');
       }
       step('Injury report…', 20);
-      return loadNews(null).then(function () { return opp; });
+      return loadNews(null, fresh ? { force: true } : undefined).then(function () { return opp; });
     }).then(function (opp) {
       report.steps.push(newsCache.error
                           ? ((newsCache.count || 0) > 0
@@ -1031,7 +1036,8 @@
                                              : '')));
       step('Projections from ESPN…', 38);
       if (!root.Projections) return opp;
-      return root.Projections.refresh(S.settings.season, week, function (t, p) { step(t, p); })
+      return root.Projections.refresh(S.settings.season, week, function (t, p) { step(t, p); },
+                                      fresh ? { force: true } : undefined)
         .then(function (c) {
           report.steps.push(c.error ? ('projections FAILED: ' + c.error)
                                     : c.failedNow
@@ -1064,6 +1070,7 @@
             });
         });
     }).then(function (opp) {
+      if (skipClaude) { report.steps.push('Claude API: not called (file route)'); return opp; }
       if (!root.Ai || !root.Ai.configured()) {
         report.steps.push('Claude: no API key set — skipped');
         return opp;
