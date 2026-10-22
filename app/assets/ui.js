@@ -525,10 +525,12 @@
   var claudePrepRunning = false;
   /* The paid-API buttons: refresh, then run `go`. If the refresh is declined
      or refused, the button is put back exactly as it was. */
-  function claudeAsk(go, btn, label) {
+  function claudeAsk(go, btn, label, jobName) {
+    /* the caller's own job name is held from the first instant, so a re-render
+       mid-refresh still shows this button as running (test_jobguard.js) */
     afterFreshRefresh(go, 'Before asking Claude', function () {
       btn.disabled = false; btn.textContent = label;
-    });
+    }, jobName);
   }
   function refreshForClaude(onStep) {
     function step(t, p) { if (onStep) onStep(t, p); }
@@ -567,7 +569,7 @@
   /* Runs refreshForClaude behind its own progress bar, then calls go(). If any
      feed fell back to saved data the user is told and chooses — never a silent
      "up to date" claim. */
-  function afterFreshRefresh(go, jobLabel, onCancel) {
+  function afterFreshRefresh(go, jobLabel, onCancel, jobName) {
     if (claudePrepRunning || job.name) {
       toast('Another refresh is still running — wait for it to finish');
       if (onCancel) onCancel();
@@ -575,7 +577,7 @@
     }
     claudePrepRunning = true;
     var t0 = Date.now(), last = 'Refreshing everything…';
-    jobStart('claudeprep', last);
+    jobStart(jobName || 'claudeprep', last);
     var tick = setInterval(function () {
       jobStep(last + '  (' + Math.round((Date.now() - t0) / 1000) + 's)');
     }, 1000);
@@ -2539,7 +2541,7 @@
         anote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
           '  ·  the rest of the app is unaffected.';
       });
-      }, abtn, 'Ask Claude');
+      }, abtn, 'Ask Claude', 'teamanalysis');
     });
     var arow = el('div', 'dbrow'); arow.appendChild(abtn);
     acard.appendChild(arow); acard.appendChild(anote); acard.appendChild(aest);
@@ -3293,7 +3295,7 @@
           wnote.textContent = 'That did not work: ' + (e && e.message ? e.message : e) +
             '  ·  the ranked board above is unaffected and still works.';
         });
-      }, wsync, 'Ask Claude about the wire');
+      }, wsync, 'Ask Claude about the wire', 'waivers');
     });
     var wrow = el('div', 'dbrow'); wrow.appendChild(wsync);
     wcard.appendChild(wrow); wcard.appendChild(wnote); wcard.appendChild(west);
