@@ -2105,7 +2105,7 @@
          slot instead of dropping it on <body> */
       sel.setAttribute('data-fk', 'ln|' + t.id + '|' + k.key);
       sel.appendChild(new Option('— empty —', ''));
-      var opts = Store.eligible(t.id, k.pos);
+      var opts = Store.eligible(t.id, k.pos, week);
       /* players already used in another slot are shown but marked */
       opts.forEach(function (p) {
         var usedIn = null, kk;

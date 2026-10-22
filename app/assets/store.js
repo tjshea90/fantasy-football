@@ -322,10 +322,55 @@
     }
     return out;
   }
-  function eligible(teamId, slotPos) {
+  /* A week that is over: its lineup is history, so players the team has since
+     dropped belong in its drop-downs (Tj, 2026-10-22b). */
+  function isHistorical(week) {
+    var w = Number(week);
+    return weekIsScored(w) || w < (Number(S.settings.currentWeek) || 1);
+  }
+  function eligible(teamId, slotPos, week) {
     var t = team(teamId); if (!t) return [];
     var ok = slotPos === 'FLEX' ? S.league.flexEligible : [slotPos];
-    return t.players.filter(function (p) { return ok.indexOf(p.pos) >= 0; });
+    var out = t.players.filter(function (p) { return ok.indexOf(p.pos) >= 0; });
+    if (week && isHistorical(week) && S.released) {
+      S.released.forEach(function (r) {
+        if (r.teamId === teamId && r.player && ok.indexOf(r.player.pos) >= 0) out.push(r.player);
+      });
+    }
+    return out;
+  }
+  /* Players dropped BEFORE v9.1 were erased outright: only the 'drop'
+     transaction (name, pos, team, week) survived. Rebuild a released-player
+     record from each so history can be restored. NFL team comes from the
+     league book (every player ESPN ever reported); stats and points then
+     resolve by name like any other player. Idempotent. */
+  function backfillReleased() {
+    if (!S.released) S.released = [];
+    var added = 0, tx = S.transactions || [], i, j;
+    for (i = tx.length - 1; i >= 0; i--) {
+      var x = tx[i]; if (!x || x.type !== 'drop' || !x.player) continue;
+      var tm = null;
+      for (j = 0; j < S.teams.length; j++) if (S.teams[j].name === x.team) tm = S.teams[j];
+      if (!tm) continue;
+      var key = root.Names ? root.Names.canon(x.player) : x.player.toLowerCase();
+      var have = false;
+      tm.players.forEach(function (p) { if ((root.Names ? root.Names.canon(p.name) : p.name.toLowerCase()) === key) have = true; });
+      S.released.forEach(function (r) {
+        if (r.teamId === tm.id && (root.Names ? root.Names.canon(r.player.name) : r.player.name.toLowerCase()) === key) have = true;
+      });
+      if (have) continue;
+      var nfl = '', w, row;
+      for (w in S.book) {
+        row = (root.Names && root.Names.hit) ? root.Names.hit(S.book[w], x.player) : null;
+        if (row && row.t) nfl = row.t;
+      }
+      S.released.push({ teamId: tm.id, from: Number(x.week) || 1, restored: true,
+        player: { id: nextPid(), name: x.player, pos: x.pos, nfl: nfl,
+                  bye: nfl ? (S.byes[nfl] || 0) : 0, espnId: '' } });
+      added++;
+    }
+    if (added) save();
+    return added;
   }
 
   /* --- teams / rosters --------------------------------------------- */
@@ -684,7 +729,26 @@
   /* --- scoring roll-ups --------------------------------------------- */
   function playerPoints(week, pid) {
     var l = lineFor(week, pid);
-    return l ? root.Scoring.score(l).total : 0;
+    if (l) return root.Scoring.score(l).total;
+    var b = bookPointsFor(week, pid);
+    return b === null ? 0 : b;
+  }
+  /* A player in a finished week's lineup with no stat line of his own (he was
+     dropped before v9.1 and his line went with him, or he was added later)
+     still scored: the league book holds this league's points for every player
+     ESPN reported that week. Only for finished weeks, so a live week never
+     borrows a half-played number. */
+  function bookRowFor(week, pid) {
+    if (!isHistorical(week)) return null;
+    var rec = playerById(pid), p = rec ? rec.player : null; if (!p) return null;
+    var bw = bookWeek(week);
+    var row = p.pos === 'DEF' ? bw['DEF:' + String(p.nfl || '').toUpperCase()]
+              : ((root.Names && root.Names.hit) ? root.Names.hit(bw, p.name) : bw[p.name]);
+    return row || null;
+  }
+  function bookPointsFor(week, pid) {
+    var row = bookRowFor(week, pid);
+    return row ? (Number(row.p) || 0) : null;
   }
   /* Points for a team in a week, counting ONLY the players in starting slots.
    * A blank slot or a bye-week starter scores 0, per the rules. */
@@ -701,7 +765,7 @@
       total += pts;
       detail.push({ slot: keys[i].label, pid: pid || null, player: p,
                     pts: Math.round(pts * 100) / 100, onBye: onBye,
-                    played: !!(pid && lineFor(week, pid) && lineFor(week, pid).played) });
+                    played: !!(pid && ((lineFor(week, pid) && lineFor(week, pid).played) || (!lineFor(week, pid) && bookRowFor(week, pid)))) });
     }
     return { total: Math.round(total * 100) / 100, detail: detail };
   }
@@ -1071,7 +1135,7 @@
     lastSaveOk: function () { return lastSaveOk; },
     team: team, allPlayers: allPlayers,
     exportAll: exportAll, playerById: playerById, addPlayer: addPlayer, removePlayer: removePlayer,
-    slotKeys: slotKeys, eligible: eligible,
+    slotKeys: slotKeys, eligible: eligible, backfillReleased: backfillReleased, isHistorical: isHistorical,
     getLineup: getLineup, setSlot: setSlot, copyLineup: copyLineup,
     isManual: isManual, clearManual: clearManual, applyAuto: applyAuto,
     isLocked: isLocked, lockedSlots: lockedSlots, gameStarted: gameStarted,
