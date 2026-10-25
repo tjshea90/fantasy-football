@@ -1006,3 +1006,8 @@ For this app, whenever I press the button to ask Claude anything such as advice,
 ```
 This came up twice, but I think the ESPN rosters worked. I'm not sure. Also, make sure when this data refreshes for Claude or the Claude prompt, it also refreshes all the data with the rest of the app so I don't have to do it more than once
 ```
+
+## 2026-10-25T03:58:47Z
+```
+I get this error every time, and I think the rosters are correctly loading
+```
