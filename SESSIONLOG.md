@@ -7,13 +7,14 @@ usage cap mid-ANALYSIS (no file edited yet) still leaves its findings on
 GitHub. Thinking and user messages are not copied; credentials and emails are
 redacted. Deliberate notes live in WORKLOG.md; the plan lives in TASKS.md.
 
-## session d488f374 · branch ccr-6a828d91-nmqeuv · log from 2026-10-25T03:58:53.908Z · last tool 2026-10-25T03:58:55.430Z · updated 2026-10-25T03:58:55Z
+## session d488f374 · branch ccr-6a828d91-nmqeuv · log from 2026-10-25T03:58:53.908Z · last tool 2026-10-25T03:59:25.177Z · updated 2026-10-25T03:59:36Z
 
 Claude's messages, oldest first:
 
-- (none yet)
+- [03:59] Checking whether this is the bug v9.4 already fixed or a new one.
+- [03:59] You're right: the rosters are loading fine and the warning is wrong. v9.4 already fixes it, and it looks like your phone is still on v9.3. **What's going on:** in v9.3, the roster refresh always returns a list of teams that didn't answer, and the code treated the list as a failure even when it was empty. So "NFL rosters" showed up every time, even on a perfect refresh. Your screenshot matches v9.3 exactly: the plain words "• NFL rosters" with no team count after them. **How v9.4 handles it:** it counts the teams that didn't answer. It only warns if more than 3 of the 32 teams fail, and then the warning says how many (for example, "NFL rosters (5 of 32 teams did not answer)"). A couple of slo …
 
-Last 1 tool calls: 03:58 Bash Read briefing and find NFL rosters feed
+Last 10 tool calls: 03:58 Bash Read briefing and find NFL rosters feed · 03:59 Bash Check recent history and refresh code · 03:59 Bash Compare v9.3 label and find PlayerDB.refresh · 03:59 Bash Read PlayerDB.refresh · 03:59 Bash Read doRefresh · 03:59 Bash Read rest of doRefresh and version · 03:59 Bash Read rawSave · 03:59 ToolSearch select:mcp__github__get_release_by_tag · 03:59 mcp__github__get_release_by_tag · 03:59 Bash Save finding to worklog
 
 ## session 24a55216 · branch ccr-84bef0a3-t2q34v · log from 2026-10-22T20:39:02.709Z · last tool 2026-10-22T21:05:17.708Z · updated 2026-10-22T21:05:58Z
 
