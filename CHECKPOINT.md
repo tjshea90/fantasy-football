@@ -1,6 +1,6 @@
-# CHECKPOINT 68 — read me first, then TASKS.md
+# CHECKPOINT 70 — read me first, then TASKS.md
 
-**Written:** 2026-10-29T00:57:20Z · **version:** 9.4 · **tests:** all 34 suites green
+**Written:** 2026-10-29T00:58:55Z · **version:** 9.4 · **tests:** all 34 suites green
 
 ## Just done
 ship: v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
@@ -23,10 +23,11 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M TASKS.md
+     M STATE.md
 
 ## Last ten checkpoints
 ```
+  0776ced ckpt 68: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
   427c7f9 ship v9.4: v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now cove
   7534aec ckpt 80: ship: v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now 
   5d6fecf ship v9.3: attach built APK
@@ -36,8 +37,7 @@ request in his own words and `git log` carries every step already taken.
   d3d03a2 ckpt 63: Refresh-everything-before-Claude gate (all share/ask buttons) done + test_claud
   831040c ckpt 100: v9.2 shipped + Release verified: old players restorable into completed-week li
   3a00af2 ship v9.2: v9.2: restore old players into completed weeks' lineup drop-downs; points fro
-  aad9ce9 ckpt 97: ship: v9.2: restore old players into completed weeks' lineup drop-downs; points
 ```
 
-(23 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
