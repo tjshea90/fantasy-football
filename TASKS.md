@@ -47,3 +47,12 @@ printed at session start; read it only if one of those issues comes up again.
 ## 2026-10-22 — refresh everything before any prompt to Claude (Tj)
 > "whenever I press the button to ask Claude anything ... or any button to share any prompt with Claude, first refresh all data in the app ... injuries, updated rosters, NFL bye weeks, NFL full rosters from ESPN ... Do not make the prompt file until all updates and refreshes are complete."
 - [x] `refreshForClaude` / `afterFreshRefresh` in ui.js: NFL rosters (PlayerDB), schedule+byes, injuries, week projections (all reuse windows bypassed via `syncAll(..,{fresh,skipClaude})`), box scores — file/API only after all finish; failed feeds ask "Use saved data?". Wired into all 3 file buttons, team-analysis + wire + advice API buttons, advice pull-to-refresh. Test: tools/test_claudeprep.js
+
+# TASKS — 2026-10-29 request (Tj)
+
+> "I lost my phone and all the data including scores and rosters. Find the best way for me to update the app with the attached up to date rosters, standings, and schedule so I don't need to manually enter them. Most team names in the html files are very close to the team names in the app but not exact matches. My team is Shea."
+
+- [x] 1. (test_snapshot.js) tools/mkleaguesnap.py parses the 10 RTSports capsules + schedule PDF -> app/assets/leaguesnap.js (scores cross-checked between capsules; standings = Tj's screenshot)
+- [x] 2. (test_snapshot.js) Store.applySnapshot: fuzzy team match (Shea=My team, Moe=Mo, Tugboat/Eric=Tugdude), rosters, 14-week schedule, final scores as manual scores, add/drop history -> released, week-8 lineups
+- [x] 3. (browser-checked) first-launch offer + Data screen "Restore from the league site" + "Load past weeks' NFL stats"
+- [ ] 4. ship v9.5, publish Release, send Tj the link
