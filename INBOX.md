@@ -1021,3 +1021,8 @@ I get this error every time, and I think the rosters are correctly loading
 ```
 It didn't ask me to restore the league 
 ```
+
+## 2026-10-29T02:28:55Z
+```
+Never mind it works 
+```
