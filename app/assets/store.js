@@ -1027,6 +1027,215 @@
     }
     return extras ? 'full' : true;
   }
+
+  /* ---- LEAGUE SNAPSHOT IMPORT (Tj, 2026-10-29: lost his phone and every score
+   * and roster; supplied the league site's ten Team Capsule pages + the season
+   * schedule instead of re-typing them). tools/mkleaguesnap.py turns those
+   * files into window.LEAGUE_SNAPSHOT (leaguesnap.js); this applies it.
+   *
+   * What it restores: team names, current rosters, the week-by-week schedule
+   * (all 14 weeks), every played week's final score per team (as manual week
+   * scores, so standings / W-L / points-for are exactly the league's), the
+   * current week's real starting lineups, and each team's add/drop history -
+   * dropped players are parked in S.released so the completed-week lineup
+   * drop-downs offer them (v9.2). What it does NOT touch: settings, API key,
+   * stat lines, the league book, weeks beyond the snapshot's current week.
+   *
+   * Team matching: the league site's names are close to, not equal to, the
+   * app's ("Moe"/"Mo", "Tugboat/Eric"/"Tugdude", "Shea"/"My team"). Exact name
+   * first, then the owner's own team (snap.me <-> league.me), then closest
+   * spelling, one-to-one. The pairing is returned so the UI can show it and
+   * the test pins it. Everything is built on a COPY and swapped in only when
+   * it has all validated, like importJSON. */
+  function snapNorm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function snapDist(a, b) {
+    var m = a.length, n = b.length, i, j, prev = [], cur;
+    for (j = 0; j <= n; j++) prev[j] = j;
+    for (i = 1; i <= m; i++) {
+      cur = [i];
+      for (j = 1; j <= n; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function snapSim(a, b) {
+    a = snapNorm(a); b = snapNorm(b);
+    if (!a || !b) return 0;
+    var pre = 0; while (pre < a.length && pre < b.length && a.charAt(pre) === b.charAt(pre)) pre++;
+    var lev = 1 - snapDist(a, b) / Math.max(a.length, b.length);
+    return lev + pre / Math.max(a.length, b.length) + (a.indexOf(b) >= 0 || b.indexOf(a) >= 0 ? 0.5 : 0);
+  }
+  /* -> [{snap: <index into snapTeams>, team: <app team>, how}] or throws */
+  function matchSnapshotTeams(snapTeams, teams, meId, meName) {
+    if (snapTeams.length !== teams.length) {
+      throw new Error('the snapshot has ' + snapTeams.length + ' teams but this app has ' + teams.length);
+    }
+    var out = [], usedS = {}, usedT = {}, i, j;
+    function take(si, ti, how) { usedS[si] = 1; usedT[ti] = 1; out.push({ snap: si, team: teams[ti], how: how }); }
+    for (i = 0; i < snapTeams.length; i++) for (j = 0; j < teams.length; j++) {
+      if (!usedS[i] && !usedT[j] && snapNorm(snapTeams[i].name) === snapNorm(teams[j].name)) take(i, j, 'exact');
+    }
+    if (meName && meId) {
+      for (i = 0; i < snapTeams.length; i++) if (!usedS[i] && snapNorm(snapTeams[i].name) === snapNorm(meName)) {
+        for (j = 0; j < teams.length; j++) if (!usedT[j] && teams[j].id === meId) take(i, j, 'yours');
+      }
+    }
+    var pairs = [];
+    for (i = 0; i < snapTeams.length; i++) if (!usedS[i]) for (j = 0; j < teams.length; j++) if (!usedT[j]) {
+      pairs.push({ i: i, j: j, s: snapSim(snapTeams[i].name, teams[j].name) });
+    }
+    pairs.sort(function (x, y) { return y.s - x.s; });
+    for (var k = 0; k < pairs.length; k++) if (!usedS[pairs[k].i] && !usedT[pairs[k].j]) take(pairs[k].i, pairs[k].j, 'close');
+    return out;
+  }
+  function applySnapshot(snap, opts) {
+    opts = opts || {};
+    if (!snap || !snap.teams || !snap.teams.length) throw new Error('not a league snapshot');
+    var o = clone(S), Nm = root.Names, i, j, k, w;
+    var canon = function (n) { return Nm && Nm.canon ? Nm.canon(n) : snapNorm(n); };
+    var pairs = matchSnapshotTeams(snap.teams, o.teams, o.league.me, snap.me);
+    if (opts.dryRun) return { ok: true, pairs: pairs.map(function (p) { return { from: p.team.name, to: snap.teams[p.snap].name, how: p.how }; }) };
+    var idOf = {}, renamed = {};
+    pairs.forEach(function (p) { idOf[snap.teams[p.snap].name] = p.team.id; renamed[p.team.name] = snap.teams[p.snap].name; });
+    /* every player the app already knows about, so ids, projections and the
+       stat lines keyed by them survive; a player who changed teams moves */
+    var known = {};
+    function keyOf(name, pos) { return canon(name) + '|' + pos; }
+    o.teams.forEach(function (t) { t.players.forEach(function (p) { known[keyOf(p.name, p.pos)] = p; }); });
+    (o.released || []).forEach(function (r) { if (r.player && !known[keyOf(r.player.name, r.player.pos)]) known[keyOf(r.player.name, r.player.pos)] = r.player; });
+    var pool = null;
+    function poolHit(name, pos) {
+      if (pool === null) {
+        pool = {};
+        var db = root.PLAYERDB && root.PLAYERDB.players || [];
+        for (var q = 0; q < db.length; q++) pool[canon(db[q].n) + '|' + db[q].p] = db[q];
+      }
+      return pool[keyOf(name, pos)] || null;
+    }
+    var maxPid = 0;
+    function trackPid(p) { var m = /^p(\d+)$/.exec(p.id || ''); if (m && +m[1] > maxPid) maxPid = +m[1]; }
+    o.teams.forEach(function (t) { t.players.forEach(trackPid); });
+    (o.released || []).forEach(function (r) { if (r.player) trackPid(r.player); });
+    if (o.settings && typeof o.settings.pidHigh === 'number' && o.settings.pidHigh > maxPid) maxPid = o.settings.pidHigh;
+    function mk(row) {
+      var hit = known[keyOf(row.name, row.pos)];
+      if (hit) {
+        if (row.nfl && hit.nfl !== row.nfl) { hit.nfl = row.nfl; hit.bye = row.bye || o.byes[row.nfl] || hit.bye; }
+        return hit;
+      }
+      var pl = poolHit(row.name, row.pos);
+      maxPid++;
+      var p = { id: 'p' + maxPid, name: row.name, pos: row.pos, nfl: row.nfl || (pl && pl.t) || '',
+                bye: row.bye || (pl && pl.b) || (o.byes[row.nfl] || 0), espnId: (pl && pl.e) || '' };
+      known[keyOf(row.name, row.pos)] = p;
+      return p;
+    }
+    /* names first, then rosters */
+    pairs.forEach(function (p) {
+      var t = p.team, sn = snap.teams[p.snap];
+      t.name = sn.name; t.owner = sn.name;
+    });
+    (o.transactions || []).forEach(function (x) { if (renamed[x.team]) x.team = renamed[x.team]; });
+    var rosterKeys = {};
+    pairs.forEach(function (p) {
+      var sn = snap.teams[p.snap]; p.team.players = [];
+      sn.roster.forEach(function (row) {
+        var pl = mk(row); p.team.players.push(pl); rosterKeys[keyOf(pl.name, pl.pos)] = p.team.id;
+      });
+    });
+    /* add/drop history: transactions list, and every dropped player who is not
+       on that team now goes to S.released so past weeks can still use him */
+    if (!o.released) o.released = [];
+    if (!o.transactions) o.transactions = [];
+    var txHave = {}, relHave = {};
+    o.transactions.forEach(function (x) { txHave[[x.team, x.type, x.player, x.week].join('|')] = 1; });
+    o.released.forEach(function (r) { if (r.player) relHave[r.teamId + '|' + keyOf(r.player.name, r.player.pos)] = 1; });
+    var newTx = [], relAdded = 0;
+    pairs.forEach(function (p) {
+      var sn = snap.teams[p.snap];
+      sn.activity.forEach(function (a) {
+        if (a.type === 'drop' && rosterKeys[keyOf(a.name, a.pos)] !== p.team.id) {
+          var rk = p.team.id + '|' + keyOf(a.name, a.pos);
+          if (!relHave[rk]) {
+            relHave[rk] = 1; relAdded++;
+            o.released.push({ teamId: p.team.id, from: a.week, restored: true,
+                              player: mk({ name: a.name, pos: a.pos, nfl: a.nfl, bye: 0 }) });
+          }
+        }
+        if (a.draft) return;
+        var tk = [sn.name, a.type, a.name, a.week].join('|');
+        if (txHave[tk]) return;
+        txHave[tk] = 1;
+        newTx.push({ at: a.at || nowISO(), type: a.type, team: sn.name, player: a.name, pos: a.pos,
+                     week: a.week, imported: true });
+      });
+    });
+    newTx.sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; });
+    o.transactions = newTx.concat(o.transactions);
+    o.settings.pidHigh = maxPid;
+    /* the schedule, then every played week's final scores */
+    var nWeeks = 0, nScores = 0;
+    Object.keys(snap.schedule || {}).forEach(function (wk) {
+      var prs = [];
+      snap.schedule[wk].forEach(function (pr) { if (idOf[pr[0]] && idOf[pr[1]]) prs.push([idOf[pr[0]], idOf[pr[1]]]); });
+      if (prs.length) { o.matchups[wk] = prs; nWeeks++; }
+    });
+    var thru = Number(snap.thru) || 0;
+    pairs.forEach(function (p) {
+      var sn = snap.teams[p.snap];
+      Object.keys(sn.results).forEach(function (wk) {
+        var r = sn.results[wk];
+        if (!o.manualScores[wk]) o.manualScores[wk] = {};
+        o.manualScores[wk][p.team.id] = Math.round(r.pts * 100) / 100; nScores++;
+        if (!o.matchups[wk]) o.matchups[wk] = [];
+        if (idOf[r.opp]) {
+          var have = o.matchups[wk].some(function (m) { return m[0] === p.team.id || m[1] === p.team.id; });
+          if (!have) o.matchups[wk].push([p.team.id, idOf[r.opp]]);
+        }
+      });
+    });
+    /* played weeks count as final (so standings get their W-L) but are marked
+       `imported`: no stat lines yet. A real sync of that week replaces the flag. */
+    for (w = 1; w <= thru; w++) {
+      var wm = o.weekMeta[String(w)] || (o.weekMeta[String(w)] = {});
+      if (!wm.synced) { wm.synced = true; wm.allFinal = true; wm.imported = true; wm.games = 0; wm.at = nowISO(); }
+    }
+    /* the current week's lineups exactly as the league site has them */
+    var cw = Number(snap.week) || thru + 1;
+    var keys = []; (function () {
+      var raw = o.league.slots, counts = {}, seen = {};
+      raw.forEach(function (x) { counts[x] = (counts[x] || 0) + 1; });
+      raw.forEach(function (x) { if (counts[x] === 1) keys.push({ key: x, pos: x }); else { seen[x] = (seen[x] || 0) + 1; keys.push({ key: x + seen[x], pos: x }); } });
+    })();
+    var flexOK = o.league.flexEligible || ['RB', 'WR', 'TE'], lineupsSet = 0;
+    pairs.forEach(function (p) {
+      var starters = snap.teams[p.snap].roster.filter(function (r) { return r.starter; }).map(function (r) { return mk(r); });
+      if (starters.length < keys.length - 1) return;
+      var L = {}, left = starters.slice();
+      keys.forEach(function (sk) {
+        if (sk.pos === 'FLEX') return;
+        for (var a = 0; a < left.length; a++) if (left[a].pos === sk.pos) { L[sk.key] = left[a].id; left.splice(a, 1); return; }
+      });
+      keys.forEach(function (sk) {
+        if (sk.pos !== 'FLEX') return;
+        for (var a = 0; a < left.length; a++) if (flexOK.indexOf(left[a].pos) >= 0) { L[sk.key] = left[a].id; left.splice(a, 1); return; }
+      });
+      if (!o.lineups[String(cw)]) o.lineups[String(cw)] = {};
+      o.lineups[String(cw)][p.team.id] = L;
+      if (!o.lineupManual[String(cw)]) o.lineupManual[String(cw)] = {};
+      var M = {}; keys.forEach(function (sk) { M[sk.key] = 1; });
+      o.lineupManual[String(cw)][p.team.id] = M; lineupsSet++;
+    });
+    o.settings.currentWeek = cw;
+    o.settings.snapAppliedAt = nowISO();
+    if (snap.league && o.league.name !== snap.league) o.league.name = snap.league;
+    S = o; bumpGen(); markArchive(); save();
+    return { ok: true, pairs: pairs.map(function (p) { return { from: renamed[p.team.name] ? '' : '', to: p.team.name, how: p.how }; }),
+             weeks: nWeeks, scores: nScores, released: relAdded, transactions: newTx.length,
+             lineups: lineupsSet, thru: thru, week: cw };
+  }
   function resetToSeed(seed) { S = fromSeed(seed); markArchive(); save(); return S; }
 
   /* ---- THE LEAGUE BOOK ---------------------------------------------------
@@ -1146,6 +1355,7 @@
     inferLineup: inferLineup,
     seasonTotals: seasonTotals, standings: standings, weekIsScored: weekIsScored,
     exportJSON: exportJSON, importJSON: importJSON, resetToSeed: resetToSeed,
+    applySnapshot: applySnapshot,
     autoBackup: autoBackup,
     setBook: setBook, bookWeek: bookWeek, bookTrend: bookTrend, bookNames: bookNames,
     playerAvg: playerAvg
