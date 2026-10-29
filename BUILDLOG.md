@@ -83,3 +83,4 @@
 2026-10-22T21:05Z | v9.4 | step 290/292 | v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now covers the whole app
 2026-10-29T01:00Z | v9.5 | step 290/292 | v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
 2026-10-29T01:04Z | v9.6 | step 290/292 | v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
+2026-10-29T02:28Z | v9.7 | step 290/292 | v9.7: league restore offer now appears even if a week is already synced; card moved to Data > League

@@ -126,6 +126,6 @@ WORKLOG.md
 SESSIONLOG.md
 WAITING.md
 AGENTS.md
-releases/FFTracker-v9.3.apk
 releases/FFTracker-v9.4.apk
 releases/FFTracker-v9.6.apk
+releases/FFTracker-v9.7.apk
