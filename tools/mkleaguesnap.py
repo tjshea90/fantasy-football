@@ -19,6 +19,16 @@ def txt(s):
     return html.unescape(re.sub(r'<[^>]+>', '', s)).strip()
 
 
+MONTHS = {m: i + 1 for i, m in enumerate('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split())}
+
+
+def iso(dt):
+    # RTSports prints ET; every date in an Aug-Oct season is EDT (-04:00)
+    mon, day, hh, mm, ap = dt.groups()
+    h = int(hh) % 12 + (12 if ap == 'pm' else 0)
+    return '2026-%02d-%02dT%02d:%02d:00-04:00' % (MONTHS[mon], int(day), h, int(mm))
+
+
 def parse_capsule(path):
     t = open(path, errors='replace').read()
     name = re.search(r'<title>(.*?) Team Capsule', t).group(1)
@@ -45,9 +55,15 @@ def parse_capsule(path):
             continue
         m = re.search(r'<strong>Player (?:Added|Dropped) <span><a>(.*?)</a>\s*([A-Z/]+)\s*([A-Z-]*)</span>', a)
         w = re.search(r'<small>\s*Week (\d+)', a)
+        dt = re.search(r'([A-Z][a-z]{2}) (\d+) (\d+):(\d+)(am|pm) ET', a)
         acts.append({'type': kind, 'name': txt(m.group(1)),
                      'pos': m.group(2).replace('D/ST', 'DEF'), 'nfl': m.group(3).strip('-'),
-                     'week': int(w.group(1)) if w else 1})
+                     'week': int(w.group(1)) if w else 1,
+                     'at': iso(dt) if dt else ''})
+    if acts:
+        first = min(a['at'][:10] for a in acts if a['at'])
+        for a in acts:
+            a['draft'] = a['type'] == 'add' and a['at'][:10] == first and a['week'] == 1
     results = {}
     for wk, opp, res in re.findall(
             r'tc-schedule-week">Week (\d+)</span>.*?<b><a [^>]*>(.*?)</a></b></span>'
@@ -113,7 +129,7 @@ def main():
             if r and r['opp'] != b:
                 sys.exit('schedule/results disagree week %d: %s vs %s (capsule says %s)' % (w, a, b, r['opp']))
     week = max(c['week'] or 0 for c in caps.values())
-    snap = {'source': 'RTSports team capsules + 2026 schedule', 'week': week,
+    snap = {'me': 'Shea', 'league': '5811 League', 'source': 'RTSports team capsules + 2026 schedule', 'week': week,
             'thru': max(c['thru'] for c in caps.values()),
             'teams': [caps[n] for n in sorted(caps)], 'schedule': {str(k): v for k, v in sched.items()}}
     out = os.path.join(os.path.dirname(__file__), '..', 'app', 'assets', 'leaguesnap.js')
