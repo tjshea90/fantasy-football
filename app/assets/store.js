@@ -1135,7 +1135,7 @@
     /* names first, then rosters */
     pairs.forEach(function (p) {
       var t = p.team, sn = snap.teams[p.snap];
-      t.name = sn.name; t.owner = sn.name;
+      p.old = t.name; t.name = sn.name; t.owner = sn.name;
     });
     (o.transactions || []).forEach(function (x) { if (renamed[x.team]) x.team = renamed[x.team]; });
     var rosterKeys = {};
@@ -1232,7 +1232,7 @@
     o.settings.snapAppliedAt = nowISO();
     if (snap.league && o.league.name !== snap.league) o.league.name = snap.league;
     S = o; bumpGen(); markArchive(); save();
-    return { ok: true, pairs: pairs.map(function (p) { return { from: renamed[p.team.name] ? '' : '', to: p.team.name, how: p.how }; }),
+    return { ok: true, pairs: pairs.map(function (p) { return { from: p.old, to: p.team.name, how: p.how }; }),
              weeks: nWeeks, scores: nScores, released: relAdded, transactions: newTx.length,
              lineups: lineupsSet, thru: thru, week: cw };
   }
