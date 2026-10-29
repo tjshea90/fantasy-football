@@ -31,6 +31,7 @@ BUILDLOG.md
 app/assets/seed.json
 app/assets/scoring.js
 tools/mkseed.py
+tools/mkleaguesnap.py
 tools/test_scoring.js
 _maps.json
 app/assets/espn.js
@@ -55,6 +56,7 @@ android/debug.keystore
 RESUME.md
 proj2026_league.json
 app/assets/seed.js
+app/assets/leaguesnap.js
 tools/test_boot.js
 app/assets/players.js
 app/assets/playerdb.js
@@ -89,6 +91,7 @@ tools/test_ai.js
 app/assets/handoff.js
 tools/test_handoff.js
 tools/test_history.js
+tools/test_snapshot.js
 app/assets/schedule.js
 tools/test_schedule.js
 tools/test_net.js
