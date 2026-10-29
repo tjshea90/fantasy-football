@@ -81,3 +81,4 @@
 2026-10-22T05:39Z | v9.2 | step 290/292 | v9.2: restore old players into completed weeks' lineup drop-downs; points from league book
 2026-10-22T20:51Z | v9.3 | step 290/292 | v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters, byes, injuries, projections and scores; file is built only after
 2026-10-22T21:05Z | v9.4 | step 290/292 | v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now covers the whole app
+2026-10-29T01:00Z | v9.5 | step 290/292 | v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
