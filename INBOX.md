@@ -1011,3 +1011,8 @@ This came up twice, but I think the ESPN rosters worked. I'm not sure. Also, mak
 ```
 I get this error every time, and I think the rosters are correctly loading
 ```
+
+## 2026-10-29T00:43:59Z
+```
+@"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/863e2461-2026-schedule-395837.pdf" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/dad575fb-Dustin_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/b52538ab-Jose_Brandon_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/72ab2400-JR_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/2a5b13ca-Moe_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/4fc66af2-Mike_Jamie_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/2c3d7701-Ron_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/fae569c7-Shea_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/00dc4639-Steve_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/e29c5c40-Tim_Team_Capsule_-_5811_League.html" @"/root/.claude/uploads/33dea76e-27d8-5f98-b1c5-8de2447d6d63/44c1d2c5-Tugboat_Eric_Team_Capsule_-_5811_League.html" For this app, I lost my phone and all the data  including scores and rosters. Find the best way for me to update the app with the attached up to date rosters, standings, and schedule so I don't need to manually enter them. Most team names in the html files are very close to the team names in the app but not exact matches. My team is Shea.
+```
