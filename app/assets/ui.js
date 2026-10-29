@@ -4056,7 +4056,29 @@
     }
     return c;
   }
+  function snapshotCard(root) {
+    if (window.LEAGUE_SNAPSHOT) {
+      var cl = el('div', 'card');
+      cl.appendChild(el('h2', null, 'Restore from the league site'));
+      cl.appendChild(el('p', 'muted', 'Puts back rosters, the full schedule, every final score, standings and ' +
+        'add/drop history from the league site\'s own pages (through week ' + window.LEAGUE_SNAPSHOT.thru +
+        ') - no typing. Settings and your API key are kept.'));
+      var rl = el('button', 'btn pri'); rl.textContent = 'Restore league';
+      rl.addEventListener('click', function () { restoreLeagueSnapshot(false); });
+      cl.appendChild(rl);
+      var pw = el('button', 'btn'); pw.textContent = 'Load past weeks\' NFL stats'; pw.style.marginLeft = '8px';
+      pw.addEventListener('click', function () {
+        var n = Math.max(0, (Number(S.settings.currentWeek) || 1) - 1);
+        if (!n) { toast('No past weeks yet'); return; }
+        syncPastWeeks(n);
+      });
+      cl.appendChild(pw);
+      root.appendChild(cl);
+    }
+
+  }
   function viewDataLeague(root) {
+    snapshotCard(root);
     addSafe(root, 'Standings', standingsCard);          /* first: Tj's pick #10 */
     addSafe(root, 'Weekly scores', weeklyScoresCard);
     addSafe(root, 'Power rankings', powerCard);
@@ -4332,26 +4354,6 @@
     cs.appendChild(el('p', 'hint', 'If the top or bottom is still clipped, drag these until it sits right. ' +
       'The value is saved and applied every launch.'));
     root.appendChild(cs);
-
-    /* league site restore */
-    if (window.LEAGUE_SNAPSHOT) {
-      var cl = el('div', 'card');
-      cl.appendChild(el('h2', null, 'Restore from the league site'));
-      cl.appendChild(el('p', 'muted', 'Puts back rosters, the full schedule, every final score, standings and ' +
-        'add/drop history from the league site\'s own pages (through week ' + window.LEAGUE_SNAPSHOT.thru +
-        ') - no typing. Settings and your API key are kept.'));
-      var rl = el('button', 'btn pri'); rl.textContent = 'Restore league';
-      rl.addEventListener('click', function () { restoreLeagueSnapshot(false); });
-      cl.appendChild(rl);
-      var pw = el('button', 'btn'); pw.textContent = 'Load past weeks\' NFL stats'; pw.style.marginLeft = '8px';
-      pw.addEventListener('click', function () {
-        var n = Math.max(0, (Number(S.settings.currentWeek) || 1) - 1);
-        if (!n) { toast('No past weeks yet'); return; }
-        syncPastWeeks(n);
-      });
-      cl.appendChild(pw);
-      root.appendChild(cl);
-    }
 
     /* backup */
     var c3 = el('div', 'card');
