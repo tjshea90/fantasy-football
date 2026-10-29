@@ -796,7 +796,7 @@
          the build: offer to restore it once, after the first paint */
       if (window.LEAGUE_SNAPSHOT && !S.settings.snapAppliedAt && !S.settings.snapAsked &&
           !Object.keys(S.weekMeta).some(function (k) { return S.weekMeta[k] && S.weekMeta[k].synced; })) {
-        setTimeout(function () { if (!modalOpen()) restoreLeagueSnapshot(true); }, 900);
+        if (!modalOpen()) restoreLeagueSnapshot(true);
       }
     } catch (e) { /* the offer is optional */ }
     try {
@@ -5022,7 +5022,7 @@
             'Load them', function () { syncPastWeeks(r.thru); }, false);
         }, 400);
       }, false, function () {
-        if (fromBoot) { S.settings.snapAsked = true; Store.save(); toast('Not now - it stays under Data → Restore from the league site', 4200); }
+        if (fromBoot) { S.settings.snapAsked = true; Store.save(); toast('Not now - you can restore it any time from the Data screen', 4200); }
       });
   }
   function syncPastWeeks(upto) {
