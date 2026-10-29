@@ -43,10 +43,10 @@ def parse_capsule(path):
         kind = 'add' if 'Player Added' in a else 'drop' if 'Player Dropped' in a else None
         if not kind:
             continue
-        m = re.search(r'<strong>Player (?:Added|Dropped) <span><a>(.*?)</a>\s*([A-Z/]+)\s*([A-Z]*)</span>', a)
+        m = re.search(r'<strong>Player (?:Added|Dropped) <span><a>(.*?)</a>\s*([A-Z/]+)\s*([A-Z-]*)</span>', a)
         w = re.search(r'<small>\s*Week (\d+)', a)
         acts.append({'type': kind, 'name': txt(m.group(1)),
-                     'pos': m.group(2).replace('D/ST', 'DEF'), 'nfl': m.group(3),
+                     'pos': m.group(2).replace('D/ST', 'DEF'), 'nfl': m.group(3).strip('-'),
                      'week': int(w.group(1)) if w else 1})
     results = {}
     for wk, opp, res in re.findall(
