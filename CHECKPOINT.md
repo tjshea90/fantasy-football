@@ -1,6 +1,6 @@
-# CHECKPOINT 70 — read me first, then TASKS.md
+# CHECKPOINT 75 — read me first, then TASKS.md
 
-**Written:** 2026-10-29T00:58:55Z · **version:** 9.4 · **tests:** all 34 suites green
+**Written:** 2026-10-29T01:02:44Z · **version:** 9.5 · **tests:** all 34 suites green
 
 ## Just done
 ship: v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
@@ -27,6 +27,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  91ef264 ship v9.5: v9.5: restore league from the league site's capsules + schedule (rosters, sta
+  2d05c5a ckpt 70: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
   0776ced ckpt 68: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
   427c7f9 ship v9.4: v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now cove
   7534aec ckpt 80: ship: v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now 
@@ -35,9 +37,7 @@ request in his own words and `git log` carries every step already taken.
   20bd769 ckpt 67: ship: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters,
   641c34b ckpt 65: ship: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters,
   d3d03a2 ckpt 63: Refresh-everything-before-Claude gate (all share/ask buttons) done + test_claud
-  831040c ckpt 100: v9.2 shipped + Release verified: old players restorable into completed-week li
-  3a00af2 ship v9.2: v9.2: restore old players into completed weeks' lineup drop-downs; points fro
 ```
 
-(1 automatic checkpoint(s) since the last deliberate one — the
+(2 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
