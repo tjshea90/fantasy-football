@@ -35,7 +35,7 @@ fail=0
 # rather than the whole directory.
 mapfile -t listed < <(grep -v '^\s*$' MANIFEST.txt | grep -v '^#')
 disk=$(find . -type f -not -path './sdk/*' -not -path './build/*' -not -path './.git/*' \
-        -not -path './.ckpt/*' -not -path './.claude/scheduled_tasks.lock' \
+        -not -path './.ckpt/*' -not -path './.simple-workflow/*' -not -path './.claude/scheduled_tasks.lock' \
         -not -name '*.pyc' -not -name '*.log' -printf '%P\n' | sort)
 missing=(); for f in "${listed[@]}"; do [ -e "$f" ] || missing+=("$f"); done
 stale=$(comm -23 <(printf '%s\n' "$disk") <(printf '%s\n' "${listed[@]}" | sort))

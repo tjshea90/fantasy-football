@@ -794,8 +794,10 @@
     try {
       /* a fresh install (nothing synced, never asked) with a league snapshot in
          the build: offer to restore it once, after the first paint */
-      if (window.LEAGUE_SNAPSHOT && !S.settings.snapAppliedAt && !S.settings.snapAsked &&
-          !Object.keys(S.weekMeta).some(function (k) { return S.weekMeta[k] && S.weekMeta[k].synced; })) {
+      /* v9.7: NOT gated on "nothing synced". Tj's v9.6 install never asked: a
+         phone that has already synced an NFL week (or came back through Android's
+         backup) is exactly the one that still has no league scores. */
+      if (window.LEAGUE_SNAPSHOT && !S.settings.snapAppliedAt && !S.settings.snapAsked) {
         if (!modalOpen()) restoreLeagueSnapshot(true);
       }
     } catch (e) { /* the offer is optional */ }
