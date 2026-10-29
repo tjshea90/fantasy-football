@@ -199,7 +199,7 @@ function load(f) {
 }
 
 console.log('\n-- every module evaluates --');
-var order = ['version.js', 'seed.js', 'players.js', 'scoring.js', 'espn.js', 'names.js',
+var order = ['version.js', 'seed.js', 'leaguesnap.js', 'players.js', 'scoring.js', 'espn.js', 'names.js',
              'store.js', 'playerdb.js', 'gamelog.js', 'projections.js', 'usage.js', 'ai.js',
              'recommend.js', 'ros.js', 'sim.js', 'value.js', 'teamreport.js', 'recap.js', 'schedule.js',
              'handoff.js', 'stats.js', 'gestures.js', 'ui.js'];

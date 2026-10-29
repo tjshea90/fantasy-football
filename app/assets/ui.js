@@ -5022,7 +5022,7 @@
             'Load them', function () { syncPastWeeks(r.thru); }, false);
         }, 400);
       }, false, function () {
-        if (fromBoot) { S.settings.snapAsked = true; Store.save(); toast('Not now - Data tab has "Restore from the league site"', 4200); }
+        if (fromBoot) { S.settings.snapAsked = true; Store.save(); toast('Not now - it stays under Data → Restore from the league site', 4200); }
       });
   }
   function syncPastWeeks(upto) {
