@@ -55,4 +55,4 @@ printed at session start; read it only if one of those issues comes up again.
 - [x] 1. (test_snapshot.js) tools/mkleaguesnap.py parses the 10 RTSports capsules + schedule PDF -> app/assets/leaguesnap.js (scores cross-checked between capsules; standings = Tj's screenshot)
 - [x] 2. (test_snapshot.js) Store.applySnapshot: fuzzy team match (Shea=My team, Moe=Mo, Tugboat/Eric=Tugdude), rosters, 14-week schedule, final scores as manual scores, add/drop history -> released, week-8 lineups
 - [x] 3. (browser-checked) first-launch offer + Data screen "Restore from the league site" + "Load past weeks' NFL stats"
-- [ ] 4. ship v9.5, publish Release, send Tj the link
+- [x] 4. (v9.6 released, asset verified) ship, publish Release, send Tj the link

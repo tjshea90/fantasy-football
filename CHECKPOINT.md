@@ -1,12 +1,12 @@
-# CHECKPOINT 75 — read me first, then TASKS.md
+# CHECKPOINT 78 — read me first, then TASKS.md
 
-**Written:** 2026-10-29T01:02:44Z · **version:** 9.5 · **tests:** all 34 suites green
+**Written:** 2026-10-29T01:05:57Z · **version:** 9.6 · **tests:** all 34 suites green
 
 ## Just done
-ship: v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
+v9.6 shipped + Release verified: league restore from RTSports capsules/schedule
 
 ## Do this next
-verify on the phone
+Tj installs v9.6, taps Restore on first launch, then 'Load past weeks NFL stats'; confirm standings match site
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,12 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M STATE.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  c043c73 ship v9.6: v9.5: restore league from the league site's capsules + schedule (rosters, sta
+  6534d96 ckpt 75: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
   91ef264 ship v9.5: v9.5: restore league from the league site's capsules + schedule (rosters, sta
   2d05c5a ckpt 70: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
   0776ced ckpt 68: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
@@ -35,9 +37,7 @@ request in his own words and `git log` carries every step already taken.
   5d6fecf ship v9.3: attach built APK
   5770f58 ship v9.3: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters, bye
   20bd769 ckpt 67: ship: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters,
-  641c34b ckpt 65: ship: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters,
-  d3d03a2 ckpt 63: Refresh-everything-before-Claude gate (all share/ask buttons) done + test_claud
 ```
 
-(2 automatic checkpoint(s) since the last deliberate one — the
+(1 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
