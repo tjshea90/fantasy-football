@@ -218,6 +218,10 @@ var order = ['version.js', 'seed.js', 'leaguesnap.js', 'players.js', 'scoring.js
 var loadErr = null;
 try {
   order.forEach(load);
+  /* a fresh install with a league snapshot opens a restore offer at boot - a
+     modal with its own short focus timer. That is test_snapshot.js's business;
+     this suite counts the POLL's timers, so pre-answer the offer. */
+  W.LEAGUE_SNAPSHOT = undefined;
 } catch (e) {
   loadErr = e;
 }
