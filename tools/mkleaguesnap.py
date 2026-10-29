@@ -29,7 +29,7 @@ def parse_capsule(path):
     roster = []
     body = t[t.find('tc-roster-table'):]
     body = body[:body.find('</table>')]
-    for row in re.findall(r'<tr class="">(.*?)</tr>', body, re.S):
+    for row in re.findall(r'<tr class="(?!tc-group-row)[^"]*">(.*?)</tr>', body, re.S):
         pos = re.search(r'pos-badge pos-\w+">(.*?)</span>', row).group(1)
         nm = txt(re.search(r'<strong><a>(.*?)</a></strong>', row).group(1))
         nfl = re.search(r'title="([A-Z]{2,3})"', row)
