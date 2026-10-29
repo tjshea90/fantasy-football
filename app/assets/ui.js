@@ -792,6 +792,14 @@
     } catch (e) { /* the tab bar and render() below must still work */ }
     render();
     try {
+      /* a fresh install (nothing synced, never asked) with a league snapshot in
+         the build: offer to restore it once, after the first paint */
+      if (window.LEAGUE_SNAPSHOT && !S.settings.snapAppliedAt && !S.settings.snapAsked &&
+          !Object.keys(S.weekMeta).some(function (k) { return S.weekMeta[k] && S.weekMeta[k].synced; })) {
+        setTimeout(function () { if (!modalOpen()) restoreLeagueSnapshot(true); }, 900);
+      }
+    } catch (e) { /* the offer is optional */ }
+    try {
       startLive();
       freshenSchedule();
       refreshPlayerDBIfStale();
@@ -4323,6 +4331,26 @@
       'The value is saved and applied every launch.'));
     root.appendChild(cs);
 
+    /* league site restore */
+    if (window.LEAGUE_SNAPSHOT) {
+      var cl = el('div', 'card');
+      cl.appendChild(el('h2', null, 'Restore from the league site'));
+      cl.appendChild(el('p', 'muted', 'Puts back rosters, the full schedule, every final score, standings and ' +
+        'add/drop history from the league site\'s own pages (through week ' + window.LEAGUE_SNAPSHOT.thru +
+        ') - no typing. Settings and your API key are kept.'));
+      var rl = el('button', 'btn pri'); rl.textContent = 'Restore league';
+      rl.addEventListener('click', function () { restoreLeagueSnapshot(false); });
+      cl.appendChild(rl);
+      var pw = el('button', 'btn'); pw.textContent = 'Load past weeks\' NFL stats'; pw.style.marginLeft = '8px';
+      pw.addEventListener('click', function () {
+        var n = Math.max(0, (Number(S.settings.currentWeek) || 1) - 1);
+        if (!n) { toast('No past weeks yet'); return; }
+        syncPastWeeks(n);
+      });
+      cl.appendChild(pw);
+      root.appendChild(cl);
+    }
+
     /* backup */
     var c3 = el('div', 'card');
     c3.appendChild(el('h2', null, 'Backup'));
@@ -4952,6 +4980,59 @@
     });
     c.appendChild(pt);
     return c;
+  }
+
+  /* ---------- league snapshot restore (2026-10-29) ----------
+   * Tj lost his phone and with it every score and roster. leaguesnap.js carries
+   * the league site's own Team Capsule pages + schedule (tools/mkleaguesnap.py);
+   * Store.applySnapshot puts rosters, standings, schedule, scores and the
+   * add/drop history back. The team pairing is shown first because the site's
+   * names are close to, not equal to, the app's. */
+  function restoreLeagueSnapshot(fromBoot) {
+    var snap = window.LEAGUE_SNAPSHOT;
+    if (!snap) { toast('This build has no league snapshot'); return; }
+    var pv;
+    try { pv = Store.applySnapshot(snap, { dryRun: true }); }
+    catch (e) { modal('Cannot restore', String(e && e.message ? e.message : e)); return; }
+    var lines = pv.pairs.map(function (p) {
+      return p.to + (p.from !== p.to ? '   (the app called it "' + p.from + '")' : '');
+    }).join('\n');
+    var redo = !!S.settings.snapAppliedAt;
+    confirmModal(fromBoot ? 'Restore your league?' : 'Restore from the league site?',
+      'This build carries the league site\'s data through week ' + snap.thru + ' (' + snap.teams.length +
+      ' teams): rosters, the full schedule, every final score, standings, each team\'s add/drops, and the ' +
+      'week-' + snap.week + ' lineups.\n\nTeams:\n' + lines + '\n\n' +
+      'Your settings and API key are kept.' +
+      (redo ? '\n\nYou restored once already - doing it again puts rosters and week-' + snap.week +
+        ' lineups back to the site\'s copy, undoing any change you made since.' : ''),
+      'Restore', function () {
+        var r;
+        try { r = Store.applySnapshot(snap); }
+        catch (e) { modal('Nothing was changed', String(e && e.message ? e.message : e)); return; }
+        S = Store.get(); week = S.settings.currentWeek || 1;
+        S.settings.snapAsked = true; Store.save();
+        if (window.Sim) Sim.invalidate();
+        renderTop();
+        toast('League restored: ' + r.scores + ' scores, ' + r.released + ' past players', 4200);
+        setTimeout(function () {
+          confirmModal('Load past weeks\' NFL stats too?',
+            'Standings and scores are already right. This also downloads the NFL stats for weeks 1-' + r.thru +
+            ' so each player\'s points show when you fill in a past lineup. It takes a minute or two ' +
+            'and needs internet; you can also do it later by syncing each week.',
+            'Load them', function () { syncPastWeeks(r.thru); }, false);
+        }, 400);
+      }, false, function () {
+        if (fromBoot) { S.settings.snapAsked = true; Store.save(); toast('Not now - Data tab has "Restore from the league site"', 4200); }
+      });
+  }
+  function syncPastWeeks(upto) {
+    var back = week, w = 1;
+    (function next() {
+      if (w > upto) { week = back; render(); toast('Past weeks loaded'); return; }
+      week = w; w++;
+      var p; try { p = doSync({ quiet: false }); } catch (e) { p = null; }
+      if (p && p.then) p.then(next, next); else next();
+    })();
   }
 
   /* ---------- sync ---------- */

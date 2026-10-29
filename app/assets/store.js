@@ -167,7 +167,10 @@
          in ui.js. null on a fresh install; boot() already treats a missing
          or no-longer-valid tab name as "no preference", so this default is
          only here for defaults() to stay a complete list of settings. */
-      lastTab: null
+      lastTab: null,
+      /* league snapshot restore (applySnapshot): when it was applied / whether
+         the first-launch offer was already answered */
+      snapAppliedAt: null, snapAsked: false
       /* individualReturnTD was here until v4.7. Tj settled the rules-sheet
          ambiguity ("a defense touchdown is only scored one time") and the
          setting is gone, not defaulted — see the note in scoring.js. An old
