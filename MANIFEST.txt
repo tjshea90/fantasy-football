@@ -92,6 +92,7 @@ app/assets/handoff.js
 tools/test_handoff.js
 tools/test_history.js
 tools/test_snapshot.js
+tools/test_dialoglayer.js
 app/assets/schedule.js
 tools/test_schedule.js
 tools/test_net.js

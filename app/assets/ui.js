@@ -181,8 +181,16 @@
   }
   function dialog(title, bodyText, build) {
     var back = el('div');
-    back.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:60;' +
-      'display:flex;align-items:center;justify-content:center;padding:18px';
+    /* Its own compositor layer (translateZ + explicit edges, not just inset:0).
+       2026-10-30, Tj: tapping a roster row's "..." showed nothing on the Roster
+       tab, and the menu was sitting there when he switched to Stats. <main> is a
+       will-change:transform layer (app.css) and the Roster page is the tallest
+       in the app; the reading is that Android's compositor drew the long page
+       over a plain fixed overlay. Not reproducible in desktop Chromium, so this
+       is a hardening, pinned in test_dialoglayer.js, not a proven root cause. */
+    back.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;' +
+      'background:rgba(0,0,0,.66);z-index:60;transform:translateZ(0);-webkit-transform:translateZ(0);' +
+      'will-change:transform;display:flex;align-items:center;justify-content:center;padding:18px';
     /* Screen readers need to know this is a dialog and that the page behind it
        is inert; `data-nogesture` tells gestures.js the same thing. */
     back.setAttribute('role', 'dialog');
@@ -225,6 +233,15 @@
     });
     document.body.appendChild(back);
     modalStack.push(close);
+    /* force layout and a repaint on the next frames, so a stale frame cannot
+       leave the overlay unpainted until something else (a tab switch) repaints */
+    void back.offsetHeight;
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () {
+        back.style.opacity = '0.999';
+        window.requestAnimationFrame(function () { back.style.opacity = ''; });
+      });
+    }
     /* Focus lands INSIDE the dialog, so the next tab press stays in it and a
        screen reader announces the dialog rather than the page behind it. */
     window.setTimeout(function () {
