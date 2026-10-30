@@ -84,3 +84,4 @@
 2026-10-29T01:00Z | v9.5 | step 290/292 | v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
 2026-10-29T01:04Z | v9.6 | step 290/292 | v9.5: restore league from the league site's capsules + schedule (rosters, standings, 14-week schedule, scores, add/drops) - first-launch offer and Data screen button
 2026-10-29T02:28Z | v9.7 | step 290/292 | v9.7: league restore offer now appears even if a week is already synced; card moved to Data > League
+2026-10-30T02:29Z | v9.8 | step 290/292 | v9.8: roster row menu (and every dialog) hardened so it paints on the Roster tab
