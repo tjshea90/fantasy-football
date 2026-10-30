@@ -1,9 +1,9 @@
-# CHECKPOINT 85 — read me first, then TASKS.md
+# CHECKPOINT 96 — read me first, then TASKS.md
 
-**Written:** 2026-10-29T02:26:40Z · **version:** 9.6 · **tests:** all 34 suites green
+**Written:** 2026-10-30T02:28:26Z · **version:** 9.7 · **tests:** all 35 suites green
 
 ## Just done
-ship: v9.7: league restore offer now appears even if a week is already synced; card moved to Data > League
+ship: v9.8: roster row menu (and every dialog) hardened so it paints on the Roster tab
 
 ## Do this next
 verify on the phone
@@ -27,6 +27,8 @@ request in his own words and `git log` carries every step already taken.
 
 ## Last ten checkpoints
 ```
+  19fc7ad ship v9.7: v9.7: league restore offer now appears even if a week is already synced; card
+  faad4e4 ckpt 85: ship: v9.7: league restore offer now appears even if a week is already synced; 
   2300495 ckpt 78: v9.6 shipped + Release verified: league restore from RTSports capsules/schedule
   c043c73 ship v9.6: v9.5: restore league from the league site's capsules + schedule (rosters, sta
   6534d96 ckpt 75: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
@@ -35,9 +37,7 @@ request in his own words and `git log` carries every step already taken.
   0776ced ckpt 68: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
   427c7f9 ship v9.4: v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now cove
   7534aec ckpt 80: ship: v9.4: fixed false 'NFL rosters failed' prompt before Claude; refresh now 
-  5d6fecf ship v9.3: attach built APK
-  5770f58 ship v9.3: v9.3: every Ask-Claude / share-prompt button first refreshes NFL rosters, bye
 ```
 
-(6 automatic checkpoint(s) since the last deliberate one — the
+(9 automatic checkpoint(s) since the last deliberate one — the
 session was still mid-step. `git diff` against it shows what changed.)
