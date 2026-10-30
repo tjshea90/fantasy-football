@@ -1026,3 +1026,9 @@ It didn't ask me to restore the league
 ```
 Never mind it works 
 ```
+
+## 2026-10-30T02:22:43Z
+```
+When I press the menu dots next to a player such as in the roster tab, the pop up menu does not show up to drop the player. When I switch to the stats tab, the pop up menu from the roster tab that I last pressed is there. Fix this. Also, what is the easiest way to sync all app data for the fantasy football app between my phone and tablet so they are perfect mirrors of all data throughout the app. 
+Separately, without saving anything to the repo or changing anything, research and tell me : 1) what is the current, up to date status on whether rashee rice is expected to play this week 2) what is tracfone (Verizon) prepaid policy on carrier unlocking. I have a 64gb Samsung a15 3) I am in an area where, possibly due to brick buildings or congestion, Verizon 5g ultra wide is extremely slow, sometimes under 1mbps. Other carriers are all also poor speed, but not as bad as Verizon. This may be due to not fully getting uw coverage inside the building. After midnight however, I sometimes get speeds in the 100+ mbps range. What apps /methods / settings can I try on my Samsung a15 5g tracfone prepaid to try to get better speeds, whether this is forcing 4g or regular 5g without uw, or changing settings for apn or other settings, or third party app apps, or anything else that can possibly fix or improve the speed issue. 
+```
