@@ -830,7 +830,7 @@
        A verdict now counts only for the week it was written for; any other
        week falls back to the ESPN feed, which is refreshed every 10 minutes.
        (A verdict with no week is from a pre-stamping build: same rule.) */
-    if (ai && ai.week !== week) ai = null;
+    if (ai && Number(ai.week) !== Number(week)) ai = null;
     /* Store.isOnBye, not `p.bye === week`: it falls back to the league's bye
        table when a player carries no bye of his own, which is what Alerts.java
        has always done. The two used to disagree — the notification would warn
