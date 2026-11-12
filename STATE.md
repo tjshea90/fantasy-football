@@ -1,6 +1,24 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-09-27** · **v9.0**, shipped (GitHub Release v9.0 verified, run #29) · APK builds, signed, all 30 test suites green · now on GitHub, worked across three Claude accounts
+**Last updated: 2026-11-12** · **v9.9** · all 35 test suites green · on GitHub, worked across three Claude accounts
+
+## v9.9 — Claude injury verdicts are week-scoped, 2026-11-12
+
+Tj: "the player on my roster jaylen Warren seems permanently stuck on out
+status, even though he isn't out".
+
+- **Cause.** ESPN's injury feed (checked live) lists him Active, so health()
+  was clean. The O badge was the Claude flag: `mergeAi` keeps every verdict
+  forever (so the triage can carry clear ones forward), and `projectOne`
+  applied whatever verdict was on file to EVERY week. One "not expected to
+  play" from the week he was hurt kept him flagged and zeroed until a paid
+  Claude sync happened to re-check him.
+- **Fix.** `projectOne` ignores a verdict whose `week` is not the week being
+  projected; other weeks fall back to the ESPN feed. Triage was already
+  week-aware (it re-researches a verdict from another week).
+- **Test.** test_locks.js "the same verdict no longer marks him OUT in week 9"
+  — confirmed FAIL on the pre-fix recommend.js.
+
 
 ## 2026-09-27b — the resume/checkpoint system, after it lost a session's work
 
