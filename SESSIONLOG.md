@@ -7,13 +7,15 @@ usage cap mid-ANALYSIS (no file edited yet) still leaves its findings on
 GitHub. Thinking and user messages are not copied; credentials and emails are
 redacted. Deliberate notes live in WORKLOG.md; the plan lives in TASKS.md.
 
-## session edcbfd0d · branch ccr-94d43faa-xk19pg · log from 2026-11-12T19:50:16.794Z · last tool 2026-11-12T19:50:17.715Z · updated 2026-11-12T19:50:17Z
+## session edcbfd0d · branch ccr-94d43faa-xk19pg · log from 2026-11-12T19:50:16.794Z · last tool 2026-11-12T19:51:24.560Z · updated 2026-11-12T19:51:24Z
 
 Claude's messages, oldest first:
 
-- (none yet)
+- [19:50] Found the injury feed: ESPN currently lists Jaylen Warren as **Active**, so the "OUT" comes from somewhere else in the app. Checking the other status sources.
+- [19:50] Likely culprit: a cached Claude verdict ("not expected to play") that never expires. Confirming.
+- [19:51] Confirmed the cause. Each Claude verdict is stamped with the week it was made for, but the projection engine applied it to **every** week, forever. Applying the fix:
 
-Last 1 tool calls: 19:50 Bash sed -n 1,80p CHECKPOINT.md | head -40; grep -rn "injur\|OUT\b\|\.statu
+Last 20 tool calls: 19:50 Bash sed -n 1,80p CHECKPOINT.md | head -40; grep -rn "injur\|OUT\b\|\.statu · 19:50 Read app/assets/recommend.js · 19:50 Bash cd /home/user/fantasy-football/app/assets && grep -n "function hit\|fu · 19:50 Read app/assets/names.js · 19:50 Bash grep -n "BASE\s*[:=]" espn.js | head; curl -s -m 20 "https://site.api. · 19:50 Bash python3 -c " import json;j=json.load(open('/tmp/claude-0/inj.json')) f · 19:50 Bash grep -n "\.code\b\|injBadge\|injCode\|badgeOut\|seasonOutlook\|outLabe · 19:50 Read app/assets/ui.js · 19:50 Read app/assets/recommend.js · 19:50 Read app/assets/value.js · 19:50 Bash grep -n "\.health\b\|health(\|healthTag(" ui.js recommend.js | head -4 · 19:50 Read app/assets/recommend.js · 19:50 Read app/assets/ui.js · 19:50 Bash cd /home/user/fantasy-football && bash tools/note.sh "Jaylen Warren st · 19:51 Read app/assets/recommend.js · 19:51 Read app/assets/recommend.js · 19:51 Bash grep -n "willPlay\|\.week *=\|week:" ai.js handoff.js | head -30; ls . · 19:51 Read app/assets/ai.js · 19:51 Edit app/assets/recommend.js · 19:51 Bash cd /home/user/fantasy-football/tools && grep -ln "mergeAi" test_*.js; 
 
 ## session 33dea76e · branch claude/bulk-roster-standings-import-w8q7qp · log from 2026-10-29T00:44:06.356Z · last tool 2026-10-30T02:30:35.600Z · updated 2026-10-30T02:31:01Z
 
