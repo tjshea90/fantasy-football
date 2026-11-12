@@ -820,6 +820,17 @@
        ("Chris" -> "christopher") was silently discarded — adjustment, reasoning
        AND the hard not-playing exclusion. 15 of this league's 170 players. */
     var ai = aiCache.byName ? root.Names.hit(aiCache.byName, p.name) : null;
+    /* A VERDICT IS ABOUT ONE WEEK (Tj, 2026-11-12: "Jaylen Warren seems
+       permanently stuck on out status, even though he isn't out"). mergeAi
+       carries every verdict forward forever so the triage can reuse it, and
+       this line used to apply whichever one was on file to EVERY week — so a
+       single "not expected to play" from the week he was hurt kept him
+       flagged O and zeroed out of the lineup long after ESPN listed him
+       Active again, until a paid Claude sync happened to re-check him.
+       A verdict now counts only for the week it was written for; any other
+       week falls back to the ESPN feed, which is refreshed every 10 minutes.
+       (A verdict with no week is from a pre-stamping build: same rule.) */
+    if (ai && ai.week !== week) ai = null;
     /* Store.isOnBye, not `p.bye === week`: it falls back to the league's bye
        table when a player carries no bye of his own, which is what Alerts.java
        has always done. The two used to disagree — the notification would warn
