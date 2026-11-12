@@ -143,6 +143,23 @@ console.log('\n-- 2. every spelling of a name reaches the same record --');
      'none of them comes back "never checked" on the next sync  <-- that was a repeat charge, every week');
 }
 {
+  /* Tj, 2026-11-12: Jaylen Warren stuck on O for weeks after he was healthy.
+     A Claude verdict is about the week it was written for — it must not
+     follow the player into every later week. */
+  const sb = boot({});
+  const { Ai, Recommend, Store } = sb;
+  const p = Store.team('myteam').players.filter(q => q.pos === 'RB')[0];
+  Recommend.mergeAi(5, Ai.normalizeAdvice({ summary: '', players: [
+    { name: p.name, status: 'out', willPlay: false, adjust: 0, confidence: 'high', reason: 'ankle' }
+  ] }, { week: 5 }, 'test'), {});
+  const pick = wk => Recommend.projectAll(wk, 'myteam', null).filter(x => x.p.id === p.id)[0];
+  const w5 = pick(5), w9 = pick(9);
+  ok(w5.flags.some(f => /Claude/.test(f.text)) && w5.proj === 0,
+     'a week-5 Claude OUT still blocks him in week 5');
+  ok(!w9.flags.some(f => /Claude/.test(f.text)) && w9.proj > 0,
+     'the same verdict no longer marks him OUT in week 9  <-- the "permanently stuck on out" bug');
+}
+{
   /* The injury feed is keyed by the FEED's spelling, the roster by its own. */
   const disk = {};
   disk['fftracker_news_v1'] = JSON.stringify({
