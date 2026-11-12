@@ -60,4 +60,4 @@ printed at session start; read it only if one of those issues comes up again.
 ## 2026-11-12 — "jaylen Warren seems permanently stuck on out status, even though he isn't out" (Tj)
 
 - [x] 1. (test_locks.js "the same verdict no longer marks him OUT in week 9", fails on pre-fix code) Cause: ESPN feed lists him Active; the O came from an old Claude verdict ("not expected to play") that projectOne applied to every week forever. Fix: a Claude verdict only counts for the week it was written for (recommend.js projectOne).
-- [ ] 2. Ship v9.9, publish Release, send Tj the link
+- [x] 2. (v10.0 shipped; v9.9 ship logged without APK) publish Release v10.0, send Tj the link

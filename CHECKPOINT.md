@@ -1,12 +1,12 @@
-# CHECKPOINT 60 — read me first, then TASKS.md
+# CHECKPOINT 68 — read me first, then TASKS.md
 
-**Written:** 2026-11-12T19:54:56Z · **version:** 9.8 · **tests:** all 35 suites green
+**Written:** 2026-11-12T20:00:24Z · **version:** 10.0 · **tests:** all 35 suites green
 
 ## Just done
-ship: v9.9: Claude injury verdicts now apply only to the week they were made for (fixes players stuck on OUT)
+shipped v10.0 (Warren OUT fix); publish-release dispatched for 10.0
 
 ## Do this next
-verify on the phone
+verify Release v10.0 has the APK asset; Tj verifies Warren no longer O on phone
 
 ## How to resume, exactly
 Open this GitHub repo in a Claude Code session on ANY of the three
@@ -23,10 +23,13 @@ request in his own words and `git log` carries every step already taken.
 
 ## Uncommitted right now
      M CHECKPOINT.md
-     M STATE.md
+     M TASKS.md
 
 ## Last ten checkpoints
 ```
+  64e5e82 ship v10.0: v10.0: Claude injury verdicts apply only to the week they were made for (fix
+  343c3c7 ship v9.9: v9.9: Claude injury verdicts now apply only to the week they were made for (f
+  731b069 ckpt 60: ship: v9.9: Claude injury verdicts now apply only to the week they were made fo
   6ce61f9 ckpt 58: fixed Jaylen Warren stuck OUT: stale Claude verdict applied to every week; now 
   afe15bd ship v9.8: v9.8: roster row menu (and every dialog) hardened so it paints on the Roster 
   a15b42c ckpt 96: ship: v9.8: roster row menu (and every dialog) hardened so it paints on the Ros
@@ -34,9 +37,6 @@ request in his own words and `git log` carries every step already taken.
   faad4e4 ckpt 85: ship: v9.7: league restore offer now appears even if a week is already synced; 
   2300495 ckpt 78: v9.6 shipped + Release verified: league restore from RTSports capsules/schedule
   c043c73 ship v9.6: v9.5: restore league from the league site's capsules + schedule (rosters, sta
-  6534d96 ckpt 75: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
-  91ef264 ship v9.5: v9.5: restore league from the league site's capsules + schedule (rosters, sta
-  2d05c5a ckpt 70: ship: v9.5: restore league from the league site's capsules + schedule (rosters,
 ```
 
 (1 automatic checkpoint(s) since the last deliberate one — the
