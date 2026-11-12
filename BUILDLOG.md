@@ -86,3 +86,4 @@
 2026-10-29T02:28Z | v9.7 | step 290/292 | v9.7: league restore offer now appears even if a week is already synced; card moved to Data > League
 2026-10-30T02:29Z | v9.8 | step 290/292 | v9.8: roster row menu (and every dialog) hardened so it paints on the Roster tab
 2026-11-12T19:56Z | v9.9 | step 290/292 | v9.9: Claude injury verdicts now apply only to the week they were made for (fixes players stuck on OUT)
+2026-11-12T19:58Z | v10.0 | step 290/292 | v10.0: Claude injury verdicts apply only to the week they were made for (fixes Jaylen Warren stuck on OUT)
