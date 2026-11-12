@@ -1,8 +1,8 @@
 # STATE — FF Season Tracker
 
-**Last updated: 2026-11-12** · **v9.9** · all 35 test suites green · on GitHub, worked across three Claude accounts
+**Last updated: 2026-11-12** · **v10.0** (v9.9 was logged without an APK; same fix, shipped as v10.0) · all 35 test suites green · on GitHub, worked across three Claude accounts
 
-## v9.9 — Claude injury verdicts are week-scoped, 2026-11-12
+## v10.0 (logged first as v9.9) — Claude injury verdicts are week-scoped, 2026-11-12
 
 Tj: "the player on my roster jaylen Warren seems permanently stuck on out
 status, even though he isn't out".
