@@ -56,3 +56,8 @@ printed at session start; read it only if one of those issues comes up again.
 - [x] 2. (test_snapshot.js) Store.applySnapshot: fuzzy team match (Shea=My team, Moe=Mo, Tugboat/Eric=Tugdude), rosters, 14-week schedule, final scores as manual scores, add/drop history -> released, week-8 lineups
 - [x] 3. (browser-checked) first-launch offer + Data screen "Restore from the league site" + "Load past weeks' NFL stats"
 - [x] 4. (v9.6 released, asset verified) ship, publish Release, send Tj the link
+
+## 2026-11-12 — "jaylen Warren seems permanently stuck on out status, even though he isn't out" (Tj)
+
+- [x] 1. (test_locks.js "the same verdict no longer marks him OUT in week 9", fails on pre-fix code) Cause: ESPN feed lists him Active; the O came from an old Claude verdict ("not expected to play") that projectOne applied to every week forever. Fix: a Claude verdict only counts for the week it was written for (recommend.js projectOne).
+- [ ] 2. Ship v9.9, publish Release, send Tj the link
